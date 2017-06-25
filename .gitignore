@@ -1,0 +1,10 @@
+.DS_Store
+*~
+*.user
+*.suo
+*.apikey
+.vs/
+.fake/
+packages/
+bin/
+obj/
