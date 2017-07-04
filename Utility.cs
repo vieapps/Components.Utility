@@ -1718,6 +1718,36 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Evaluate a JavaScript expression
+		/// <summary>
+		/// Evaluates an expression and return value (just like JavaScript does)
+		/// </summary>
+		/// <param name="expression">The JavaScript expression for evaluating</param>
+		/// <returns></returns>
+		public static object Eval(string expression)
+		{
+			var value = JsEval.Eval(expression);
+			if (value != null && value is Microsoft.JScript.DateObject)
+			{
+				var datetime = value.ToString().ToArray(' ');
+				return DateTime.Parse(datetime[5] + "/" + datetime[1].GetMonthFromHttpString().ToString("00") + "/" + datetime[2] + " " + datetime[3]);
+			}
+			else
+				return value;
+		}
+
+		/// <summary>
+		/// Evaluates an expression and return value (just like JavaScript does)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="expression">The JavaScript expression for evaluating</param>
+		/// <returns></returns>
+		public static T Eval<T>(string expression)
+		{
+			return (T)Utility.Eval(expression);
+		}
+		#endregion
+
 	}
 
 	// -----------------------------------------------------------

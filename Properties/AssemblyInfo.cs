@@ -25,9 +25,6 @@ using System.Runtime.CompilerServices;
 // If you need to access a type in this assembly from COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("757CE2C8-6BFA-41D7-97D7-A4D156A14BC3")]
-
 // Version information for an assembly consists of the following four values:
 //
 //      Major Version
@@ -37,7 +34,7 @@ using System.Runtime.CompilerServices;
 //
 [assembly: AssemblyVersion("10.1")]
 [assembly: AssemblyFileVersion("10.1")]
-[assembly: AssemblyInformationalVersion("10.1.expd-2017.06.12")]
+[assembly: AssemblyInformationalVersion("10.1.jsev-2017.07.04")]
 
 // visible related information to repository component
 [assembly: InternalsVisibleTo("VIEApps.Components.Repository")]
