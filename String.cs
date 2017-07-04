@@ -121,8 +121,8 @@ namespace net.vieapps.Components.Utility
 		/// Check to see its equals
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="comparisonType"></param>
 		/// <param name="compareTo"></param>
+		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsEquals(this string @string, string compareTo, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
@@ -133,8 +133,8 @@ namespace net.vieapps.Components.Utility
 		/// Check to see its contains
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="comparisonType"></param>
 		/// <param name="substring"></param>
+		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsContains(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
@@ -147,8 +147,8 @@ namespace net.vieapps.Components.Utility
 		/// Check to see its starts with
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="comparisonType"></param>
 		/// <param name="substring"></param>
+		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsStartsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
@@ -161,8 +161,8 @@ namespace net.vieapps.Components.Utility
 		/// Check to see its ends with
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="comparisonType"></param>
 		/// <param name="substring"></param>
+		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsEndsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
@@ -175,15 +175,38 @@ namespace net.vieapps.Components.Utility
 		/// Gets position of sub-string (index of sub-string)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="comparisonType"></param>
 		/// <param name="substring"></param>
 		/// <param name="startIndex"></param>
+		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static int PositionOf(this string @string, string substring, int startIndex = 0, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
 			return startIndex >= @string.Length
 				? -1
 				: @string.IndexOf(substring, startIndex < 0 ? 0 : startIndex, comparisonType);
+		}
+
+		/// <summary>
+		/// Counts the number of appearances of the sub-string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="substring"></param>
+		/// <param name="startIndex"></param>
+		/// <param name="comparisonType"></param>
+		/// <returns></returns>
+		public static int Count(this string @string, string substring, int startIndex = 0, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
+		{
+			if (string.IsNullOrWhiteSpace(substring))
+				return 0;
+
+			var count = 0;
+			var start = @string.PositionOf(substring, startIndex < 0 ? 0 : startIndex, comparisonType);
+			while (start > -1)
+			{
+				count++;
+				start = @string.PositionOf(substring, start + 1, comparisonType);
+			}
+			return count;
 		}
 		#endregion
 
