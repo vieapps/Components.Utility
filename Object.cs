@@ -1146,12 +1146,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XElement ToXml<T>(this T @object)
 		{
-			using (var memoryStream = new MemoryStream())
+			using (var stream = new MemoryStream())
 			{
-				using (TextWriter streamWriter = new StreamWriter(memoryStream))
+				using (TextWriter writer = new StreamWriter(stream))
 				{
-					(new XmlSerializer(typeof(T))).Serialize(streamWriter, @object);
-					return XElement.Parse(Encoding.UTF8.GetString(memoryStream.ToArray()));
+					(new XmlSerializer(typeof(T))).Serialize(writer, @object);
+					return XElement.Parse(Encoding.UTF8.GetString(stream.ToArray()));
 				}
 			}
 		}
@@ -1190,11 +1190,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XElement ToXElement(this XmlNode node)
 		{
-			XDocument xDoc = new XDocument();
-			using (XmlWriter xmlWriter = xDoc.CreateWriter())
+			var doc = new XDocument();
+			using (var writer = doc.CreateWriter())
 			{
-				node.WriteTo(xmlWriter);
-				return xDoc.Root;
+				node.WriteTo(writer);
+				return doc.Root;
 			}
 		}
 
@@ -1205,10 +1205,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XmlNode ToXmlNode(XElement element)
 		{
-			using (XmlReader xmlReader = element.CreateReader())
+			using (var reader = element.CreateReader())
 			{
-				XmlDocument xmlDoc = new XmlDocument();
-				return xmlDoc.ReadNode(xmlReader);
+				var doc = new XmlDocument();
+				return doc.ReadNode(reader);
 			}
 		}
 
@@ -1219,12 +1219,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XmlDocument ToXmlDocument(this XElement element)
 		{
-			using (XmlReader xmlReader = element.CreateReader())
+			using (var reader = element.CreateReader())
 			{
-				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(xmlReader);
-				xmlDoc.DocumentElement.Attributes.RemoveAll();
-				return xmlDoc;
+				var doc = new XmlDocument();
+				doc.Load(reader);
+				doc.DocumentElement.Attributes.RemoveAll();
+				return doc;
 			}
 		}
 
@@ -1235,15 +1235,15 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XDocument ToXDocument(this XmlDocument document)
 		{
-			XDocument xDoc = new XDocument();
-			using (XmlWriter xmlWriter = xDoc.CreateWriter())
+			var doc = new XDocument();
+			using (XmlWriter writer = doc.CreateWriter())
 			{
-				document.WriteTo(xmlWriter);
+				document.WriteTo(writer);
 			}
-			XmlDeclaration declaration = document.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
+			var declaration = document.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 			if (declaration != null)
-				xDoc.Declaration = new XDeclaration(declaration.Version, declaration.Encoding, declaration.Standalone);
-			return xDoc;
+				doc.Declaration = new XDeclaration(declaration.Version, declaration.Encoding, declaration.Standalone);
+			return doc;
 		}
 
 		/// <summary>
@@ -1253,13 +1253,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XmlDocument ToXmlDocument(this XDocument document)
 		{
-			using (XmlReader xmlReader = document.CreateReader())
+			using (var reader = document.CreateReader())
 			{
-				XmlDocument xmlDoc = new XmlDocument();
-				xmlDoc.Load(xmlReader);
+				var doc = new XmlDocument();
+				doc.Load(reader);
 				if (document.Declaration != null)
-					xmlDoc.InsertBefore(xmlDoc.CreateXmlDeclaration(document.Declaration.Version, document.Declaration.Encoding, document.Declaration.Standalone), xmlDoc.FirstChild);
-				return xmlDoc;
+					doc.InsertBefore(doc.CreateXmlDeclaration(document.Declaration.Version, document.Declaration.Encoding, document.Declaration.Standalone), doc.FirstChild);
+				return doc;
 			}
 		}
 
@@ -1276,7 +1276,7 @@ namespace net.vieapps.Components.Utility
 			if (xslTransfrom == null)
 				return results;
 
-			using (StringWriter writer = new StringWriter())
+			using (var writer = new StringWriter())
 			{
 				try
 				{
@@ -1293,13 +1293,13 @@ namespace net.vieapps.Components.Utility
 			results = results.Replace(StringComparison.OrdinalIgnoreCase, "&#xD;", "").Replace(StringComparison.OrdinalIgnoreCase, "&#xA;", "").Replace(StringComparison.OrdinalIgnoreCase, "\t", "").Replace(StringComparison.OrdinalIgnoreCase, "&#x9;", "").Replace(StringComparison.OrdinalIgnoreCase, "<?xml version=\"1.0\" encoding=\"utf-16\"?>", "");
 
 			// remove "xmlns:" attributes
-			int start = results.PositionOf("xmlns:");
+			var start = results.PositionOf("xmlns:");
 			while (start > 0)
 			{
-				int end = results.PositionOf("\"", start);
+				var end = results.PositionOf("\"", start);
 				end = results.PositionOf("\"", end + 1);
 				results = results.Remove(start, end - start + 1);
-				start = results.IndexOf("xmlns:");
+				start = results.PositionOf("xmlns:");
 			}
 
 			// return the result
@@ -1316,9 +1316,9 @@ namespace net.vieapps.Components.Utility
 		public static string Transfrom(this XmlDocument document, string xmlStylesheet, bool enableScript = true)
 		{
 			XslCompiledTransform xslTransform = null;
-			using (MemoryStream stream = new MemoryStream(xmlStylesheet.ToBytes()))
+			using (var stream = new MemoryStream(xmlStylesheet.ToBytes()))
 			{
-				using (XmlTextReader reader = new XmlTextReader(stream))
+				using (var reader = new XmlTextReader(stream))
 				{
 					try
 					{
