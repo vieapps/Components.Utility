@@ -31,16 +31,16 @@ namespace net.vieapps.Components.Utility
 	}
 
 	/// <summary>
-	/// Helper class for working with JSON Web Token
+	/// Static servicing methods for working with JSON Web Token
 	/// </summary>
 	public static class JSONWebToken
 	{
 		static Dictionary<JSONWebTokenHashAlgorithm, Func<string, string, string>> HashAlgorithms
 			= new Dictionary<JSONWebTokenHashAlgorithm, Func<string, string, string>>
 			{
-				{ JSONWebTokenHashAlgorithm.HS256, (key, value) => { return value.GetHMACSHA256(key, false).ToBase64Url(true, false); }  },
-				{ JSONWebTokenHashAlgorithm.HS384, (key, value) => { return value.GetHMACSHA384(key, false).ToBase64Url(true, false); }  },
-				{ JSONWebTokenHashAlgorithm.HS512, (key, value) => { return value.GetHMACSHA512(key, false).ToBase64Url(true, false); }  }
+				{ JSONWebTokenHashAlgorithm.HS256, (key, value) => value.GetHMACSHA256(key, false).ToBase64Url(true, false)  },
+				{ JSONWebTokenHashAlgorithm.HS384, (key, value) => value.GetHMACSHA384(key, false).ToBase64Url(true, false)  },
+				{ JSONWebTokenHashAlgorithm.HS512, (key, value) => value.GetHMACSHA512(key, false).ToBase64Url(true, false)  }
 			};
 
 		static JSONWebTokenHashAlgorithm GetHashAlgorithm(string algorithm)

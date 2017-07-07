@@ -20,6 +20,9 @@ using Newtonsoft.Json.Linq;
 
 namespace net.vieapps.Components.Utility
 {
+	/// <summary>
+	/// Static servicing methods for working with collections
+	/// </summary>
 	public static class CollectionService
 	{
 
@@ -1492,13 +1495,8 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection">Collection</see> class
 		/// </summary>
-		public Collection() : this(null) { }
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection">Collection</see> class
-		/// </summary>
 		/// <param name="dictionary">Initialized values</param>
-		public Collection(Dictionary<TKey, TValue> dictionary) : base()
+		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()
 		{
 			if (dictionary != null)
 				dictionary.ForEach(entry =>

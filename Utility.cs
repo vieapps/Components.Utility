@@ -20,6 +20,9 @@ using System.Diagnostics;
 
 namespace net.vieapps.Components.Utility
 {
+	/// <summary>
+	/// Static servicing methods
+	/// </summary>
 	public static class Utility
 	{
 

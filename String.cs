@@ -7,6 +7,9 @@ using System.Globalization;
 
 namespace net.vieapps.Components.Utility
 {
+	/// <summary>
+	/// Static servicing methods for working with string
+	/// </summary>
 	public static class StringService
 	{
 

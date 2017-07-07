@@ -9,6 +9,9 @@ using System.Web;
 
 namespace net.vieapps.Components.Utility
 {
+	/// <summary>
+	/// Static servicing methods for working with captchas
+	/// </summary>
 	public static class CaptchaService
 	{
 

@@ -23,7 +23,7 @@ using Newtonsoft.Json.Linq;
 namespace net.vieapps.Components.Utility
 {
 	/// <summary>
-	/// Work with objects' meta data via reflection
+	/// Static servicing methods for working with objects
 	/// </summary>
 	public static class ObjectService
 	{
@@ -473,7 +473,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Create new instance
+		#region Fast create new instance & cast type
 		static Dictionary<Type, Func<object>> TypeFactoryCache = new Dictionary<Type, Func<object>>();
 
 		/// <summary>
@@ -503,6 +503,49 @@ namespace net.vieapps.Components.Utility
 		public static T CreateInstance<T>()
 		{
 			return (T)typeof(T).CreateInstance();
+		}
+
+		static Dictionary<Type, Func<object, object>> CastFactoryCache = new Dictionary<Type, Func<object, object>>()
+		{
+			{ typeof(Byte), value => Convert.ToByte(value) },
+			{ typeof(SByte), value => Convert.ToSByte(value) },
+			{ typeof(Int16), value => Convert.ToInt16(value) },
+			{ typeof(UInt16), value => Convert.ToUInt16(value) },
+			{ typeof(Int32), value => Convert.ToInt32(value) },
+			{ typeof(UInt32), value => Convert.ToUInt32(value) },
+			{ typeof(Int64), value => Convert.ToInt64(value) },
+			{ typeof(UInt64), value => Convert.ToUInt64(value) },
+			{ typeof(Single), value => Convert.ToSingle(value) },
+			{ typeof(Double), value => Convert.ToDouble(value) },
+			{ typeof(Decimal), value => Convert.ToDecimal(value) },
+			{ typeof(Boolean), value => Convert.ToBoolean(value) },
+			{ typeof(Char), value => Convert.ToChar(value) },
+			{ typeof(String), value => Convert.ToString(value) },
+			{ typeof(DateTime), value => Convert.ToDateTime(value) }
+		};
+
+		/// <summary>
+		/// Casts the type of a primitive object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="type">The type to cast to</param>
+		/// <returns></returns>
+		public static object CastType(this object @object, Type type)
+		{
+			return ObjectService.CastFactoryCache.ContainsKey(type)
+				? ObjectService.CastFactoryCache[type](@object)
+				: @object;
+		}
+
+		/// <summary>
+		/// Casts the type of a primitive object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static T CastType<T>(this object @object)
+		{
+			return (T)@object.CastType(typeof(T));
 		}
 		#endregion
 
@@ -541,53 +584,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (attribute == null)
 				throw new ArgumentException("attribute");
-
-			if (cast && value != null)
-			{
-				// short
-				if (attribute.Type.Equals(typeof(short)))
-					@object.SetAttributeValue(attribute.Name, value is short ? (short)value : Convert.ToInt16(value));
-				else if (attribute.Type.Equals(typeof(ushort)))
-					@object.SetAttributeValue(attribute.Name, value is ushort ? (ushort)value : Convert.ToUInt16(value));
-
-				// int
-				else if (attribute.Type.Equals(typeof(int)))
-					@object.SetAttributeValue(attribute.Name, value is int ? (int)value : Convert.ToInt32(value));
-				else if (attribute.Type.Equals(typeof(uint)))
-					@object.SetAttributeValue(attribute.Name, value is uint ? (uint)value : Convert.ToUInt32(value));
-
-				// long
-				else if (attribute.Type.Equals(typeof(long)))
-					@object.SetAttributeValue(attribute.Name, value is long ? (long)value : Convert.ToInt64(value));
-				else if (attribute.Type.Equals(typeof(ulong)))
-					@object.SetAttributeValue(attribute.Name, value is ulong ? (ulong)value : Convert.ToUInt64(value));
-
-				// decimal
-				else if (attribute.Type.Equals(typeof(decimal)))
-					@object.SetAttributeValue(attribute.Name, value is decimal ? (decimal)value : Convert.ToDecimal(value));
-
-				// double
-				else if (attribute.Type.Equals(typeof(double)))
-					@object.SetAttributeValue(attribute.Name, value is double ? (double)value : Convert.ToDouble(value));
-
-				// float
-				else if (attribute.Type.Equals(typeof(float)))
-					@object.SetAttributeValue(attribute.Name, value is float ? (float)value : Convert.ToDouble(value));
-
-				// date-time
-				else if (attribute.Type.Equals(typeof(DateTime)))
-					@object.SetAttributeValue(attribute.Name, value is DateTime ? (DateTime)value : Convert.ToDateTime(value));
-
-				// boolean value
-				else if (attribute.Type.Equals(typeof(bool)))
-					@object.SetAttributeValue(attribute.Name, value is bool ? (bool)value : Convert.ToBoolean(value));
-
-				// string or unknown type
-				else
-					@object.SetAttributeValue(attribute.Name, value);
-			}
-			else
-				@object.SetAttributeValue(attribute.Name, value);
+			@object.SetAttributeValue(attribute.Name, !cast ? value : value != null ? value.CastType(attribute.Type) : Convert.ChangeType(value, attribute.Type));
 		}
 
 		/// <summary>
@@ -929,8 +926,8 @@ namespace net.vieapps.Components.Utility
 					}
 
 					// value is primitive type
-					else if (attribute.Type.IsPrimitiveType() && !attribute.Type.Equals(value.GetType()))
-						value = Convert.ChangeType(value, attribute.Type);
+					else if (attribute.Type.IsPrimitiveType())
+						value = value.CastType(attribute.Type);
 				}
 
 				// update the value of attribute
@@ -1518,17 +1515,11 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 
-				// date-time
-				else if (type.Equals(typeof(DateTime)) && !(theValue is DateTime))
-					theValue = Convert.ToDateTime(theValue);
-
-				// long -> int
-				else if (theValue is long && (type.Equals(typeof(int)) || type.Equals(typeof(int?))))
-					theValue = Convert.ToInt32(theValue);
-
-				// double -> decimal
-				else if (theValue is double && (type.Equals(typeof(decimal)) || type.Equals(typeof(decimal?))))
-					theValue = Convert.ToDecimal(theValue);
+				// other (primitive or other)
+				else
+					theValue = theValue != null
+						? theValue.CastType(type)
+						: Convert.ChangeType(theValue, type);
 
 				// cast the value & return state
 				value = (T)theValue;

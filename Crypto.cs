@@ -10,6 +10,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace net.vieapps.Components.Utility
 {
+	/// <summary>
+	/// Static servicing methods for working with cryptos
+	/// </summary>
 	public static class CryptoService
 	{
 
