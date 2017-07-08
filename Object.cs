@@ -505,47 +505,35 @@ namespace net.vieapps.Components.Utility
 			return (T)typeof(T).CreateInstance();
 		}
 
-		static Dictionary<Type, Func<object, object>> CastFactoryCache = new Dictionary<Type, Func<object, object>>()
-		{
-			{ typeof(Byte), value => Convert.ToByte(value) },
-			{ typeof(SByte), value => Convert.ToSByte(value) },
-			{ typeof(Int16), value => Convert.ToInt16(value) },
-			{ typeof(UInt16), value => Convert.ToUInt16(value) },
-			{ typeof(Int32), value => Convert.ToInt32(value) },
-			{ typeof(UInt32), value => Convert.ToUInt32(value) },
-			{ typeof(Int64), value => Convert.ToInt64(value) },
-			{ typeof(UInt64), value => Convert.ToUInt64(value) },
-			{ typeof(Single), value => Convert.ToSingle(value) },
-			{ typeof(Double), value => Convert.ToDouble(value) },
-			{ typeof(Decimal), value => Convert.ToDecimal(value) },
-			{ typeof(Boolean), value => Convert.ToBoolean(value) },
-			{ typeof(Char), value => Convert.ToChar(value) },
-			{ typeof(String), value => Convert.ToString(value) },
-			{ typeof(DateTime), value => Convert.ToDateTime(value) }
-		};
-
 		/// <summary>
-		/// Casts the type of a primitive object
+		/// Casts the value to other type
 		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="type">The type to cast to</param>
+		/// <param name="value">The value to cast to other type</param>
+		/// <param name="type">The type to cast type of value to</param>
 		/// <returns></returns>
-		public static object CastType(this object @object, Type type)
+		public static object CastAs(this object value, Type type)
 		{
-			return ObjectService.CastFactoryCache.ContainsKey(type)
-				? ObjectService.CastFactoryCache[type](@object)
-				: @object;
+			return value != null
+				? value.GetType().Equals(type)
+					? value
+					: Convert.ChangeType(value, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
+				: null;
 		}
 
 		/// <summary>
-		/// Casts the type of a primitive object
+		/// Casts the value to other type
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
+		/// <param name="value">The value to cast to other type</param>
 		/// <returns></returns>
-		public static T CastType<T>(this object @object)
+		public static T CastAs<T>(this object value)
 		{
-			return (T)@object.CastType(typeof(T));
+			var type = typeof(T);
+			return value != null
+				? value.GetType().Equals(type)
+					? (T)value
+					: (T)Convert.ChangeType(value, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
+				: default(T);
 		}
 		#endregion
 
@@ -584,7 +572,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (attribute == null)
 				throw new ArgumentException("attribute");
-			@object.SetAttributeValue(attribute.Name, !cast ? value : value != null ? value.CastType(attribute.Type) : Convert.ChangeType(value, attribute.Type));
+			@object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value);
 		}
 
 		/// <summary>
@@ -927,7 +915,7 @@ namespace net.vieapps.Components.Utility
 
 					// value is primitive type
 					else if (attribute.Type.IsPrimitiveType())
-						value = value.CastType(attribute.Type);
+						value = value.CastAs(attribute.Type);
 				}
 
 				// update the value of attribute
@@ -1517,9 +1505,7 @@ namespace net.vieapps.Components.Utility
 
 				// other (primitive or other)
 				else
-					theValue = theValue != null
-						? theValue.CastType(type)
-						: Convert.ChangeType(theValue, type);
+					theValue = theValue.CastAs(type);
 
 				// cast the value & return state
 				value = (T)theValue;
