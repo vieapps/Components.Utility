@@ -1062,10 +1062,10 @@ namespace net.vieapps.Components.Utility
 			if (type.IsPrimitiveType())
 				json = new JValue(@object);
 
-			// generict list or hash-set
-			else if (type.IsGenericListOrHashSet())
+			// array or generict list/hash-set
+			else if (type.IsArray || type.IsGenericListOrHashSet())
 			{
-				if (type.GenericTypeArguments[0].IsClassType())
+				if ((type.IsArray && type.GetElementType().IsClassType()) || (type.IsGenericListOrHashSet() && type.GenericTypeArguments[0].IsClassType()))
 				{
 					json = new JArray();
 					foreach (var item in @object as IEnumerable)
@@ -1075,7 +1075,7 @@ namespace net.vieapps.Components.Utility
 					json = JArray.FromObject(@object);
 			}
 
-			// generic dictionary or collection
+			// generic dictionary/collection
 			else if (type.IsGenericDictionaryOrCollection())
 			{
 				if (type.GenericTypeArguments[1].IsClassType())
@@ -1087,19 +1087,6 @@ namespace net.vieapps.Components.Utility
 				}
 				else
 					json = JObject.FromObject(@object);
-			}
-
-			// array
-			else if (type.IsArray)
-			{
-				if (type.GetElementType().IsClassType())
-				{
-					json = new JArray();
-					foreach (var item in @object as IEnumerable)
-						(json as JArray).Add(item == null ? null : item.ToJson());
-				}
-				else
-					json = JArray.FromObject(@object);
 			}
 
 			// class
