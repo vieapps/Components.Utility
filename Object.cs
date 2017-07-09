@@ -773,7 +773,7 @@ namespace net.vieapps.Components.Utility
 					{
 						// prepare
 						JArray data = null;
-						if (attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetSerializeAsObjectAttribute() != null && token is JObject)
+						if (attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetAsObjectAttribute() != null && token is JObject)
 						{
 							data = new JArray();
 							if ((token as JObject).Count > 0)
@@ -812,12 +812,12 @@ namespace net.vieapps.Components.Utility
 					{
 						// prepare
 						JObject data = null;
-						if (attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetSerializeAsArrayAttribute() != null && token is JArray)
+						if (attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetAsArrayAttribute() != null && token is JArray)
 						{
 							data = new JObject();
 							if ((token as JArray).Count > 0)
 							{
-								var asArray = attribute.GetSerializeAsArrayAttribute();
+								var asArray = attribute.GetAsArrayAttribute();
 								var keyAttribute = !string.IsNullOrWhiteSpace(asArray.KeyAttribute)
 									? asArray.KeyAttribute
 									: "ID";
@@ -1026,23 +1026,23 @@ namespace net.vieapps.Components.Utility
 		static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
 		{
 			return ObjectService.GetProperties(type)
-				.Where(attribute => (attribute.Type.IsGenericDictionaryOrCollection() && attribute.GetSerializeAsArrayAttribute() != null) || (attribute.Type.IsGenericListOrHashSet() && attribute.GetSerializeAsObjectAttribute() != null))
+				.Where(attribute => (attribute.Type.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.Type.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
 				.ToList();
 		}
 
-		static SerializeAsArrayAttribute GetSerializeAsArrayAttribute(this AttributeInfo attribute)
+		static AsArrayAttribute GetAsArrayAttribute(this AttributeInfo attribute)
 		{
-			var attributes = attribute.Info.GetCustomAttributes(typeof(SerializeAsArrayAttribute), true);
+			var attributes = attribute.Info.GetCustomAttributes(typeof(AsArrayAttribute), true);
 			return attributes.Length > 0
-				? attributes[0] as SerializeAsArrayAttribute
+				? attributes[0] as AsArrayAttribute
 				: null;
 		}
 
-		static SerializeAsObjectAttribute GetSerializeAsObjectAttribute(this AttributeInfo attribute)
+		static AsObjectAttribute GetAsObjectAttribute(this AttributeInfo attribute)
 		{
-			var attributes = attribute.Info.GetCustomAttributes(typeof(SerializeAsObjectAttribute), true);
+			var attributes = attribute.Info.GetCustomAttributes(typeof(AsObjectAttribute), true);
 			return attributes.Length > 0
-				? attributes[0] as SerializeAsObjectAttribute
+				? attributes[0] as AsObjectAttribute
 				: null;
 		}
 
@@ -1095,14 +1095,14 @@ namespace net.vieapps.Components.Utility
 				json = JObject.FromObject(@object);
 				type.GetSpecialSerializeAttributes().ForEach(attribute =>
 				{
-					if (attribute.Type.IsGenericListOrHashSet() && attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetSerializeAsObjectAttribute() != null)
+					if (attribute.Type.IsGenericListOrHashSet() && attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetAsObjectAttribute() != null)
 					{
 						var jsonObject = new JObject();
 
 						var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
 						if (items != null)
 						{
-							var asObject = attribute.GetSerializeAsObjectAttribute();
+							var asObject = attribute.GetAsObjectAttribute();
 							var keyAttribute = !string.IsNullOrWhiteSpace(asObject.KeyAttribute)
 								? asObject.KeyAttribute
 								: "ID";
@@ -1118,7 +1118,7 @@ namespace net.vieapps.Components.Utility
 
 						json[attribute.Name] = jsonObject;
 					}
-					else if (attribute.Type.IsGenericDictionaryOrCollection() && attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetSerializeAsArrayAttribute() != null)
+					else if (attribute.Type.IsGenericDictionaryOrCollection() && attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetAsArrayAttribute() != null)
 					{
 						var jsonArray = new JArray();
 
@@ -1408,11 +1408,11 @@ namespace net.vieapps.Components.Utility
 		public static ExpandoObject ToExpandoObject(this IDictionary<string, object> @object)
 		{
 			var expando = new ExpandoObject();
-			@object.ForEach(p =>
+			@object.ForEach(entry =>
 			{
-				(expando as IDictionary<string, object>)[p.Key] = p.Value is IDictionary<string, object>
-					? (p.Value as IDictionary<string, object>).ToExpandoObject()
-					: p.Value;
+				(expando as IDictionary<string, object>)[entry.Key] = entry.Value is IDictionary<string, object>
+					? (entry.Value as IDictionary<string, object>).ToExpandoObject()
+					: entry.Value;
 			});
 			return expando;
 		}
@@ -1482,7 +1482,7 @@ namespace net.vieapps.Components.Utility
 				return false;
 
 			// prepare
-			var theObject = @object as IDictionary<string, object>;
+			var dictionary = @object as IDictionary<string, object>;
 			var names = name.IndexOf(".") > 0
 				? name.ToArray('.', true, true)
 				: new string[] { name };
@@ -1490,27 +1490,27 @@ namespace net.vieapps.Components.Utility
 			// no multiple
 			if (names.Length < 2)
 			{
-				if (!theObject.ContainsKey(name))
+				if (!dictionary.ContainsKey(name))
 					return false;
 
-				value = theObject[name];
+				value = dictionary[name];
 				return true;
 			}
 
 			// got multiple
 			var index = 0;
-			while (index < names.Length - 1 && theObject != null)
+			while (index < names.Length - 1 && dictionary != null)
 			{
-				theObject = theObject.ContainsKey(names[index])
-					? theObject[names[index]] as IDictionary<string, object>
+				dictionary = dictionary.ContainsKey(names[index])
+					? dictionary[names[index]] as IDictionary<string, object>
 					: null;
 				index++;
 			}
 
-			if (theObject == null || !theObject.ContainsKey(names[names.Length - 1]))
+			if (dictionary == null || !dictionary.ContainsKey(names[names.Length - 1]))
 				return false;
 
-			value = theObject[names[names.Length - 1]];
+			value = dictionary[names[names.Length - 1]];
 			return true;
 		}
 
@@ -1586,13 +1586,13 @@ namespace net.vieapps.Components.Utility
 
 	#region Attributes of object serialization
 	/// <summary>
-	/// Specifies this property is be serialized as an object (JObject) instead as an array (JArray) while serializing/deserializing via Json.NET
+	/// Specifies this property is serialized as an object (JObject) instead as an array (JArray) while serializing/deserializing via Json.NET
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
 	[DebuggerDisplay("Key = {KeyAttribute}")]
-	public class SerializeAsObjectAttribute : Attribute
+	public class AsObjectAttribute : Attribute
 	{
-		public SerializeAsObjectAttribute() { }
+		public AsObjectAttribute() { }
 
 		/// <summary>
 		/// Gets or sets the name of attribute to use as the key (if not value is provided, the name 'ID' will be used while processing)
@@ -1601,13 +1601,13 @@ namespace net.vieapps.Components.Utility
 	}
 
 	/// <summary>
-	/// Specifies this property is be serialized as an array (JArray) instead as an object (JObject) while serializing/deserializing via Json.NET
+	/// Specifies this property is serialized as an array (JArray) instead as an object (JObject) while serializing/deserializing via Json.NET
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
 	[DebuggerDisplay("Key = {KeyAttribute}")]
-	public class SerializeAsArrayAttribute : Attribute
+	public class AsArrayAttribute : Attribute
 	{
-		public SerializeAsArrayAttribute() { }
+		public AsArrayAttribute() { }
 
 		/// <summary>
 		/// Gets or sets the name of attribute to use as the key (if not value is provided, the name 'ID' will be used while processing)
