@@ -119,7 +119,7 @@ namespace net.vieapps.Components.Utility
 		#region Working with JSON
 		public JObject ToJson()
 		{
-			return this.ToJson<EmailMessage>();
+			return this.ToJson<EmailMessage>() as JObject;
 		}
 
 		public override string ToString()
@@ -246,7 +246,7 @@ namespace net.vieapps.Components.Utility
 		#region Working with JSON
 		public JObject ToJson()
 		{
-			var json = this.ToJson<WebHookMessage>();
+			var json = this.ToJson<WebHookMessage>() as JObject;
 			json.Add(new JProperty("Headers", this.Headers.ToJObject()));
 			json.Add(new JProperty("QueryString", this.QueryString.ToJObject()));
 			return json;

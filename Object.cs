@@ -32,20 +32,31 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Presents information of an attribute of an objects
 		/// </summary>
-		[Serializable]
-		[DebuggerDisplay("Name = {Name}")]
+		[Serializable, DebuggerDisplay("Name = {Name}")]
 		public class AttributeInfo
 		{
-			public AttributeInfo() { }
+			public AttributeInfo()
+			{
+				this.NotNull = false;
+				this.Column = null;
+				this.MaxLength = 0;
+				this.IsCLOB = false;
+				this.IsDateTimeString = false;
+			}
 
 			public string Name { get; internal set; }
+
 			public MemberInfo Info { get; internal set; }
+
 			internal bool NotNull { get; set; }
+
 			internal string Column { get; set; }
+
 			internal int MaxLength { get; set; }
+
 			internal bool IsCLOB { get; set; }
+
 			internal bool IsDateTimeString { get; set; }
-			internal bool IsCustom { get; set; }
 
 			/// <summary>
 			/// Specifies this attribute can be read
@@ -100,38 +111,45 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Object meta data
+		static Dictionary<Type, List<AttributeInfo>> ObjectProperties = new Dictionary<Type, List<AttributeInfo>>();
+		static Dictionary<Type, List<AttributeInfo>> ObjectFields = new Dictionary<Type, List<AttributeInfo>>();
+
 		/// <summary>
-		/// Gets collection of public properties of the object's type
+		/// Gets the collection of public properties of the type
 		/// </summary>
 		/// <param name="type">The type for processing</param>
 		/// <returns>Collection of public properties</returns>
 		public static List<AttributeInfo> GetProperties(Type type)
 		{
-			var defaultMembers = type.GetCustomAttributes(typeof(DefaultMemberAttribute));
-			var defaultMember = defaultMembers != null
-				? defaultMembers.FirstOrDefault() as DefaultMemberAttribute
-				: null;
-
-			var properties = new List<AttributeInfo>();
-			type.GetProperties(BindingFlags.Instance | BindingFlags.Public).ForEach(info =>
-			{
-				if (defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-					properties.Add(new AttributeInfo()
+			List<AttributeInfo> properties = null;
+			if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
+				lock (ObjectService.ObjectProperties)
+				{
+					if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
 					{
-						Name = info.Name,
-						Info = info,
-						NotNull = false,
-						Column = null,
-						MaxLength = 0,
-						IsCLOB = false,
-						IsCustom = false
-					});
-			});
+						var defaultMembers = type.GetCustomAttributes(typeof(DefaultMemberAttribute));
+						var defaultMember = defaultMembers != null
+							? defaultMembers.FirstOrDefault() as DefaultMemberAttribute
+							: null;
+
+						properties = new List<AttributeInfo>();
+						type.GetProperties(BindingFlags.Instance | BindingFlags.Public).ForEach(info =>
+						{
+							if (defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
+								properties.Add(new AttributeInfo()
+								{
+									Name = info.Name,
+									Info = info
+								});
+						});
+						ObjectService.ObjectProperties.Add(type, properties);
+					}
+				}
 			return properties;
 		}
 
 		/// <summary>
-		/// Gets collection of public properties of the object
+		/// Gets the collection of public properties of the object's type
 		/// </summary>
 		/// <param name="object">The object for processing</param>
 		/// <returns>Collection of public properties</returns>
@@ -141,32 +159,36 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets collection of private fields/attributes of the object's type
+		/// Gets the collection of fields (private attributes) of the type
 		/// </summary>
 		/// <param name="type">The type for processing</param>
 		/// <returns>Collection of private fields/attributes</returns>
 		public static List<AttributeInfo> GetFields(Type type)
 		{
-			var attributes = new List<AttributeInfo>();
-			type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic).ForEach(info =>
-			{
-				if (!info.Name.StartsWith("<"))
-					attributes.Add(new AttributeInfo()
+			List<AttributeInfo> attributes = null;
+			if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
+				lock (ObjectService.ObjectFields)
+				{
+					if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
 					{
-						Name = info.Name,
-						Info = info,
-						NotNull = false,
-						Column = null,
-						MaxLength = 0,
-						IsCLOB = false,
-						IsCustom = false
-					});
-			});
+						attributes = new List<AttributeInfo>();
+						type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic).ForEach(info =>
+						{
+							if (!info.Name.StartsWith("<"))
+								attributes.Add(new AttributeInfo()
+								{
+									Name = info.Name,
+									Info = info
+								});
+						});
+						ObjectService.ObjectFields.Add(type, attributes);
+					}
+				}
 			return attributes;
 		}
 
 		/// <summary>
-		/// Gets collection of private fields/attributes of the object's type
+		/// Gets the collection of fields (private attributes) of the object's type
 		/// </summary>
 		/// <param name="object">The object for processing</param>
 		/// <returns>Collection of private fields/attributes</returns>
@@ -176,7 +198,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets collection of attributes of the object's type (means contains all public properties and private fields)
+		/// Gets the collection of attributes of the type (means contains all public properties and private fields)
 		/// </summary>
 		/// <param name="type">The type for processing</param>
 		/// <returns>Collection of attributes</returns>
@@ -188,7 +210,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets collection of attributes of the object's type (means contains all public properties and private fields)
+		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
 		/// </summary>
 		/// <param name="object">The object for processing</param>
 		/// <returns>Collection of attributes</returns>
@@ -198,7 +220,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Get full type name (type name with assembly name) of this type
+		/// Get the full type name (type name with assembly name) of this type
 		/// </summary>
 		/// <param name="type"></param>
 		/// <param name="justName">true to get only name (means last element in full namespace)</param>
@@ -211,61 +233,59 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is primitive
+		/// Gets the state to determines the type is primitive or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is primitive</returns>
 		public static bool IsPrimitiveType(this Type type)
 		{
-			return type.IsPrimitive
-				? type.IsPrimitive
-				: type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
+			return type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is string
+		/// Gets the state to determines the type is string or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is string</returns>
 		public static bool IsStringType(this Type type)
 		{
-			return type.Equals(typeof(System.String));
+			return type.Equals(typeof(String));
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is date-time
+		/// Gets the state to determines the type is date-time or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
 		public static bool IsDateTimeType(this Type type)
 		{
-			return type.Equals(typeof(System.DateTime));
+			return type.Equals(typeof(DateTime));
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is integral numeric
+		/// Gets the state to determines the type is integral numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is integral numeric</returns>
 		public static bool IsIntegralType(this Type type)
 		{
-			return type.Equals(typeof(System.Int16)) || type.Equals(typeof(System.Int32)) || type.Equals(typeof(System.Int64))
-							|| type.Equals(typeof(System.UInt16)) || type.Equals(typeof(System.UInt32)) || type.Equals(typeof(System.UInt64))
-							|| type.Equals(typeof(System.Byte)) || type.Equals(typeof(System.SByte));
+			return type.Equals(typeof(Byte)) || type.Equals(typeof(SByte))
+				|| type.Equals(typeof(Int16)) || type.Equals(typeof(Int32)) || type.Equals(typeof(Int64))
+				|| type.Equals(typeof(UInt16)) || type.Equals(typeof(UInt32)) || type.Equals(typeof(UInt64));
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is floating numeric
+		/// Gets the state to determines the type is floating numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
 		public static bool IsFloatingPointType(this Type type)
 		{
-			return type.Equals(typeof(System.Decimal)) || type.Equals(typeof(System.Double)) || type.Equals(typeof(System.Single));
+			return type.Equals(typeof(Decimal)) || type.Equals(typeof(Double)) || type.Equals(typeof(Single));
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is numeric
+		/// Gets the state to determines the type is numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
@@ -275,7 +295,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is a reference of a class
+		/// Gets the state to determines the type is a reference of a class or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
@@ -287,7 +307,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Collection meta data
 		/// <summary>
-		/// Gets state to determines this type is sub-class of a generic type
+		/// Gets the state to determines this type is sub-class of a generic type
 		/// </summary>
 		/// <param name="type">The type for checking</param>
 		/// <param name="genericType">The generic type for checking</param>
@@ -313,7 +333,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a generic list
+		/// Gets the state to determines the type is a generic list
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a generic list; otherwise false.</returns>
@@ -323,7 +343,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a generic list
+		/// Gets the state to determines the object's type is a generic list
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list; otherwise false.</returns>
@@ -333,7 +353,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a generic hash-set
+		/// Gets the state to determines the type is a generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
@@ -343,7 +363,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a generic hash-set
+		/// Gets the state to determines the object's type is a generic hash-set
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
@@ -353,7 +373,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a generic list or generic hash-set
+		/// Gets the state to determines the type is generic list or generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
@@ -363,7 +383,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a generic list or generic hash-set
+		/// Gets the state to determines the object's type is generic list or generic hash-set
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
@@ -473,7 +493,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Fast create new instance & cast type
+		#region Create new instance & Cast
 		static Dictionary<Type, Func<object>> TypeFactoryCache = new Dictionary<Type, Func<object>>();
 
 		/// <summary>
@@ -484,14 +504,12 @@ namespace net.vieapps.Components.Utility
 		public static object CreateInstance(this Type type)
 		{
 			Func<object> func;
-
 			if (!ObjectService.TypeFactoryCache.TryGetValue(type, out func))
 				lock (ObjectService.TypeFactoryCache)
 				{
 					if (!ObjectService.TypeFactoryCache.TryGetValue(type, out func))
 						ObjectService.TypeFactoryCache[type] = func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
 				}
-
 			return func();
 		}
 
@@ -782,7 +800,7 @@ namespace net.vieapps.Components.Utility
 
 						var instance = data != null && data.Count > 0
 							? serializer.Deserialize(new JTokenReader(data), type)
-							: Activator.CreateInstance(type);
+							: type.CreateInstance();
 
 						@object.SetAttributeValue(attribute, instance);
 					}
@@ -831,7 +849,7 @@ namespace net.vieapps.Components.Utility
 
 						var instance = data != null && data.Count > 0
 							? serializer.Deserialize(new JTokenReader(data), type)
-							: Activator.CreateInstance(type);
+							: type.CreateInstance();
 
 						@object.SetAttributeValue(attribute, instance);
 					}
@@ -843,7 +861,7 @@ namespace net.vieapps.Components.Utility
 					{
 						var instance = token is JObject && (token as JObject).Count > 0
 							? serializer.Deserialize(new JTokenReader(token), typeof(Collection))
-							: Activator.CreateInstance<Collection>();
+							: typeof(Collection).CreateInstance();
 						@object.SetAttributeValue(attribute, instance);
 					}
 					catch { }
@@ -936,7 +954,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T Copy<T>(this T @object, HashSet<string> excluded = null)
 		{
-			var instance = Activator.CreateInstance<T>();
+			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(@object, excluded);
 			return instance;
 		}
@@ -951,7 +969,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T Copy<T>(this T @object, JToken json, HashSet<string> excluded = null)
 		{
-			var instance = Activator.CreateInstance<T>();
+			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(json, excluded);
 			return instance;
 		}
@@ -966,7 +984,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T Copy<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null)
 		{
-			var instance = Activator.CreateInstance<T>();
+			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(expandoObject, excluded);
 			return instance;
 		}
@@ -995,7 +1013,7 @@ namespace net.vieapps.Components.Utility
 			// cannot serialize, then copy data
 			else
 			{
-				instance = Activator.CreateInstance<T>();
+				instance = ObjectService.CreateInstance<T>();
 				@object.CopyTo(instance);
 			}
 
@@ -1034,50 +1052,98 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static JObject ToJson<T>(this T @object)
+		public static JToken ToJson<T>(this T @object)
 		{
-			// deserialize as JSON
-			var json = JObject.FromObject(@object);
+			// prepare
+			JToken json = null;
+			Type type = typeof(T);
 
-			// update special attributes
-			@object.GetType().GetSpecialSerializeAttributes().ForEach(attribute =>
+			// primitive
+			if (type.IsPrimitiveType())
+				json = new JValue(@object);
+
+			// generict list or hash-set
+			else if (type.IsGenericListOrHashSet())
 			{
-				if (attribute.Type.IsGenericListOrHashSet() && attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetSerializeAsObjectAttribute() != null)
+				if (type.GenericTypeArguments[0].IsClassType())
 				{
-					var jsonObject = new JObject();
+					json = new JArray();
+					foreach (var item in @object as IEnumerable)
+						(json as JArray).Add(item == null ? null : item.ToJson());
+				}
+				else
+					json = JArray.FromObject(@object);
+			}
 
-					var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
-					if (items != null)
+			// generic dictionary or collection
+			else if (type.IsGenericDictionaryOrCollection())
+			{
+				if (type.GenericTypeArguments[0].IsClassType())
+				{
+					json = new JObject();
+					var enumerator = (@object as IDictionary).GetEnumerator();
+					while (enumerator.MoveNext())
+						(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value == null ? null : enumerator.Value.ToJson()));
+				}
+				else
+					json = JObject.FromObject(@object);
+			}
+
+			// array
+			else if (type.IsArray)
+			{
+				if (type.GetElementType().IsClassType())
+				{
+					json = new JArray();
+					foreach (var item in @object as IEnumerable)
+						(json as JArray).Add(item == null ? null : item.ToJson());
+				}
+				else
+					json = JArray.FromObject(@object);
+			}
+
+			// class
+			else
+			{
+				json = JObject.FromObject(@object);
+				type.GetSpecialSerializeAttributes().ForEach(attribute =>
+				{
+					if (attribute.Type.IsGenericListOrHashSet() && attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetSerializeAsObjectAttribute() != null)
 					{
-						var asObject = attribute.GetSerializeAsObjectAttribute();
-						var keyAttribute = !string.IsNullOrWhiteSpace(asObject.KeyAttribute)
-							? asObject.KeyAttribute
-							: "ID";
+						var jsonObject = new JObject();
 
-						foreach (var item in items)
-							if (item != null)
-							{
-								var key = item.GetAttributeValue(keyAttribute);
-								if (key != null)
-									jsonObject.Add(new JProperty(key.ToString(), item.ToJson()));
-							}
+						var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
+						if (items != null)
+						{
+							var asObject = attribute.GetSerializeAsObjectAttribute();
+							var keyAttribute = !string.IsNullOrWhiteSpace(asObject.KeyAttribute)
+								? asObject.KeyAttribute
+								: "ID";
+
+							foreach (var item in items)
+								if (item != null)
+								{
+									var key = item.GetAttributeValue(keyAttribute);
+									if (key != null)
+										jsonObject.Add(new JProperty(key.ToString(), item.ToJson()));
+								}
+						}
+
+						json[attribute.Name] = jsonObject;
 					}
+					else if (attribute.Type.IsGenericDictionaryOrCollection() && attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetSerializeAsArrayAttribute() != null)
+					{
+						var jsonArray = new JArray();
 
-					json[attribute.Name] = jsonObject;
-				}
-				else if (attribute.Type.IsGenericDictionaryOrCollection() && attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetSerializeAsArrayAttribute() != null)
-				{
-					var jsonArray = new JArray();
+						var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
+						if (items != null)
+							foreach (var item in items)
+								jsonArray.Add(item == null ? null : item.ToJson());
 
-					var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
-					if (items != null)
-						foreach (var item in items)
-							if (item != null)
-								jsonArray.Add(item.ToJson());
-
-					json[attribute.Name] = jsonArray;
-				}
-			});
+						json[attribute.Name] = jsonArray;
+					}
+				});
+			}
 
 			// return the JSON
 			return json;
@@ -1098,7 +1164,7 @@ namespace net.vieapps.Components.Utility
 			// got special, then create new instance and copy data from JSON
 			if (copy || typeof(T).GetSpecialSerializeAttributes().Count > 0)
 			{
-				@object = Activator.CreateInstance<T>();
+				@object = ObjectService.CreateInstance<T>();
 				@object.CopyFrom(json);
 			}
 

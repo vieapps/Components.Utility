@@ -38,9 +38,12 @@ namespace net.vieapps.Components.Utility
 		public static string[] ToArray(this string @string, char @char = ',', bool removeEmptyElements = false, bool trim = true)
 		{
 			if (string.IsNullOrWhiteSpace(@string))
-				return new string[] { "" };
+				return new string[] { };
 
-			var array = @string.Trim().Split(@char);
+			var array = trim
+				? @string.Trim().Split(@char)
+				: @string.Split(@char);
+
 			if (removeEmptyElements)
 			{
 				int index = 0;
@@ -97,7 +100,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToString(this IEnumerable<string> @object, string seperate)
 		{
-			string @string = "";
+			var @string = "";
 			@object.ForEach(item =>
 			{
 				@string += (!@string.Equals("") ? seperate : "") + item;
@@ -130,7 +133,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToString(this NameValueCollection @object, string elementSeperate, string valueSeperate = null)
 		{
-			string @string = "";
+			var @string = "";
 			foreach (string key in @object)
 				@string += (!@string.Equals("") ? elementSeperate : "") + key + (string.IsNullOrWhiteSpace(valueSeperate) ? ": " : valueSeperate) + @object[key];
 			return @string;
@@ -227,7 +230,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T[] RemoveAt<T>(this T[] @object, int index)
 		{
-			T[] array = new T[@object.Length - 1];
+			var array = new T[@object.Length - 1];
 			if (index > 0)
 				Array.Copy(@object, 0, array, 0, index);
 
@@ -368,7 +371,7 @@ namespace net.vieapps.Components.Utility
 
 			else
 			{
-				SortedList random = new SortedList();
+				var random = new SortedList();
 				@object.ForEach((o, i) =>
 				{
 					random.Add(Utility.GetRandomNumber(), i);
@@ -401,7 +404,7 @@ namespace net.vieapps.Components.Utility
 			if (@object is HashSet<T>)
 				return @object as HashSet<T>;
 
-			HashSet <T> set = checkDuplicated
+			var set = checkDuplicated
 				? new HashSet<T>()
 				: new HashSet<T>(@object);
 
@@ -500,7 +503,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
 
-			Collection collection = new Collection();
+			var collection = new Collection();
 			@object.ForEach(item =>
 			{
 				try
@@ -538,7 +541,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this Collection @object)
 		{
-			Dictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
+			var dictionary = new Dictionary<TKey, TValue>();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
 				dictionary.Add((TKey)enumerator.Entry.Key, (TValue)enumerator.Entry.Value);
@@ -554,7 +557,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this Collection<TKey, TValue> @object)
 		{
-			Dictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
+			var dictionary = new Dictionary<TKey, TValue>();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
 				dictionary.Add(enumerator.Current.Key, enumerator.Current.Value);
@@ -605,7 +608,7 @@ namespace net.vieapps.Components.Utility
 
 					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
 					{
-						var obj = Activator.CreateInstance(type);
+						var obj = type.CreateInstance();
 						obj.CopyFrom(value as ExpandoObject);
 						value = obj;
 					}
@@ -695,7 +698,7 @@ namespace net.vieapps.Components.Utility
 
 					else if (valueType.IsClassType() && !valueType.Equals(typeof(ExpandoObject)))
 					{
-						var obj = Activator.CreateInstance(valueType);
+						var obj = valueType.CreateInstance();
 						obj.CopyFrom(value as ExpandoObject);
 						value = obj;
 					}
@@ -751,16 +754,47 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region JSON Conversions
+		#region JSON (JArray) Conversions
 		/// <summary>
 		/// Creates a JArray object from this collection
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static JArray ToJArray<T>(this IEnumerable<T> @object)
+		public static JArray ToJArray<T>(this IList<T> @object)
 		{
-			return JArray.FromObject(@object);
+			if (typeof(T).IsClassType())
+			{
+				var array = new JArray();
+				@object.ForEach(item =>
+				{
+					array.Add(item.ToJson());
+				});
+				return array;
+			}
+			else
+				return JArray.FromObject(@object);
+		}
+
+		/// <summary>
+		/// Creates a JArray object from this collection
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static JArray ToJArray<T>(this ISet<T> @object)
+		{
+			if (typeof(T).IsClassType())
+			{
+				var array = new JArray();
+				@object.ForEach(item =>
+				{
+					array.Add(item.ToJson());
+				});
+				return array;
+			}
+			else
+				return JArray.FromObject(@object);
 		}
 
 		/// <summary>
@@ -778,40 +812,56 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Creates a JObject object from this collection
+		/// Creates a JArray object from this collection
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
 		/// <param name="object"></param>
-		/// <param name="keyAttribute">The string that presents name of attribute to use their value as key</param>
 		/// <returns></returns>
-		public static JObject ToJObject<T>(this IEnumerable<T> @object, string keyAttribute)
+		public static JArray ToJArray<TKey, TValue>(this IDictionary<TKey, TValue> @object)
+		{
+			var json = new JArray();
+			var enumerator = @object.GetEnumerator();
+			while (enumerator.MoveNext())
+				json.Add(enumerator.Current.Value.ToJson());
+			return json;
+		}
+
+		/// <summary>
+		/// Creates a dictionary of objects from this JSON
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
+		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <returns></returns>
+		public static Dictionary<TKey, TValue> CreateDictionary<TKey, TValue>(this JArray json, string keyAttribute)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
 
-			var json = new JObject();
-			@object.ForEach(item =>
+			var dictionary = new Dictionary<TKey, TValue>();
+			foreach (var token in json)
 			{
-				var key = item.GetAttributeValue(keyAttribute);
-				if (object.ReferenceEquals(key, null))
-					key = item.GetHashCode();
-				json.Add(new JProperty(key.ToString(), item.ToJson<T>()));
-			});
-			return json;
+				var @object = token.FromJson<TValue>();
+				var key = (TKey)@object.GetAttributeValue(keyAttribute);
+				if (!object.ReferenceEquals(key, null) && !dictionary.ContainsKey(key))
+					dictionary.Add(key, @object);
+			}
+			return dictionary;
 		}
 
 		/// <summary>
 		/// Creates a collection of objects from this JSON
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
+		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
 		/// <returns></returns>
-		public static List<T> CreateList<T>(this JObject json)
+		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JArray json, string keyAttribute)
 		{
-			var collection = new List<T>();
-			foreach (var token in json)
-				collection.Add(token.Value.FromJson<T>());
-			return collection;
+			return new Collection<TKey, TValue>(json.CreateDictionary<TKey, TValue>(keyAttribute));
 		}
 
 		/// <summary>
@@ -850,6 +900,68 @@ namespace net.vieapps.Components.Utility
 			}
 			return collection;
 		}
+		#endregion
+
+		#region JSON (JObject) Conversions
+		/// <summary>
+		/// Creates a JObject object from this collection
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="keyAttribute">The string that presents name of attribute to use their value as key</param>
+		/// <returns></returns>
+		public static JObject ToJObject<T>(this IList<T> @object, string keyAttribute)
+		{
+			if (string.IsNullOrWhiteSpace(keyAttribute))
+				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+
+			var json = new JObject();
+			@object.ForEach(item =>
+			{
+				var key = item.GetAttributeValue(keyAttribute);
+				if (object.ReferenceEquals(key, null))
+					key = item.GetHashCode();
+				json.Add(new JProperty(key.ToString(), item.ToJson<T>()));
+			});
+			return json;
+		}
+
+		/// <summary>
+		/// Creates a JObject object from this collection
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="keyAttribute">The string that presents name of attribute to use their value as key</param>
+		/// <returns></returns>
+		public static JObject ToJObject<T>(this ISet<T> @object, string keyAttribute)
+		{
+			if (string.IsNullOrWhiteSpace(keyAttribute))
+				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+
+			var json = new JObject();
+			@object.ForEach(item =>
+			{
+				var key = item.GetAttributeValue(keyAttribute);
+				if (object.ReferenceEquals(key, null))
+					key = item.GetHashCode();
+				json.Add(new JProperty(key.ToString(), item.ToJson<T>()));
+			});
+			return json;
+		}
+
+		/// <summary>
+		/// Creates a collection of objects from this JSON
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
+		/// <returns></returns>
+		public static List<T> CreateList<T>(this JObject json)
+		{
+			var collection = new List<T>();
+			foreach (var token in json)
+				collection.Add(token.Value.FromJson<T>());
+			return collection;
+		}
 
 		/// <summary>
 		/// Creates a JArray object from this collection
@@ -858,12 +970,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static JArray ToJArray<TKey, TValue>(this Collection<TKey, TValue> @object)
+		public static JObject ToJObject<TKey, TValue>(this IDictionary<TKey, TValue> @object)
 		{
-			var json = new JArray();
+			var json = new JObject();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current.Value.ToJson());
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value.ToJson()));
 			return json;
 		}
 
@@ -875,20 +987,33 @@ namespace net.vieapps.Components.Utility
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JArray json, string keyAttribute)
+		public static Dictionary<TKey, TValue> CreateDictionary<TKey, TValue>(this JObject json, string keyAttribute)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
 
-			var collection = new Collection<TKey, TValue>();
+			var dictionary = new Dictionary<TKey, TValue>();
 			foreach (var token in json)
 			{
-				var @object = token.FromJson<TValue>();
+				var @object = token.Value.FromJson<TValue>();
 				var key = (TKey)@object.GetAttributeValue(keyAttribute);
-				if (!object.ReferenceEquals(key, null) && !collection.Contains(key))
-					collection.Add(key, @object);
+				if (!object.ReferenceEquals(key, null) && !dictionary.ContainsKey(key))
+					dictionary.Add(key, @object);
 			}
-			return collection;
+			return dictionary;
+		}
+
+		/// <summary>
+		/// Creates a collection of objects from this JSON
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
+		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <returns></returns>
+		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JObject json, string keyAttribute)
+		{
+			return new Collection<TKey, TValue>(json.CreateDictionary<TKey, TValue>(keyAttribute));
 		}
 
 		/// <summary>
@@ -926,75 +1051,6 @@ namespace net.vieapps.Components.Utility
 					collection.Add(key, @object);
 			}
 			return collection;
-		}
-
-		/// <summary>
-		/// Creates a JArray object from this collection
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="object"></param>
-		/// <returns></returns>
-		public static JObject ToJObject<TKey, TValue>(this Collection<TKey, TValue> @object)
-		{
-			var json = new JObject();
-			var enumerator = @object.GetEnumerator();
-			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value.ToJson()));
-			return json;
-		}
-
-		/// <summary>
-		/// Creates a collection of objects from this JSON
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
-		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
-		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JObject json, string keyAttribute)
-		{
-			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
-
-			var collection = new Collection<TKey, TValue>();
-			foreach (var token in json)
-			{
-				var @object = token.Value.FromJson<TValue>();
-				var key = (TKey)@object.GetAttributeValue(keyAttribute);
-				if (!object.ReferenceEquals(key, null) && !collection.Contains(key))
-					collection.Add(key, @object);
-			}
-			return collection;
-		}
-
-		/// <summary>
-		/// Creates a collection of objects from this JSON
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
-		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
-		/// <returns></returns>
-		public static Collection CreateCollection<T>(this JToken json, string keyAttribute)
-		{
-			return json is JArray
-				? (json as JArray).CreateCollection<T>(keyAttribute)
-				: (json as JObject).CreateCollection<T>(keyAttribute);
-		}
-
-		/// <summary>
-		/// Creates a collection of objects from this JSON
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
-		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
-		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JToken json, string keyAttribute)
-		{
-			return json is JArray
-				? (json as JArray).CreateCollection<TKey, TValue>(keyAttribute)
-				: (json as JObject).CreateCollection<TKey, TValue>(keyAttribute);
 		}
 
 		/// <summary>
