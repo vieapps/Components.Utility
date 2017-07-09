@@ -41,7 +41,6 @@ namespace net.vieapps.Components.Utility
 				this.Column = null;
 				this.MaxLength = 0;
 				this.IsCLOB = false;
-				this.IsDateTimeString = false;
 			}
 
 			public string Name { get; internal set; }
@@ -55,8 +54,6 @@ namespace net.vieapps.Components.Utility
 			internal int MaxLength { get; set; }
 
 			internal bool IsCLOB { get; set; }
-
-			internal bool IsDateTimeString { get; set; }
 
 			/// <summary>
 			/// Specifies this attribute can be read
