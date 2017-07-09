@@ -1056,7 +1056,7 @@ namespace net.vieapps.Components.Utility
 		{
 			// prepare
 			JToken json = null;
-			Type type = typeof(T);
+			Type type = @object.GetType();
 
 			// primitive
 			if (type.IsPrimitiveType())
