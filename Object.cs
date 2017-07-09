@@ -1078,7 +1078,7 @@ namespace net.vieapps.Components.Utility
 			// generic dictionary or collection
 			else if (type.IsGenericDictionaryOrCollection())
 			{
-				if (type.GenericTypeArguments[0].IsClassType())
+				if (type.GenericTypeArguments[1].IsClassType())
 				{
 					json = new JObject();
 					var enumerator = (@object as IDictionary).GetEnumerator();
