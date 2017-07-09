@@ -1023,14 +1023,14 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region JSON Conversions
-		static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
+		internal static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
 		{
 			return ObjectService.GetProperties(type)
 				.Where(attribute => (attribute.Type.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.Type.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
 				.ToList();
 		}
 
-		static AsArrayAttribute GetAsArrayAttribute(this AttributeInfo attribute)
+		internal static AsArrayAttribute GetAsArrayAttribute(this AttributeInfo attribute)
 		{
 			var attributes = attribute.Info.GetCustomAttributes(typeof(AsArrayAttribute), true);
 			return attributes.Length > 0
@@ -1038,7 +1038,7 @@ namespace net.vieapps.Components.Utility
 				: null;
 		}
 
-		static AsObjectAttribute GetAsObjectAttribute(this AttributeInfo attribute)
+		internal static AsObjectAttribute GetAsObjectAttribute(this AttributeInfo attribute)
 		{
 			var attributes = attribute.Info.GetCustomAttributes(typeof(AsObjectAttribute), true);
 			return attributes.Length > 0
@@ -1057,40 +1057,47 @@ namespace net.vieapps.Components.Utility
 			// prepare
 			JToken json = null;
 			Type type = @object.GetType();
+			Type elementType = type.IsArray
+				? type.GetElementType()
+				: type.IsGenericListOrHashSet()
+					? type.GenericTypeArguments[0]
+					: type.IsGenericDictionaryOrCollection()
+						? type.GenericTypeArguments[1]
+						: null;
 
-			// primitive
-			if (type.IsPrimitiveType())
-				json = new JValue(@object);
-
-			// array or generict list/hash-set
-			else if (type.IsArray || type.IsGenericListOrHashSet())
+			// collection
+			if (elementType != null)
 			{
-				if ((type.IsArray && type.GetElementType().IsClassType()) || (type.IsGenericListOrHashSet() && type.GenericTypeArguments[0].IsClassType()))
+				// array or generict list/hash-set
+				if (type.IsArray || type.IsGenericListOrHashSet())
 				{
-					json = new JArray();
-					foreach (var item in @object as IEnumerable)
-						(json as JArray).Add(item == null ? null : item.ToJson());
+					if (elementType.IsClassType())
+					{
+						json = new JArray();
+						foreach (var item in @object as IEnumerable)
+							(json as JArray).Add(item == null ? null : item.ToJson());
+					}
+					else
+						json = JArray.FromObject(@object);
 				}
+
+				// generic dictionary/collection
 				else
-					json = JArray.FromObject(@object);
+				{
+					if (elementType.IsClassType())
+					{
+						json = new JObject();
+						var enumerator = (@object as IDictionary).GetEnumerator();
+						while (enumerator.MoveNext())
+							(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value == null ? null : enumerator.Value.ToJson()));
+					}
+					else
+						json = JObject.FromObject(@object);
+				}
 			}
 
-			// generic dictionary/collection
-			else if (type.IsGenericDictionaryOrCollection())
-			{
-				if (type.GenericTypeArguments[1].IsClassType())
-				{
-					json = new JObject();
-					var enumerator = (@object as IDictionary).GetEnumerator();
-					while (enumerator.MoveNext())
-						(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value == null ? null : enumerator.Value.ToJson()));
-				}
-				else
-					json = JObject.FromObject(@object);
-			}
-
-			// class
-			else
+			// object
+			else if (type.IsClassType())
 			{
 				json = JObject.FromObject(@object);
 				type.GetSpecialSerializeAttributes().ForEach(attribute =>
@@ -1131,6 +1138,10 @@ namespace net.vieapps.Components.Utility
 					}
 				});
 			}
+
+			// primitive or unknown
+			else
+				json = new JValue(@object);
 
 			// return the JSON
 			return json;
