@@ -390,7 +390,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a generic dictionary
+		/// Gets the state to determines the type is reference of a generic dictionary
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
@@ -400,7 +400,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a generic dictionary
+		/// Gets the state to determines the type of the object is reference of a generic dictionary
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
@@ -410,7 +410,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type is reference of a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
@@ -420,7 +420,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type of the object is reference of a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
@@ -430,7 +430,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
@@ -440,7 +440,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type of the object is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
@@ -450,7 +450,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
+		/// Gets the state to determines the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
@@ -460,7 +460,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
+		/// Gets the state to determines the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
@@ -470,7 +470,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
+		/// Gets the state to determines the type is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
@@ -480,13 +480,23 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets state to determines the type of the object is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
+		/// Gets the state to determines the type of the object is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
 		public static bool IsCollection(this object @object)
 		{
 			return @object.GetType().IsCollection();
+		}
+
+		/// <summary>
+		/// Gets the state to determines the the object is array or not
+		/// </summary>
+		/// <param name="object">The object for checking type</param>
+		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		public static bool IsArray(this object @object)
+		{
+			return @object.GetType().IsArray;
 		}
 		#endregion
 
@@ -779,7 +789,7 @@ namespace net.vieapps.Components.Utility
 								foreach (var item in token as JObject)
 									if (gotSpecialAttributes)
 									{
-										object child = Activator.CreateInstance(attribute.Type.GenericTypeArguments[0]);
+										object child = attribute.Type.GenericTypeArguments[0].CreateInstance();
 										child.CopyFrom(item.Value);
 										data.Add(JObject.FromObject(child));
 									}
@@ -822,7 +832,7 @@ namespace net.vieapps.Components.Utility
 								foreach (JObject item in token as JArray)
 									if (gotSpecialAttributes)
 									{
-										object child = Activator.CreateInstance(attribute.Type.GenericTypeArguments[1]);
+										object child = attribute.Type.GenericTypeArguments[1].CreateInstance();
 										child.CopyFrom(item);
 										var keyValue = child.GetAttributeValue(keyAttribute);
 										if (keyValue != null)
@@ -867,7 +877,7 @@ namespace net.vieapps.Components.Utility
 				else if (attribute.Type.IsClassType())
 					try
 					{
-						var instance = Activator.CreateInstance(attribute.Type);
+						var instance = attribute.Type.CreateInstance();
 						if (token is JObject && (token as JObject).Count > 0)
 							instance.CopyFrom(token);
 						@object.SetAttributeValue(attribute, instance);
@@ -922,7 +932,7 @@ namespace net.vieapps.Components.Utility
 
 						else if (attribute.Type.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
 						{
-							var obj = Activator.CreateInstance(attribute.Type);
+							var obj = attribute.Type.CreateInstance();
 							obj.CopyFrom(value as ExpandoObject);
 							value = obj;
 						}
@@ -1051,53 +1061,44 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static JToken ToJson<T>(this T @object)
 		{
-			// prepare
 			JToken json = null;
-			Type type = @object.GetType();
-			Type elementType = type.IsArray
-				? type.GetElementType()
-				: type.IsGenericListOrHashSet()
-					? type.GenericTypeArguments[0]
-					: type.IsGenericDictionaryOrCollection()
-						? type.GenericTypeArguments[1]
-						: null;
 
-			// collection
-			if (elementType != null)
+			// array or generict list/hash-set
+			if (@object.IsArray() || @object.IsGenericListOrHashSet())
 			{
-				// array or generict list/hash-set
-				if (type.IsArray || type.IsGenericListOrHashSet())
-				{
-					if (elementType.IsClassType())
-					{
-						json = new JArray();
-						foreach (var item in @object as IEnumerable)
-							(json as JArray).Add(item == null ? null : item.ToJson());
-					}
-					else
-						json = JArray.FromObject(@object);
-				}
+				Type type = @object.IsArray()
+					? @object.GetType().GetElementType()
+					: @object.GetType().GenericTypeArguments[0];
 
-				// generic dictionary/collection
-				else
+				if (type.IsClassType())
 				{
-					if (elementType.IsClassType())
-					{
-						json = new JObject();
-						var enumerator = (@object as IDictionary).GetEnumerator();
-						while (enumerator.MoveNext())
-							(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value == null ? null : enumerator.Value.ToJson()));
-					}
-					else
-						json = JObject.FromObject(@object);
+					json = new JArray();
+					foreach (var item in @object as IEnumerable)
+						(json as JArray).Add(item == null ? null : item.ToJson());
 				}
+				else
+					json = JArray.FromObject(@object);
+			}
+
+			// generict dictionary/collection
+			if (@object.IsGenericDictionaryOrCollection())
+			{
+				if (@object.GetType().GenericTypeArguments[1].IsClassType())
+				{
+					json = new JObject();
+					var enumerator = (@object as IDictionary).GetEnumerator();
+					while (enumerator.MoveNext())
+						(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value == null ? null : enumerator.Value.ToJson()));
+				}
+				else
+					json = JObject.FromObject(@object);
 			}
 
 			// object
-			else if (type.IsClassType())
+			else if (@object.GetType().IsClassType())
 			{
 				json = JObject.FromObject(@object);
-				type.GetSpecialSerializeAttributes().ForEach(attribute =>
+				@object.GetType().GetSpecialSerializeAttributes().ForEach(attribute =>
 				{
 					if (attribute.Type.IsGenericListOrHashSet() && attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetAsObjectAttribute() != null)
 					{
@@ -1220,9 +1221,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T FromXml<T>(this string xml)
 		{
-			using (StringReader stringReader = new StringReader(xml))
+			using (var stringReader = new StringReader(xml))
 			{
-				using (XmlReader xmlReader = new XmlTextReader(stringReader))
+				using (var xmlReader = new XmlTextReader(stringReader))
 				{
 					return (T)(new XmlSerializer(typeof(T))).Deserialize(xmlReader);
 				}
@@ -1558,7 +1559,7 @@ namespace net.vieapps.Components.Utility
 
 					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
 					{
-						var obj = Activator.CreateInstance(type);
+						var obj = type.CreateInstance();
 						obj.CopyFrom(theValue as ExpandoObject);
 						theValue = obj;
 					}

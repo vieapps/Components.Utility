@@ -586,7 +586,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static IEnumerable ToList(this List<object> @object, Type type)
 		{
-			var list = Activator.CreateInstance((typeof(List<>)).MakeGenericType(type)) as IList;
+			var list = typeof(List<>).MakeGenericType(type).CreateInstance() as IList;
 			@object.ForEach(element =>
 			{
 				// assign value
@@ -671,7 +671,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static IDictionary ToDictionary(this ExpandoObject @object, Type keyType, Type valueType)
 		{
-			var dictionary = Activator.CreateInstance((typeof(Dictionary<,>)).MakeGenericType(keyType, valueType)) as IDictionary;
+			var dictionary = typeof(Dictionary<,>).MakeGenericType(keyType, valueType).CreateInstance() as IDictionary;
 			@object.ForEach(element =>
 			{
 				// key
@@ -768,7 +768,7 @@ namespace net.vieapps.Components.Utility
 				var array = new JArray();
 				@object.ForEach(item =>
 				{
-					array.Add(item.ToJson());
+					array.Add(item == null ? null : item.ToJson());
 				});
 				return array;
 			}
@@ -789,7 +789,7 @@ namespace net.vieapps.Components.Utility
 				var array = new JArray();
 				@object.ForEach(item =>
 				{
-					array.Add(item.ToJson());
+					array.Add(item == null ? null : item.ToJson());
 				});
 				return array;
 			}
@@ -823,7 +823,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current.Value.ToJson());
+				json.Add(enumerator.Current.Value == null ? null : enumerator.Current.Value.ToJson());
 			return json;
 		}
 
@@ -874,7 +874,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current.ToJson());
+				json.Add(enumerator.Current == null ? null : enumerator.Current.ToJson());
 			return json;
 		}
 
@@ -975,7 +975,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value.ToJson()));
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value == null ? null : enumerator.Current.Value.ToJson()));
 			return json;
 		}
 
@@ -1026,7 +1026,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			var enumerator = @object.AsEnumerableDictionaryEntry.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value.ToJson()));
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value == null ? null : enumerator.Current.Value.ToJson()));
 			return json;
 		}
 
@@ -1396,8 +1396,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The zero-based index of the first occurrence of item within the entire the collections if found; otherwise, –1.</returns>
 		public int IndexOf(object @object)
 		{
-			int index = -1;
-			foreach (object value in this.Values)
+			var index = -1;
+			foreach (var value in this.Values)
 			{
 				index++;
 				if (object.ReferenceEquals(@object, value))
@@ -1415,8 +1415,8 @@ namespace net.vieapps.Components.Utility
 		{
 			if (!object.ReferenceEquals(@object, null))
 			{
-				int index = -1;
-				foreach (object key in this.Keys)
+				var index = -1;
+				foreach (var key in this.Keys)
 				{
 					index++;
 					if (object.ReferenceEquals(@object, key))
@@ -1460,13 +1460,11 @@ namespace net.vieapps.Components.Utility
 			Collection _collection = null;
 			List<object> _keys = new List<object>();
 
-			public Enumerator() : this(null) { }
-
-			public Enumerator(Collection collection)
+			public Enumerator(Collection collection = null)
 			{
 				this._collection = collection;
 				if (this._collection != null)
-					foreach (object key in this._collection.Keys)
+					foreach (var key in this._collection.Keys)
 						this._keys.Add(key);
 			}
 
