@@ -82,9 +82,9 @@ namespace net.vieapps.Components.Utility
 				header.ToJson().ToString(Formatting.None).ToBase64Url(),
 				payload.ToString(Formatting.None).ToBase64Url()
 			};
-			segments.Add(JSONWebToken.HashAlgorithms[algorithm](key, segments[0] + "." + segments[1]));
+			segments.Add(JSONWebToken.HashAlgorithms[algorithm](key, string.Join(".", segments)));
 
-			return string.Join(".", segments.ToArray());
+			return string.Join(".", segments);
 		}
 
 		/// <summary>
