@@ -13,7 +13,7 @@ namespace net.vieapps.Components.Utility
 	public static class StringService
 	{
 
-		#region Manipulations
+		#region Manipulations & Conversions
 		/// <summary>
 		/// Gets left-side sub-string (just like VB does)
 		/// </summary>
@@ -116,6 +116,31 @@ namespace net.vieapps.Components.Utility
 		public static string GetCapitalizedWords(this string @string)
 		{
 			return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(@string);
+		}
+
+		/// <summary>
+		/// Converts this enum-string to enum type value
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="type">The type of enum</param>
+		/// <returns></returns>
+		public static object ToEnum(this string @string, Type type)
+		{
+			if (type == null || !type.IsEnum)
+				throw new ArgumentException("The type is not enum");
+
+			return Enum.Parse(type, @string);
+		}
+
+		/// <summary>
+		/// Converts this enum-string to enum type value
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static T ToEnum<T>(this string @string)
+		{
+			return (T)@string.ToEnum(typeof(T));
 		}
 		#endregion
 
@@ -471,7 +496,7 @@ namespace net.vieapps.Components.Utility
 
 			// add timestamp if has no value
 			if (result.Equals(""))
-				result = Convert.ToInt64(Utility.GetRandomNumber()).ToIdentity() + "-" + DateTime.UtcNow.ToUnixTimestamp().ToIdentity();
+				result = Convert.ToInt64(UtilityService.GetRandomNumber()).ToIdentity() + "-" + DateTime.UtcNow.ToUnixTimestamp().ToIdentity();
 
 			// numeric
 			else if (StringService.Numberic.Replace(result, "").Equals(result))

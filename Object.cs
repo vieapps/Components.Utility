@@ -873,6 +873,14 @@ namespace net.vieapps.Components.Utility
 					}
 					catch { }
 
+				// enum
+				else if (attribute.Type.IsEnum && token is JValue && (token as JValue).Value != null)
+					try
+					{
+						@object.SetAttributeValue(attribute, (token as JValue).Value.ToString().ToEnum(attribute.Type));
+					}
+					catch { }
+
 				// class
 				else if (attribute.Type.IsClassType())
 					try
@@ -1154,8 +1162,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T FromJson<T>(this JToken json, bool copy = false)
 		{
-			// initialize object
-			var @object = default(T);
+			// initialize the object
+			T @object;
 
 			// got special, then create new instance and copy data from JSON
 			if (copy || typeof(T).GetSpecialSerializeAttributes().Count > 0)

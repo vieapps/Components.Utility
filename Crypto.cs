@@ -1226,7 +1226,7 @@ namespace net.vieapps.Components.Utility
 			// generate new container name for new key-pair
 			CspParameters cspParams = new CspParameters(1, "Microsoft Strong Cryptographic Provider");
 			cspParams.Flags = CspProviderFlags.UseArchivableKey;
-			cspParams.KeyContainerName = "VIEAppsRSAContainer-" + Utility.GetUUID();
+			cspParams.KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.GetUUID();
 
 			// generate key pair
 			using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048, cspParams))

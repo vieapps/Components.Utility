@@ -54,7 +54,7 @@ namespace net.vieapps.Components.Utility
 
 		public EmailMessage(string encryptedMessage)
 		{
-			this.Id = Utility.GetUUID();
+			this.Id = UtilityService.GetUUID();
 			this.SendingTime = DateTime.Now;
 			this.From = "";
 			this.ReplyTo = "";
@@ -110,7 +110,7 @@ namespace net.vieapps.Components.Utility
 			get
 			{
 				if (string.IsNullOrWhiteSpace(this.Id))
-					this.Id = Utility.GetUUID();
+					this.Id = UtilityService.GetUUID();
 				return this.ToString().Encrypt(EmailMessage.EncryptionKey);
 			}
 		}
@@ -141,7 +141,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static EmailMessage Load(string filePath)
 		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath) ? new EmailMessage(Utility.ReadTextFile(filePath)) : null;
+			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath) ? new EmailMessage(UtilityService.ReadTextFile(filePath)) : null;
 		}
 
 		/// <summary>
@@ -154,7 +154,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					Utility.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.EncryptedMessage, false);
+					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.EncryptedMessage, false);
 				}
 				catch { }
 		}
@@ -201,7 +201,7 @@ namespace net.vieapps.Components.Utility
 
 		public WebHookMessage(string encryptedMessage)
 		{
-			this.Id = Utility.GetUUID();
+			this.Id = UtilityService.GetUUID();
 			this.SendingTime = DateTime.Now;
 			this.EndpointURL = "";
 			this.Body = "";
@@ -237,7 +237,7 @@ namespace net.vieapps.Components.Utility
 			get
 			{
 				if (string.IsNullOrWhiteSpace(this.Id))
-					this.Id = Utility.GetUUID();
+					this.Id = UtilityService.GetUUID();
 				return this.ToString().Encrypt(WebHookMessage.EncryptionKey);
 			}
 		}
@@ -279,7 +279,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static WebHookMessage Load(string filePath)
 		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath) ? new WebHookMessage(Utility.ReadTextFile(filePath)) : null;
+			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath) ? new WebHookMessage(UtilityService.ReadTextFile(filePath)) : null;
 		}
 
 		/// <summary>
@@ -292,7 +292,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					Utility.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.EncryptedMessage, false);
+					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.EncryptedMessage, false);
 				}
 				catch { }
 		}

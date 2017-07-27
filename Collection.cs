@@ -374,7 +374,7 @@ namespace net.vieapps.Components.Utility
 				var random = new SortedList();
 				@object.ForEach((o, i) =>
 				{
-					random.Add(Utility.GetRandomNumber(), i);
+					random.Add(UtilityService.GetRandomNumber(), i);
 				});
 
 				int maxIndex = random.Count / 2;
@@ -574,6 +574,19 @@ namespace net.vieapps.Components.Utility
 		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this Dictionary<TKey, TValue> @object)
 		{
 			return new Collection<TKey, TValue>(@object);
+		}
+
+		/// <summary>
+		/// Creates a collection of enums from this collection of enum-strings
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="enums"></param>
+		/// <returns></returns>
+		public static IEnumerable<T> ToEnums<T>(this IEnumerable<string> enums)
+		{
+			return enums == null
+				? null
+				: enums.Select(@enum => @enum.ToEnum<T>());
 		}
 		#endregion
 

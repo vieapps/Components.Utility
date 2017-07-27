@@ -3,12 +3,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 
-/* 
- * Tells the compiler to make sure the whole assembly is CLS Compliant, 
- * this  is nessisary for users that may not be using C# to access and use this assembly.
- */
-[assembly: CLSCompliant(true)]
-
 // General Information about an assembly is controlled through the following set of attributes.
 // Change these attribute values to modify the information associated with an assembly.
 [assembly: AssemblyTitle("VIEApps NGX")]
@@ -34,7 +28,7 @@ using System.Runtime.CompilerServices;
 //
 [assembly: AssemblyVersion("10.1")]
 [assembly: AssemblyFileVersion("10.1")]
-[assembly: AssemblyInformationalVersion("10.1.scrf-2017.07.22")]
+[assembly: AssemblyInformationalVersion("10.1.rnmc-2017.07.26")]
 
 // visible related information to repository component
 [assembly: InternalsVisibleTo("VIEApps.Components.Repository")]
