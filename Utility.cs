@@ -1056,7 +1056,20 @@ namespace net.vieapps.Components.Utility
 		public static void KillProcess(Process process)
 		{
 			if (process != null)
-				process.Kill();
+			{
+				if (process.StartInfo.RedirectStandardInput)
+				{
+					process.StandardInput.Close();
+					process.Refresh();
+					if (!process.HasExited)
+					{
+						if (!process.WaitForExit(567))
+							process.Kill();
+					}
+				}
+				else
+					process.Kill();
+			}
 		}
 
 		/// <summary>
