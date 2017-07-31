@@ -588,6 +588,35 @@ namespace net.vieapps.Components.Utility
 				? null
 				: enums.Select(@enum => @enum.ToEnum<T>());
 		}
+
+		/// <summary>
+		/// Converts this name and value collection to dictionary with all keys in lower case
+		/// </summary>
+		/// <param name="nv"></param>
+		/// <returns></returns>
+		public static Dictionary<string, string> ToDictionary(this NameValueCollection nv)
+		{
+			var dictionary = new Dictionary<string, string>();
+			foreach (string key in nv)
+				if (!dictionary.ContainsKey(key.ToLower()))
+					dictionary.Add(key.ToLower(), nv[key]);
+			return dictionary;
+		}
+
+		/// <summary>
+		/// Converts this dictionary to the name and value collection
+		/// </summary>
+		/// <param name="dictionary"></param>
+		/// <returns></returns>
+		public static NameValueCollection ToNameValueCollection(this Dictionary<string, string> dictionary)
+		{
+			var nv = new NameValueCollection();
+			dictionary.ForEach(entry =>
+			{
+				nv.Add(entry.Key, entry.Value);
+			});
+			return nv;
+		}
 		#endregion
 
 		#region Special conversions

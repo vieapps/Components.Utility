@@ -122,6 +122,20 @@ namespace net.vieapps.Components.Utility
 	}
 
 	[Serializable]
+	public class ServiceOperationException : AppException
+	{
+		public ServiceOperationException() : base("Error occured while operating with service") { }
+
+		public ServiceOperationException(string message) : base(message) { }
+
+		public ServiceOperationException(string message, Exception innerException) : base(message, innerException) { }
+
+		public ServiceOperationException(Exception innerException) : base("Error occured while operating with service: " + innerException.Message, innerException) { }
+
+		public ServiceOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+	}
+
+	[Serializable]
 	public class RemoteServerErrorException : AppException
 	{
 		public string ResponseBody { get; internal set; }
