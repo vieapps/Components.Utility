@@ -136,6 +136,20 @@ namespace net.vieapps.Components.Utility
 	}
 
 	[Serializable]
+	public class ServiceNotFoundException : AppException
+	{
+		public ServiceNotFoundException() : base("The requested service is not found") { }
+
+		public ServiceNotFoundException(string message) : base(message) { }
+
+		public ServiceNotFoundException(string message, Exception innerException) : base(message, innerException) { }
+
+		public ServiceNotFoundException(Exception innerException) : base("The requested service is not found: " + innerException.Message, innerException) { }
+
+		public ServiceNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+	}
+
+	[Serializable]
 	public class RemoteServerErrorException : AppException
 	{
 		public string ResponseBody { get; internal set; }
