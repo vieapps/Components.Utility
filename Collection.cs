@@ -149,7 +149,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T First<T>(this T[] @object)
 		{
-			return @object.Length > 1
+			return @object.Length > 0
 				? @object[0]
 				: default(T);
 		}
@@ -175,7 +175,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T First<T>(this IList<T> @object)
 		{
-			return @object.Count > 1
+			return @object.Count > 0
 				? @object[0]
 				: default(T);
 		}
@@ -201,7 +201,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T First<T>(this Collection @object)
 		{
-			return @object.Count > 1
+			return @object.Count > 0
 				? (T)@object[0]
 				: default(T);
 		}
