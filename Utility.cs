@@ -1,12 +1,13 @@
 ﻿#region Related components
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.Security;
@@ -511,7 +512,7 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
-		internal static long MinSmallFileSize = 1024 * 40;                              // 40 KB
+		internal static long MinSmallFileSize = 1024 * 40;                             // 40 KB
 		internal static long MaxSmallFileSize = 1024 * 1024 * 2;                // 02 MB
 		internal static long MaxAllowedSize = UtilityService.MaxRequestLength * 1024 * 1024;
 
@@ -543,31 +544,31 @@ namespace net.vieapps.Components.Utility
 		/// <param name="context"></param>
 		/// <param name="filePath">The path to file</param>
 		/// <param name="contentType">The MIME type</param>
+		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="eTag">The entity tag</param>
 		/// <returns></returns>
-		public static async Task WriteFileToOutputAsync(this HttpContext context, string filePath, string contentType, string eTag)
+		public static async Task WriteFileToOutputAsync(this HttpContext context, string filePath, string contentType, string eTag = null, string contentDisposition = null)
 		{
-			await context.WriteFileToOutputAsync(filePath, contentType, null, eTag);
+			await context.WriteFileToOutputAsync(new FileInfo(filePath), contentType, eTag, contentDisposition);
 		}
 
 		/// <summary>
 		/// Writes the content of the file directly to output stream
 		/// </summary>
 		/// <param name="context"></param>
-		/// <param name="filePath">The path to file</param>
+		/// <param name="fileInfo">The information of the file</param>
 		/// <param name="contentType">The MIME type</param>
 		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="eTag">The entity tag</param>
 		/// <returns></returns>
-		public static async Task WriteFileToOutputAsync(this HttpContext context, string filePath, string contentType, string contentDisposition, string eTag)
+		public static async Task WriteFileToOutputAsync(this HttpContext context, FileInfo fileInfo, string contentType, string eTag = null, string contentDisposition = null)
 		{
-			var fileInfo = new FileInfo(filePath);
-			if (!fileInfo.Exists)
-				throw new FileNotFoundException("File is not found: [" + UtilityService.GetFileParts(filePath, false)[1] + "]");
+			if (fileInfo == null || !fileInfo.Exists)
+				throw new FileNotFoundException("Not found" + (fileInfo != null ? " [" + fileInfo.Name + "]" : ""));
 
-			using (Stream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+			using (Stream stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
-				await context.WriteStreamToOutputAsync(stream, contentType, contentDisposition, eTag, fileInfo.LastWriteTime.ToHttpString(), (int)UtilityService.MinSmallFileSize);
+				await context.WriteStreamToOutputAsync(stream, contentType, eTag, fileInfo.LastWriteTime.ToHttpString(), contentDisposition);
 			}
 		}
 
@@ -577,15 +578,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="context"></param>
 		/// <param name="data">The data to write</param>
 		/// <param name="contentType">The MIME type</param>
-		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="eTag">The entity tag</param>
 		/// <param name="lastModified">The last-modified time in HTTP date-time format</param>
+		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <returns></returns>
-		public static async Task WriteDataToOutputAsync(this HttpContext context, byte[] data, string contentType, string contentDisposition, string eTag, string lastModified)
+		public static async Task WriteDataToOutputAsync(this HttpContext context, byte[] data, string contentType, string eTag = null, string lastModified = null, string contentDisposition = null)
 		{
-			using (MemoryStream stream = new MemoryStream(data))
+			using (var stream = new MemoryStream(data))
 			{
-				await context.WriteStreamToOutputAsync(stream, contentType, contentDisposition, eTag, lastModified, (int)UtilityService.MinSmallFileSize);
+				await context.WriteStreamToOutputAsync(stream, contentType, eTag, lastModified, contentDisposition);
 			}
 		}
 
@@ -595,12 +596,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="context"></param>
 		/// <param name="stream">The stream to write</param>
 		/// <param name="contentType">The MIME type</param>
-		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="eTag">The entity tag</param>
 		/// <param name="lastModified">The last-modified time in HTTP date-time format</param>
+		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="blockSize">Size of one block to write</param>
 		/// <returns></returns>
-		public static async Task WriteStreamToOutputAsync(this HttpContext context, Stream stream, string contentType, string contentDisposition, string eTag, string lastModified, int blockSize)
+		public static async Task WriteStreamToOutputAsync(this HttpContext context, Stream stream, string contentType, string eTag = null, string lastModified = null, string contentDisposition = null, int blockSize = 0)
 		{
 			// validate whether the file is too large
 			var totalBytes = stream.Length;
@@ -711,7 +712,9 @@ namespace net.vieapps.Components.Utility
 				{
 					var isDisconnected = false;
 					var data = new byte[totalBytes];
-					var readBytes = totalBytes <= UtilityService.MinSmallFileSize ? stream.Read(data, 0, (int)totalBytes) : await stream.ReadAsync(data, 0, (int)totalBytes);
+					var readBytes = totalBytes <= UtilityService.MinSmallFileSize
+						? stream.Read(data, 0, (int)totalBytes)
+						: await stream.ReadAsync(data, 0, (int)totalBytes);
 					try
 					{
 						await context.Response.OutputStream.WriteAsync(data, 0, readBytes);
@@ -750,7 +753,9 @@ namespace net.vieapps.Components.Utility
 			else
 			{
 				// prepare blocks for writing
-				var packSize = blockSize;
+				var packSize = blockSize > 0
+					? blockSize
+					: (int)UtilityService.MinSmallFileSize;
 				if (packSize > (endBytes - startBytes))
 					packSize = (int)(endBytes - startBytes) + 1;
 				var totalBlocks = (int)Math.Ceiling((endBytes - startBytes + 0.0) / packSize);
@@ -1806,6 +1811,46 @@ namespace net.vieapps.Components.Utility
 		public static T Eval<T>(string expression)
 		{
 			return (T)UtilityService.Eval(expression);
+		}
+		#endregion
+
+		#region Get setting/parameter of the app
+		/// <summary>
+		/// Gets a setting of the app (from the 'appSettings' section of configuration file with prefix 'vieapps:')
+		/// </summary>
+		/// <param name="name">The name of the setting</param>
+		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <returns></returns>
+		public static string GetAppSetting(string name, string defaultValue = null)
+		{
+			var value = string.IsNullOrEmpty(name)
+				? null
+				: ConfigurationManager.AppSettings["vieapps:" + name.Trim()];
+			return string.IsNullOrEmpty(value)
+				? defaultValue
+				: value;
+		}
+
+		/// <summary>
+		/// Gets a parameter of the app (first from header, then second from query)
+		/// </summary>
+		/// <param name="name">The name of the setting</param>
+		/// <param name="header">The collection of header</param>
+		/// <param name="query">The collection of query</param>
+		/// <param name="defaultValue">The default value if the parameter is not found</param>
+		/// <returns></returns>
+		public static string GetAppParameter(string name, NameValueCollection header, NameValueCollection query, string defaultValue = null)
+		{
+			var value = string.IsNullOrWhiteSpace(name)
+				? null
+				: header?[name];
+			if (value == null)
+				value = string.IsNullOrWhiteSpace(name)
+					? null
+					: query?[name];
+			return string.IsNullOrEmpty(value)
+				? defaultValue
+				: value;
 		}
 		#endregion
 
