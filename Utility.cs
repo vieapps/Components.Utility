@@ -546,10 +546,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="contentType">The MIME type</param>
 		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="eTag">The entity tag</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task WriteFileToOutputAsync(this HttpContext context, string filePath, string contentType, string eTag = null, string contentDisposition = null)
+		public static async Task WriteFileToOutputAsync(this HttpContext context, string filePath, string contentType, string eTag = null, string contentDisposition = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			await context.WriteFileToOutputAsync(new FileInfo(filePath), contentType, eTag, contentDisposition);
+			await context.WriteFileToOutputAsync(new FileInfo(filePath), contentType, eTag, contentDisposition, cancellationToken);
 		}
 
 		/// <summary>
@@ -560,15 +561,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="contentType">The MIME type</param>
 		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="eTag">The entity tag</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task WriteFileToOutputAsync(this HttpContext context, FileInfo fileInfo, string contentType, string eTag = null, string contentDisposition = null)
+		public static async Task WriteFileToOutputAsync(this HttpContext context, FileInfo fileInfo, string contentType, string eTag = null, string contentDisposition = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException("Not found" + (fileInfo != null ? " [" + fileInfo.Name + "]" : ""));
 
 			using (Stream stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
-				await context.WriteStreamToOutputAsync(stream, contentType, eTag, fileInfo.LastWriteTime.ToHttpString(), contentDisposition);
+				await context.WriteStreamToOutputAsync(stream, contentType, eTag, fileInfo.LastWriteTime.ToHttpString(), contentDisposition, 0, cancellationToken);
 			}
 		}
 
@@ -581,12 +583,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="eTag">The entity tag</param>
 		/// <param name="lastModified">The last-modified time in HTTP date-time format</param>
 		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task WriteDataToOutputAsync(this HttpContext context, byte[] data, string contentType, string eTag = null, string lastModified = null, string contentDisposition = null)
+		public static async Task WriteDataToOutputAsync(this HttpContext context, byte[] data, string contentType, string eTag = null, string lastModified = null, string contentDisposition = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			using (var stream = new MemoryStream(data))
 			{
-				await context.WriteStreamToOutputAsync(stream, contentType, eTag, lastModified, contentDisposition);
+				await context.WriteStreamToOutputAsync(stream, contentType, eTag, lastModified, contentDisposition, 0, cancellationToken);
 			}
 		}
 
@@ -600,8 +603,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="lastModified">The last-modified time in HTTP date-time format</param>
 		/// <param name="contentDisposition">The string that presents name of attachment file, let it empty/null for writting showing/displaying (not for downloading attachment file)</param>
 		/// <param name="blockSize">Size of one block to write</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task WriteStreamToOutputAsync(this HttpContext context, Stream stream, string contentType, string eTag = null, string lastModified = null, string contentDisposition = null, int blockSize = 0)
+		public static async Task WriteStreamToOutputAsync(this HttpContext context, Stream stream, string contentType, string eTag = null, string lastModified = null, string contentDisposition = null, int blockSize = 0, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			// validate whether the file is too large
 			var totalBytes = stream.Length;
@@ -690,7 +694,7 @@ namespace net.vieapps.Components.Utility
 				}
 
 				foreach (var header in headers)
-					context.Response.AppendHeader(header[0], header[1]);
+					context.Response.Headers.Add(header[0], header[1]);
 
 				await context.Response.FlushAsync();
 			}
@@ -717,7 +721,11 @@ namespace net.vieapps.Components.Utility
 						: await stream.ReadAsync(data, 0, (int)totalBytes);
 					try
 					{
-						await context.Response.OutputStream.WriteAsync(data, 0, readBytes);
+						await context.Response.OutputStream.WriteAsync(data, 0, readBytes, cancellationToken);
+					}
+					catch (OperationCanceledException)
+					{
+						isDisconnected = true;
 					}
 					catch (HttpException ex)
 					{
@@ -779,7 +787,11 @@ namespace net.vieapps.Components.Utility
 								// write data to output stream
 								try
 								{
-									await context.Response.OutputStream.WriteAsync(buffer, 0, readBytes);
+									await context.Response.OutputStream.WriteAsync(buffer, 0, readBytes, cancellationToken);
+								}
+								catch (OperationCanceledException)
+								{
+									isDisconnected = true;
 								}
 								catch (HttpException ex)
 								{
