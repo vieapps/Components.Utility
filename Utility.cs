@@ -35,7 +35,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The string that presents UUID with hyphens (128 bits)</returns>
 		public static string GetUUID(string uuid = null)
 		{
-			var id = string.IsNullOrWhiteSpace(uuid) ? Guid.NewGuid().ToString("N").ToLower() : uuid.Trim();
+			var id = string.IsNullOrWhiteSpace(uuid)
+				? Guid.NewGuid().ToString("N").ToLower()
+				: uuid.Trim();
+
 			if (!string.IsNullOrWhiteSpace(uuid) && uuid.IndexOf("-") < 0)
 			{
 				var pos = 8;
@@ -251,6 +254,9 @@ namespace net.vieapps.Components.Utility
 				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
 			};
 
+		/// <summary>
+		/// Gets an user-agent as spider-bot
+		/// </summary>
 		public static string SpiderUserAgent
 		{
 			get
@@ -259,6 +265,9 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Gets an user-agent as mobile browser
+		/// </summary>
 		public static string MobileUserAgent
 		{
 			get
@@ -267,6 +276,9 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Gets an user-agent as desktop browser
+		/// </summary>
 		public static string DesktopUserAgent
 		{
 			get
@@ -275,6 +287,15 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Gets the web credential
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <param name="account"></param>
+		/// <param name="password"></param>
+		/// <param name="useSecureProtocol"></param>
+		/// <param name="secureProtocol"></param>
+		/// <returns></returns>
 		public static CredentialCache GetWebCredential(string uri, string account, string password, bool useSecureProtocol, SecurityProtocolType secureProtocol)
 		{
 			if (useSecureProtocol)
@@ -285,24 +306,36 @@ namespace net.vieapps.Components.Utility
 			return credentialCache;
 		}
 
+		/// <summary>
+		/// Gets the web proxy
+		/// </summary>
+		/// <param name="proxyHost"></param>
+		/// <param name="proxyPort"></param>
+		/// <param name="proxyUsername"></param>
+		/// <param name="proxyUserPassword"></param>
+		/// <param name="proxyBypassList"></param>
+		/// <returns></returns>
 		public static WebProxy GetWebProxy(string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList)
 		{
 			WebProxy proxy = null;
 			if (!string.IsNullOrWhiteSpace(proxyHost))
 			{
-				if (proxyBypassList == null || proxyBypassList.Length < 1)
-					proxy = new WebProxy(proxyHost, proxyPort);
-				else
-				{
-					var proxyAddress = new Uri("http://" + proxyHost + ":" + proxyPort.ToString());
-					proxy = new WebProxy(proxyAddress, true, proxyBypassList);
-				}
+				proxy = proxyBypassList == null || proxyBypassList.Length < 1
+					? new WebProxy(proxyHost, proxyPort)
+					: new WebProxy(new Uri("http://" + proxyHost + ":" + proxyPort.ToString()), true, proxyBypassList);
+
 				if (!string.IsNullOrWhiteSpace(proxyUsername) && !string.IsNullOrWhiteSpace(proxyUserPassword))
 					proxy.Credentials = new NetworkCredential(proxyUsername, proxyUserPassword);
 			}
 			return proxy;
 		}
 
+		/// <summary>
+		/// Performs a web request and get response in async
+		/// </summary>
+		/// <param name="httpRequest"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static async Task<HttpWebResponse> GetResponseAsync(this HttpWebRequest httpRequest, CancellationToken cancellationToken)
 		{
 			using (cancellationToken.Register(() => httpRequest.Abort(), useSynchronizationContext: false))
@@ -325,6 +358,22 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Gets the web response
+		/// </summary>
+		/// <param name="method"></param>
+		/// <param name="uri"></param>
+		/// <param name="headers"></param>
+		/// <param name="cookies"></param>
+		/// <param name="body"></param>
+		/// <param name="contentType"></param>
+		/// <param name="timeout"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="credential"></param>
+		/// <param name="proxy"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, Cookie[] cookies, string body, string contentType, int timeout, string userAgent, string referUri, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			// get the request object to handle on the remote resource
@@ -342,7 +391,7 @@ namespace net.vieapps.Components.Utility
 			// headers
 			if (headers != null)
 				foreach (var header in headers)
-					if (!header.Key.Equals("Accept-Encoding"))
+					if (!header.Key.IsEquals("accept-encoding"))
 						webRequest.Headers.Add(header.Key, header.Value);
 
 			// cookies
@@ -351,7 +400,7 @@ namespace net.vieapps.Components.Utility
 					webRequest.CookieContainer.Add(cookie);
 
 			// compression
-			webRequest.Headers.Add("Accept-Encoding", "deflate,gzip");
+			webRequest.Headers.Add("accept-encoding", "deflate,gzip");
 			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 
 			// credential
@@ -397,7 +446,7 @@ namespace net.vieapps.Components.Utility
 			}
 			catch (WebException ex)
 			{
-				string responseBody = "";
+				var responseBody = "";
 				if (ex.Status.Equals(WebExceptionStatus.ProtocolError))
 				{
 					using (var stream = (ex.Response as HttpWebResponse).GetResponseStream())
@@ -420,6 +469,24 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Gets the web response
+		/// </summary>
+		/// <param name="method"></param>
+		/// <param name="uri"></param>
+		/// <param name="headers"></param>
+		/// <param name="body"></param>
+		/// <param name="contentType"></param>
+		/// <param name="timeout"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="credentialAccount"></param>
+		/// <param name="credentialPassword"></param>
+		/// <param name="useSecureProtocol"></param>
+		/// <param name="secureProtocol"></param>
+		/// <param name="proxy"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout, string userAgent, string referUri, string credentialAccount, string credentialPassword, bool useSecureProtocol, SecurityProtocolType secureProtocol, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			// credential
@@ -431,27 +498,78 @@ namespace net.vieapps.Components.Utility
 			return await UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken);
 		}
 
+		/// <summary>
+		/// Gets the web resource stream
+		/// </summary>
+		/// <param name="method"></param>
+		/// <param name="uri"></param>
+		/// <param name="headers"></param>
+		/// <param name="body"></param>
+		/// <param name="contentType"></param>
+		/// <param name="timeout"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="credentialAccount"></param>
+		/// <param name="credentialPassword"></param>
+		/// <param name="useSecureProtocol"></param>
+		/// <param name="secureProtocol"></param>
+		/// <param name="proxy"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout, string userAgent, string referUri, string credentialAccount, string credentialPassword, bool useSecureProtocol, SecurityProtocolType secureProtocol, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			var webResponse = await UtilityService.GetWebResponseAsync(method, uri, headers, body, contentType, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken);
 			return webResponse.GetResponseStream();
 		}
 
+		/// <summary>
+		/// Gets the web resource stream
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <param name="referUri"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task<Stream> GetWebResourceAsync(string uri, string referUri, CancellationToken cancellationToken)
 		{
 			return UtilityService.GetWebResourceAsync("GET", uri, null, null, null, 90, UtilityService.SpiderUserAgent, referUri, null, null, true, SecurityProtocolType.Ssl3, null, cancellationToken);
 		}
 
+		/// <summary>
+		/// Gets the web resource stream
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <param name="referUri"></param>
+		/// <returns></returns>
 		public static Task<Stream> GetWebResourceAsync(string uri, string referUri)
 		{
 			return UtilityService.GetWebResourceAsync(uri, referUri, CancellationToken.None);
 		}
 
+		/// <summary>
+		/// Gets the web resource stream
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <returns></returns>
 		public static Task<Stream> GetWebResourceAsync(string uri)
 		{
 			return UtilityService.GetWebResourceAsync(uri, null);
 		}
 
+		/// <summary>
+		/// Gets the web page
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="headers"></param>
+		/// <param name="timeout"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="credentialAccount"></param>
+		/// <param name="credentialPassword"></param>
+		/// <param name="useSecureProtocol"></param>
+		/// <param name="secureProtocol"></param>
+		/// <param name="proxy"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static async Task<string> GetWebPageAsync(string url, Dictionary<string, string> headers, int timeout, string userAgent, string referUri, string credentialAccount, string credentialPassword, bool useSecureProtocol, SecurityProtocolType secureProtocol, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			// check uri
@@ -459,7 +577,7 @@ namespace net.vieapps.Components.Utility
 				return null;
 
 			// get stream of external resource as HTML
-			string html = "";
+			var html = "";
 			using (var webResponse = await UtilityService.GetWebResponseAsync("GET", url, headers, null, "text/html", timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken))
 			{
 				using (var stream = webResponse.GetResponseStream())
@@ -475,21 +593,77 @@ namespace net.vieapps.Components.Utility
 			return html.HtmlDecode();
 		}
 
+		/// <summary>
+		/// Gets the web page
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="headers"></param>
+		/// <param name="timeout"></param>
+		/// <param name="proxyHost"></param>
+		/// <param name="proxyPort"></param>
+		/// <param name="proxyUsername"></param>
+		/// <param name="proxyUserPassword"></param>
+		/// <param name="proxyBypassList"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="credentialAccount"></param>
+		/// <param name="credentialPassword"></param>
+		/// <param name="useSecureProtocol"></param>
+		/// <param name="secureProtocol"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, Dictionary<string, string> headers, int timeout, string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList, string userAgent, string referUri, string credentialAccount, string credentialPassword, bool useSecureProtocol, SecurityProtocolType secureProtocol, CancellationToken cancellationToken)
 		{
 			return UtilityService.GetWebPageAsync(url, headers, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, UtilityService.GetWebProxy(proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList), cancellationToken);
 		}
 
+		/// <summary>
+		/// Gets the web page
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="headers"></param>
+		/// <param name="timeout"></param>
+		/// <param name="proxyHost"></param>
+		/// <param name="proxyPort"></param>
+		/// <param name="proxyUsername"></param>
+		/// <param name="proxyUserPassword"></param>
+		/// <param name="proxyBypassList"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, Dictionary<string, string> headers, int timeout, string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList, string userAgent, string referUri, CancellationToken cancellationToken)
 		{
 			return UtilityService.GetWebPageAsync(url, headers, timeout, proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList, userAgent, referUri, null, null, true, SecurityProtocolType.Ssl3, cancellationToken);
 		}
 
+		/// <summary>
+		/// Gets the web page
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="timeout"></param>
+		/// <param name="proxyHost"></param>
+		/// <param name="proxyPort"></param>
+		/// <param name="proxyUsername"></param>
+		/// <param name="proxyUserPassword"></param>
+		/// <param name="proxyBypassList"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="referUri"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, int timeout, string proxyHost = null, int proxyPort = 0, string proxyUsername = null, string proxyUserPassword = null, string[] proxyBypassList = null, string userAgent = null, string referUri = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return UtilityService.GetWebPageAsync(url, null, timeout, proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList, userAgent, referUri, cancellationToken);
 		}
 
+		/// <summary>
+		/// Gets the web page
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="referUri"></param>
+		/// <param name="userAgent"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, string referUri = null, string userAgent = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return UtilityService.GetWebPageAsync(url, 45, null, 0, null, null, null, userAgent, referUri, cancellationToken);
@@ -568,7 +742,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException("Not found" + (fileInfo != null ? " [" + fileInfo.Name + "]" : ""));
 
-			using (Stream stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
 			{
 				await context.WriteStreamToOutputAsync(stream, contentType, eTag, fileInfo.LastWriteTime.ToHttpString(), contentDisposition, 0, cancellationToken);
 			}
@@ -718,7 +892,7 @@ namespace net.vieapps.Components.Utility
 					var data = new byte[totalBytes];
 					var readBytes = totalBytes <= UtilityService.MinSmallFileSize
 						? stream.Read(data, 0, (int)totalBytes)
-						: await stream.ReadAsync(data, 0, (int)totalBytes);
+						: await stream.ReadAsync(data, 0, (int)totalBytes, cancellationToken);
 					try
 					{
 						await context.Response.OutputStream.WriteAsync(data, 0, readBytes, cancellationToken);
@@ -781,7 +955,7 @@ namespace net.vieapps.Components.Utility
 						try
 						{
 							var buffer = new byte[packSize];
-							var readBytes = await stream.ReadAsync(buffer, 0, packSize);
+							var readBytes = await stream.ReadAsync(buffer, 0, packSize, cancellationToken);
 							if (readBytes > 0)
 							{
 								// write data to output stream
@@ -836,6 +1010,13 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Remove/Clear tags
+		/// <summary>
+		/// Removes HTML/XML tags
+		/// </summary>
+		/// <param name="input"></param>
+		/// <param name="tag"></param>
+		/// <param name="attributeValueToClean"></param>
+		/// <returns></returns>
 		public static string RemoveTag(string input, string tag, string attributeValueToClean = null)
 		{
 			if (string.IsNullOrWhiteSpace(input))
@@ -881,6 +1062,12 @@ namespace net.vieapps.Components.Utility
 			return output;
 		}
 
+		/// <summary>
+		/// Removes  Microsoft Office tags
+		/// </summary>
+		/// <param name="input"></param>
+		/// <param name="tags"></param>
+		/// <returns></returns>
 		public static string RemoveMsOfficeTags(string input, string[] tags = null)
 		{
 			if (string.IsNullOrWhiteSpace(input))
@@ -893,6 +1080,12 @@ namespace net.vieapps.Components.Utility
 			return output;
 		}
 
+		/// <summary>
+		/// Removes attributes of a HTML/XML tags
+		/// </summary>
+		/// <param name="input"></param>
+		/// <param name="tag"></param>
+		/// <returns></returns>
 		public static string RemoveTagAttributes(string input, string tag)
 		{
 			if (string.IsNullOrWhiteSpace(input))
@@ -915,6 +1108,12 @@ namespace net.vieapps.Components.Utility
 			return output;
 		}
 
+		/// <summary>
+		/// Clears HTML/XML tags (with inner)
+		/// </summary>
+		/// <param name="input"></param>
+		/// <param name="tag"></param>
+		/// <returns></returns>
 		public static string ClearTag(string input, string tag)
 		{
 			if (string.IsNullOrWhiteSpace(input))
@@ -939,6 +1138,11 @@ namespace net.vieapps.Components.Utility
 			return output;
 		}
 
+		/// <summary>
+		/// Clears comments tags
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
 		public static string ClearComments(string input)
 		{
 			if (string.IsNullOrWhiteSpace(input))
@@ -992,6 +1196,11 @@ namespace net.vieapps.Components.Utility
 			return UtilityService._RegexNormals;
 		}
 
+		/// <summary>
+		/// Removes whitespaces and breaks
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
 		public static string RemoveWhitespaces(string input)
 		{
 			if (string.IsNullOrWhiteSpace(input))
@@ -1103,6 +1312,11 @@ namespace net.vieapps.Components.Utility
 		static List<string> _FileRemovements = new List<string>() { "\\", "/", "*", "?", "<", ">", "|", ":", "\r", "\n", "\t" };
 		static List<string[]> _FileReplacements = new List<string[]>() { new string[] { "\"", "'" }, new string[] { "%20", " " }, new string[] { " ft. ", " & " } };
 
+		/// <summary>
+		/// Normalizes the file name
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
 		public static string GetNormalizedFilename(string input)
 		{
 			var output = input.ConvertCompositeUnicodeToUnicode();
@@ -1120,7 +1334,13 @@ namespace net.vieapps.Components.Utility
 			return output;
 		}
 
-		public static string[] GetFileParts(string filePath, bool removeExtension = true)
+		/// <summary>
+		/// Gets parts of file path (seperate path and file name)
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="removeExtension"></param>
+		/// <returns></returns>
+		public static Tuple<string, string> GetFileParts(string filePath, bool removeExtension = true)
 		{
 			string path = "", filename = "";
 			try
@@ -1164,9 +1384,17 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			return new string[] { path, UtilityService.GetNormalizedFilename(filename) };
+			return new Tuple<string, string>(path, UtilityService.GetNormalizedFilename(filename));
 		}
 
+		/// <summary>
+		/// Searchs and gets listing of files by searching pattern
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="searchInSubFolder"></param>
+		/// <param name="excludedSubFolders"></param>
+		/// <returns></returns>
 		public static List<FileInfo> GetFiles(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null)
 		{
 			if (!Directory.Exists(path))
@@ -1179,11 +1407,10 @@ namespace net.vieapps.Components.Utility
 
 			searchingPatterns.ForEach(searchingPattern =>
 			{
-				var files = Directory.GetFiles(path, searchingPattern)
-					.Select(p => new FileInfo(p))
+				fileInfos.Append(Directory.GetFiles(path, searchingPattern)
+					.Select(f => new FileInfo(f))
 					.OrderBy(f => f.Name)
-					.ToList();
-				fileInfos.Append(files);
+					.ToList());
 			});
 
 			if (searchInSubFolder)
@@ -1204,11 +1431,10 @@ namespace net.vieapps.Components.Utility
 						if (!isExcluded)
 							searchingPatterns.ForEach(searchingPattern =>
 							{
-								var files = Directory.GetFiles(folderPath, searchingPattern)
-									.Select(p => new FileInfo(p))
+								fileInfos.Append(Directory.GetFiles(folderPath, searchingPattern)
+									.Select(f => new FileInfo(f))
 									.OrderBy(f => f.Name)
-									.ToList();
-								fileInfos.Append(files);
+									.ToList());
 							});
 					}
 			}
@@ -1216,6 +1442,14 @@ namespace net.vieapps.Components.Utility
 			return fileInfos;
 		}
 
+		/// <summary>
+		/// Searchs and gets the listing of file paths by searching pattern
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="searchInSubFolder"></param>
+		/// <param name="excludedSubFolders"></param>
+		/// <returns></returns>
 		public static List<string> GetFilePaths(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null)
 		{
 			return UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders)
@@ -1225,6 +1459,12 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Read/Write text files
+		/// <summary>
+		/// Reads a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
 		public static string ReadTextFile(string filePath, Encoding encoding = default(UTF8Encoding))
 		{
 			if (!File.Exists(filePath))
@@ -1243,6 +1483,12 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Reads a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
 		public static async Task<string> ReadTextFileAsync(string filePath, Encoding encoding = default(UTF8Encoding))
 		{
 			if (!File.Exists(filePath))
@@ -1261,6 +1507,13 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Writes a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="content"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
 		public static void WriteTextFile(string filePath, string content, bool append = false, Encoding encoding = default(UTF8Encoding))
 		{
 			if (string.IsNullOrWhiteSpace(filePath) || content == null)
@@ -1276,6 +1529,14 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Writes a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="content"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
 		public static async Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = default(UTF8Encoding))
 		{
 			if (string.IsNullOrWhiteSpace(filePath) || content == null)
@@ -1687,6 +1948,14 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		/// <summary>
+		/// Reads the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="position"></param>
+		/// <param name="totalOfLines"></param>
+		/// <param name="lines"></param>
+		/// <param name="newPosition"></param>
 		public static void ReadTextFile(string filePath, long position, int totalOfLines, out List<string> lines, out long newPosition)
 		{
 			using (var fileReader = new TextFileReader(filePath))
@@ -1704,14 +1973,25 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Reads the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="totalOfLines"></param>
+		/// <returns></returns>
 		public static List<string> ReadTextFile(string filePath, int totalOfLines)
 		{
-			List<string> lines;
-			long newPosition;
-			UtilityService.ReadTextFile(filePath, 0, totalOfLines, out lines, out newPosition);
+			UtilityService.ReadTextFile(filePath, 0, totalOfLines, out List<string> lines, out long newPosition);
 			return lines;
 		}
 
+		/// <summary>
+		/// Writes the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="lines"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
 		public static void WriteTextFile(string filePath, List<string> lines, bool append = true, Encoding encoding = default(UTF8Encoding))
 		{
 			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
@@ -1732,6 +2012,11 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Read/Download binary files
+		/// <summary>
+		/// Reads a binary file
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <returns></returns>
 		public static byte[] ReadFile(FileInfo fileInfo)
 		{
 			if (fileInfo.Exists)
@@ -1745,11 +2030,21 @@ namespace net.vieapps.Components.Utility
 				return null;
 		}
 
+		/// <summary>
+		/// Reads a binary file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <returns></returns>
 		public static byte[] ReadFile(string filePath)
 		{
 			return UtilityService.ReadFile(new FileInfo(filePath));
 		}
 
+		/// <summary>
+		/// Reads a binary file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <returns></returns>
 		public static async Task<byte[]> ReadFileAsync(string filePath)
 		{
 			var fileInfo = new FileInfo(filePath);
@@ -1768,13 +2063,21 @@ namespace net.vieapps.Components.Utility
 				}
 		}
 
+		/// <summary>
+		/// Downloads a file from a remote uri
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="filePath"></param>
+		/// <param name="referUri"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="onError"></param>
+		/// <returns></returns>
 		public static async Task DownloadFileAsync(string url, string filePath, string referUri = null, CancellationToken cancellationToken = default(CancellationToken), Action<string, string> onCompleted = null, Action<string, Exception> onError = null)
 		{
 			if (string.IsNullOrWhiteSpace(url) || !url.IsStartsWith("http"))
-			{
-				if (onCompleted != null)
-					onCompleted(url, null);
-			}
+				onCompleted?.Invoke(url, null);
+
 			else
 				try
 				{
@@ -1785,13 +2088,11 @@ namespace net.vieapps.Components.Utility
 							await webStream.CopyToAsync(fileStream, 1024, cancellationToken);
 						}
 					}
-					if (onCompleted != null)
-						onCompleted(url, filePath);
+					onCompleted?.Invoke(url, null);
 				}
 				catch (Exception ex)
 				{
-					if (onError != null)
-						onError(url, ex);
+					onError?.Invoke(url, ex);
 				}
 		}
 		#endregion
