@@ -885,7 +885,6 @@ namespace net.vieapps.Components.Utility
 
 			// write small file directly to output stream
 			if (!flushAsPartialContent && totalBytes <= UtilityService.MaxSmallFileSize)
-			{
 				try
 				{
 					var isDisconnected = false;
@@ -929,7 +928,6 @@ namespace net.vieapps.Components.Utility
 				{
 					throw;
 				}
-			}
 
 			// flush to output stream
 			else
@@ -966,6 +964,7 @@ namespace net.vieapps.Components.Utility
 								catch (OperationCanceledException)
 								{
 									isDisconnected = true;
+									break;
 								}
 								catch (HttpException ex)
 								{
@@ -1074,9 +1073,14 @@ namespace net.vieapps.Components.Utility
 				return "";
 
 			var output = input.Trim();
-			var msoTags = tags == null || tags.Length < 1 ? "w:|o:|v:|m:|st1:".Split('|') : tags;
-			foreach (var tag in msoTags)
+			var msoTags = tags == null || tags.Length < 1
+				? "w:|o:|v:|m:|st1:".Split('|')
+				: tags;
+
+			msoTags.ForEach(tag =>
+			{
 				output = UtilityService.RemoveTag(output, tag);
+			});
 			return output;
 		}
 
@@ -1161,7 +1165,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Removing white-space methods
+		#region Removing whitespaces & breaks
 		internal static List<object[]> _RegexNormals = null;
 
 		internal static List<object[]> GetRegEx()
@@ -1209,8 +1213,10 @@ namespace net.vieapps.Components.Utility
 			var output = input.Replace("&nbsp;", " ").Trim();
 			var regexs = UtilityService.GetRegEx();
 			if (regexs != null)
-				foreach (var regex in regexs)
+				regexs.ForEach(regex =>
+				{
 					output = (regex[0] as Regex).Replace(output, regex[1] as string);
+				});
 			return output;
 		}
 		#endregion
@@ -1400,14 +1406,14 @@ namespace net.vieapps.Components.Utility
 			if (!Directory.Exists(path))
 				throw new DirectoryNotFoundException("The folder is not found [" + path + "]");
 
-			var fileInfos = new List<FileInfo>();
+			var files = new List<FileInfo>();
 			var searchingPatterns = string.IsNullOrWhiteSpace(searchPatterns)
 				? new string[] { "*.*" }
 				: searchPatterns.ToArray('|', true);
 
 			searchingPatterns.ForEach(searchingPattern =>
 			{
-				fileInfos.Append(Directory.GetFiles(path, searchingPattern)
+				files.Append(Directory.GetFiles(path, searchingPattern)
 					.Select(f => new FileInfo(f))
 					.OrderBy(f => f.Name)
 					.ToList());
@@ -1416,8 +1422,8 @@ namespace net.vieapps.Components.Utility
 			if (searchInSubFolder)
 			{
 				var folderPaths = Directory.GetDirectories(path);
-				if (folderPaths != null && folderPaths.Length > 0)
-					foreach (var folderPath in folderPaths)
+				if (folderPaths != null)
+					folderPaths.ForEach(folderPath =>
 					{
 						var isExcluded = false;
 						if (excludedSubFolders != null && excludedSubFolders.Count > 0)
@@ -1431,15 +1437,15 @@ namespace net.vieapps.Components.Utility
 						if (!isExcluded)
 							searchingPatterns.ForEach(searchingPattern =>
 							{
-								fileInfos.Append(Directory.GetFiles(folderPath, searchingPattern)
+								files.Append(Directory.GetFiles(folderPath, searchingPattern)
 									.Select(f => new FileInfo(f))
 									.OrderBy(f => f.Name)
 									.ToList());
 							});
-					}
+					});
 			}
 
-			return fileInfos;
+			return files;
 		}
 
 		/// <summary>
@@ -1519,11 +1525,11 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath) || content == null)
 				return;
 
-			using (var file = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
+			using (var writer = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
 			{
 				try
 				{
-					file.Write(content);
+					writer.Write(content);
 				}
 				catch { }
 			}
@@ -1542,11 +1548,11 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath) || content == null)
 				return;
 
-			using (var file = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
+			using (var writer = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
 			{
 				try
 				{
-					await file.WriteAsync(content);
+					await writer.WriteAsync(content);
 				}
 				catch { }
 			}
@@ -1958,13 +1964,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="newPosition"></param>
 		public static void ReadTextFile(string filePath, long position, int totalOfLines, out List<string> lines, out long newPosition)
 		{
-			using (var fileReader = new TextFileReader(filePath))
+			using (var reader = new TextFileReader(filePath))
 			{
 				try
 				{
-					fileReader.Seek(position);
-					lines = fileReader.ReadLines(totalOfLines);
-					newPosition = fileReader.Position;
+					reader.Seek(position);
+					lines = reader.ReadLines(totalOfLines);
+					newPosition = reader.Position;
 				}
 				catch (Exception)
 				{
@@ -1995,16 +2001,16 @@ namespace net.vieapps.Components.Utility
 		public static void WriteTextFile(string filePath, List<string> lines, bool append = true, Encoding encoding = default(UTF8Encoding))
 		{
 			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
-				using (var file = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
+				using (var writer = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
 				{
 					try
 					{
 						lines.ForEach(line =>
 						{
 							if (line != null)
-								file.WriteLine(line);
+								writer.WriteLine(line);
 						});
-						file.Flush();
+						writer.Flush();
 					}
 					catch { }
 				}
@@ -2019,11 +2025,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] ReadFile(FileInfo fileInfo)
 		{
-			if (fileInfo.Exists)
-				using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+			if (fileInfo != null && fileInfo.Exists)
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
 				{
 					var buffer = new byte[fileInfo.Length];
-					fileStream.Read(buffer, 0, (int)fileInfo.Length);
+					stream.Read(buffer, 0, (int)fileInfo.Length);
 					return buffer;
 				}
 			else
@@ -2055,10 +2061,10 @@ namespace net.vieapps.Components.Utility
 				return UtilityService.ReadFile(fileInfo);
 
 			else
-				using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, 10240, true))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, 10240, true))
 				{
 					var data = new byte[fileInfo.Length];
-					await fileStream.ReadAsync(data, 0, (int)fileInfo.Length);
+					await stream.ReadAsync(data, 0, (int)fileInfo.Length);
 					return data;
 				}
 		}
@@ -2073,7 +2079,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onCompleted"></param>
 		/// <param name="onError"></param>
 		/// <returns></returns>
-		public static async Task DownloadFileAsync(string url, string filePath, string referUri = null, CancellationToken cancellationToken = default(CancellationToken), Action<string, string> onCompleted = null, Action<string, Exception> onError = null)
+		public static async Task DownloadFileAsync(string url, string filePath, string referUri = null, Action<string, string> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (string.IsNullOrWhiteSpace(url) || !url.IsStartsWith("http"))
 				onCompleted?.Invoke(url, null);
