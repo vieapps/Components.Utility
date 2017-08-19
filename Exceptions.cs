@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace net.vieapps.Components.Utility
 {
 	[Serializable]
-	public abstract class AppException : Exception
+	public class AppException : Exception
 	{
 		public AppException() : base() { }
 
@@ -183,5 +183,19 @@ namespace net.vieapps.Components.Utility
 		public ConnectionTimeoutException(string message, Exception innerException) : base(message, innerException) { }
 
 		public ConnectionTimeoutException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+	}
+
+	[Serializable]
+	public class MethodNotAllowedException : AppException
+	{
+		public MethodNotAllowedException() : base("The method is not allowed") { }
+
+		public MethodNotAllowedException(string method) : base("The method is not allowed: " + method) { }
+
+		public MethodNotAllowedException(Exception innerException) : base("The method is not allowed", innerException) { }
+
+		public MethodNotAllowedException(string message, Exception innerException) : base(message, innerException) { }
+
+		public MethodNotAllowedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
 }
