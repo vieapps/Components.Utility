@@ -1069,6 +1069,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static JToken ToJson<T>(this T @object)
 		{
+			// by-pass on JObject or JArray
+			if (@object is JObject || @object is JArray)
+				return @object as JToken;
+
+			// generate
 			JToken json = null;
 
 			// array or generict list/hash-set
