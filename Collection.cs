@@ -12,6 +12,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Newtonsoft.Json;
@@ -1162,13 +1163,14 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
 		/// <returns></returns>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> action, bool waitForAllCompleted = true)
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
 		{
 			var tasks = new List<Task>();
 			foreach (T item in enumerable)
-				tasks.Add(action(item));
+				tasks.Add(action(item, cancellationToken));
 
 			return waitForAllCompleted
 				? Task.WhenAll(tasks)
@@ -1181,16 +1183,17 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
 		/// <returns></returns>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task> action, bool waitForAllCompleted = true)
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
 		{
 			var index = -1;
 			var tasks = new List<Task>();
 			foreach (T item in enumerable)
 			{
 				index++;
-				tasks.Add(action(item, index));
+				tasks.Add(action(item, index, cancellationToken));
 			}
 
 			return waitForAllCompleted
