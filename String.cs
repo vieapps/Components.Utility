@@ -478,7 +478,7 @@ namespace net.vieapps.Components.Utility
 		public static string GetANSIUri(this string @string, bool toLowerCase = true)
 		{
 			// convert Vietnamese characters
-			string result = @string.Trim().ConvertUnicodeToANSI();
+			var result = @string.Trim().ConvertUnicodeToANSI();
 
 			// remove all special characters
 			result = result.Replace(StringComparison.OrdinalIgnoreCase, "C#", "CSharp").Replace(" ", "-");
@@ -504,7 +504,9 @@ namespace net.vieapps.Components.Utility
 			else if (StringService.Numberic.Replace(result, "").Equals(result))
 				result = Convert.ToInt64(result).ToIdentity() + "-" + DateTime.UtcNow.ToUnixTimestamp().ToIdentity();
 
-			return toLowerCase ? result.ToLower() : result;
+			return toLowerCase
+				? result.ToLower()
+				: result;
 		}
 
 		/// <summary>

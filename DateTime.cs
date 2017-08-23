@@ -295,10 +295,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToHttpString(this DateTime datetime, bool useUTC = true)
 		{
-			var time = (useUTC ? datetime.ToUniversalTime() : datetime);
+			var time = useUTC
+				? datetime.ToUniversalTime()
+				: datetime;
 			return time.GetWeekDayName() + ", " + string.Format("0{0}", time.Day).Right(2)
-							+ " " + time.GetMonthName() + " " + time.Year.ToString() + " " + string.Format("0{0}", time.Hour).Right(2)
-							+ ":" + string.Format("0{0}", time.Minute).Right(2) + ":" + string.Format("0{0}", time.Second).Right(2) + " GMT";
+				+ " " + time.GetMonthName() + " " + time.Year.ToString() + " " + string.Format("0{0}", time.Hour).Right(2)
+				+ ":" + string.Format("0{0}", time.Minute).Right(2) + ":" + string.Format("0{0}", time.Second).Right(2) + " GMT";
 		}
 
 		/// <summary>
@@ -375,7 +377,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true)
 		{
-			return (long)((useUTC ? datetime.ToUniversalTime() : datetime) - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds;
+			return ((useUTC ? datetime.ToUniversalTime() : datetime) - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds.CastAs<long>();
 		}
 
 		/// <summary>
@@ -387,7 +389,9 @@ namespace net.vieapps.Components.Utility
 		public static DateTime FromUnixTimestamp(this long unixTimestamp, bool useUTC = true)
 		{
 			var datetime = (new System.DateTime(1970, 1, 1, 0, 0, 0, 0)).AddSeconds(unixTimestamp);
-			return useUTC ? datetime : datetime.ToLocalTime();
+			return useUTC
+				? datetime
+				: datetime.ToLocalTime();
 		}
 
 		/// <summary>
@@ -422,7 +426,5 @@ namespace net.vieapps.Components.Utility
 		{
 			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
 		}
-
 	}
-
 }

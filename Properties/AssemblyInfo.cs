@@ -28,7 +28,7 @@ using System.Runtime.CompilerServices;
 //
 [assembly: AssemblyVersion("10.1")]
 [assembly: AssemblyFileVersion("10.1")]
-[assembly: AssemblyInformationalVersion("10.1.jtks-2017.08.23")]
+[assembly: AssemblyInformationalVersion("10.1.rfti-2017.08.23")]
 
 // visible related information to repository component
 [assembly: InternalsVisibleTo("VIEApps.Components.Repository")]

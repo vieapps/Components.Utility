@@ -311,7 +311,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if the checking type is sub-class of the generic type</returns>
 		public static bool IsSubclassOfGeneric(this Type type, Type genericType)
 		{
-			if (!genericType.IsGenericType)
+			if (genericType == null || !genericType.IsGenericType)
 				return false;
 
 			while (type != null && type != typeof(object))
@@ -1013,7 +1013,7 @@ namespace net.vieapps.Components.Utility
 		public static T Clone<T>(this T @object)
 		{
 			// initialize the object
-			var instance = default(T);
+			T instance;
 
 			// the object is serializable
 			if (@object.GetType().IsSerializable)
@@ -1087,7 +1087,7 @@ namespace net.vieapps.Components.Utility
 				{
 					json = new JArray();
 					foreach (var item in @object as IEnumerable)
-						(json as JArray).Add(item == null ? null : item.ToJson());
+						(json as JArray).Add(item?.ToJson());
 				}
 				else
 					json = JArray.FromObject(@object);
@@ -1101,7 +1101,7 @@ namespace net.vieapps.Components.Utility
 					json = new JObject();
 					var enumerator = (@object as IDictionary).GetEnumerator();
 					while (enumerator.MoveNext())
-						(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value == null ? null : enumerator.Value.ToJson()));
+						(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value?.ToJson()));
 				}
 				else
 					json = JObject.FromObject(@object);
@@ -1130,7 +1130,7 @@ namespace net.vieapps.Components.Utility
 								{
 									var key = item.GetAttributeValue(keyAttribute);
 									if (key != null)
-										jsonObject.Add(new JProperty(key.ToString(), item.ToJson()));
+										jsonObject.Add(new JProperty(key.ToString(), item?.ToJson()));
 								}
 						}
 
@@ -1143,7 +1143,7 @@ namespace net.vieapps.Components.Utility
 						var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
 						if (items != null)
 							foreach (var item in items)
-								jsonArray.Add(item == null ? null : item.ToJson());
+								jsonArray.Add(item?.ToJson());
 
 						json[attribute.Name] = jsonArray;
 					}
@@ -1208,7 +1208,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var stream = new MemoryStream())
 			{
-				using (TextWriter writer = new StreamWriter(stream))
+				using (var writer = new StreamWriter(stream))
 				{
 					(new XmlSerializer(typeof(T))).Serialize(writer, @object);
 					return XElement.Parse(Encoding.UTF8.GetString(stream.ToArray()));
@@ -1296,7 +1296,7 @@ namespace net.vieapps.Components.Utility
 		public static XDocument ToXDocument(this XmlDocument document)
 		{
 			var doc = new XDocument();
-			using (XmlWriter writer = doc.CreateWriter())
+			using (var writer = doc.CreateWriter())
 			{
 				document.WriteTo(writer);
 			}
@@ -1554,7 +1554,7 @@ namespace net.vieapps.Components.Utility
 			if (@object.TryGet(name, out theValue))
 			{
 				// get type
-				Type type = typeof(T);
+				var type = typeof(T);
 
 				// generic list/hash-set
 				if (theValue is List<object> && type.IsGenericListOrHashSet())

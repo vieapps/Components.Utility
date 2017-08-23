@@ -322,18 +322,16 @@ namespace net.vieapps.Components.Utility
 			HashAlgorithm hasher = null;
 			try
 			{
-				if (string.IsNullOrWhiteSpace(mode))
-					hasher = SHA256.Create();
-				else if (mode.IsEquals("MD5"))
+				if ("MD5".IsEquals(mode))
 					hasher = MD5.Create();
-				else if (mode.IsEquals("SHA1"))
+				else if ("SHA1".IsEquals(mode))
 					hasher = SHA1.Create();
-				else if (mode.IsEquals("SHA384"))
-					hasher = SHA384.Create();
-				else if (mode.IsEquals("SHA512"))
-					hasher = SHA512.Create();
-				else
+				else if ("SHA256".IsEquals(mode))
 					hasher = SHA256.Create();
+				else if ("SHA384".IsEquals(mode))
+					hasher = SHA384.Create();
+				else
+					hasher = SHA512.Create();
 				return hasher.ComputeHash(@string.ToBytes());
 			}
 			catch (Exception)
@@ -342,11 +340,8 @@ namespace net.vieapps.Components.Utility
 			}
 			finally
 			{
-				if (hasher != null)
-				{
-					hasher.Clear();
-					hasher.Dispose();
-				}
+				hasher?.Clear();
+				hasher?.Dispose();
 			}
 		}
 
@@ -472,23 +467,21 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="mode"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, string key, string mode = null)
+		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
 		{
 			HMAC hasher = null;
 			try
 			{
-				if (string.IsNullOrWhiteSpace(mode))
-					hasher = new HMACSHA256(key.ToBytes());
-				else if (mode.IsEquals("MD5"))
+				if ("MD5".IsEquals(mode))
 					hasher = new HMACMD5(key.ToBytes());
-				else if (mode.IsEquals("SHA1"))
+				else if ("SHA1".IsEquals(mode))
 					hasher = new HMACSHA1(key.ToBytes());
-				else if (mode.IsEquals("SHA384"))
-					hasher = new HMACSHA384(key.ToBytes());
-				else if (mode.IsEquals("SHA512"))
-					hasher = new HMACSHA512(key.ToBytes());
-				else
+				else if ("SHA256".IsEquals(mode))
 					hasher = new HMACSHA256(key.ToBytes());
+				else if ("SHA384".IsEquals(mode))
+					hasher = new HMACSHA384(key.ToBytes());
+				else
+					hasher = new HMACSHA512(key.ToBytes());
 				return hasher.ComputeHash(@string.ToBytes());
 			}
 			catch (Exception)
@@ -497,11 +490,8 @@ namespace net.vieapps.Components.Utility
 			}
 			finally
 			{
-				if (hasher != null)
-				{
-					hasher.Clear();
-					hasher.Dispose();
-				}
+				hasher?.Clear();
+				hasher?.Dispose();
 			}
 		}
 
@@ -651,15 +641,17 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(@string))
 				return "";
 
-			using (var cryptor = new AesCryptoServiceProvider())
+			using (var crypto = new AesCryptoServiceProvider())
 			{
-				cryptor.Key = key;
-				cryptor.IV = iv;
-				using (var cryptoTransform = cryptor.CreateEncryptor())
+				crypto.Key = key;
+				crypto.IV = iv;
+				using (var encryptor = crypto.CreateEncryptor())
 				{
 					var encrypted = @string.ToBytes();
-					encrypted = cryptoTransform.TransformFinalBlock(encrypted, 0, encrypted.Length);
-					return toHexa ? encrypted.ToHexa() : encrypted.ToBase64();
+					encrypted = encryptor.TransformFinalBlock(encrypted, 0, encrypted.Length);
+					return toHexa
+						? encrypted.ToHexa()
+						: encrypted.ToBase64();
 				}
 			}
 		}
@@ -691,14 +683,16 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(@string))
 				return "";
 
-			using (var cryptor = new AesCryptoServiceProvider())
+			using (var crypto = new AesCryptoServiceProvider())
 			{
-				cryptor.Key = key;
-				cryptor.IV = iv;
-				using (var cryptoTransform = cryptor.CreateDecryptor())
+				crypto.Key = key;
+				crypto.IV = iv;
+				using (var decryptor = crypto.CreateDecryptor())
 				{
-					var decrypted = isHexa ? @string.HexToBytes() : @string.Base64ToBytes();
-					decrypted = cryptoTransform.TransformFinalBlock(decrypted, 0, decrypted.Length);
+					var decrypted = isHexa
+						? @string.HexToBytes()
+						: @string.Base64ToBytes();
+					decrypted = decryptor.TransformFinalBlock(decrypted, 0, decrypted.Length);
 					return UTF8Encoding.UTF8.GetString(decrypted);
 				}
 			}
@@ -1224,25 +1218,25 @@ namespace net.vieapps.Components.Utility
 		public static List<string> GenerateRSAKeyPairs()
 		{
 			// generate new container name for new key-pair
-			CspParameters cspParams = new CspParameters(1, "Microsoft Strong Cryptographic Provider");
+			var cspParams = new CspParameters(1, "Microsoft Strong Cryptographic Provider");
 			cspParams.Flags = CspProviderFlags.UseArchivableKey;
 			cspParams.KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.GetUUID();
 
 			// generate key pair
-			using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048, cspParams))
+			using (var rsa = new RSACryptoServiceProvider(2048, cspParams))
 			{
 				// to not store
 				rsa.PersistKeyInCsp = false;
 
 				// create collection of keys
-				List<string> keyPairs = new List<string>();
+				var keyPairs = new List<string>();
 
 				// add private key in XML format
-				string key = rsa.ToXmlString(true);
+				var key = rsa.ToXmlString(true);
 				keyPairs.Append(new List<string>() { key, key.Encrypt() });
 
 				// add public key in XML format
-				string publicKey = rsa.ToXmlString(false);
+				var publicKey = rsa.ToXmlString(false);
 				keyPairs.Append(new List<string>() { publicKey, publicKey.Encrypt() });
 
 				// add private key in PEM format
@@ -1254,7 +1248,7 @@ namespace net.vieapps.Components.Utility
 				keyPairs.Append(new List<string>() { key, key.Encrypt() });
 
 				// add modulus and exponent of public key in HEX format
-				System.Xml.XmlDocument xmlDoc = new System.Xml.XmlDocument();
+				var xmlDoc = new System.Xml.XmlDocument();
 				xmlDoc.LoadXml(publicKey);
 				keyPairs.Append(new List<string>() { xmlDoc.DocumentElement.ChildNodes[0].InnerText.ToHexa(true), xmlDoc.DocumentElement.ChildNodes[1].InnerText.ToHexa(true) });
 
@@ -1276,7 +1270,7 @@ namespace net.vieapps.Components.Utility
 			if (rsa.PublicOnly)
 				throw new ArgumentException("CSP does not contain a private key", "csp");
 
-			TextWriter outputStream = new StringWriter();
+			var outputStream = new StringWriter();
 			var parameters = rsa.ExportParameters(true);
 			using (var stream = new MemoryStream())
 			{
@@ -1324,7 +1318,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static String ExportPublicKeyToPEMFormat(RSACryptoServiceProvider rsa)
 		{
-			TextWriter outputStream = new StringWriter();
+			var outputStream = new StringWriter();
 			var parameters = rsa.ExportParameters(false);
 			using (var stream = new MemoryStream())
 			{

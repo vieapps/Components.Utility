@@ -61,10 +61,7 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 			else if (trim)
-				array.ForEach((item, index) =>
-				{
-					array[index] = item.Trim();
-				});
+				array.ForEach((item, index) => array[index] = item.Trim());
 
 			return array;
 		}
@@ -102,10 +99,7 @@ namespace net.vieapps.Components.Utility
 		public static string ToString(this IEnumerable<string> @object, string seperate)
 		{
 			var @string = "";
-			@object.ForEach(item =>
-			{
-				@string += (!@string.Equals("") ? seperate : "") + item;
-			});
+			@object.ForEach(item => @string += (!@string.Equals("") ? seperate : "") + item);
 			return @string;
 		}
 
@@ -118,10 +112,7 @@ namespace net.vieapps.Components.Utility
 		public static string ToString<T>(this IEnumerable<T> @object, string seperate)
 		{
 			string @string = "";
-			@object.ForEach(item =>
-			{
-				@string += (!@string.Equals("") ? seperate : "") + item.ToString();
-			});
+			@object.ForEach(item => @string += (!@string.Equals("") ? seperate : "") + item.ToString());
 			return @string;
 		}
 
@@ -250,14 +241,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="items">Items to append</param>
 		public static void Append<T>(this IList<T> @object, bool allowDuplicated, IEnumerable<T> items)
 		{
-			if (items != null)
-				items.ForEach(item =>
-				{
-					if (allowDuplicated)
-						@object.Add(item);
-					else if (@object.IndexOf(item) < 0)
-						@object.Add(item);
-				});
+			items?.ForEach(item =>
+			{
+				if (allowDuplicated)
+					@object.Add(item);
+				else if (@object.IndexOf(item) < 0)
+					@object.Add(item);
+			});
 		}
 
 		/// <summary>
@@ -280,11 +270,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="lists"></param>
 		public static void Append<T>(this IList<T> @object, bool allowDuplicated, params IEnumerable<T>[] lists)
 		{
-			if (lists != null)
-				lists.ForEach(list =>
-				{
-					@object.Append(allowDuplicated, list);
-				});
+			lists?.ForEach(list => @object.Append(allowDuplicated, list));
 		}
 
 		/// <summary>
@@ -318,11 +304,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="items"></param>
 		public static void Append<T>(this ISet<T> @object, IEnumerable<T> items)
 		{
-			if (items != null)
-				items.ForEach(item =>
-				{
-					@object.Append(item);
-				});
+			items?.ForEach(item => @object.Append(item));
 		}
 
 		/// <summary>
@@ -333,11 +315,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="lists"></param>
 		public static void Append<T>(this ISet<T> @object, params IEnumerable<T>[] lists)
 		{
-			if (lists != null)
-				lists.ForEach(list =>
-				{
-					@object.Append(list);
-				});
+			lists?.ForEach(list => @object.Append(list));
 		}
 
 		/// <summary>
@@ -804,36 +782,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static JArray ToJArray<T>(this IList<T> @object)
+		public static JArray ToJArray<T>(this IEnumerable<T> @object)
 		{
-			if (typeof(T).IsClassType())
+			if (typeof(T).IsPrimitiveType() || typeof(T).IsClassType())
 			{
 				var array = new JArray();
-				@object.ForEach(item =>
-				{
-					array.Add(item == null ? null : item.ToJson());
-				});
-				return array;
-			}
-			else
-				return JArray.FromObject(@object);
-		}
-
-		/// <summary>
-		/// Creates a JArray object from this collection
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <returns></returns>
-		public static JArray ToJArray<T>(this ISet<T> @object)
-		{
-			if (typeof(T).IsClassType())
-			{
-				var array = new JArray();
-				@object.ForEach(item =>
-				{
-					array.Add(item == null ? null : item.ToJson());
-				});
+				@object.ForEach(item => array.Add(item?.ToJson()));
 				return array;
 			}
 			else
@@ -1362,7 +1316,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
 		public bool Contains(object key)
 		{
-			return object.ReferenceEquals(key, null) ? false : this._collection.Contains(key);
+			return key != null && this._collection.Contains(key);
 		}
 
 		/// <summary>
@@ -1597,11 +1551,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="dictionary">Initialized values</param>
 		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()
 		{
-			if (dictionary != null)
-				dictionary.ForEach(entry =>
-				{
-					this.Add(entry);
-				});
+			dictionary?.ForEach(entry => this.Add(entry));
 		}
 
 		#region Properties
