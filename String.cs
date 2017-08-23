@@ -154,7 +154,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static bool IsEquals(this string @string, string compareTo, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
-			return @string.Equals(compareTo, comparisonType);
+			return string.IsNullOrWhiteSpace(compareTo)
+				? false
+				: @string.Equals(compareTo, comparisonType);
 		}
 
 		/// <summary>
@@ -209,7 +211,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static int PositionOf(this string @string, string substring, int startIndex = 0, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
-			return startIndex >= @string.Length
+			return string.IsNullOrWhiteSpace(substring) || startIndex >= @string.Length
 				? -1
 				: @string.IndexOf(substring, startIndex < 0 ? 0 : startIndex, comparisonType);
 		}
