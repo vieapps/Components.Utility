@@ -1,7 +1,6 @@
 ﻿#region Related components
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,50 +8,27 @@ using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Diagnostics;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Converters;
 #endregion
 
 namespace net.vieapps.Components.Utility
 {
 	/// <summary>
-	/// Presents a email message
+	/// Presents an email message
 	/// </summary>
 	[Serializable]
 	[DebuggerDisplay("Subject = {Subject}")]
 	public class EmailMessage
 	{
-
-		internal static string EncryptionKey = "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys";
-
-		#region Properties
-		public string From { get; set; }
-		public string ReplyTo { get; set; }
-		public string To { get; set; }
-		public string Cc { get; set; }
-		public string Bcc { get; set; }
-		public string Subject { get; set; }
-		public string Body { get; set; }
-		public string Footer { get; set; }
-		public string Attachment { get; set; }
-		public MailPriority Priority { get; set; }
-		public bool IsHtmlFormat { get; set; }
-		public int Encoding { get; set; }
-		public string SmtpServer { get; set; }
-		public int SmtpServerPort { get; set; }
-		public string SmtpUsername { get; set; }
-		public string SmtpPassword { get; set; }
-		public bool SmtpEnableSSL { get; set; }
-		public bool SmtpStartTLS { get; set; }
-		#endregion
-
-		#region Constructors
-		public EmailMessage() : this(null) { }
-
-		public EmailMessage(string encryptedMessage)
+		/// <summary>
+		/// Initializes a new email message
+		/// </summary>
+		/// <param name="encryptedMessage"></param>
+		public EmailMessage(string encryptedMessage = null)
 		{
 			this.Id = UtilityService.GetUUID();
 			this.SendingTime = DateTime.Now;
@@ -78,10 +54,33 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try
 				{
-					this.CopyFrom(EmailMessage.FromJson(encryptedMessage.Decrypt(EmailMessage.EncryptionKey)));
+					this.CopyFrom(encryptedMessage.Decrypt(EmailMessage.EncryptionKey).FromJson<EmailMessage>());
 				}
 				catch { }
 		}
+
+		internal static string EncryptionKey = "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys";
+
+		#region Properties
+		public string From { get; set; }
+		public string ReplyTo { get; set; }
+		public string To { get; set; }
+		public string Cc { get; set; }
+		public string Bcc { get; set; }
+		public string Subject { get; set; }
+		public string Body { get; set; }
+		public string Footer { get; set; }
+		public string Attachment { get; set; }
+		[JsonConverter(typeof(StringEnumConverter))]
+		public MailPriority Priority { get; set; }
+		public bool IsHtmlFormat { get; set; }
+		public int Encoding { get; set; }
+		public string SmtpServer { get; set; }
+		public int SmtpServerPort { get; set; }
+		public string SmtpUsername { get; set; }
+		public string SmtpPassword { get; set; }
+		public bool SmtpEnableSSL { get; set; }
+		public bool SmtpStartTLS { get; set; }
 		#endregion
 
 		#region Helper properties
@@ -100,37 +99,6 @@ namespace net.vieapps.Components.Utility
 		/// Set a specifict time to tell mailer send this message from this time
 		/// </remarks>
 		public DateTime SendingTime { get; set; }
-
-		/// <summary>
-		/// Gets the encrypted message 
-		/// </summary>
-		[JsonIgnore]
-		public string EncryptedMessage
-		{
-			get
-			{
-				if (string.IsNullOrWhiteSpace(this.Id))
-					this.Id = UtilityService.GetUUID();
-				return this.ToString().Encrypt(EmailMessage.EncryptionKey);
-			}
-		}
-		#endregion
-
-		#region Working with JSON
-		public JObject ToJson()
-		{
-			return this.ToJson<EmailMessage>() as JObject;
-		}
-
-		public override string ToString()
-		{
-			return this.ToJson().ToString(Formatting.None);
-		}
-
-		public static EmailMessage FromJson(string json)
-		{
-			return JsonConvert.DeserializeObject<EmailMessage>(json);
-		}
 		#endregion
 
 		#region Working with files
@@ -141,7 +109,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static EmailMessage Load(string filePath)
 		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath) ? new EmailMessage(UtilityService.ReadTextFile(filePath)) : null;
+			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+				? new EmailMessage(UtilityService.ReadTextFile(filePath))
+				: null;
 		}
 
 		/// <summary>
@@ -154,7 +124,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.EncryptedMessage, false);
+					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.ToJson().ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey));
 				}
 				catch { }
 		}
@@ -169,6 +139,26 @@ namespace net.vieapps.Components.Utility
 	[DebuggerDisplay("Endpoint = {EndpointURL}")]
 	public class WebHookMessage
 	{
+		/// <summary>
+		/// Initializes a new web-hook message
+		/// </summary>
+		/// <param name="encryptedMessage"></param>
+		public WebHookMessage(string encryptedMessage = null)
+		{
+			this.Id = UtilityService.GetUUID();
+			this.SendingTime = DateTime.Now;
+			this.EndpointURL = "";
+			this.Body = "";
+			this.Header = new Dictionary<string, string>();
+			this.Query = new Dictionary<string, string>();
+
+			if (!string.IsNullOrWhiteSpace(encryptedMessage))
+				try
+				{
+					this.CopyFrom(encryptedMessage.Decrypt(WebHookMessage.EncryptionKey).FromJson<WebHookMessage>());
+				}
+				catch { }
+		}
 
 		internal static string EncryptionKey = "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys";
 
@@ -187,34 +177,13 @@ namespace net.vieapps.Components.Utility
 		/// Gets or Sets header of webhook message
 		/// </summary>
 		[JsonIgnore]
-		public NameValueCollection Headers { get; set; }
+		public Dictionary<string, string> Header { get; set; }
 
 		/// <summary>
 		/// Gets or Sets query-string of webhook message
 		/// </summary>
 		[JsonIgnore]
-		public NameValueCollection QueryString { get; set; }
-		#endregion
-
-		#region Constructors
-		public WebHookMessage() : this(null) { }
-
-		public WebHookMessage(string encryptedMessage)
-		{
-			this.Id = UtilityService.GetUUID();
-			this.SendingTime = DateTime.Now;
-			this.EndpointURL = "";
-			this.Body = "";
-			this.Headers = new NameValueCollection();
-			this.QueryString = new NameValueCollection();
-
-			if (!string.IsNullOrWhiteSpace(encryptedMessage))
-				try
-				{
-					this.CopyFrom(WebHookMessage.FromJson(encryptedMessage.Decrypt(WebHookMessage.EncryptionKey)));
-				}
-				catch { }
-		}
+		public Dictionary<string, string> Query { get; set; }
 		#endregion
 
 		#region Helper properties
@@ -227,48 +196,6 @@ namespace net.vieapps.Components.Utility
 		/// Gets or sets time to start to send this message.
 		/// </summary>
 		public DateTime SendingTime { get; set; }
-
-		/// <summary>
-		/// Gets encrypted message 
-		/// </summary>
-		[JsonIgnore]
-		public string EncryptedMessage
-		{
-			get
-			{
-				if (string.IsNullOrWhiteSpace(this.Id))
-					this.Id = UtilityService.GetUUID();
-				return this.ToString().Encrypt(WebHookMessage.EncryptionKey);
-			}
-		}
-		#endregion
-
-		#region Working with JSON
-		public JObject ToJson()
-		{
-			var json = this.ToJson<WebHookMessage>() as JObject;
-			json.Add(new JProperty("Headers", this.Headers.ToJObject()));
-			json.Add(new JProperty("QueryString", this.QueryString.ToJObject()));
-			return json;
-		}
-
-		public override string ToString()
-		{
-			return this.ToJson().ToString(Formatting.None);
-		}
-
-		public static WebHookMessage FromJson(string json)
-		{
-			var message = json.FromJson<WebHookMessage>();
-
-			var jsonObject = JObject.Parse(json);
-			if (jsonObject["Headers"] != null && jsonObject["Headers"] is JObject)
-				message.Headers = (jsonObject["Headers"] as JObject).CreateNameValueCollection();
-			if (jsonObject["QueryString"] != null && jsonObject["QueryString"] is JObject)
-				message.QueryString = (jsonObject["QueryString"] as JObject).CreateNameValueCollection();
-
-			return message;
-		}
 		#endregion
 
 		#region Working with files
@@ -279,7 +206,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static WebHookMessage Load(string filePath)
 		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath) ? new WebHookMessage(UtilityService.ReadTextFile(filePath)) : null;
+			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+				? new WebHookMessage(UtilityService.ReadTextFile(filePath))
+				: null;
 		}
 
 		/// <summary>
@@ -292,7 +221,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.EncryptedMessage, false);
+					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey));
 				}
 				catch { }
 		}
@@ -313,26 +242,16 @@ namespace net.vieapps.Components.Utility
 		/// Prepares a valid email address
 		/// </summary>
 		/// <param name="emailInfo">The string that presents information of an email adress before validating</param>
-		/// <returns><see cref="System.Net.Mail.MailAddress">MailAddress</see> object that contains valid email address</returns>
-		public static MailAddress PrepareMailAddress(string emailInfo)
-		{
-			return MessageUtility.PrepareMailAddress(emailInfo, false);
-		}
-
-		/// <summary>
-		/// Prepares a valid email address
-		/// </summary>
-		/// <param name="emailInfo">The string that presents information of an email adress before validating</param>
 		/// <param name="convertNameToANSI">true to convert display name as ANSI</param>
 		/// <returns><see cref="System.Net.Mail.MailAddress">MailAddress</see> object that contains valid email address</returns>
-		public static MailAddress PrepareMailAddress(string emailInfo, bool convertNameToANSI)
+		public static MailAddress GetMailAddress(this string emailInfo, bool convertNameToANSI = false)
 		{
-			if (emailInfo == null || emailInfo.Equals(""))
+			if (string.IsNullOrWhiteSpace(emailInfo))
 				return null;
 
 			string email = "", displayName = "";
 
-			string[] emails = emailInfo.Split('<');
+			var emails = emailInfo.ToArray('<');
 			if (emails.Length > 1)
 			{
 				email = emails[1];
@@ -347,15 +266,22 @@ namespace net.vieapps.Components.Utility
 			while (email.StartsWith("/") || email.StartsWith(@"\"))
 				email = email.Right(email.Length - 1);
 
-			return email.Equals("") ? null : new MailAddress(email, displayName, Encoding.UTF8);
+			return email.Equals("")
+				? null
+				: new MailAddress(email, displayName, Encoding.UTF8);
 		}
 
-		static string GetEmailDomain(string emailAddress)
+		/// <summary>
+		/// Gets the domain name from the email address
+		/// </summary>
+		/// <param name="emailAddress"></param>
+		/// <returns></returns>
+		public static string GetDomain(this string emailAddress)
 		{
-			string domain = "";
-			if (emailAddress != null && !emailAddress.Equals(""))
+			var domain = "";
+			if (!string.IsNullOrWhiteSpace(emailAddress))
 			{
-				int pos = emailAddress.IndexOf("@");
+				var pos = emailAddress.PositionOf("@");
 				if (pos > 0)
 					domain = emailAddress.Right(emailAddress.Length - pos - 1);
 				if (emailAddress.EndsWith(">"))
@@ -419,62 +345,45 @@ namespace net.vieapps.Components.Utility
 				throw new InvalidDataException("No sender information for the message!");
 
 			// validate recipients
-			string toEmails = "";
-			if (to != null)
-				toEmails = to.Trim();
-			string ccEmails = "";
-			if (cc != null)
-				ccEmails = cc.Trim();
-			string bccEmails = "";
-			if (bcc != null)
-				bccEmails = bcc.Trim();
+			var toEmails = string.IsNullOrWhiteSpace(to)
+				? ""
+				: to.Trim();
+
+			var ccEmails = string.IsNullOrWhiteSpace(cc)
+				? ""
+				: cc.Trim();
+
+			var bccEmails = string.IsNullOrWhiteSpace(bcc)
+				? ""
+				: bcc.Trim();
 
 			// remove all harmful domains
 			if (preventDomains != null && preventDomains.Count > 0)
 			{
-				// variable for checing
 				string[] emails = null;
 
 				// to
 				if (!toEmails.Equals(""))
 				{
-					emails = toEmails.Split(';');
+					emails = toEmails.ToArray(';');
 					toEmails = "";
-					foreach (string email in emails)
-					{
-						if (!preventDomains.Contains(MessageUtility.GetEmailDomain(email)))
-							toEmails += email + ";";
-					}
-					if (!toEmails.Equals(""))
-						toEmails = toEmails.Left(toEmails.Length - 1);
+					emails.ForEach(email => toEmails += (!toEmails.Equals("") ? ";" : "") + (!preventDomains.Contains(email.GetDomain()) ? email : ""));
 				}
 
 				// cc
 				if (!ccEmails.Equals(""))
 				{
-					emails = ccEmails.Split(';');
+					emails = ccEmails.ToArray(';');
 					ccEmails = "";
-					foreach (string email in emails)
-					{
-						if (!preventDomains.Contains(MessageUtility.GetEmailDomain(email)))
-							ccEmails += email + ";";
-					}
-					if (!ccEmails.Equals(""))
-						ccEmails = ccEmails.Left(ccEmails.Length - 1);
+					emails.ForEach(email => ccEmails += (!ccEmails.Equals("") ? ";" : "") + (!preventDomains.Contains(email.GetDomain()) ? email : ""));
 				}
 
 				// bcc
 				if (!bccEmails.Equals(""))
 				{
-					emails = bccEmails.Split(';');
+					emails = bccEmails.ToArray(';');
 					bccEmails = "";
-					foreach (string email in emails)
-					{
-						if (!preventDomains.Contains(MessageUtility.GetEmailDomain(email)))
-							bccEmails += email + ";";
-					}
-					if (!bccEmails.Equals(""))
-						bccEmails = bccEmails.Left(bccEmails.Length - 1);
+					emails.ForEach(email => bccEmails += (!bccEmails.Equals("") ? ";" : "") + (!preventDomains.Contains(email.GetDomain()) ? email : ""));
 				}
 			}
 
@@ -486,84 +395,69 @@ namespace net.vieapps.Components.Utility
 			MailAddress fromAddress = null;
 			try
 			{
-				fromAddress = MessageUtility.PrepareMailAddress(from.ConvertUnicodeToANSI());
+				fromAddress = from.ConvertUnicodeToANSI().GetMailAddress();
 			}
 			catch
 			{
-				fromAddress = MessageUtility.PrepareMailAddress("VIE Portal NG <no-reply@vieportal.net>");
+				fromAddress = "VIEApps NGX <vieapps.net@gmail.com>".GetMailAddress();
 			}
 
 			// reply to
 			MailAddress replyToAddress = null;
-			if (replyTo != null && !replyTo.Equals(""))
+			if (!string.IsNullOrWhiteSpace(replyTo))
 				try
 				{
-					replyToAddress = MessageUtility.PrepareMailAddress(replyTo);
+					replyToAddress = replyTo.GetMailAddress();
 				}
 				catch { }
 
 			// recipients
 			List<MailAddress> toAddresses = null;
-			if (toEmails != null && !toEmails.Equals(""))
+			if (!string.IsNullOrWhiteSpace(toEmails))
 			{
 				toAddresses = new List<MailAddress>();
-				string[] emails = toEmails.Split(';');
-				foreach (string email in emails)
+				toEmails.ToArray(';').ForEach(email =>
 				{
-					MailAddress emailAddress = null;
 					try
 					{
-						emailAddress = MessageUtility.PrepareMailAddress(email);
+						toAddresses.Add(email.GetMailAddress());
 					}
 					catch { }
-					if (emailAddress != null)
-						toAddresses.Add(emailAddress);
-				}
+				});
 			}
 
 			List<MailAddress> ccAddresses = null;
-			if (ccEmails != null && !ccEmails.Equals(""))
+			if (!string.IsNullOrWhiteSpace(ccEmails))
 			{
 				ccAddresses = new List<MailAddress>();
-				string[] emails = ccEmails.Split(';');
-				foreach (string email in emails)
+				ccEmails.ToArray(';').ForEach(email =>
 				{
-					MailAddress emailAddress = null;
 					try
 					{
-						emailAddress = MessageUtility.PrepareMailAddress(email);
+						ccAddresses.Add(email.GetMailAddress());
 					}
 					catch { }
-					if (emailAddress != null)
-						ccAddresses.Add(emailAddress);
-				}
+				});
 			}
 
 			List<MailAddress> bccAddresses = null;
-			if (bccEmails != null && !bccEmails.Equals(""))
+			if (!string.IsNullOrWhiteSpace(bccEmails))
 			{
 				bccAddresses = new List<MailAddress>();
-				string[] emails = bccEmails.Split(';');
-				foreach (string email in emails)
+				bccEmails.ToArray(';').ForEach(email =>
 				{
-					MailAddress emailAddress = null;
 					try
 					{
-						emailAddress = MessageUtility.PrepareMailAddress(email);
+						bccAddresses.Add(email.GetMailAddress());
 					}
 					catch { }
-					if (emailAddress != null)
-						bccAddresses.Add(emailAddress);
-				}
+				});
 			}
 
 			// prepare attachments
-			List<string> attachments = null;
-			if (attachment != null && File.Exists(attachment))
-			{
-				attachments = new List<string>();
-				attachments.Add(attachment);
-			}
+			var attachments = attachment != null && File.Exists(attachment)
+				? new List<string>() { attachment }
+				:  null;
 
 			// send mail
 			MessageUtility.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl);
@@ -592,22 +486,25 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl)
 		{
 			// prepare SMTP server
-			SmtpClient smtp = new SmtpClient();
+			var smtp = new SmtpClient();
 
 			// host name (IP of DNS of SMTP server)
-			if (smtpServer != null && !smtpServer.Equals(""))
-				smtp.Host = smtpServer;
-			else
-				smtp.Host = "127.0.0.1";        // local host SMTP
+			smtp.Host = !string.IsNullOrWhiteSpace(smtpServer)
+				? smtpServer
+				: "127.0.0.1";
 
 			// port
-			int serverPort = 25;
-			try { serverPort = Convert.ToInt32(smtpServerPort); }
-			catch { serverPort = 25; }
-			smtp.Port = serverPort;
+			try
+			{
+				smtp.Port = Convert.ToInt32(smtpServerPort);
+			}
+			catch
+			{
+				smtp.Port = 25;
+			}
 
 			// credential (username/password)
-			if (smtpUsername != null && !smtpUsername.Equals("") && smtpPassword != null && !smtpPassword.Equals(""))
+			if (!string.IsNullOrWhiteSpace(smtpUsername) && !string.IsNullOrWhiteSpace(smtpPassword))
 				smtp.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
 
 			// SSL
@@ -639,10 +536,10 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp)
 		{
 			// check
-			if (subject == null || subject.Trim().Equals("") || body == null || body.Trim().Equals(""))
+			if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
 				throw new InvalidDataException("The email must have subject and body");
 
-			if (fromAddress == null || fromAddress.Address == null || fromAddress.Equals(""))
+			if (fromAddress == null || string.IsNullOrWhiteSpace(fromAddress.Address))
 				throw new InvalidDataException("The email must have sender address");
 
 			if ((toAddresses == null || toAddresses.Count < 1)
@@ -654,7 +551,7 @@ namespace net.vieapps.Components.Utility
 				throw new InvalidDataException("You must provide SMTP information for sending an email.");
 
 			// create new message object
-			MailMessage message = new MailMessage();
+			var message = new MailMessage();
 
 			// sender
 			message.From = new MailAddress(fromAddress.Address, fromAddress.DisplayName.ConvertUnicodeToANSI(), Encoding.UTF8);
@@ -687,27 +584,24 @@ namespace net.vieapps.Components.Utility
 			message.Subject = subject;
 
 			// body
-			string messageBody = body;
-			if (additionalFooter != null && !additionalFooter.Equals(""))
-				messageBody += additionalFooter;
-			message.Body = messageBody;
+			message.Body = body + (!string.IsNullOrWhiteSpace(additionalFooter) ? additionalFooter : "");
 
 			// attachment
 			if (attachments != null && attachments.Count > 0)
-				foreach (string attachment in attachments)
+				attachments.ForEach(attachment =>
 				{
-					if (attachment.Trim().Equals(""))
-						continue;
-					if (!File.Exists(attachment))
-						continue;
-					message.Attachments.Add(new System.Net.Mail.Attachment(attachment));
-				}
+					if (!string.IsNullOrWhiteSpace(attachment) && File.Exists(attachment))
+						message.Attachments.Add(new System.Net.Mail.Attachment(attachment));
+				});
 
 			// additional headers
-			message.Headers.Add("X-Mailer", "VIE Portal NG Mailer (System)");
+			message.Headers.Add("x-mailer", "VIEApps NGX Mailer");
 
 			// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
-			ServicePointManager.ServerCertificateValidationCallback = delegate (object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors) { return true; };
+			ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+			{
+				return true;
+			};
 
 			// send message
 			smtp.Send(message);
