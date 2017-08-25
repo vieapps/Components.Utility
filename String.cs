@@ -142,6 +142,16 @@ namespace net.vieapps.Components.Utility
 		{
 			return (T)@string.ToEnum(typeof(T));
 		}
+
+		/// <summary>
+		/// Gets the string from array of bytes with UTF8 encoding
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static string GetString(this byte[] bytes)
+		{
+			return Encoding.UTF8.GetString(bytes);
+		}
 		#endregion
 
 		#region Comparisions

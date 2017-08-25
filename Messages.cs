@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Net;
 using System.Net.Mail;
-using System.Net.Security;
 using System.Diagnostics;
 
 using Newtonsoft.Json;

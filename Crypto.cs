@@ -144,7 +144,7 @@ namespace net.vieapps.Components.Utility
 			var base64Str = isBase64Url
 				? @string.ToBase64(false, true)
 				: @string;
-			return Encoding.UTF8.GetString(Convert.FromBase64String(base64Str));
+			return Convert.FromBase64String(base64Str).GetString();
 		}
 
 		/// <summary>
@@ -204,7 +204,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: UTF8Encoding.UTF8.GetString(@string.ToBase64(false, true).Base64ToBytes());
+				: @string.ToBase64(false, true).Base64ToBytes().GetString();
 		}
 
 		/// <summary>
@@ -693,7 +693,7 @@ namespace net.vieapps.Components.Utility
 						? @string.HexToBytes()
 						: @string.Base64ToBytes();
 					decrypted = decryptor.TransformFinalBlock(decrypted, 0, decrypted.Length);
-					return UTF8Encoding.UTF8.GetString(decrypted);
+					return decrypted.GetString();
 				}
 			}
 		}
@@ -780,7 +780,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string RSADecrypt(RSACryptoServiceProvider rsa, string data)
 		{
-			return Encoding.UTF8.GetString(CryptoService.RSADecrypt(rsa, Convert.FromBase64String(data)));
+			return CryptoService.RSADecrypt(rsa, Convert.FromBase64String(data)).GetString();
 		}
 
 		/// <summary>

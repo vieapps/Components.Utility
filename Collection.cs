@@ -351,18 +351,15 @@ namespace net.vieapps.Components.Utility
 			else
 			{
 				var random = new SortedList();
-				@object.ForEach((o, i) =>
-				{
-					random.Add(UtilityService.GetRandomNumber(), i);
-				});
+				@object.ForEach((o, i) => random.Add(UtilityService.GetRandomNumber(), i));
 
-				int maxIndex = random.Count / 2;
+				var maxIndex = random.Count / 2;
 				if (random.Count % 2 == 1)
 					maxIndex++;
-				int oldIndex = 0;
+				var oldIndex = 0;
 				while (oldIndex < maxIndex)
 				{
-					int newIndex = (int)random.GetByIndex(oldIndex);
+					var newIndex = (int)random.GetByIndex(oldIndex);
 					@object.Swap(oldIndex, newIndex);
 					oldIndex++;
 				}
@@ -590,10 +587,7 @@ namespace net.vieapps.Components.Utility
 		public static NameValueCollection ToNameValueCollection(this Dictionary<string, string> dictionary)
 		{
 			var nv = new NameValueCollection();
-			dictionary.ForEach(entry =>
-			{
-				nv.Add(entry.Key, entry.Value);
-			});
+			dictionary.ForEach(entry => nv.Add(entry.Key, entry.Value));
 			return nv;
 		}
 		#endregion
@@ -803,8 +797,7 @@ namespace net.vieapps.Components.Utility
 		public static List<T> CreateList<T>(this JArray json)
 		{
 			var collection = new List<T>();
-			foreach (var token in json)
-				collection.Add(token.FromJson<T>());
+			json.ForEach(token => collection.Add(token.FromJson<T>()));
 			return collection;
 		}
 
@@ -820,7 +813,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current.Value == null ? null : enumerator.Current.Value.ToJson());
+				json.Add(enumerator.Current.Value?.ToJson());
 			return json;
 		}
 
@@ -871,7 +864,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current == null ? null : enumerator.Current.ToJson());
+				json.Add(enumerator.Current?.ToJson());
 			return json;
 		}
 
@@ -972,7 +965,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value == null ? null : enumerator.Current.Value.ToJson()));
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value?.ToJson()));
 			return json;
 		}
 
@@ -1023,7 +1016,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			var enumerator = @object.AsEnumerableDictionaryEntry.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value == null ? null : enumerator.Current.Value.ToJson()));
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value?.ToJson()));
 			return json;
 		}
 
@@ -1074,9 +1067,9 @@ namespace net.vieapps.Components.Utility
 				if (token.Value != null && token.Value is JValue && (token.Value as JValue).Value != null)
 				{
 					if (nvCollection[token.Key] != null)
-						nvCollection.Set(token.Key, (token.Value as JValue).Value.ToString());
+						nvCollection.Set(token.Key, (token.Value as JValue).Value as string);
 					else
-						nvCollection.Add(token.Key, (token.Value as JValue).Value.ToString());
+						nvCollection.Add(token.Key, (token.Value as JValue).Value as string);
 				}
 			return nvCollection;
 		}

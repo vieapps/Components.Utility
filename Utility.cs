@@ -10,9 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.Security;
-using System.Security;
-using System.Security.Cryptography.X509Certificates;
 using System.Configuration;
 using System.Web;
 using System.Web.Configuration;
@@ -296,7 +293,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="useSecureProtocol"></param>
 		/// <param name="secureProtocol"></param>
 		/// <returns></returns>
-		public static CredentialCache GetWebCredential(string uri, string account, string password, bool useSecureProtocol, SecurityProtocolType secureProtocol)
+		public static CredentialCache GetWebCredential(string uri, string account, string password, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3)
 		{
 			if (useSecureProtocol)
 				ServicePointManager.SecurityProtocol = secureProtocol;
@@ -315,7 +312,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxyUserPassword"></param>
 		/// <param name="proxyBypassList"></param>
 		/// <returns></returns>
-		public static WebProxy GetWebProxy(string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList)
+		public static WebProxy GetWebProxy(string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList = null)
 		{
 			WebProxy proxy = null;
 			if (!string.IsNullOrWhiteSpace(proxyHost))
@@ -432,7 +429,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
-			ServicePointManager.ServerCertificateValidationCallback = delegate (object s, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+			ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
 			{
 				return true;
 			};
@@ -831,8 +828,7 @@ namespace net.vieapps.Components.Utility
 					context.Response.StatusDescription = "Partial Content";
 				}
 
-				foreach (var header in headers)
-					context.Response.Headers.Add(header[0], header[1]);
+				headers.ForEach(header => context.Response.Headers.Add(header[0], header[1]));
 
 				await context.Response.FlushAsync();
 			}
@@ -1038,7 +1034,7 @@ namespace net.vieapps.Components.Utility
 
 			var output = input.Trim();
 			var msoTags = tags == null || tags.Length < 1
-				? "w:|o:|v:|m:|st1:".Split('|')
+				? "w:|o:|v:|m:|st1:|st2:|st3:|st4:|st5:".Split('|')
 				: tags;
 
 			msoTags.ForEach(tag => output = UtilityService.RemoveTag(output, tag));
@@ -1117,7 +1113,7 @@ namespace net.vieapps.Components.Utility
 			var start = output.PositionOf("<!--");
 			while (start > -1)
 			{
-				int end = output.PositionOf("-->", start);
+				var end = output.PositionOf("-->", start);
 				if (end > 0)
 					output = output.Remove(start, end - start + 3);
 				start = output.PositionOf("<!--", start + 1);
@@ -2123,16 +2119,16 @@ namespace net.vieapps.Components.Utility
 	// -----------------------------------------------------------
 
 	#region Search Query
+	/// <summary>
+	/// Presents a parsed query for searching
+	/// </summary>
 	public class SearchQuery
 	{
-		public List<string> AndWords { get; set; }
-		public List<string> OrWords { get; set; }
-		public List<string> NotWords { get; set; }
-		public List<string> AndPhrases { get; set; }
-		public List<string> OrPhrases { get; set; }
-		public List<string> NotPhrases { get; set; }
-
-		public SearchQuery()
+		/// <summary>
+		/// Initializes a searching query
+		/// </summary>
+		/// <param name="query"></param>
+		public SearchQuery(string query = null)
 		{
 			this.AndWords = new List<string>();
 			this.OrWords = new List<string>();
@@ -2140,23 +2136,34 @@ namespace net.vieapps.Components.Utility
 			this.AndPhrases = new List<string>();
 			this.OrPhrases = new List<string>();
 			this.NotPhrases = new List<string>();
+			this.Parse(query);
 		}
 
-		public static SearchQuery Parse(string searchingQuery)
-		{
-			var searchQuery = new SearchQuery();
-			if (string.IsNullOrWhiteSpace(searchingQuery))
-				return searchQuery;
+		public List<string> AndWords { get; set; }
 
-			var query = SearchQuery.NormalizeKeywords(searchingQuery);
-			int start = -1, end = -1;
+		public List<string> OrWords { get; set; }
+
+		public List<string> NotWords { get; set; }
+
+		public List<string> AndPhrases { get; set; }
+
+		public List<string> OrPhrases { get; set; }
+
+		public List<string> NotPhrases { get; set; }
+
+		void Parse(string query)
+		{
+			if (string.IsNullOrWhiteSpace(query))
+				return;
+
+			var searchQuery = this.NormalizeKeywords(query);
 			var allWords = new List<string>();
 			var allPhrases = new List<string>();
 
-			start = query.PositionOf("\"");
-			end = query.PositionOf("\"", start + 1);
+			var start = searchQuery.PositionOf("\"");
+			var end = searchQuery.PositionOf("\"", start + 1);
 			if (start < 0 || end < 1)
-				SearchQuery.ExtractWords(query.Replace("\"", ""), ref allWords);
+				allWords = allWords.Concat(searchQuery.Replace("\"", "").ToArray(' ').Select(i => i.Trim())).ToList();
 
 			else
 			{
@@ -2164,56 +2171,42 @@ namespace net.vieapps.Components.Utility
 				{
 					var previousCharater = "";
 					if (start > 0)
-						previousCharater = query[start - 1].ToString();
+						previousCharater = searchQuery[start - 1].ToString();
 
 					if (previousCharater.Equals("+") || previousCharater.Equals("-"))
 						start--;
 
-					var phrase = query.Substring(start, end - start + 1);
+					var phrase = searchQuery.Substring(start, end - start + 1);
 					allPhrases.Add(phrase.Replace(" -\"", "\"").Replace(" +\"", "\""));
-					query = query.Remove(start, end - start + 1).Trim();
-					start = query.IndexOf("\"");
-					end = query.IndexOf("\"", start + 1);
+					searchQuery = searchQuery.Remove(start, end - start + 1).Trim();
+					start = searchQuery.IndexOf("\"");
+					end = searchQuery.IndexOf("\"", start + 1);
 				}
-
-				SearchQuery.ExtractWords(query.Replace("\"", ""), ref allWords);
+				allWords = allWords.Concat(this.NormalizeKeywords(searchQuery).Replace("\"", "").ToArray(' ').Select(i => i.Trim())).ToList();
 			}
 
-			foreach (var word in allWords)
+			allWords.Distinct().ForEach(word =>
 			{
 				if (word[0].Equals('+'))
-					searchQuery.AndWords.Add(word.Right(word.Length - 1));
+					this.AndWords.Add(word.Right(word.Length - 1));
 				else if (word[0].Equals('-'))
-					searchQuery.NotWords.Add(word.Right(word.Length - 1));
+					this.NotWords.Add(word.Right(word.Length - 1));
 				else
-					searchQuery.OrWords.Add(word);
-			}
+					this.OrWords.Add(word);
+			});
 
-			foreach (var phrase in allPhrases)
+			allPhrases.Distinct().ForEach(phrase =>
 			{
 				if (phrase[0].Equals('+'))
-					searchQuery.AndPhrases.Add(phrase.Right(phrase.Length - 1).Replace("\"", ""));
+					this.AndPhrases.Add(phrase.Right(phrase.Length - 1).Replace("\"", ""));
 				else if (phrase[0].Equals('-'))
-					searchQuery.NotPhrases.Add(phrase.Right(phrase.Length - 1).Replace("\"", ""));
+					this.NotPhrases.Add(phrase.Right(phrase.Length - 1).Replace("\"", ""));
 				else
-					searchQuery.OrPhrases.Add(phrase.Replace("\"", ""));
-			}
-
-			return searchQuery;
+					this.OrPhrases.Add(phrase.Replace("\"", ""));
+			});
 		}
 
-		static void ExtractWords(string query, ref List<string> words)
-		{
-			if (string.IsNullOrWhiteSpace(query))
-				return;
-
-			var allWords = SearchQuery.NormalizeKeywords(query).Replace("\"", "").ToArray(' ');
-			foreach (var word in allWords)
-				if (!string.IsNullOrWhiteSpace(word))
-					words.Add(word.Trim());
-		}
-
-		static string NormalizeKeywords(string keywords)
+		string NormalizeKeywords(string keywords)
 		{
 			var normalizedKeywords = keywords.Trim().Replace("  ", " ");
 

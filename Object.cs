@@ -1079,7 +1079,7 @@ namespace net.vieapps.Components.Utility
 			// array or generict list/hash-set
 			if (@object.IsArray() || @object.IsGenericListOrHashSet())
 			{
-				Type type = @object.IsArray()
+				var type = @object.IsArray()
 					? @object.GetType().GetElementType()
 					: @object.GetType().GenericTypeArguments[0];
 
@@ -1211,7 +1211,7 @@ namespace net.vieapps.Components.Utility
 				using (var writer = new StreamWriter(stream))
 				{
 					(new XmlSerializer(typeof(T))).Serialize(writer, @object);
-					return XElement.Parse(Encoding.UTF8.GetString(stream.ToArray()));
+					return XElement.Parse(stream.ToArray().GetString());
 				}
 			}
 		}
@@ -1375,21 +1375,15 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Transfrom(this XmlDocument document, string xmlStylesheet, bool enableScript = true)
 		{
-			XslCompiledTransform xslTransform = null;
 			using (var stream = new MemoryStream(xmlStylesheet.ToBytes()))
 			{
 				using (var reader = new XmlTextReader(stream))
 				{
 					try
 					{
-						XsltSettings xsltSettings = null;
-						if (enableScript)
-						{
-							xsltSettings = new XsltSettings();
-							xsltSettings.EnableScript = true;
-						}
-						xslTransform = new XslCompiledTransform();
-						xslTransform.Load(reader, xsltSettings, null);
+						var xslTransform = new XslCompiledTransform();
+						xslTransform.Load(reader, enableScript ? new XsltSettings() { EnableScript = true } : null, null);
+						return document.Transfrom(xslTransform);
 					}
 					catch (Exception)
 					{
@@ -1397,7 +1391,6 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 			}
-			return document.Transfrom(xslTransform);
 		}
 		#endregion
 
@@ -1469,8 +1462,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static object Get(this ExpandoObject @object, string name)
 		{
-			object value;
-			return @object.TryGet(name, out value)
+			return @object.TryGet(name, out object value)
 				? value
 				: null;
 		}
@@ -1483,8 +1475,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static T Get<T>(this ExpandoObject @object, string name)
 		{
-			T value;
-			return @object.TryGet<T>(name, out value)
+			return @object.TryGet<T>(name, out T value)
 				? value
 				: default(T);
 		}
@@ -1599,8 +1590,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if the object got an attribute with the name</returns>
 		public static bool Has(this ExpandoObject @object, string name)
 		{
-			object value;
-			return @object.TryGet(name, out value);
+			return @object.TryGet(name, out object value);
 		}
 		#endregion
 

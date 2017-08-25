@@ -35,7 +35,7 @@ namespace net.vieapps.Components.Utility
 				return "1" + (addString ? " nanosecond" : "");
 
 			int hours = 0, minutes = 0, seconds = 0;
-			long miliseconds = elapsedTimes;
+			var miliseconds = elapsedTimes;
 			while (miliseconds > 999)
 			{
 				seconds++;
@@ -55,7 +55,7 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			string times = "";
+			var times = "";
 
 			if (miliseconds > 0)
 				times = miliseconds.ToString() + (addString ? " milisecond(s)" : "") + times;
@@ -280,7 +280,9 @@ namespace net.vieapps.Components.Utility
 				var minute = times[1];
 				var second = times[2];
 				datetime = new DateTime(Convert.ToInt32(year), month.GetMonthFromHttpString(), Convert.ToInt32(day), Convert.ToInt32(hour), Convert.ToInt32(minute), Convert.ToInt32(second));
-				datetime = (useUTC ? datetime.ToUniversalTime() : datetime.ToLocalTime());
+				datetime = useUTC
+					? datetime.ToUniversalTime()
+					: datetime.ToLocalTime();
 			}
 			catch { }
 
