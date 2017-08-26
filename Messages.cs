@@ -47,8 +47,8 @@ namespace net.vieapps.Components.Utility
 			this.SmtpServerPort = 25;
 			this.SmtpUsername = "";
 			this.SmtpPassword = "";
-			this.SmtpEnableSSL = false;
-			this.SmtpStartTLS = false;
+			this.SmtpServerEnableSsl = false;
+			this.SmtpStartTls = false;
 
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try
@@ -76,8 +76,8 @@ namespace net.vieapps.Components.Utility
 		public int SmtpServerPort { get; set; }
 		public string SmtpUsername { get; set; }
 		public string SmtpPassword { get; set; }
-		public bool SmtpEnableSSL { get; set; }
-		public bool SmtpStartTLS { get; set; }
+		public bool SmtpServerEnableSsl { get; set; }
+		public bool SmtpStartTls { get; set; }
 		#endregion
 
 		#region Helper properties
