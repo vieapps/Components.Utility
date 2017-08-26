@@ -775,13 +775,14 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
+		/// <param name="converter"></param>
 		/// <returns></returns>
-		public static JArray ToJArray<T>(this IEnumerable<T> @object)
+		public static JArray ToJArray<T>(this IEnumerable<T> @object, Func<T, JToken> converter = null)
 		{
 			if (typeof(T).IsPrimitiveType() || typeof(T).IsClassType())
 			{
 				var array = new JArray();
-				@object.ForEach(item => array.Add(item?.ToJson()));
+				@object.ForEach(item => array.Add(converter != null ? converter(item) : item?.ToJson()));
 				return array;
 			}
 			else
@@ -807,13 +808,14 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TKey"></typeparam>
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="object"></param>
+		/// <param name="converter"></param>
 		/// <returns></returns>
-		public static JArray ToJArray<TKey, TValue>(this IDictionary<TKey, TValue> @object)
+		public static JArray ToJArray<TKey, TValue>(this IDictionary<TKey, TValue> @object, Func<TValue, JToken> converter = null)
 		{
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current.Value?.ToJson());
+				json.Add(converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson());
 			return json;
 		}
 
@@ -900,7 +902,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="keyAttribute">The string that presents name of attribute to use their value as key</param>
 		/// <returns></returns>
-		public static JObject ToJObject<T>(this IList<T> @object, string keyAttribute)
+		public static JObject ToJObject<T>(this IEnumerable<T> @object, string keyAttribute, Func<T, JToken> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
@@ -911,30 +913,7 @@ namespace net.vieapps.Components.Utility
 				var key = item.GetAttributeValue(keyAttribute);
 				if (object.ReferenceEquals(key, null))
 					key = item.GetHashCode();
-				json.Add(new JProperty(key.ToString(), item.ToJson<T>()));
-			});
-			return json;
-		}
-
-		/// <summary>
-		/// Creates a JObject object from this collection
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <param name="keyAttribute">The string that presents name of attribute to use their value as key</param>
-		/// <returns></returns>
-		public static JObject ToJObject<T>(this ISet<T> @object, string keyAttribute)
-		{
-			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
-
-			var json = new JObject();
-			@object.ForEach(item =>
-			{
-				var key = item.GetAttributeValue(keyAttribute);
-				if (object.ReferenceEquals(key, null))
-					key = item.GetHashCode();
-				json.Add(new JProperty(key.ToString(), item.ToJson<T>()));
+				json.Add(new JProperty(key.ToString(), converter != null ? converter(item) : item.ToJson<T>()));
 			});
 			return json;
 		}
@@ -960,12 +939,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static JObject ToJObject<TKey, TValue>(this IDictionary<TKey, TValue> @object)
+		public static JObject ToJObject<TKey, TValue>(this IDictionary<TKey, TValue> @object, Func<TValue, JToken> converter = null)
 		{
 			var json = new JObject();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value?.ToJson()));
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson()));
 			return json;
 		}
 
@@ -1011,12 +990,12 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static JObject ToJObject(this Collection @object)
+		public static JObject ToJObject(this Collection @object, Func<object, JToken> converter = null)
 		{
 			var json = new JObject();
 			var enumerator = @object.AsEnumerableDictionaryEntry.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), enumerator.Current.Value?.ToJson()));
+				json.Add(new JProperty(enumerator.Current.Key.ToString(), converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson()));
 			return json;
 		}
 
@@ -1084,7 +1063,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
 		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
 		{
-			foreach (T item in enumerable)
+			foreach (var item in enumerable)
 				action(item);
 		}
 
@@ -1097,10 +1076,40 @@ namespace net.vieapps.Components.Utility
 		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T, int> action)
 		{
 			var index = -1;
-			foreach (T item in enumerable)
+			foreach (var item in enumerable)
 			{
 				index++;
 				action(item, index);
+			}
+		}
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Action<TValue> action)
+		{
+			foreach (var item in enumerable)
+				action(item.Value);
+		}
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Action<TValue, int> action)
+		{
+			var index = -1;
+			foreach (var item in enumerable)
+			{
+				index++;
+				action(item.Value, index);
 			}
 		}
 
@@ -1116,7 +1125,7 @@ namespace net.vieapps.Components.Utility
 		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
 		{
 			var tasks = new List<Task>();
-			foreach (T item in enumerable)
+			foreach (var item in enumerable)
 				tasks.Add(action(item, cancellationToken));
 
 			return waitForAllCompleted
@@ -1137,10 +1146,56 @@ namespace net.vieapps.Components.Utility
 		{
 			var index = -1;
 			var tasks = new List<Task>();
-			foreach (T item in enumerable)
+			foreach (var item in enumerable)
 			{
 				index++;
 				tasks.Add(action(item, index, cancellationToken));
+			}
+
+			return waitForAllCompleted
+				? Task.WhenAll(tasks)
+				: Task.CompletedTask;
+		}
+
+		/// <summary>
+		///  Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
+		/// <returns></returns>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
+		{
+			var tasks = new List<Task>();
+			foreach (var item in enumerable)
+				tasks.Add(action(item.Value, cancellationToken));
+
+			return waitForAllCompleted
+				? Task.WhenAll(tasks)
+				: Task.CompletedTask;
+		}
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
+		/// <returns></returns>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, int, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
+		{
+			var index = -1;
+			var tasks = new List<Task>();
+			foreach (var item in enumerable)
+			{
+				index++;
+				tasks.Add(action(item.Value, index, cancellationToken));
 			}
 
 			return waitForAllCompleted

@@ -29,7 +29,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encryptedMessage"></param>
 		public EmailMessage(string encryptedMessage = null)
 		{
-			this.Id = UtilityService.GetUUID();
+			this.ID = UtilityService.GetUUID();
 			this.SendingTime = DateTime.Now;
 			this.From = "";
 			this.ReplyTo = "";
@@ -58,8 +58,6 @@ namespace net.vieapps.Components.Utility
 				catch { }
 		}
 
-		internal static string EncryptionKey = "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys";
-
 		#region Properties
 		public string From { get; set; }
 		public string ReplyTo { get; set; }
@@ -83,13 +81,15 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Helper properties
+		internal static string EncryptionKey = "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys";
+
 		/// <summary>
 		/// Gets or sets the identity of the email message.
 		/// </summary>
 		/// <remarks>
 		/// If other message had same Id, that message will be overried by is message
 		/// </remarks>
-		public string Id { get; set; }
+		public string ID { get; set; }
 
 		/// <summary>
 		/// Gets or sets time to start to send this message via email.
@@ -123,9 +123,21 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.ToJson().ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey));
+					UtilityService.WriteTextFile(folderPath + "\\" + message.ID + ".msg", message.Encrypted);
 				}
 				catch { }
+		}
+
+		/// <summary>
+		/// Gets the string that presents the encrypted messages
+		/// </summary>
+		[JsonIgnore]
+		public string Encrypted
+		{
+			get
+			{
+				return this.ToJson().ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey);
+			}
 		}
 		#endregion
 
@@ -144,7 +156,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encryptedMessage"></param>
 		public WebHookMessage(string encryptedMessage = null)
 		{
-			this.Id = UtilityService.GetUUID();
+			this.ID = UtilityService.GetUUID();
 			this.SendingTime = DateTime.Now;
 			this.EndpointURL = "";
 			this.Body = "";
@@ -158,8 +170,6 @@ namespace net.vieapps.Components.Utility
 				}
 				catch { }
 		}
-
-		internal static string EncryptionKey = "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys";
 
 		#region Properties
 		/// <summary>
@@ -186,10 +196,12 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Helper properties
+		internal static string EncryptionKey = "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys";
+
 		/// <summary>
 		/// Gets or sets identity of the message.
 		/// </summary>
-		public string Id { get; set; }
+		public string ID { get; set; }
 
 		/// <summary>
 		/// Gets or sets time to start to send this message.
@@ -220,9 +232,21 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + "\\" + message.Id + ".msg", message.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey));
+					UtilityService.WriteTextFile(folderPath + "\\" + message.ID + ".msg", message.Encrypted);
 				}
 				catch { }
+		}
+
+		/// <summary>
+		/// Gets the string that presents the encrypted messages
+		/// </summary>
+		[JsonIgnore]
+		public string Encrypted
+		{
+			get
+			{
+				return this.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey);
+			}
 		}
 		#endregion
 
@@ -626,102 +650,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
 		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
 		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
-		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
-		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, string additionalFooter, HashSet<string> preventDomains)
-		{
-			return MessageUtility.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, additionalFooter, preventDomains, CancellationToken.None);
-		}
-
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="from">Sender name and e-mail address.</param>
-		/// <param name="replyTo">Address will be replied to.</param>
-		/// <param name="to">Recipients. Seperate multiple by comma (,).</param>
-		/// <param name="cc">CC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="bcc">BCC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="subject">Mail subject.</param>
-		/// <param name="body">Mail body.</param>
-		/// <param name="attachment">Path to attachment file.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
-		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
+		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, string additionalFooter, HashSet<string> preventDomains, CancellationToken cancellationToken)
+		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl = true, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			try
 			{
 				cancellationToken.ThrowIfCancellationRequested();
-				MessageUtility.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, additionalFooter, preventDomains);
-				return Task.CompletedTask;
-			}
-			catch (Exception ex)
-			{
-				return Task.FromException(ex);
-			}
-		}
-
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="from">Sender name and e-mail address.</param>
-		/// <param name="replyTo">Address will be replied to.</param>
-		/// <param name="to">Recipients. Seperate multiple by comma (,).</param>
-		/// <param name="cc">CC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="bcc">BCC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="subject">Mail subject.</param>
-		/// <param name="body">Mail body.</param>
-		/// <param name="attachment">Path to attachment file.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
-		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
-		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, string additionalFooter, HashSet<string> preventDomains)
-		{
-			return MessageUtility.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, additionalFooter, preventDomains, CancellationToken.None);
-		}
-
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="from">Sender name and e-mail address.</param>
-		/// <param name="replyTo">Address will be replied to.</param>
-		/// <param name="to">Recipients. Seperate multiple by comma (,).</param>
-		/// <param name="cc">CC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="bcc">BCC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="subject">Mail subject.</param>
-		/// <param name="body">Mail body.</param>
-		/// <param name="attachment">Path to attachment file.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
-		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
-		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, string additionalFooter, HashSet<string> preventDomains, CancellationToken cancellationToken)
-		{
-			try
-			{
-				cancellationToken.ThrowIfCancellationRequested();
-				MessageUtility.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, additionalFooter, preventDomains);
+				MessageUtility.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null);
 				return Task.CompletedTask;
 			}
 			catch (Exception ex)
@@ -750,33 +686,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
 		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
 		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl)
-		{
-			return MessageUtility.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, CancellationToken.None);
-		}
-
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="fromAddress">Sender address.</param>
-		/// <param name="replyToAddress">Address will be replied to.</param>
-		/// <param name="toAddresses">Collection of recipients</param>
-		/// <param name="ccAddresses">Collection of CC recipients</param>
-		/// <param name="bccAddresses">Collection of BCC recipients</param>
-		/// <param name="subject">The message subject.</param>
-		/// <param name="body">The message body.</param>
-		/// <param name="attachments">Collection of attachment files (all are full path of attachments).</param>
-		/// <param name="additionalFooter">The data will be added into email as footer.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken)
+		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			try
 			{
@@ -806,29 +717,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
 		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
 		/// <param name="smtp">Informaiton of SMTP server for sending email.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp)
-		{
-			return MessageUtility.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp, CancellationToken.None);
-		}
-
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="fromAddress">Sender address.</param>
-		/// <param name="replyToAddress">Address will be replied to.</param>
-		/// <param name="toAddresses">Collection of recipients</param>
-		/// <param name="ccAddresses">Collection of CC recipients</param>
-		/// <param name="bccAddresses">Collection of BCC recipients</param>
-		/// <param name="subject">The message subject.</param>
-		/// <param name="body">The message body.</param>
-		/// <param name="attachments">Collection of attachment files (all are full path of attachments).</param>
-		/// <param name="additionalFooter">The data will be added into email as footer.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtp">Informaiton of SMTP server for sending email.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken)
+		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			try
 			{
