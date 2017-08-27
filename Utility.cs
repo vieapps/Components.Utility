@@ -14,6 +14,7 @@ using System.Configuration;
 using System.Web;
 using System.Web.Configuration;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -1238,10 +1239,17 @@ namespace net.vieapps.Components.Utility
 		/// Kills a process
 		/// </summary>
 		/// <param name="process"></param>
-		public static void KillProcess(Process process)
+		/// <param name="action">The action to try to close the process before the process be killed</param>
+		public static void KillProcess(Process process, Action<Process> action = null)
 		{
 			if (process != null)
 			{
+				try
+				{
+					action?.Invoke(process);
+				}
+				catch { }
+
 				if (process.StartInfo.RedirectStandardInput)
 				{
 					process.StandardInput.Close();
@@ -1252,7 +1260,7 @@ namespace net.vieapps.Components.Utility
 							process.Kill();
 					}
 				}
-				else
+				else if (!process.HasExited)
 					process.Kill();
 			}
 		}
@@ -1261,9 +1269,89 @@ namespace net.vieapps.Components.Utility
 		/// Kills a process by ID
 		/// </summary>
 		/// <param name="id">The integer that presents the identity of a process</param>
-		public static void KillProcess(int id)
+		/// <param name="action">The action to try to close the process before the process be killed</param>
+		public static void KillProcess(int id, Action<Process> action = null)
 		{
 			UtilityService.KillProcess(Process.GetProcessById(id));
+		}
+
+		[DllImport("kernel32.dll")]
+		private static extern IntPtr OpenProcess(ProcessAccessFlags dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+
+		[DllImport("kernel32.dll")]
+		private static extern bool QueryFullProcessImageName(IntPtr hprocess, int dwFlags, StringBuilder lpExeName, out int size);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern bool CloseHandle(IntPtr hHandle);
+
+		[Flags]
+		private enum ProcessAccessFlags : uint
+		{
+			All = 0x1f0fff,
+			CreateThread = 2,
+			DupHandle = 0x40,
+			QueryInformation = 0x400,
+			ReadControl = 0x20000,
+			SetInformation = 0x200,
+			Synchronize = 0x100000,
+			Terminate = 1,
+			VMOperation = 8,
+			VMRead = 0x10,
+			VMWrite = 0x20
+		}
+
+		/// <summary>
+		/// Gest the identity of processes
+		/// </summary>
+		/// <param name="processExeFilename"></param>
+		/// <returns></returns>
+		public static List<Tuple<int, string>> GetProcesses(string processExeFilename)
+		{
+			if (string.IsNullOrWhiteSpace(processExeFilename))
+				return null;
+
+			var processes = new List<Tuple<int, string>>();
+			foreach (var process in Process.GetProcesses())
+			{
+				var id = process.Id;
+				var handler = UtilityService.OpenProcess(ProcessAccessFlags.QueryInformation, false, id);
+				if (handler != IntPtr.Zero)
+					try
+					{
+						var pathBuilder = new StringBuilder(0x400);
+						var capacity = pathBuilder.Capacity;
+						if (UtilityService.QueryFullProcessImageName(handler, 0, pathBuilder, out capacity))
+						{
+							string processName = pathBuilder.ToString();
+							if (processName.ToLower().EndsWith(processExeFilename.ToLower()))
+								processes.Add(new Tuple<int, string>(id, processName));
+						}
+					}
+					catch { }
+					finally
+					{
+						UtilityService.CloseHandle(handler);
+					}
+			}
+
+			return processes;
+		}
+
+		/// <summary>
+		/// Gest the identity of a process
+		/// </summary>
+		/// <param name="processExeFilename"></param>
+		/// <param name="excludedPID"></param>
+		/// <returns></returns>
+		public static int GetProcessID(string processExeFilename, int excludedPID = 0)
+		{
+			if (string.IsNullOrWhiteSpace(processExeFilename))
+				return -1;
+
+			var process = UtilityService.GetProcesses(processExeFilename).FirstOrDefault(info => excludedPID > 0 ? !info.Item1.Equals(excludedPID) : true);
+			return process == null
+				? -1
+				: process.Item1;
 		}
 		#endregion
 
