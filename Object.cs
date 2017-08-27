@@ -1410,7 +1410,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this JObject json)
+		public static ExpandoObject ToExpandoObject(this JToken json)
 		{
 			return (new JsonSerializer()).Deserialize<ExpandoObject>(new JTokenReader(json));
 		}
@@ -1440,7 +1440,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class
 		{
-			return @object.ToJson<T>().ToExpandoObject();
+			return (@object is JToken ? @object as JToken : @object.ToJson<T>()).ToExpandoObject();
 		}
 
 		/// <summary>
