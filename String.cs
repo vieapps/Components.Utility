@@ -511,11 +511,11 @@ namespace net.vieapps.Components.Utility
 
 			// add timestamp if has no value
 			if (result.Equals(""))
-				result = Convert.ToInt64(UtilityService.GetRandomNumber()).ToIdentity() + "-" + DateTime.UtcNow.ToUnixTimestamp().ToIdentity();
+				result = "v" + DateTime.UtcNow.ToUnixTimestamp();
 
 			// numeric
 			else if (StringService.Numberic.Replace(result, "").Equals(result))
-				result = Convert.ToInt64(result).ToIdentity() + "-" + DateTime.UtcNow.ToUnixTimestamp().ToIdentity();
+				result = "v" + DateTime.UtcNow.ToUnixTimestamp() + result;
 
 			return toLowerCase
 				? result.ToLower()
