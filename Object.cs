@@ -978,11 +978,10 @@ namespace net.vieapps.Components.Utility
 		/// Creates new an instance of the object and copies data (from a JSON object)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
 		/// <param name="json">The JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <returns></returns>
-		public static T Copy<T>(this T @object, JToken json, HashSet<string> excluded = null)
+		public static T Copy<T>(this JToken json, HashSet<string> excluded = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(json, excluded);
@@ -993,11 +992,10 @@ namespace net.vieapps.Components.Utility
 		/// Creates new an instance of the object and copies data (from an ExpandoObject object)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
 		/// <param name="expandoObject">The ExpandoObject object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <returns></returns>
-		public static T Copy<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null)
+		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(expandoObject, excluded);
