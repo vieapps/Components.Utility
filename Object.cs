@@ -1470,12 +1470,13 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="defaultValue">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Get<T>(this ExpandoObject @object, string name)
+		public static T Get<T>(this ExpandoObject @object, string name, T defaultValue = default(T))
 		{
 			return @object.TryGet<T>(name, out T value)
 				? value
-				: default(T);
+				: defaultValue;
 		}
 
 		/// <summary>

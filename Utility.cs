@@ -915,6 +915,28 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Removes all HTML/XML tags
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
+		public static string RemoveTags(string input)
+		{
+			if (string.IsNullOrWhiteSpace(input))
+				return "";
+
+			var output = input.Trim();
+			var start = output.PositionOf("<");
+			while (start > -1)
+			{
+				var end = output.PositionOf(">", start);
+				output = output.Remove(start, end - start + 1);
+				start = output.PositionOf("<");
+			}
+
+			return output;
+		}
+
+		/// <summary>
 		/// Removes  Microsoft Office tags
 		/// </summary>
 		/// <param name="input"></param>
