@@ -1063,7 +1063,7 @@ namespace net.vieapps.Components.Utility
 		/// Serializes this object to JSON object (with default settings of Json.NET Serializer)
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
-		/// <param name="object"></param>
+		/// <param name="object">The object to serialize to JSON</param>
 		/// <returns></returns>
 		public static JToken ToJson<T>(this T @object)
 		{
@@ -1157,13 +1157,33 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Serializes this object to JSON object (with default settings of Json.NET Serializer)
+		/// </summary>
+		/// <typeparam name="T">Type of the object</typeparam>
+		/// <param name="object">The object to serialize to JSON</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <returns></returns>
+		public static JToken ToJson<T>(this T @object, Action<JToken> onPreCompleted)
+		{
+			// serialize
+			var json = @object.ToJson();
+
+			// run the handler
+			onPreCompleted?.Invoke(json);
+
+			// return the JSON
+			return json;
+		}
+
+		/// <summary>
 		/// Creates (Deserializes) an object from this JSON object
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON object that contains information for deserializing</param>
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this JToken json, bool copy = false)
+		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onPreCompleted = null)
 		{
 			// initialize the object
 			T @object;
@@ -1179,6 +1199,9 @@ namespace net.vieapps.Components.Utility
 			else
 				@object = (new JsonSerializer()).Deserialize<T>(new JTokenReader(json));
 
+			// run the handler
+			onPreCompleted?.Invoke(@object, json);
+
 			// return object
 			return @object;
 		}
@@ -1188,10 +1211,22 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON string that contains information for deserializing</param>
+		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this string json)
+		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null)
 		{
-			return (json.Trim().StartsWith("[") ? JArray.Parse(json) as JToken : JObject.Parse(json) as JToken).FromJson<T>();
+			// deserialize
+			var token = json.Trim().StartsWith("[")
+				? JArray.Parse(json) as JToken
+				: JObject.Parse(json) as JToken;
+			var @object = token.FromJson<T>(copy);
+
+			// run the handler
+			onPreCompleted?.Invoke(@object, token);
+
+			// return object
+			return @object;
 		}
 		#endregion
 
@@ -1201,17 +1236,26 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object"></param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static XElement ToXml<T>(this T @object)
+		public static XElement ToXml<T>(this T @object, Action<XElement> onPreCompleted = null)
 		{
+			// serialize
+			XElement xml = null;
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = new StreamWriter(stream))
 				{
 					(new XmlSerializer(typeof(T))).Serialize(writer, @object);
-					return XElement.Parse(stream.ToArray().GetString());
+					xml = XElement.Parse(stream.ToArray().GetString());
 				}
 			}
+
+			// run the handler
+			onPreCompleted?.Invoke(xml);
+
+			// return the XML
+			return xml;
 		}
 
 		/// <summary>
@@ -1219,26 +1263,44 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="xml">The XML object that contains information for deserializing</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static T FromXml<T>(this XContainer xml)
+		public static T FromXml<T>(this XContainer xml, Action<T, XContainer> onPreCompleted = null)
 		{
-			return (T)(new XmlSerializer(typeof(T))).Deserialize(xml.CreateReader());
+			// deserialize
+			var @object = (T)(new XmlSerializer(typeof(T))).Deserialize(xml.CreateReader());
+
+			// run the handler
+			onPreCompleted?.Invoke(@object, xml);
+
+			// return the object
+			return @object;
 		}
+
 		/// <summary>
 		/// Creates (Deserializes) an object from this XML string
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="xml">The XML string that contains information for deserializing</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static T FromXml<T>(this string xml)
+		public static T FromXml<T>(this string xml, Action<T> onPreCompleted = null)
 		{
+			// deserialize
+			T @object;
 			using (var stringReader = new StringReader(xml))
 			{
 				using (var xmlReader = new XmlTextReader(stringReader))
 				{
-					return (T)(new XmlSerializer(typeof(T))).Deserialize(xmlReader);
+					@object = (T)(new XmlSerializer(typeof(T))).Deserialize(xmlReader);
 				}
 			}
+
+			// run the handler
+			onPreCompleted?.Invoke(@object);
+
+			// return the object
+			return @object;
 		}
 
 		/// <summary>

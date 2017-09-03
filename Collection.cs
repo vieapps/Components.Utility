@@ -485,7 +485,7 @@ namespace net.vieapps.Components.Utility
 				try
 				{
 					var key = item.GetAttributeValue(keyAttribute);
-					if (!object.ReferenceEquals(key, null) && !collection.Contains(key))
+					if (key != null && !collection.Contains(key))
 						collection.Add(key, item);
 				}
 				catch { }
@@ -837,7 +837,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var @object = token.FromJson<TValue>();
 				var key = (TKey)@object.GetAttributeValue(keyAttribute);
-				if (!object.ReferenceEquals(key, null) && !dictionary.ContainsKey(key))
+				if (key != null && !dictionary.ContainsKey(key))
 					dictionary.Add(key, @object);
 			}
 			return dictionary;
@@ -860,13 +860,14 @@ namespace net.vieapps.Components.Utility
 		/// Creates a JArray object from this collection
 		/// </summary>
 		/// <param name="object"></param>
+		/// <param name="converter"></param>
 		/// <returns></returns>
-		public static JArray ToJArray(this Collection @object)
+		public static JArray ToJArray(this Collection @object, Func<object, JToken> converter = null)
 		{
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(enumerator.Current?.ToJson());
+				json.Add(converter != null ? converter(enumerator.Current) : enumerator.Current?.ToJson());
 			return json;
 		}
 
@@ -887,7 +888,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var @object = token.FromJson<T>();
 				var key = @object.GetAttributeValue(keyAttribute);
-				if (!object.ReferenceEquals(key, null) && !collection.Contains(key))
+				if (key != null && !collection.Contains(key))
 					collection.Add(key, @object);
 			}
 			return collection;
@@ -911,7 +912,7 @@ namespace net.vieapps.Components.Utility
 			@object.ForEach(item =>
 			{
 				var key = item.GetAttributeValue(keyAttribute);
-				if (object.ReferenceEquals(key, null))
+				if (key == null)
 					key = item.GetHashCode();
 				json.Add(new JProperty(key.ToString(), converter != null ? converter(item) : item.ToJson<T>()));
 			});
@@ -966,7 +967,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var @object = token.Value.FromJson<TValue>();
 				var key = (TKey)@object.GetAttributeValue(keyAttribute);
-				if (!object.ReferenceEquals(key, null) && !dictionary.ContainsKey(key))
+				if (key != null && !dictionary.ContainsKey(key))
 					dictionary.Add(key, @object);
 			}
 			return dictionary;
@@ -1016,7 +1017,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var @object = token.Value.FromJson<T>();
 				var key = @object.GetAttributeValue(keyAttribute);
-				if (!object.ReferenceEquals(key, null) && !collection.Contains(key))
+				if (key != null && !collection.Contains(key))
 					collection.Add(key, @object);
 			}
 			return collection;
