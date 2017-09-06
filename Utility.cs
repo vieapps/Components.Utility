@@ -10,11 +10,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using System.Configuration;
 using System.Web;
 using System.Web.Configuration;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Configuration;
+using System.Xml;
+using Newtonsoft.Json.Linq;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -2229,6 +2231,42 @@ namespace net.vieapps.Components.Utility
 			normalizedKeywords = normalizedKeywords.Replace("|", "").Replace("~", "").Replace("#", "");
 
 			return normalizedKeywords;
+		}
+	}
+	#endregion
+
+	//  --------------------------------------------------------------------------------------------
+
+	#region App configuration section handler
+	/// <summary>
+	/// The handler for processing a custom configuration section of the app
+	/// </summary>
+	public class AppConfigurationSectionHandler : IConfigurationSectionHandler
+	{
+		public object Create(object parent, object configContext, XmlNode section)
+		{
+			this._section = section;
+			return this;
+		}
+
+		XmlNode _section = null;
+
+		/// <summary>
+		/// Gets the configuration section
+		/// </summary>
+		public XmlNode Section { get { return this._section; } }
+
+		/// <summary>
+		/// Gets all attributes of a node an return a JSON
+		/// </summary>
+		/// <param name="node"></param>
+		/// <returns></returns>
+		public JObject GetJson(XmlNode node)
+		{
+			var settings = new JObject();
+			foreach (XmlAttribute attribute in node.Attributes)
+				settings.Add(new JProperty(attribute.Name, attribute.Value));
+			return settings;
 		}
 	}
 	#endregion
