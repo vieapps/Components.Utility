@@ -1106,7 +1106,7 @@ namespace net.vieapps.Components.Utility
 			var psi = new ProcessStartInfo()
 			{
 				FileName = filePath,
-				Arguments = string.IsNullOrWhiteSpace(arguments) ? "" : "\"" + arguments + "\"",
+				Arguments = arguments ?? "",
 				WindowStyle = ProcessWindowStyle.Hidden,
 				CreateNoWindow = true,
 				ErrorDialog = false,
