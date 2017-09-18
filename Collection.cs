@@ -411,9 +411,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
-		public static Collection CreateCollection<T>(this HashSet<T> @object, string keyAttribute)
+		public static Collection ToCollection<T>(this HashSet<T> @object, string keyAttribute)
 		{
-			return (@object as IEnumerable<T>).CreateCollection(keyAttribute);
+			return (@object as IEnumerable<T>).ToCollection(keyAttribute);
 		}
 
 		/// <summary>
@@ -424,9 +424,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this HashSet<TValue> @object, string keyAttribute)
+		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this HashSet<TValue> @object, string keyAttribute)
 		{
-			return (@object as IEnumerable<TValue>).CreateCollection<TKey, TValue>(keyAttribute);
+			return (@object as IEnumerable<TValue>).ToCollection<TKey, TValue>(keyAttribute);
 		}
 
 		/// <summary>
@@ -449,9 +449,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
-		public static Collection CreateCollection<T>(this List<T> @object, string keyAttribute)
+		public static Collection ToCollection<T>(this List<T> @object, string keyAttribute)
 		{
-			return (@object as IEnumerable<T>).CreateCollection(keyAttribute);
+			return (@object as IEnumerable<T>).ToCollection(keyAttribute);
 		}
 
 		/// <summary>
@@ -462,9 +462,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this List<TValue> @object, string keyAttribute)
+		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this List<TValue> @object, string keyAttribute)
 		{
-			return (@object as IEnumerable<TValue>).CreateCollection<TKey, TValue>(keyAttribute);
+			return (@object as IEnumerable<TValue>).ToCollection<TKey, TValue>(keyAttribute);
 		}
 
 		/// <summary>
@@ -474,7 +474,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
-		public static Collection CreateCollection<T>(this IEnumerable<T> @object, string keyAttribute)
+		public static Collection ToCollection<T>(this IEnumerable<T> @object, string keyAttribute)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
@@ -501,7 +501,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this IEnumerable<TValue> @object, string keyAttribute)
+		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this IEnumerable<TValue> @object, string keyAttribute)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
@@ -547,7 +547,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="object">The collection of objects</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this Dictionary<TKey, TValue> @object)
+		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this Dictionary<TKey, TValue> @object)
 		{
 			return new Collection<TKey, TValue>(@object);
 		}
@@ -568,14 +568,14 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Converts this name and value collection to dictionary with all keys in lower case
 		/// </summary>
-		/// <param name="nv"></param>
+		/// <param name="nvCollection"></param>
 		/// <returns></returns>
-		public static Dictionary<string, string> ToDictionary(this NameValueCollection nv)
+		public static Dictionary<string, string> ToDictionary(this NameValueCollection nvCollection)
 		{
 			var dictionary = new Dictionary<string, string>();
-			foreach (string key in nv)
+			foreach (string key in nvCollection)
 				if (!dictionary.ContainsKey(key.ToLower()))
-					dictionary.Add(key.ToLower(), nv[key]);
+					dictionary.Add(key.ToLower(), nvCollection[key]);
 			return dictionary;
 		}
 
@@ -586,9 +586,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static NameValueCollection ToNameValueCollection(this Dictionary<string, string> dictionary)
 		{
-			var nv = new NameValueCollection();
-			dictionary.ForEach(entry => nv.Add(entry.Key, entry.Value));
-			return nv;
+			var nvCollection = new NameValueCollection();
+			dictionary.ForEach(entry => nvCollection.Add(entry.Key, entry.Value));
+			return nvCollection;
 		}
 		#endregion
 
@@ -774,8 +774,8 @@ namespace net.vieapps.Components.Utility
 		/// Creates a JArray object from this collection
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <param name="converter"></param>
+		/// <param name="object">The collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static JArray ToJArray<T>(this IEnumerable<T> @object, Func<T, JToken> converter = null)
 		{
@@ -794,12 +794,13 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static List<T> CreateList<T>(this JArray json)
+		public static List<T> ToList<T>(this JArray json, Func<JToken, T> converter = null)
 		{
-			var collection = new List<T>();
-			json.ForEach(token => collection.Add(token.FromJson<T>()));
-			return collection;
+			var list = new List<T>();
+			json.ForEach(token => list.Add(converter != null ? converter(token) : token.FromJson<T>()));
+			return list;
 		}
 
 		/// <summary>
@@ -807,8 +808,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="TKey"></typeparam>
 		/// <typeparam name="TValue"></typeparam>
-		/// <param name="object"></param>
-		/// <param name="converter"></param>
+		/// <param name="object">The collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static JArray ToJArray<TKey, TValue>(this IDictionary<TKey, TValue> @object, Func<TValue, JToken> converter = null)
 		{
@@ -826,20 +827,21 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static Dictionary<TKey, TValue> CreateDictionary<TKey, TValue>(this JArray json, string keyAttribute)
+		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this JArray json, string keyAttribute, Func<JToken, TValue> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
 
 			var dictionary = new Dictionary<TKey, TValue>();
-			foreach (var token in json)
+			json.ForEach(token =>
 			{
-				var @object = token.FromJson<TValue>();
+				var @object = converter != null ? converter(token) : token.FromJson<TValue>();
 				var key = (TKey)@object.GetAttributeValue(keyAttribute);
 				if (key != null && !dictionary.ContainsKey(key))
 					dictionary.Add(key, @object);
-			}
+			});
 			return dictionary;
 		}
 
@@ -850,10 +852,11 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JArray json, string keyAttribute)
+		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this JArray json, string keyAttribute, Func<JToken, TValue> converter = null)
 		{
-			return new Collection<TKey, TValue>(json.CreateDictionary<TKey, TValue>(keyAttribute));
+			return new Collection<TKey, TValue>(json.ToDictionary<TKey, TValue>(keyAttribute, converter));
 		}
 
 		/// <summary>
@@ -877,20 +880,21 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static Collection CreateCollection<T>(this JArray json, string keyAttribute)
+		public static Collection ToCollection<T>(this JArray json, string keyAttribute, Func<JToken, T> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
 
 			var collection = new Collection();
-			foreach (var token in json)
+			json.ForEach(token =>
 			{
-				var @object = token.FromJson<T>();
+				var @object = converter != null ? converter(token) : token.FromJson<T>();
 				var key = @object.GetAttributeValue(keyAttribute);
 				if (key != null && !collection.Contains(key))
 					collection.Add(key, @object);
-			}
+			});
 			return collection;
 		}
 		#endregion
@@ -902,6 +906,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <param name="keyAttribute">The string that presents name of attribute to use their value as key</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static JObject ToJObject<T>(this IEnumerable<T> @object, string keyAttribute, Func<T, JToken> converter = null)
 		{
@@ -911,9 +916,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			@object.ForEach(item =>
 			{
-				var key = item.GetAttributeValue(keyAttribute);
-				if (key == null)
-					key = item.GetHashCode();
+				var key = item.GetAttributeValue(keyAttribute) ?? item.GetHashCode();
 				json.Add(new JProperty(key.ToString(), converter != null ? converter(item) : item.ToJson<T>()));
 			});
 			return json;
@@ -924,13 +927,13 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static List<T> CreateList<T>(this JObject json)
+		public static List<T> ToList<T>(this JObject json, Func<JToken, T> converter = null)
 		{
-			var collection = new List<T>();
-			foreach (var token in json)
-				collection.Add(token.Value.FromJson<T>());
-			return collection;
+			var list = new List<T>();
+			json.ForEach(token => list.Add(converter != null ? converter(token) : token.FromJson<T>()));
+			return list;
 		}
 
 		/// <summary>
@@ -939,6 +942,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TKey"></typeparam>
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="object"></param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static JObject ToJObject<TKey, TValue>(this IDictionary<TKey, TValue> @object, Func<TValue, JToken> converter = null)
 		{
@@ -956,8 +960,9 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static Dictionary<TKey, TValue> CreateDictionary<TKey, TValue>(this JObject json, string keyAttribute)
+		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this JObject json, string keyAttribute, Func<JToken, TValue> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
@@ -965,7 +970,7 @@ namespace net.vieapps.Components.Utility
 			var dictionary = new Dictionary<TKey, TValue>();
 			foreach (var token in json)
 			{
-				var @object = token.Value.FromJson<TValue>();
+				var @object = converter != null ? converter(token.Value) : token.Value.FromJson<TValue>();
 				var key = (TKey)@object.GetAttributeValue(keyAttribute);
 				if (key != null && !dictionary.ContainsKey(key))
 					dictionary.Add(key, @object);
@@ -980,10 +985,11 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static Collection<TKey, TValue> CreateCollection<TKey, TValue>(this JObject json, string keyAttribute)
+		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this JObject json, string keyAttribute, Func<JToken, TValue> converter = null)
 		{
-			return new Collection<TKey, TValue>(json.CreateDictionary<TKey, TValue>(keyAttribute));
+			return new Collection<TKey, TValue>(json.ToDictionary<TKey, TValue>(keyAttribute, converter));
 		}
 
 		/// <summary>
@@ -1006,8 +1012,9 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object that presents the serialized data of collection of objects</param>
 		/// <param name="keyAttribute">The string that presents name of the attribute that their value will be used a the key of collection of objects</param>
+		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
-		public static Collection CreateCollection<T>(this JObject json, string keyAttribute)
+		public static Collection ToCollection<T>(this JObject json, string keyAttribute, Func<JToken, T> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
@@ -1015,7 +1022,7 @@ namespace net.vieapps.Components.Utility
 			var collection = new Collection();
 			foreach (var token in json)
 			{
-				var @object = token.Value.FromJson<T>();
+				var @object = converter != null ? converter(token.Value) : token.Value.FromJson<T>();
 				var key = @object.GetAttributeValue(keyAttribute);
 				if (key != null && !collection.Contains(key))
 					collection.Add(key, @object);
@@ -1040,7 +1047,7 @@ namespace net.vieapps.Components.Utility
 		/// Creates a name-value collection from JSON object
 		/// </summary>
 		/// <param name="json"></param>
-		public static NameValueCollection CreateNameValueCollection(this JObject json)
+		public static NameValueCollection ToNameValueCollection(this JObject json)
 		{
 			var nvCollection = new NameValueCollection();
 			foreach (var token in json)
