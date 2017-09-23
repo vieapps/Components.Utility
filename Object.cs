@@ -1559,7 +1559,7 @@ namespace net.vieapps.Components.Utility
 			var dictionary = @object as IDictionary<string, object>;
 			var names = name.IndexOf(".") > 0
 				? name.ToArray('.', true, true)
-				: new string[] { name };
+				: new[] { name };
 
 			// no multiple
 			if (names.Length < 2)
@@ -1652,6 +1652,51 @@ namespace net.vieapps.Components.Utility
 		public static bool Has(this ExpandoObject @object, string name)
 		{
 			return @object.TryGet(name, out object value);
+		}
+
+		/// <summary>
+		/// Removes an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <returns>true if the attribute has been removed from the object; otherwise false.</returns>
+		public static bool Remove(this ExpandoObject @object, string name)
+		{
+			// check
+			if (string.IsNullOrWhiteSpace(name))
+				return false;
+
+			// prepare
+			var dictionary = @object as IDictionary<string, object>;
+			var names = name.IndexOf(".") > 0
+				? name.ToArray('.', true, true)
+				: new[] { name };
+
+			// no multiple
+			if (names.Length < 2)
+			{
+				if (!dictionary.ContainsKey(name))
+					return false;
+
+				dictionary.Remove(name);
+				return true;
+			}
+
+			// got multiple
+			var index = 0;
+			while (index < names.Length - 1 && dictionary != null)
+			{
+				dictionary = dictionary.ContainsKey(names[index])
+					? dictionary[names[index]] as IDictionary<string, object>
+					: null;
+				index++;
+			}
+
+			if (dictionary == null || !dictionary.ContainsKey(names[names.Length - 1]))
+				return false;
+
+			dictionary.Remove(names[names.Length - 1]);
+			return true;
 		}
 		#endregion
 

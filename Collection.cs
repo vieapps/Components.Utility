@@ -1126,19 +1126,26 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <returns></returns>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
 		{
-			var tasks = new List<Task>();
-			foreach (var item in enumerable)
-				tasks.Add(action(item, cancellationToken));
+			if (!parallelExecutions)
+				foreach (var item in enumerable)
+					await actionAsync(item, cancellationToken);
 
-			return waitForAllCompleted
-				? Task.WhenAll(tasks)
-				: Task.CompletedTask;			
+			else
+			{
+				var tasks = new List<Task>();
+				foreach (var item in enumerable)
+					tasks.Add(actionAsync(item, cancellationToken));
+
+				if (waitForAllCompleted)
+					await Task.WhenAll(tasks);
+			}
 		}
 
 		/// <summary>
@@ -1146,23 +1153,33 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <returns></returns>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
 		{
 			var index = -1;
-			var tasks = new List<Task>();
-			foreach (var item in enumerable)
-			{
-				index++;
-				tasks.Add(action(item, index, cancellationToken));
-			}
+			if (!parallelExecutions)
+				foreach (var item in enumerable)
+				{
+					index++;
+					await actionAsync(item, index, cancellationToken);
+				}
 
-			return waitForAllCompleted
-				? Task.WhenAll(tasks)
-				: Task.CompletedTask;
+			else
+			{
+				var tasks = new List<Task>();
+				foreach (var item in enumerable)
+				{
+					index++;
+					tasks.Add(actionAsync(item, index, cancellationToken));
+				}
+
+				if (waitForAllCompleted)
+					await Task.WhenAll(tasks);
+			}
 		}
 
 		/// <summary>
@@ -1171,19 +1188,26 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TKey"></typeparam>
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <returns></returns>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
 		{
-			var tasks = new List<Task>();
-			foreach (var item in enumerable)
-				tasks.Add(action(item.Value, cancellationToken));
+			if (!parallelExecutions)
+				foreach (var item in enumerable)
+					await actionAsync(item.Value, cancellationToken);
 
-			return waitForAllCompleted
-				? Task.WhenAll(tasks)
-				: Task.CompletedTask;
+			else
+			{
+				var tasks = new List<Task>();
+				foreach (var item in enumerable)
+					tasks.Add(actionAsync(item.Value, cancellationToken));
+
+				if (waitForAllCompleted)
+					await Task.WhenAll(tasks);
+			}
 		}
 
 		/// <summary>
@@ -1192,23 +1216,33 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TKey"></typeparam>
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <returns></returns>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, int, CancellationToken, Task> action, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
 		{
 			var index = -1;
-			var tasks = new List<Task>();
-			foreach (var item in enumerable)
-			{
-				index++;
-				tasks.Add(action(item.Value, index, cancellationToken));
-			}
+			if (!parallelExecutions)
+				foreach (var item in enumerable)
+				{
+					index++;
+					await actionAsync(item.Value, index, cancellationToken);
+				}
 
-			return waitForAllCompleted
-				? Task.WhenAll(tasks)
-				: Task.CompletedTask;
+			else
+			{
+				var tasks = new List<Task>();
+				foreach (var item in enumerable)
+				{
+					index++;
+					tasks.Add(actionAsync(item.Value, index, cancellationToken));
+				}
+
+				if (waitForAllCompleted)
+					await Task.WhenAll(tasks);
+			}
 		}
 		#endregion
 
