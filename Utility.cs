@@ -1271,6 +1271,73 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Working with task in the thread pool
+		/// <summary>
+		/// Executes a task the the thread pool with cancellation token
+		/// </summary>
+		/// <param name="action"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<object>();
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				try
+				{
+					if (cancellationToken == null)
+						cancellationToken = default(CancellationToken);
+					cancellationToken.Register(() =>
+					{
+						tcs.SetCanceled();
+						return;
+					});
+
+					action?.Invoke();
+					tcs.SetResult(null);
+				}
+				catch (Exception ex)
+				{
+					tcs.SetException(ex);
+				}
+			});
+			return tcs.Task;
+		}
+
+		/// <summary>
+		/// Executes a task the the thread pool with cancellation token
+		/// </summary>
+		/// <typeparam name="TResult"></typeparam>
+		/// <param name="func"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<TResult>();
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				try
+				{
+					if (cancellationToken == null)
+						cancellationToken = default(CancellationToken);
+					cancellationToken.Register(() =>
+					{
+						tcs.SetCanceled();
+						return;
+					});
+
+					var result = func != null ? func.Invoke() : default(TResult);
+					tcs.SetResult(result);
+				}
+				catch (Exception ex)
+				{
+					tcs.SetException(ex);
+				}
+			});
+			return tcs.Task;
+		}
+		#endregion
+
 		#region Working with files & folders
 		static List<string> _FileRemovements = new List<string>() { "\\", "/", "*", "?", "<", ">", "|", ":", "\r", "\n", "\t" };
 		static List<string[]> _FileReplacements = new List<string[]>() { new string[] { "\"", "'" }, new string[] { "%20", " " }, new string[] { " ft. ", " & " } };
