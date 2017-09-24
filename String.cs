@@ -168,7 +168,7 @@ namespace net.vieapps.Components.Utility
 		public static bool IsEquals(this string @string, string compareTo, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
 			return string.IsNullOrWhiteSpace(compareTo)
-				? false
+				? string.IsNullOrWhiteSpace(@string)
 				: @string.Equals(compareTo, comparisonType);
 		}
 

@@ -1461,6 +1461,19 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Searchs and gets listing of files by searching pattern
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="searchInSubFolder"></param>
+		/// <param name="excludedSubFolders"></param>
+		/// <returns></returns>
+		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask<List<FileInfo>>(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders), cancellationToken);
+		}
+
+		/// <summary>
 		/// Searchs and gets the listing of file paths by searching pattern
 		/// </summary>
 		/// <param name="path"></param>
