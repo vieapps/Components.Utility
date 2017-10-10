@@ -1655,6 +1655,55 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="value">The value to set</param>
+		/// <returns>true if the attribute has been setted; otherwise false.</returns>
+		public static bool Set(this ExpandoObject @object, string name, object value)
+		{
+			// check
+			if (string.IsNullOrWhiteSpace(name))
+				return false;
+
+			// prepare
+			var dictionary = @object as IDictionary<string, object>;
+			var names = name.IndexOf(".") > 0
+				? name.ToArray('.', true, true)
+				: new[] { name };
+
+			// no multiple
+			if (names.Length < 2)
+			{
+				if (!dictionary.ContainsKey(name))
+					dictionary.Add(name, value);
+				else
+					dictionary[name] = value;
+				return true;
+			}
+
+			// got multiple
+			var index = 0;
+			while (index < names.Length - 1 && dictionary != null)
+			{
+				dictionary = dictionary.ContainsKey(names[index])
+					? dictionary[names[index]] as IDictionary<string, object>
+					: null;
+				index++;
+			}
+
+			if (dictionary == null)
+				return false;
+
+			if (!dictionary.ContainsKey(names[names.Length - 1]))
+				dictionary.Add(names[names.Length - 1], value);
+			else
+				dictionary[names[names.Length - 1]] = value;
+			return true;
+		}
+
+		/// <summary>
 		/// Removes an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
 		/// </summary>
 		/// <param name="object"></param>
