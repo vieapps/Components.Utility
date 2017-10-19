@@ -2,6 +2,8 @@
 using System;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.IO;
+using System.IO.Compression;
 using System.Globalization;
 #endregion
 
@@ -13,7 +15,7 @@ namespace net.vieapps.Components.Utility
 	public static class StringService
 	{
 
-		#region Manipulations & Conversions
+		#region Manipulations
 		/// <summary>
 		/// Gets left-side sub-string (just like VB does)
 		/// </summary>
@@ -50,21 +52,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets reversed string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string Reverse(this string @string)
-		{
-			if (@string.Equals("") || @string.Length < 2)
-				return @string;
-
-			var reverseChars = @string.ToCharArray();
-			Array.Reverse(reverseChars);
-			return new string(reverseChars);
-		}
-
-		/// <summary>
 		/// Replaces
 		/// </summary>
 		/// <param name="string"></param>
@@ -94,66 +81,6 @@ namespace net.vieapps.Components.Utility
 					: -1;
 			}
 			return result;
-		}
-
-		/// <summary>
-		/// Gets the string with first-letter is capitalized
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string GetCapitalizedFirstLetter(this string @string)
-		{
-			var chars = @string.ToLower().ToCharArray();
-			chars[0] = char.ToUpper(chars[0]);
-			return new string(chars);
-		}
-
-		/// <summary>
-		/// Gets the string with first-letter of all words is capitalized
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string GetCapitalizedWords(this string @string)
-		{
-			return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(@string);
-		}
-
-		/// <summary>
-		/// Converts this enum-string to enum type value
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="type">The type of enum</param>
-		/// <returns></returns>
-		public static object ToEnum(this string @string, Type type)
-		{
-			if (type == null || !type.IsEnum)
-				throw new ArgumentException("The type is not enum");
-
-			return Enum.Parse(type, @string);
-		}
-
-		/// <summary>
-		/// Converts this enum-string to enum type value
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static T ToEnum<T>(this string @string)
-		{
-			return (T)@string.ToEnum(typeof(T));
-		}
-
-		/// <summary>
-		/// Gets the string from array of bytes with UTF8 encoding
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="count"></param>
-		/// <returns></returns>
-		public static string GetString(this byte[] bytes, int count = 0)
-		{
-			return count > 0
-				? Encoding.UTF8.GetString(bytes, 0, count)
-				: Encoding.UTF8.GetString(bytes);
 		}
 		#endregion
 
@@ -253,62 +180,206 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Vietnamese Conversions
+		#region Compressions
+		/// <summary>
+		/// Compresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static byte[] Compress(this byte[] data)
+		{
+			using (var stream = new MemoryStream())
+			{
+				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
+				{
+					deflate.Write(data, 0, data.Length);
+					deflate.Close();
+					return stream.ToArray();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Compresses the string using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns>The compressed-string in Base64 format</returns>
+		public static string Compress(this string data)
+		{
+			return data.ToBytes().Compress().ToBase64();
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static byte[] Decompress(this byte[] data)
+		{
+			using (var input = new MemoryStream(data))
+			{
+				using (var deflate = new DeflateStream(input, CompressionMode.Decompress))
+				{
+					using (var output = new MemoryStream())
+					{
+						var buffer = new byte[64];
+						var readBytes = deflate.Read(buffer, 0, buffer.Length);
+						while (readBytes > 0)
+						{
+							output.Write(buffer, 0, readBytes);
+							readBytes = deflate.Read(buffer, 0, buffer.Length);
+						}
+						deflate.Close();
+						return output.ToArray();
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the Base64 string using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static string Decompress(this string data)
+		{
+			return data.Base64ToBytes().Decompress().GetString();
+		}
+		#endregion
+
+		#region Conversions
+		/// <summary>
+		/// Gets reversed string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string Reverse(this string @string)
+		{
+			if (@string.Equals("") || @string.Length < 2)
+				return @string;
+
+			var reverseChars = @string.ToCharArray();
+			Array.Reverse(reverseChars);
+			return new string(reverseChars);
+		}
+
+		/// <summary>
+		/// Gets the string with first-letter is capitalized
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string GetCapitalizedFirstLetter(this string @string)
+		{
+			var chars = @string.ToLower().ToCharArray();
+			chars[0] = char.ToUpper(chars[0]);
+			return new string(chars);
+		}
+
+		/// <summary>
+		/// Gets the string with first-letter of all words is capitalized
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string GetCapitalizedWords(this string @string)
+		{
+			return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(@string);
+		}
+
+		/// <summary>
+		/// Converts this enum-string to enum type value
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="type">The type of enum</param>
+		/// <returns></returns>
+		public static object ToEnum(this string @string, Type type)
+		{
+			if (type == null || !type.IsEnum)
+				throw new ArgumentException("The type is not enum");
+
+			return Enum.Parse(type, @string);
+		}
+
+		/// <summary>
+		/// Converts this enum-string to enum type value
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static T ToEnum<T>(this string @string)
+		{
+			return (T)@string.ToEnum(typeof(T));
+		}
+
+		/// <summary>
+		/// Gets the string from array of bytes with UTF8 encoding
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static string GetString(this byte[] bytes, int count = 0)
+		{
+			return count > 0
+				? Encoding.UTF8.GetString(bytes, 0, count)
+				: Encoding.UTF8.GetString(bytes);
+		}
+		#endregion
+
+		#region Conversions (Vietnamese)
 		internal static string ConvertVietnamese(this string @string, int mode)
 		{
 			if (string.IsNullOrWhiteSpace(@string))
 				return String.Empty;
 
-			string utf8Literal = "Ã  Ã¡ áº£ Ã£ áº¡ Ã€ Ã áº¢ Ãƒ áº  Ã¢ áº§ áº¥ áº© áº« áº­ Ã‚ áº¦ áº¤ áº¨ áºª áº¬ Äƒ áº± áº¯ áº³ áºµ áº· Ä‚ áº° áº® áº² áº´ áº¶ "
-												+ "Ã² Ã³ á» Ãµ á» Ã’ Ã“ á»Ž Ã• á»Œ Ã´ á»“ á»‘ á»• á»— á»™ Ã” á»’ á» á»” á»– á»˜ Æ¡ á» á»› á»Ÿ á»¡ á»£ Æ  á»œ á»š á»ž á»  á»¢ "
-												+ "Ã¨ Ã© áº» áº½ áº¹ Ãˆ Ã‰ áºº áº¼ áº¸ Ãª á» áº¿ á»ƒ á»… á»‡ ÃŠ á»€ áº¾ á»‚ á»„ á»† "
-												+ "Ã¹ Ãº á»§ Å© á»¥ Ã™ Ãš á»¦ Å¨ á»¤ Æ° á»« á»© á»­ á»¯ á»± Æ¯ á»ª á»¨ á»¬ á»® á»° "
-												+ "Ã¬ Ã­ á»‰ Ä© á»‹ ÃŒ Ã á»ˆ Ä¨ á»Š á»³ Ã½ á»· á»¹ á»µ á»² Ã á»¶ á»¸ á»´ Ä‘ Ä "
-												+ "â€œ â€ â€“ Ã â€™ Á ÇŽ â€¦ aI";
-			string[] utf8Literals = utf8Literal.Split(' ');
+			var utf8Literal = "Ã  Ã¡ áº£ Ã£ áº¡ Ã€ Ã áº¢ Ãƒ áº  Ã¢ áº§ áº¥ áº© áº« áº­ Ã‚ áº¦ áº¤ áº¨ áºª áº¬ Äƒ áº± áº¯ áº³ áºµ áº· Ä‚ áº° áº® áº² áº´ áº¶ "
+				+ "Ã² Ã³ á» Ãµ á» Ã’ Ã“ á»Ž Ã• á»Œ Ã´ á»“ á»‘ á»• á»— á»™ Ã” á»’ á» á»” á»– á»˜ Æ¡ á» á»› á»Ÿ á»¡ á»£ Æ  á»œ á»š á»ž á»  á»¢ "
+				+ "Ã¨ Ã© áº» áº½ áº¹ Ãˆ Ã‰ áºº áº¼ áº¸ Ãª á» áº¿ á»ƒ á»… á»‡ ÃŠ á»€ áº¾ á»‚ á»„ á»† "
+				+ "Ã¹ Ãº á»§ Å© á»¥ Ã™ Ãš á»¦ Å¨ á»¤ Æ° á»« á»© á»­ á»¯ á»± Æ¯ á»ª á»¨ á»¬ á»® á»° "
+				+ "Ã¬ Ã­ á»‰ Ä© á»‹ ÃŒ Ã á»ˆ Ä¨ á»Š á»³ Ã½ á»· á»¹ á»µ á»² Ã á»¶ á»¸ á»´ Ä‘ Ä "
+				+ "â€œ â€ â€“ Ã â€™ Á ÇŽ â€¦ aI";
+			var utf8Literals = utf8Literal.Split(' ');
 
-			string utf8Unicode = "à á ả ã ạ À Á Ả Ã Ạ â ầ ấ ẩ ẫ ậ Â Ầ Ấ Ẩ Ẫ Ậ ă ằ ắ ẳ ẵ ặ Ă Ằ Ắ Ẳ Ẵ Ặ "
-												+ "ò ó ỏ õ ọ Ò Ó Ỏ Õ Ọ ô ồ ố ổ ỗ ộ Ô Ồ Ố Ổ Ỗ Ộ ơ ờ ớ ở ỡ ợ Ơ Ờ Ớ Ở Ỡ Ợ "
-												+ "è é ẻ ẽ ẹ È É Ẻ Ẽ Ẹ ê ề ế ể ễ ệ Ê Ề Ế Ể Ễ Ệ "
-												+ "ù ú ủ ũ ụ Ù Ú Ủ Ũ Ụ ư ừ ứ ử ữ ự Ư Ừ Ứ Ử Ữ Ự "
-												+ "ì í ỉ ĩ ị Ì Í Ỉ Ĩ Ị ỳ ý ỷ ỹ ỵ Ỳ Ý Ỷ Ỹ Ỵ đ Đ "
-												+ "“ ” – Á ’ Đ ă &nbsp; á";
-			string[] utf8Unicodes = utf8Unicode.Split(' ');
+			var utf8Unicode = "à á ả ã ạ À Á Ả Ã Ạ â ầ ấ ẩ ẫ ậ Â Ầ Ấ Ẩ Ẫ Ậ ă ằ ắ ẳ ẵ ặ Ă Ằ Ắ Ẳ Ẵ Ặ "
+				+ "ò ó ỏ õ ọ Ò Ó Ỏ Õ Ọ ô ồ ố ổ ỗ ộ Ô Ồ Ố Ổ Ỗ Ộ ơ ờ ớ ở ỡ ợ Ơ Ờ Ớ Ở Ỡ Ợ "
+				+ "è é ẻ ẽ ẹ È É Ẻ Ẽ Ẹ ê ề ế ể ễ ệ Ê Ề Ế Ể Ễ Ệ "
+				+ "ù ú ủ ũ ụ Ù Ú Ủ Ũ Ụ ư ừ ứ ử ữ ự Ư Ừ Ứ Ử Ữ Ự "
+				+ "ì í ỉ ĩ ị Ì Í Ỉ Ĩ Ị ỳ ý ỷ ỹ ỵ Ỳ Ý Ỷ Ỹ Ỵ đ Đ "
+				+ "“ ” – Á ’ Đ ă &nbsp; á";
+			var utf8Unicodes = utf8Unicode.Split(' ');
 
-			string utf8UnicodeComposite = "à á ả ã ạ À Á Ả Ã Ạ â ầ ấ ẩ ẫ ậ Â Ầ Ấ Ẩ Ẫ Ậ ă ằ ắ ẳ ẵ ặ Ă Ằ Ắ Ẳ Ẵ Ặ "
-												+ "ò ó ỏ õ ọ Ò Ó Ỏ Õ Ọ ô ồ ố ổ ỗ ộ Ô Ồ Ố Ổ Ỗ Ộ ơ ờ ớ ở ỡ ợ Ơ Ờ Ớ Ở Ỡ Ợ "
-												+ "è é ẻ ẽ ẹ È É Ẻ Ẽ Ẹ ê ề ế ể ễ ệ Ê Ề Ế Ể Ễ Ệ "
-												+ "ù ú ủ ũ ụ Ù Ú Ủ Ũ Ụ ư ừ ứ ử ữ ự Ư Ừ Ứ Ử Ữ Ự "
-												+ "ì í ỉ ĩ ị Ì Í Ỉ Ĩ Ị ỳ ý ỷ ỹ ỵ Ỳ Ý Ỷ Ỹ Ỵ đ Đ "
-												+ "“ ” – Á ’ Đ ă &nbsp; á";
-			string[] utf8UnicodeComposites = utf8UnicodeComposite.Split(' ');
+			var utf8UnicodeComposite = "à á ả ã ạ À Á Ả Ã Ạ â ầ ấ ẩ ẫ ậ Â Ầ Ấ Ẩ Ẫ Ậ ă ằ ắ ẳ ẵ ặ Ă Ằ Ắ Ẳ Ẵ Ặ "
+				+ "ò ó ỏ õ ọ Ò Ó Ỏ Õ Ọ ô ồ ố ổ ỗ ộ Ô Ồ Ố Ổ Ỗ Ộ ơ ờ ớ ở ỡ ợ Ơ Ờ Ớ Ở Ỡ Ợ "
+				+ "è é ẻ ẽ ẹ È É Ẻ Ẽ Ẹ ê ề ế ể ễ ệ Ê Ề Ế Ể Ễ Ệ "
+				+ "ù ú ủ ũ ụ Ù Ú Ủ Ũ Ụ ư ừ ứ ử ữ ự Ư Ừ Ứ Ử Ữ Ự "
+				+ "ì í ỉ ĩ ị Ì Í Ỉ Ĩ Ị ỳ ý ỷ ỹ ỵ Ỳ Ý Ỷ Ỹ Ỵ đ Đ "
+				+ "“ ” – Á ’ Đ ă &nbsp; á";
+			var utf8UnicodeComposites = utf8UnicodeComposite.Split(' ');
 
-			string ansi = "a a a a a A A A A A a a a a a a A A A A A A a a a a a a A A A A A A "
-									+ "o o o o o O O O O O o o o o o o O O O O O O o o o o o o O O O O O O "
-									+ "e e e e e E E E E E e e e e e e E E E E E E "
-									+ "u u u u u U U U U U u u u u u u U U U U U U "
-									+ "i i i i i I I I I I y y y y y Y Y Y Y Y d D "
-									+ "\" \" - A ' D a &nbsp; a";
-			string[] ansis = ansi.Split(' ');
+			var ansi = "a a a a a A A A A A a a a a a a A A A A A A a a a a a a A A A A A A "
+				+ "o o o o o O O O O O o o o o o o O O O O O O o o o o o o O O O O O O "
+				+ "e e e e e E E E E E e e e e e e E E E E E E "
+				+ "u u u u u U U U U U u u u u u u U U U U U U "
+				+ "i i i i i I I I I I y y y y y Y Y Y Y Y d D "
+				+ "\" \" - A ' D a &nbsp; a";
+			var ansis = ansi.Split(' ');
 
-			string decimalUnicode = "&#224; &#225; &#7843; &#227; &#7841; &#192; &#193; &#7842; &#195; &#7840; &#226; &#7847; &#7845; &#7849; &#7851; &#7853; &#194; &#7846; &#7844; &#7848; &#7850; &#7852; &#259; &#7857; &#7855; &#7859; &#7861; &#7863; &#258; &#7856; &#7854; &#7858; &#7860; &#7862; "
-									+ "&#242; &#243; &#7887; &#245; &#7885; &#210; &#211; &#7886; &#213; &#7884; &#244; &#7891; &#7889; &#7893; &#7895; &#7897; &#212; &#7890; &#7888; &#7892; &#7894; &#7896; &#417; &#7901; &#7899; &#7903; &#7905; &#7907; &#416; &#7900; &#7898; &#7902; &#7904; &#7906; "
-									+ "&#232; &#233; &#7867; &#7869; &#7865; &#200; &#201; &#7866; &#7868; &#7864; &#234; &#7873; &#7871; &#7875; &#7877; &#7879; &#202; &#7872; &#7870; &#7874; &#7876; &#7878; "
-									+ "&#249; &#250; &#7911; &#361; &#7909; &#217; &#218; &#7910; &#360; &#7908; &#432; &#7915; &#7913; &#7917; &#7919; &#7921; &#431; &#7914; &#7912; &#7916; &#7918; &#7920; "
-									+ "&#236; &#237; &#7881; &#297; &#7883; &#204; &#205; &#7880; &#296; &#7882; &#7923; &#253; &#7927; &#7929; &#7925; &#7922; &#221; &#7926; &#7928; &#7924; &#273; &#272; "
-									+ "&#34; &#34; &#45; &#224; &#39; &#272; &#259; &#32; &#225;";
-			string[] decimalUnicodes = decimalUnicode.Split(' ');
+			var decimalUnicode = "&#224; &#225; &#7843; &#227; &#7841; &#192; &#193; &#7842; &#195; &#7840; &#226; &#7847; &#7845; &#7849; &#7851; &#7853; &#194; &#7846; &#7844; &#7848; &#7850; &#7852; &#259; &#7857; &#7855; &#7859; &#7861; &#7863; &#258; &#7856; &#7854; &#7858; &#7860; &#7862; "
+				+ "&#242; &#243; &#7887; &#245; &#7885; &#210; &#211; &#7886; &#213; &#7884; &#244; &#7891; &#7889; &#7893; &#7895; &#7897; &#212; &#7890; &#7888; &#7892; &#7894; &#7896; &#417; &#7901; &#7899; &#7903; &#7905; &#7907; &#416; &#7900; &#7898; &#7902; &#7904; &#7906; "
+				+ "&#232; &#233; &#7867; &#7869; &#7865; &#200; &#201; &#7866; &#7868; &#7864; &#234; &#7873; &#7871; &#7875; &#7877; &#7879; &#202; &#7872; &#7870; &#7874; &#7876; &#7878; "
+				+ "&#249; &#250; &#7911; &#361; &#7909; &#217; &#218; &#7910; &#360; &#7908; &#432; &#7915; &#7913; &#7917; &#7919; &#7921; &#431; &#7914; &#7912; &#7916; &#7918; &#7920; "
+				+ "&#236; &#237; &#7881; &#297; &#7883; &#204; &#205; &#7880; &#296; &#7882; &#7923; &#253; &#7927; &#7929; &#7925; &#7922; &#221; &#7926; &#7928; &#7924; &#273; &#272; "
+				+ "&#34; &#34; &#45; &#224; &#39; &#272; &#259; &#32; &#225;";
+			var decimalUnicodes = decimalUnicode.Split(' ');
 
-			string tcvn3 = "µ ¸ ¶ · ¹ µ ¸ ¶ · ¹ © Ç Ê È É Ë ¢ Ç Ê È É Ë ¨ » ¾ ¼ ½ Æ ¡ » ¾ ¼ ½ Æ "
-										+ "ß ã á â ä ß ã á â ä « å è æ ç é ¤ å è æ ç é ¬ ê í ë ì î ¥ ê í ë ì î "
-										+ "Ì Ð Î Ï Ñ Ì Ð Î Ï Ñ ª Ò Õ Ó Ô Ö £ Ò Õ Ó Ô Ö "
-										+ "ï ó ñ ò ô ï ó ñ ò ô ­ õ ø ö ÷ ù ¦ õ ø ö ÷ ù "
-										+ "× Ý Ø Ü Þ × Ý Ø Ü Þ ú ý û ü þ ú ý û ü þ ® § "
-										+ "“ ” – ¸ ’ § ¨ &nbsp; ¸";
-			string[] tcvn3s = tcvn3.Split(' ');
+			var tcvn3 = "µ ¸ ¶ · ¹ µ ¸ ¶ · ¹ © Ç Ê È É Ë ¢ Ç Ê È É Ë ¨ » ¾ ¼ ½ Æ ¡ » ¾ ¼ ½ Æ "
+				+ "ß ã á â ä ß ã á â ä « å è æ ç é ¤ å è æ ç é ¬ ê í ë ì î ¥ ê í ë ì î "
+				+ "Ì Ð Î Ï Ñ Ì Ð Î Ï Ñ ª Ò Õ Ó Ô Ö £ Ò Õ Ó Ô Ö "
+				+ "ï ó ñ ò ô ï ó ñ ò ô ­ õ ø ö ÷ ù ¦ õ ø ö ÷ ù "
+				+ "× Ý Ø Ü Þ × Ý Ø Ü Þ ú ý û ü þ ú ý û ü þ ® § "
+				+ "“ ” – ¸ ’ § ¨ &nbsp; ¸";
+			var tcvn3s = tcvn3.Split(' ');
 
-			int decodeLength = -1;
-			string result = @string.Trim();
+			var decodeLength = -1;
+			var result = @string.Trim();
 
 			// convert
 			switch (mode)
@@ -478,7 +549,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region  Uri Conversions
+		#region  Conversions (Uri)
 		static Regex Normal = new Regex("[^a-zA-Z0-9_-]+");
 		static Regex Numberic = new Regex("[^0-9]+");
 

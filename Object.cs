@@ -118,8 +118,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>Collection of public properties</returns>
 		public static List<AttributeInfo> GetProperties(Type type)
 		{
-			List<AttributeInfo> properties = null;
-			if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
+			if (!ObjectService.ObjectProperties.TryGetValue(type, out List<AttributeInfo> properties))
 				lock (ObjectService.ObjectProperties)
 				{
 					if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
@@ -128,17 +127,10 @@ namespace net.vieapps.Components.Utility
 						var defaultMember = defaultMembers != null
 							? defaultMembers.FirstOrDefault() as DefaultMemberAttribute
 							: null;
-
-						properties = new List<AttributeInfo>();
-						type.GetProperties(BindingFlags.Instance | BindingFlags.Public).ForEach(info =>
-						{
-							if (defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-								properties.Add(new AttributeInfo()
-								{
-									Name = info.Name,
-									Info = info
-								});
-						});
+						properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+							.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
+							.Select(info => new AttributeInfo() { Name = info.Name, Info = info })
+							.ToList();
 						ObjectService.ObjectProperties.Add(type, properties);
 					}
 				}
@@ -162,22 +154,15 @@ namespace net.vieapps.Components.Utility
 		/// <returns>Collection of private fields/attributes</returns>
 		public static List<AttributeInfo> GetFields(Type type)
 		{
-			List<AttributeInfo> attributes = null;
-			if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
+			if (!ObjectService.ObjectFields.TryGetValue(type, out List<AttributeInfo> attributes))
 				lock (ObjectService.ObjectFields)
 				{
 					if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
 					{
-						attributes = new List<AttributeInfo>();
-						type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic).ForEach(info =>
-						{
-							if (!info.Name.StartsWith("<"))
-								attributes.Add(new AttributeInfo()
-								{
-									Name = info.Name,
-									Info = info
-								});
-						});
+						attributes = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+							.Where(info => !info.Name.StartsWith("<"))
+							.Select(info => new AttributeInfo() { Name = info.Name, Info = info })
+							.ToList();
 						ObjectService.ObjectFields.Add(type, attributes);
 					}
 				}
@@ -1515,33 +1500,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static object Get(this ExpandoObject @object, string name)
-		{
-			return @object.TryGet(name, out object value)
-				? value
-				: null;
-		}
-
-		/// <summary>
-		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="defaultValue">Default value when the attribute is not found</param>
-		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Get<T>(this ExpandoObject @object, string name, T defaultValue = default(T))
-		{
-			return @object.TryGet<T>(name, out T value)
-				? value
-				: defaultValue;
-		}
-
-		/// <summary>
 		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
 		/// </summary>
 		/// <param name="object"></param>
@@ -1641,6 +1599,33 @@ namespace net.vieapps.Components.Utility
 
 			// return the default state
 			return false;
+		}
+
+		/// <summary>
+		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
+		public static object Get(this ExpandoObject @object, string name)
+		{
+			return @object.TryGet(name, out object value)
+				? value
+				: null;
+		}
+
+		/// <summary>
+		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="defaultValue">Default value when the attribute is not found</param>
+		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
+		public static T Get<T>(this ExpandoObject @object, string name, T defaultValue = default(T))
+		{
+			return @object.TryGet<T>(name, out T value)
+				? value
+				: defaultValue;
 		}
 
 		/// <summary>
