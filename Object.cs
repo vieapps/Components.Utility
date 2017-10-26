@@ -1077,7 +1077,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// generict dictionary/collection
-			if (@object.IsGenericDictionaryOrCollection())
+			else if (@object.IsGenericDictionaryOrCollection())
 			{
 				if (@object.GetType().GenericTypeArguments[1].IsClassType())
 				{
