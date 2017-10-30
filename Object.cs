@@ -47,13 +47,13 @@ namespace net.vieapps.Components.Utility
 
 			public MemberInfo Info { get; internal set; }
 
-			internal bool NotNull { get; set; }
+			public bool NotNull { get; set; }
 
-			internal string Column { get; set; }
+			public string Column { get; set; }
 
-			internal int MaxLength { get; set; }
+			public int MaxLength { get; set; }
 
-			internal bool IsCLOB { get; set; }
+			public bool IsCLOB { get; set; }
 
 			/// <summary>
 			/// Specifies this attribute can be read

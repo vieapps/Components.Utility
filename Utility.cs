@@ -10,13 +10,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
-using System.Web;
-using System.Web.Configuration;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Configuration;
 using System.Xml;
-
 using Newtonsoft.Json.Linq;
 #endregion
 
@@ -194,8 +191,10 @@ namespace net.vieapps.Components.Utility
 			if (useSecureProtocol)
 				ServicePointManager.SecurityProtocol = secureProtocol;
 
-			var credentialCache = new CredentialCache();
-			credentialCache.Add(new Uri(uri), "Basic", new NetworkCredential(account, password));
+			var credentialCache = new CredentialCache
+			{
+				{ new Uri(uri), "Basic", new NetworkCredential(account, password) }
+			};
 			return credentialCache;
 		}
 
