@@ -12,7 +12,7 @@
 		<Version>10.1.0.1</Version>
 		<AssemblyVersion>10.1.0.1</AssemblyVersion>
 		<FileVersion>10.1.0.1</FileVersion>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
 		<PackageTags>utility;vieapps;vieapps.components</PackageTags>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
