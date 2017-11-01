@@ -466,21 +466,21 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="mode"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
+		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256")
 		{
 			HMAC hasher = null;
 			try
 			{
 				if ("MD5".IsEquals(mode))
-					hasher = new HMACMD5(key.ToBytes());
+					hasher = new HMACMD5(key);
 				else if ("SHA1".IsEquals(mode))
-					hasher = new HMACSHA1(key.ToBytes());
+					hasher = new HMACSHA1(key);
 				else if ("SHA256".IsEquals(mode))
-					hasher = new HMACSHA256(key.ToBytes());
+					hasher = new HMACSHA256(key);
 				else if ("SHA384".IsEquals(mode))
-					hasher = new HMACSHA384(key.ToBytes());
+					hasher = new HMACSHA384(key);
 				else
-					hasher = new HMACSHA512(key.ToBytes());
+					hasher = new HMACSHA512(key);
 				return hasher.ComputeHash(@string.ToBytes());
 			}
 			catch (Exception)
@@ -492,6 +492,18 @@ namespace net.vieapps.Components.Utility
 				hasher?.Clear();
 				hasher?.Dispose();
 			}
+		}
+
+		/// <summary>
+		/// Gets HMAC hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
+		{
+			return @string.GetHMACHash(key.ToBytes(), mode);
 		}
 
 		/// <summary>

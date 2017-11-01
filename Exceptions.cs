@@ -64,6 +64,8 @@ namespace net.vieapps.Components.Utility
 
 		public InformationInvalidException(string message) : base(message) { }
 
+		public InformationInvalidException(Exception innerException) : base("Information is invalid", innerException) { }
+
 		public InformationInvalidException(string message, Exception innerException) : base(message, innerException) { }
 
 		public InformationInvalidException(SerializationInfo info, StreamingContext context) : base(info, context) { }
@@ -72,7 +74,11 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class InformationExistedException : AppException
 	{
+		public InformationExistedException() : base("Information is existed") { }
+
 		public InformationExistedException(string message) : base(message) { }
+
+		public InformationExistedException(Exception innerException) : base("Information is existed", innerException) { }
 
 		public InformationExistedException (string message, Exception innerException) : base(message, innerException) { }
 
@@ -100,9 +106,9 @@ namespace net.vieapps.Components.Utility
 
 		public DatabaseOperationException(string message) : base(message) { }
 
-		public DatabaseOperationException(string message, Exception innerException) : base(message, innerException) { }
-
 		public DatabaseOperationException(Exception innerException) : base("Error occured while operating with database: " + innerException.Message, innerException) { }
+
+		public DatabaseOperationException(string message, Exception innerException) : base(message, innerException) { }
 
 		public DatabaseOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
@@ -114,9 +120,9 @@ namespace net.vieapps.Components.Utility
 
 		public RepositoryOperationException(string message) : base(message) { }
 
-		public RepositoryOperationException(string message, Exception innerException) : base(message, innerException) { }
-
 		public RepositoryOperationException(Exception innerException) : base("Error occured while operating with repository: " + innerException.Message, innerException) { }
+
+		public RepositoryOperationException(string message, Exception innerException) : base(message, innerException) { }
 
 		public RepositoryOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
@@ -128,9 +134,9 @@ namespace net.vieapps.Components.Utility
 
 		public ServiceOperationException(string message) : base(message) { }
 
-		public ServiceOperationException(string message, Exception innerException) : base(message, innerException) { }
-
 		public ServiceOperationException(Exception innerException) : base("Error occured while operating with service: " + innerException.Message, innerException) { }
+
+		public ServiceOperationException(string message, Exception innerException) : base(message, innerException) { }
 
 		public ServiceOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
@@ -142,9 +148,9 @@ namespace net.vieapps.Components.Utility
 
 		public ServiceNotFoundException(string message) : base(message) { }
 
-		public ServiceNotFoundException(string message, Exception innerException) : base(message, innerException) { }
-
 		public ServiceNotFoundException(Exception innerException) : base("The requested service is not found: " + innerException.Message, innerException) { }
+
+		public ServiceNotFoundException(string message, Exception innerException) : base(message, innerException) { }
 
 		public ServiceNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}

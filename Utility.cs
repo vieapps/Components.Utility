@@ -1130,6 +1130,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="searchPatterns"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
@@ -1150,6 +1151,20 @@ namespace net.vieapps.Components.Utility
 				.Select(f => f.FullName)
 				.ToList();
 		}
+
+		/// <summary>
+		/// Searchs and gets the listing of file paths by searching pattern
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="searchInSubFolder"></param>
+		/// <param name="excludedSubFolders"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask<List<string>>(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders), cancellationToken);
+		}
 		#endregion
 
 		#region Read/Write text files
@@ -1164,15 +1179,15 @@ namespace net.vieapps.Components.Utility
 			if (!File.Exists(filePath))
 				throw new FileNotFoundException("The file is not found [" + filePath + "]");
 
-			using (var reader = new StreamReader(filePath, encoding != null ? encoding : Encoding.UTF8, true))
+			using (var reader = new StreamReader(filePath, encoding ?? Encoding.UTF8, true))
 			{
 				try
 				{
 					return reader.ReadToEnd();
 				}
-				catch (Exception ex)
+				catch (Exception)
 				{
-					throw ex;
+					throw;
 				}
 			}
 		}
@@ -1188,15 +1203,15 @@ namespace net.vieapps.Components.Utility
 			if (!File.Exists(filePath))
 				throw new FileNotFoundException("The file is not found [" + filePath + "]");
 
-			using (var reader = new StreamReader(filePath, encoding != null ? encoding : Encoding.UTF8, true))
+			using (var reader = new StreamReader(filePath, encoding ?? Encoding.UTF8, true))
 			{
 				try
 				{
 					return await reader.ReadToEndAsync();
 				}
-				catch (Exception ex)
+				catch (Exception)
 				{
-					throw ex;
+					throw;
 				}
 			}
 		}
@@ -1213,7 +1228,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath) || content == null)
 				return;
 
-			using (var writer = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
+			using (var writer = new StreamWriter(filePath, append, encoding ?? Encoding.UTF8))
 			{
 				try
 				{
@@ -1236,7 +1251,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath) || content == null)
 				return;
 
-			using (var writer = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
+			using (var writer = new StreamWriter(filePath, append, encoding ?? Encoding.UTF8))
 			{
 				try
 				{
@@ -1689,15 +1704,11 @@ namespace net.vieapps.Components.Utility
 		public static void WriteTextFile(string filePath, List<string> lines, bool append = true, Encoding encoding = default(UTF8Encoding))
 		{
 			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
-				using (var writer = new StreamWriter(filePath, append, encoding != null ? encoding : Encoding.UTF8))
+				using (var writer = new StreamWriter(filePath, append, encoding ?? Encoding.UTF8))
 				{
 					try
 					{
-						lines.ForEach(line =>
-						{
-							if (line != null)
-								writer.WriteLine(line);
-						});
+						lines.Where(line => line != null).ForEach(line => writer.WriteLine(line));
 						writer.Flush();
 					}
 					catch { }
@@ -1720,8 +1731,7 @@ namespace net.vieapps.Components.Utility
 					stream.Read(buffer, 0, (int)fileInfo.Length);
 					return buffer;
 				}
-			else
-				return null;
+			return null;
 		}
 
 		/// <summary>

@@ -504,7 +504,7 @@ namespace net.vieapps.Components.Utility
 		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this IEnumerable<TValue> @object, string keyAttribute)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
 			return new Collection<TKey, TValue>(@object.ToDictionary(item => (TKey)item.GetAttributeValue(keyAttribute)));
 		}
 
@@ -885,7 +885,7 @@ namespace net.vieapps.Components.Utility
 		public static Collection ToCollection<T>(this JArray json, string keyAttribute, Func<JToken, T> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
 
 			var collection = new Collection();
 			json.ForEach(token =>
@@ -911,7 +911,7 @@ namespace net.vieapps.Components.Utility
 		public static JObject ToJObject<T>(this IEnumerable<T> @object, string keyAttribute, Func<T, JToken> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
 
 			var json = new JObject();
 			@object.ForEach(item =>
@@ -965,7 +965,7 @@ namespace net.vieapps.Components.Utility
 		public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this JObject json, string keyAttribute, Func<JToken, TValue> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
 
 			var dictionary = new Dictionary<TKey, TValue>();
 			foreach (var token in json)
@@ -1017,7 +1017,7 @@ namespace net.vieapps.Components.Utility
 		public static Collection ToCollection<T>(this JObject json, string keyAttribute, Func<JToken, T> converter = null)
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
-				throw new ArgumentNullException("keyAttribute", "The name of key attribute is null");
+				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
 
 			var collection = new Collection();
 			foreach (var token in json)
@@ -1072,7 +1072,7 @@ namespace net.vieapps.Components.Utility
 		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
 		{
 			foreach (var item in enumerable)
-				action(item);
+				action?.Invoke(item);
 		}
 
 		/// <summary>
@@ -1087,7 +1087,7 @@ namespace net.vieapps.Components.Utility
 			foreach (var item in enumerable)
 			{
 				index++;
-				action(item, index);
+				action?.Invoke(item, index);
 			}
 		}
 
@@ -1101,7 +1101,7 @@ namespace net.vieapps.Components.Utility
 		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Action<TValue> action)
 		{
 			foreach (var item in enumerable)
-				action(item.Value);
+				action?.Invoke(item.Value);
 		}
 
 		/// <summary>
@@ -1117,7 +1117,7 @@ namespace net.vieapps.Components.Utility
 			foreach (var item in enumerable)
 			{
 				index++;
-				action(item.Value, index);
+				action?.Invoke(item.Value, index);
 			}
 		}
 

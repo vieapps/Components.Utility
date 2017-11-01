@@ -35,25 +35,17 @@ namespace net.vieapps.Components.Utility
 		[Serializable, DebuggerDisplay("Name = {Name}")]
 		public class AttributeInfo
 		{
-			public AttributeInfo()
+			public AttributeInfo() : this(null, null) { }
+
+			public AttributeInfo(string name, MemberInfo info)
 			{
-				this.NotNull = false;
-				this.Column = null;
-				this.MaxLength = 0;
-				this.IsCLOB = false;
+				this.Name = name;
+				this.Info = info;
 			}
 
 			public string Name { get; internal set; }
 
 			public MemberInfo Info { get; internal set; }
-
-			public bool NotNull { get; set; }
-
-			public string Column { get; set; }
-
-			public int MaxLength { get; set; }
-
-			public bool IsCLOB { get; set; }
 
 			/// <summary>
 			/// Specifies this attribute can be read
@@ -129,7 +121,7 @@ namespace net.vieapps.Components.Utility
 							: null;
 						properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
 							.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-							.Select(info => new AttributeInfo() { Name = info.Name, Info = info })
+							.Select(info => new AttributeInfo(info.Name, info))
 							.ToList();
 						ObjectService.ObjectProperties.Add(type, properties);
 					}
@@ -161,7 +153,7 @@ namespace net.vieapps.Components.Utility
 					{
 						attributes = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
 							.Where(info => !info.Name.StartsWith("<"))
-							.Select(info => new AttributeInfo() { Name = info.Name, Info = info })
+							.Select(info => new AttributeInfo(info.Name, info))
 							.ToList();
 						ObjectService.ObjectFields.Add(type, attributes);
 					}
@@ -495,8 +487,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The newly created instance</returns>
 		public static object CreateInstance(this Type type)
 		{
-			Func<object> func;
-			if (!ObjectService.TypeFactoryCache.TryGetValue(type, out func))
+			if (!ObjectService.TypeFactoryCache.TryGetValue(type, out Func<object> func))
 				lock (ObjectService.TypeFactoryCache)
 				{
 					if (!ObjectService.TypeFactoryCache.TryGetValue(type, out func))
@@ -557,7 +548,7 @@ namespace net.vieapps.Components.Utility
 		public static void SetAttributeValue(this object @object, string name, object value)
 		{
 			if (string.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("name");
+				throw new ArgumentException(nameof(name));
 
 			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 			if (fieldInfo != null)
@@ -581,7 +572,7 @@ namespace net.vieapps.Components.Utility
 		public static void SetAttributeValue(this object @object, AttributeInfo attribute, object value, bool cast = false)
 		{
 			if (attribute == null)
-				throw new ArgumentException("attribute");
+				throw new ArgumentException(nameof(attribute));
 			@object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value);
 		}
 
@@ -594,7 +585,7 @@ namespace net.vieapps.Components.Utility
 		public static object GetAttributeValue(this object @object, string name)
 		{
 			if (string.IsNullOrWhiteSpace(name))
-				throw new ArgumentException("name");
+				throw new ArgumentException(nameof(name));
 
 			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 			if (fieldInfo != null)
@@ -618,7 +609,7 @@ namespace net.vieapps.Components.Utility
 		public static object GetAttributeValue(this object @object, AttributeInfo attribute)
 		{
 			if (attribute == null || string.IsNullOrWhiteSpace(attribute.Name))
-				throw new ArgumentException("attribute");
+				throw new ArgumentException(nameof(attribute));
 
 			return @object.GetAttributeValue(attribute.Name);
 		}
@@ -673,7 +664,7 @@ namespace net.vieapps.Components.Utility
 		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null)
 		{
 			if (object.ReferenceEquals(destination, null))
-				throw new ArgumentNullException("destination", "The destination is null");
+				throw new ArgumentNullException(nameof(destination), "The destination is null");
 
 			@object.GetProperties().ForEach(attribute =>
 			{
@@ -705,7 +696,7 @@ namespace net.vieapps.Components.Utility
 		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null)
 		{
 			if (object.ReferenceEquals(source, null))
-				throw new ArgumentNullException("source", "The source is null");
+				throw new ArgumentNullException(nameof(source), "The source is null");
 
 			@object.GetProperties().ForEach(attribute =>
 			{
@@ -737,7 +728,7 @@ namespace net.vieapps.Components.Utility
 		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null)
 		{
 			if (object.ReferenceEquals(json, null))
-				throw new ArgumentNullException("json", "The JSON is null");
+				throw new ArgumentNullException(nameof(json), "The JSON is null");
 
 			var serializer = new JsonSerializer();
 			foreach (var attribute in @object.GetProperties())

@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.IO;
 using System.IO.Compression;
 using System.Globalization;
+using System.Threading.Tasks;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -25,7 +26,7 @@ namespace net.vieapps.Components.Utility
 		public static string Left(this string @string, int length)
 		{
 			if (length < 0)
-				throw new ArgumentException("Argument 'length' must be greater or equal to zero", "length");
+				throw new ArgumentException("Argument 'length' must be greater or equal to zero", nameof(length));
 
 			return @string.Equals("")
 				? string.Empty
@@ -43,7 +44,7 @@ namespace net.vieapps.Components.Utility
 		public static string Right(this string @string, int length)
 		{
 			if (length < 0)
-				throw new ArgumentException("Argument 'length' must be greater or equal to zero", "length");
+				throw new ArgumentException("Argument 'length' must be greater or equal to zero", nameof(length));
 
 			return @string.Equals("")
 				? string.Empty : length >= @string.Length
@@ -210,6 +211,34 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Compresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static async Task<byte[]> CompressAsync(this byte[] data)
+		{
+			using (var stream = new MemoryStream())
+			{
+				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
+				{
+					await deflate.WriteAsync(data, 0, data.Length);
+					deflate.Close();
+					return stream.ToArray();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Compresses the string using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns>The compressed-string in Base64 format</returns>
+		public static async Task<string> CompressAsync(this string data)
+		{
+			return (await data.ToBytes().CompressAsync()).ToBase64();
+		}
+
+		/// <summary>
 		/// Decompresses the array of bytes using Deflate compression method
 		/// </summary>
 		/// <param name="data"></param>
@@ -245,6 +274,43 @@ namespace net.vieapps.Components.Utility
 		{
 			return data.Base64ToBytes().Decompress().GetString();
 		}
+
+		/// <summary>
+		/// Decompresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static async Task<byte[]> DecompressAsync(this byte[] data)
+		{
+			using (var input = new MemoryStream(data))
+			{
+				using (var deflate = new DeflateStream(input, CompressionMode.Decompress))
+				{
+					using (var output = new MemoryStream())
+					{
+						var buffer = new byte[64];
+						var readBytes = await deflate.ReadAsync(buffer, 0, buffer.Length);
+						while (readBytes > 0)
+						{
+							await output.WriteAsync(buffer, 0, readBytes);
+							readBytes = await deflate.ReadAsync(buffer, 0, buffer.Length);
+						}
+						deflate.Close();
+						return output.ToArray();
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the Base64 string using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static async Task<string> DecompressAsync(this string data)
+		{
+			return (await data.Base64ToBytes().DecompressAsync()).GetString();
+		}
 		#endregion
 
 		#region Conversions
@@ -258,9 +324,9 @@ namespace net.vieapps.Components.Utility
 			if (@string.Equals("") || @string.Length < 2)
 				return @string;
 
-			var reverseChars = @string.ToCharArray();
-			Array.Reverse(reverseChars);
-			return new string(reverseChars);
+			var chars = @string.ToCharArray();
+			Array.Reverse(chars);
+			return new string(chars);
 		}
 
 		/// <summary>
@@ -294,7 +360,7 @@ namespace net.vieapps.Components.Utility
 		public static object ToEnum(this string @string, Type type)
 		{
 			if (type == null || !type.IsEnum)
-				throw new ArgumentException("The type is not enum");
+				throw new ArgumentException("The type is not enum", nameof(type));
 
 			return Enum.Parse(type, @string);
 		}
@@ -328,7 +394,7 @@ namespace net.vieapps.Components.Utility
 		internal static string ConvertVietnamese(this string @string, int mode)
 		{
 			if (string.IsNullOrWhiteSpace(@string))
-				return String.Empty;
+				return string.Empty;
 
 			var utf8Literal = "Ã  Ã¡ áº£ Ã£ áº¡ Ã€ Ã áº¢ Ãƒ áº  Ã¢ áº§ áº¥ áº© áº« áº­ Ã‚ áº¦ áº¤ áº¨ áºª áº¬ Äƒ áº± áº¯ áº³ áºµ áº· Ä‚ áº° áº® áº² áº´ áº¶ "
 				+ "Ã² Ã³ á» Ãµ á» Ã’ Ã“ á»Ž Ã• á»Œ Ã´ á»“ á»‘ á»• á»— á»™ Ã” á»’ á» á»” á»– á»˜ Æ¡ á» á»› á»Ÿ á»¡ á»£ Æ  á»œ á»š á»ž á»  á»¢ "
