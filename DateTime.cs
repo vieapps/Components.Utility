@@ -390,7 +390,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static DateTime FromUnixTimestamp(this long unixTimestamp, bool useUTC = true)
 		{
-			var datetime = (new System.DateTime(1970, 1, 1, 0, 0, 0, 0)).AddSeconds(unixTimestamp);
+			var datetime = (new DateTime(1970, 1, 1, 0, 0, 0, 0)).AddSeconds(unixTimestamp);
 			return useUTC
 				? datetime
 				: datetime.ToLocalTime();

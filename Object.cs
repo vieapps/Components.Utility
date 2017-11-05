@@ -1036,6 +1036,20 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this XmlNode object to JSON object
+		/// </summary>
+		/// <param name="node">The XmlNode object to convert to JSON</param>
+		/// <returns></returns>
+		public static JObject ToJson(this XmlNode node)
+		{
+			var json = new JObject();
+			if (node != null && node.Attributes != null)
+				foreach (XmlAttribute attribute in node.Attributes)
+					json.Add(new JProperty(attribute.Name, attribute.Value));
+			return json;
+		}
+
+		/// <summary>
 		/// Serializes this object to JSON object (with default settings of Json.NET Serializer)
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>

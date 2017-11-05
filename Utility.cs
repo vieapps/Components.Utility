@@ -1,19 +1,19 @@
 ﻿#region Related components
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 using System.IO;
+using System.Linq;
+using System.Xml;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Configuration;
-using System.Xml;
+
 using Newtonsoft.Json.Linq;
 #endregion
 
@@ -22,7 +22,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Static servicing methods
 	/// </summary>
-	public static class UtilityService
+	public static partial class UtilityService
 	{
 
 		#region UUID & Random number
@@ -853,85 +853,6 @@ namespace net.vieapps.Components.Utility
 		{
 			UtilityService.KillProcess(Process.GetProcessById(id));
 		}
-
-		[DllImport("kernel32.dll")]
-		private static extern IntPtr OpenProcess(ProcessAccessFlags dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-
-		[DllImport("kernel32.dll")]
-		private static extern bool QueryFullProcessImageName(IntPtr hprocess, int dwFlags, StringBuilder lpExeName, out int size);
-
-		[DllImport("kernel32.dll", SetLastError = true)]
-		private static extern bool CloseHandle(IntPtr hHandle);
-
-		[Flags]
-		private enum ProcessAccessFlags : uint
-		{
-			All = 0x1f0fff,
-			CreateThread = 2,
-			DupHandle = 0x40,
-			QueryInformation = 0x400,
-			ReadControl = 0x20000,
-			SetInformation = 0x200,
-			Synchronize = 0x100000,
-			Terminate = 1,
-			VMOperation = 8,
-			VMRead = 0x10,
-			VMWrite = 0x20
-		}
-
-		/// <summary>
-		/// Gest the identity of processes
-		/// </summary>
-		/// <param name="processExeFilename"></param>
-		/// <returns></returns>
-		public static List<Tuple<int, string>> GetProcesses(string processExeFilename)
-		{
-			if (string.IsNullOrWhiteSpace(processExeFilename))
-				return null;
-
-			var processes = new List<Tuple<int, string>>();
-			foreach (var process in Process.GetProcesses())
-			{
-				var id = process.Id;
-				var handler = UtilityService.OpenProcess(ProcessAccessFlags.QueryInformation, false, id);
-				if (handler != IntPtr.Zero)
-					try
-					{
-						var pathBuilder = new StringBuilder(0x400);
-						var capacity = pathBuilder.Capacity;
-						if (UtilityService.QueryFullProcessImageName(handler, 0, pathBuilder, out capacity))
-						{
-							string processName = pathBuilder.ToString();
-							if (processName.ToLower().EndsWith(processExeFilename.ToLower()))
-								processes.Add(new Tuple<int, string>(id, processName));
-						}
-					}
-					catch { }
-					finally
-					{
-						UtilityService.CloseHandle(handler);
-					}
-			}
-
-			return processes;
-		}
-
-		/// <summary>
-		/// Gest the identity of a process
-		/// </summary>
-		/// <param name="processExeFilename"></param>
-		/// <param name="excludedPID"></param>
-		/// <returns></returns>
-		public static int GetProcessID(string processExeFilename, int excludedPID = 0)
-		{
-			if (string.IsNullOrWhiteSpace(processExeFilename))
-				return -1;
-
-			var process = UtilityService.GetProcesses(processExeFilename).FirstOrDefault(info => excludedPID > 0 ? !info.Item1.Equals(excludedPID) : true);
-			return process == null
-				? -1
-				: process.Item1;
-		}
 		#endregion
 
 		#region Working with task in the thread pool
@@ -1263,400 +1184,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Read/Write text files (multiple lines)
-
-		#region Helper class for reading text file
-		/// <summary>
-		/// Implements a System.IO.BinaryReader that reads block of characters from a file stream in a particular encoding.
-		/// </summary>
-		public sealed class TextFileReader : IDisposable
-		{
-
-			// by default, one reading block of Windows is 4K (4096), then use 64K(65536)/128K(131072)/256K(262144)/512K(524288)
-			// for better performance while working with text file has large line of characters
-			public static readonly int BufferSize = 65536;
-
-			#region Information of one line after reading
-			internal sealed class TextLine
-			{
-				public TextLine() { }
-
-				string _line = "";
-				public string Line
-				{
-					get { return _line; }
-					set { _line = value; }
-				}
-
-				long _position = 0;
-				public long Position
-				{
-					get { return _position; }
-					set { _position = value; }
-				}
-			}
-			#endregion
-
-			FileStream _fileStream = null;
-			BinaryReader _binReader = null;
-			StreamReader _streamReader = null;
-
-			Queue<TextLine> _lines = null;
-			StringBuilder _builder = null;
-
-			Encoding _encoding = Encoding.UTF8;
-			long _length = -1;
-			long _position = 0;
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="TextFileReader"/> class.
-			/// </summary>
-			/// <param name="filePath">The path to text file.</param>
-			/// <param name="detectEncoding">if set to <c>true</c>, then detect encoding of text file.</param>
-			public TextFileReader(string filePath, bool detectEncoding = true)
-			{
-				// check existed
-				this.Existed(filePath);
-
-				// default encoding is UTF-8
-				Encoding encoding = Encoding.UTF8;
-
-				// detect encoding
-				if (detectEncoding)
-				{
-					// create streams to detect encoding
-					this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-					this._streamReader = new StreamReader(this._fileStream, true);
-
-					// get encoding
-					encoding = this._streamReader.CurrentEncoding;
-
-					// reset stream (jump to first)
-					this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
-				}
-
-				// initialize reader
-				this.InitializeReader(filePath, encoding);
-			}
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="TextFileReader"/> class.
-			/// </summary>
-			/// <param name="filePath">The path to text file.</param>
-			/// <param name="encoding">The encoding of text file.</param>
-			public TextFileReader(string filePath, Encoding encoding)
-			{
-				// check existed
-				this.Existed(filePath);
-
-				// initialize reader
-				this.InitializeReader(filePath, encoding);
-			}
-
-			/// <summary>
-			/// Checks existed of the file.
-			/// </summary>
-			/// <param name="filePath">The path to text file.</param>
-			void Existed(string filePath)
-			{
-				if (string.IsNullOrWhiteSpace(filePath))
-					throw new ApplicationException("No path");
-
-				else if (!File.Exists(filePath))
-					throw new FileNotFoundException("File (" + filePath + ") is not found.");
-			}
-
-			/// <summary>
-			/// Initializes the reader.
-			/// </summary>
-			/// <param name="filePath">The path to text file.</param>
-			/// <param name="encoding">The encoding of text file.</param>
-			void InitializeReader(string filePath, Encoding encoding)
-			{
-				// create streams and builders
-				if (this._fileStream == null)
-					this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-
-				if (this._binReader == null)
-					this._binReader = new BinaryReader(this._fileStream, encoding);
-
-				if (this._builder == null)
-					this._builder = new StringBuilder();
-
-				if (this._lines == null)
-					this._lines = new Queue<TextLine>();
-
-				// assign some helper attributes
-				this._length = this._fileStream.Length;
-				this._encoding = encoding;
-			}
-
-			/// <summary>
-			/// Gets the position of file after reading last line.
-			/// </summary>
-			public long Position { get { return this._position; } }
-
-			/// <summary>
-			/// Gets the current encoding of text file.
-			/// </summary>
-			public Encoding Encoding { get { return this._encoding; } }
-
-			/// <summary>
-			/// Gets the length of text file (in bytes).
-			/// </summary>
-			public long Length { get { return this._length; } }
-
-			/// <summary>
-			/// Sets the position within the current stream (from the beginning position)
-			/// </summary>
-			/// <param name="offset">A byte offset relative to the origin parameter</param>
-			/// <returns>The new position within the current stream</returns>
-			public long Seek(long offset)
-			{
-				return this.Seek(offset, SeekOrigin.Begin);
-			}
-
-			/// <summary>
-			/// Sets the position within the current stream (read next line from this position)
-			/// </summary>
-			/// <param name="offset">A byte offset relative to the origin parameter</param>
-			/// <param name="origin">A value of type System.IO.SeekOrigin indicating the reference point used to obtain the new position</param>
-			/// <returns>The new position within the current stream</returns>
-			public long Seek(long offset, SeekOrigin origin)
-			{
-				// seek and reset
-				this._position = this._binReader.BaseStream.Seek(offset, origin);
-				this._builder = new StringBuilder();
-				this._lines = new Queue<TextLine>();
-
-				// return new position
-				return this._position;
-			}
-
-			/// <summary>
-			/// Reads all lines of characters from the current stream (from the begin to end) and returns the data as a collection of string.
-			/// </summary>
-			/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
-			public List<string> ReadAllLines()
-			{
-				// create new stream if need
-				if (this._streamReader == null)
-					this._streamReader = new StreamReader(this._fileStream, this._encoding);
-
-				// jump to first
-				this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
-
-				// read all lines
-				List<string> lines = new List<string>();
-				string line = this._streamReader.ReadLine();
-				while (line != null)
-				{
-					// normalize UTF-16 BOM of all lines
-					if (line.Length > 0 && line[0] == '\uFEFF')
-						line = line.Substring(1);
-
-					// add the line into collection
-					lines.Add(line);
-					line = this._streamReader.ReadLine();
-				}
-
-				// assign position to end of file
-				this._position = _length;
-
-				// return lines
-				return lines;
-			}
-
-			/// <summary>
-			/// Reads some lines of characters from the current stream at the current position and returns the data as a collection of string.
-			/// </summary>
-			/// <param name="totalLines">The total number of lines to read (set as 0 to read from current position to end of file).</param>
-			/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
-			public List<string> ReadLines(int totalLines)
-			{
-				// use StreamReader to read all lines (better performance)
-				if (totalLines < 1 && this.Position < this._encoding.GetPreamble().Length)
-					return this.ReadAllLines();
-
-				// read lines
-				List<string> lines = new List<string>();
-				int counter = 0;
-				string line = this.ReadLine();
-				while (line != null)
-				{
-					// normalize UTF-16 BOM of all lines
-					if (line.Length > 0 && line[0] == '\uFEFF')
-						line = line.Substring(1);
-
-					// add the line into collection
-					lines.Add(line);
-
-					// check counter and read next line
-					counter++;
-					if (totalLines > 0 && counter >= totalLines)
-						break;
-					line = this.ReadLine();
-				}
-				return lines;
-			}
-
-			/// <summary>
-			/// Reads a line of characters from the current stream at the current position and returns the data as a string.
-			/// </summary>
-			/// <returns>The next line from the input stream, or null if the end of the input stream is reached</returns>
-			public string ReadLine()
-			{
-				// check to read next block
-				if (this._lines == null || this._lines.Count < 1)
-					this.ReadBlockOfLines();
-
-				// get first line from queue and assign position
-				TextLine line = null;
-				if (this._lines != null && this._lines.Count > 0)
-				{
-					line = this._lines.Dequeue();
-					this._position = line.Position;
-				}
-				else
-					this._position = this._length;
-
-				// return line of characters
-				return line != null ? line.Line : null;
-			}
-
-			void ReadBlockOfLines()
-			{
-				// read one block
-				char[] data = new char[TextFileReader.BufferSize];
-				int readBytes = this._binReader.Read(data, 0, TextFileReader.BufferSize);
-
-				// build block of lines and continue read other blocks until reach end-of-line (\n)
-				while (readBytes > 0)
-				{
-					this._builder.Append(data);
-					if (!this.BuildBlockOfLines())
-						readBytes = this._binReader.Read(data, 0, TextFileReader.BufferSize);
-					else
-						readBytes = 0;
-				}
-			}
-
-			bool BuildBlockOfLines()
-			{
-				// get current string and find the end-of-line (\n)
-				string theString = this._builder.ToString();
-				int eolPosition = theString.IndexOf("\n");
-				bool endOfLineIsFound = eolPosition > -1;
-
-				// stop process if end-of-line is not found
-				if (!endOfLineIsFound)
-					return endOfLineIsFound;
-
-				// end-of-file flag
-				bool endOfFileIsFound = false;
-
-				// process lines of characters and check end-of-file
-				while (eolPosition > -1)
-				{
-					// get line of characters
-					string line = theString.Substring(0, eolPosition + 1);
-
-					// prepare reading position of stream
-					this._position += this.Encoding.GetByteCount(line);
-
-					// refine line of characters
-					while (line.EndsWith("\n"))
-						line = line.Substring(0, line.Length - 1);
-					while (line.EndsWith("\r"))
-						line = line.Substring(0, line.Length - 1);
-
-					// normalize UTF-16 BOM of all lines
-					if (line.Length > 0 && line[0] == '\uFEFF')
-						line = line.Substring(1);
-
-					// update line of characters into queue
-					TextLine textLine = new TextLine();
-					textLine.Line = line;
-					textLine.Position = this._position;
-					this._lines.Enqueue(textLine);
-
-					// stop process if end of file
-					if (endOfFileIsFound)
-					{
-						theString = null;
-						break;
-					}
-
-					// remove the processed line
-					else
-						theString = theString.Remove(0, eolPosition + 1);
-
-					// check end-of-file position (\0)
-					if (theString.StartsWith("\0"))
-					{
-						endOfFileIsFound = true;
-						theString = null;
-						eolPosition = -1;
-					}
-
-					// if the string is not started by end-of-file, then check next end-of-line position
-					else
-					{
-						// check next end-of-line position
-						eolPosition = theString.IndexOf("\n");
-
-						// if next end-of-line position is not found, then check end-of-file position (\0)
-						if (eolPosition < 0)
-						{
-							eolPosition = theString.IndexOf("\0");
-							if (eolPosition > 0)
-							{
-								eolPosition--;
-								endOfFileIsFound = true;
-							}
-						}
-					}
-				}
-
-				// update builder
-				this._builder = new StringBuilder();
-				if (theString != null)
-					this._builder.Append(theString);
-
-				// return the flag
-				return endOfLineIsFound;
-			}
-
-			/// <summary>
-			/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-			/// </summary>
-			public void Dispose()
-			{
-				if (this._binReader != null)
-				{
-					this._binReader.Close();
-					this._binReader.Dispose();
-				}
-
-				if (this._streamReader != null)
-				{
-					this._streamReader.Close();
-					this._streamReader.Dispose();
-				}
-
-				if (this._fileStream != null)
-				{
-					this._fileStream.Close();
-					this._fileStream.Dispose();
-				}
-			}
-
-			~TextFileReader()
-			{
-				this.Dispose();
-			}
-		}
-		#endregion
-
 		/// <summary>
 		/// Reads the multiple lines of a text file
 		/// </summary>
@@ -1686,12 +1213,47 @@ namespace net.vieapps.Components.Utility
 		/// Reads the multiple lines of a text file
 		/// </summary>
 		/// <param name="filePath"></param>
+		/// <param name="position"></param>
 		/// <param name="totalOfLines"></param>
+		/// <returns></returns>
+		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines)
+		{
+			using (var reader = new TextFileReader(filePath))
+			{
+				try
+				{
+					reader.Seek(position);
+					var lines = await reader.ReadLinesAsync(totalOfLines);
+					return new Tuple<List<string>, long>(lines, reader.Position);
+				}
+				catch (Exception)
+				{
+					throw;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Reads the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath">The path to text file</param>
+		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
 		/// <returns></returns>
 		public static List<string> ReadTextFile(string filePath, int totalOfLines)
 		{
 			UtilityService.ReadTextFile(filePath, 0, totalOfLines, out List<string> lines, out long newPosition);
 			return lines;
+		}
+
+		/// <summary>
+		/// Reads the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath">The path to text file</param>
+		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
+		/// <returns></returns>
+		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines)
+		{
+			return (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines)).Item1;
 		}
 
 		/// <summary>
@@ -1712,6 +1274,30 @@ namespace net.vieapps.Components.Utility
 						writer.Flush();
 					}
 					catch { }
+				}
+		}
+
+		/// <summary>
+		/// Writes the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="lines"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
+		public static async Task WriteTextFileAsync(string filePath, List<string> lines, bool append = true, Encoding encoding = default(UTF8Encoding))
+		{
+			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
+				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
+				{
+					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
+					{
+						try
+						{
+							await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line), CancellationToken.None, true, false);
+							writer.Flush();
+						}
+						catch { }
+					}
 				}
 		}
 		#endregion
@@ -1813,6 +1399,7 @@ namespace net.vieapps.Components.Utility
 			var value = string.IsNullOrEmpty(name)
 				? null
 				: ConfigurationManager.AppSettings["vieapps:" + name.Trim()];
+
 			return string.IsNullOrEmpty(value)
 				? defaultValue
 				: value;
@@ -1831,10 +1418,12 @@ namespace net.vieapps.Components.Utility
 			var value = string.IsNullOrWhiteSpace(name)
 				? null
 				: header?[name];
+
 			if (value == null)
 				value = string.IsNullOrWhiteSpace(name)
 					? null
 					: query?[name];
+
 			return string.IsNullOrEmpty(value)
 				? defaultValue
 				: value;
@@ -1978,18 +1567,465 @@ namespace net.vieapps.Components.Utility
 		/// Gets the configuration section
 		/// </summary>
 		public XmlNode Section { get { return this._section; } }
+	}
+	#endregion
+
+	//  --------------------------------------------------------------------------------------------
+
+	#region Reader of a text file
+	/// <summary>
+	/// Implements a System.IO.BinaryReader that reads block of characters from a file stream in a particular encoding.
+	/// </summary>
+	public sealed class TextFileReader : IDisposable
+	{
+		// by default, one reading block of Windows is 4K (4096), then use 64K(65536)/128K(131072)/256K(262144)/512K(524288)
+		// for better performance while working with text file has large line of characters
+		public static readonly int BufferSize = 65536;
+
+		internal sealed class TextLine
+		{
+			public TextLine() { }
+
+			public string Line { get; set; } = "";
+
+			public long Position { get; set; } = 0;
+		}
+
+		FileStream _fileStream = null;
+		BinaryReader _binReader = null;
+		StreamReader _streamReader = null;
+
+		Queue<TextLine> _lines = null;
+		StringBuilder _builder = null;
+
+		Encoding _encoding = Encoding.UTF8;
+		long _length = -1, _position = 0;
 
 		/// <summary>
-		/// Gets all attributes of a node an return a JSON
+		/// Initializes a new instance of the <see cref="TextFileReader"/> class.
 		/// </summary>
-		/// <param name="node"></param>
-		/// <returns></returns>
-		public JObject GetJson(XmlNode node)
+		/// <param name="filePath">The path to text file.</param>
+		/// <param name="detectEncoding">if set to <c>true</c>, then detect encoding of text file.</param>
+		/// <param name="useAsync">true to use async</param>
+		public TextFileReader(string filePath, bool detectEncoding = true, bool useAsync = false)
 		{
-			var settings = new JObject();
-			foreach (XmlAttribute attribute in node.Attributes)
-				settings.Add(new JProperty(attribute.Name, attribute.Value));
-			return settings;
+			// check existed
+			this.Existed(filePath);
+
+			// default encoding is UTF-8
+			var encoding = Encoding.UTF8;
+
+			// detect encoding
+			if (detectEncoding)
+			{
+				// create streams to detect encoding
+				this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+				this._streamReader = new StreamReader(this._fileStream, true);
+
+				// get encoding
+				encoding = this._streamReader.CurrentEncoding;
+
+				// reset stream (jump to first)
+				this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
+			}
+
+			// initialize reader
+			this.Initialize(filePath, encoding, useAsync);
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="TextFileReader"/> class.
+		/// </summary>
+		/// <param name="filePath">The path to text file.</param>
+		/// <param name="encoding">The encoding of text file.</param>
+		/// <param name="useAsync">true to use async</param>
+		public TextFileReader(string filePath, Encoding encoding, bool useAsync = false)
+		{
+			// check existed
+			this.Existed(filePath);
+
+			// initialize reader
+			this.Initialize(filePath, encoding, useAsync);
+		}
+
+		/// <summary>
+		/// Checks existed of the file.
+		/// </summary>
+		/// <param name="filePath">The path to text file.</param>
+		void Existed(string filePath)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("No file path", nameof(filePath));
+
+			else if (!File.Exists(filePath))
+				throw new FileNotFoundException("File (" + filePath + ") is not found.");
+		}
+
+		/// <summary>
+		/// Initializes the reader.
+		/// </summary>
+		/// <param name="filePath">The path to text file.</param>
+		/// <param name="encoding">The encoding of text file.</param>
+		/// <param name="useAsync">true to use async</param>
+		void Initialize(string filePath, Encoding encoding, bool useAsync = false)
+		{
+			// create streams and builders
+			if (this._fileStream == null)
+			{
+				if (useAsync)
+					this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true);
+				else
+					this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+			}
+
+			if (this._binReader == null)
+				this._binReader = new BinaryReader(this._fileStream, encoding);
+
+			if (this._builder == null)
+				this._builder = new StringBuilder();
+
+			if (this._lines == null)
+				this._lines = new Queue<TextLine>();
+
+			// assign some helper attributes
+			this._length = this._fileStream.Length;
+			this._encoding = encoding;
+		}
+
+		/// <summary>
+		/// Gets the position of file after reading last line.
+		/// </summary>
+		public long Position { get { return this._position; } }
+
+		/// <summary>
+		/// Gets the current encoding of text file.
+		/// </summary>
+		public Encoding Encoding { get { return this._encoding; } }
+
+		/// <summary>
+		/// Gets the length of text file (in bytes).
+		/// </summary>
+		public long Length { get { return this._length; } }
+
+		/// <summary>
+		/// Sets the position within the current stream (from the beginning position)
+		/// </summary>
+		/// <param name="offset">A byte offset relative to the origin parameter</param>
+		/// <returns>The new position within the current stream</returns>
+		public long Seek(long offset)
+		{
+			return this.Seek(offset, SeekOrigin.Begin);
+		}
+
+		/// <summary>
+		/// Sets the position within the current stream (read next line from this position)
+		/// </summary>
+		/// <param name="offset">A byte offset relative to the origin parameter</param>
+		/// <param name="origin">A value for indicating the reference point used to obtain the new position</param>
+		/// <returns>The new position within the current stream</returns>
+		public long Seek(long offset, SeekOrigin origin)
+		{
+			// seek and reset
+			this._position = this._binReader.BaseStream.Seek(offset, origin);
+			this._builder = new StringBuilder();
+			this._lines = new Queue<TextLine>();
+
+			// return new position
+			return this._position;
+		}
+
+		/// <summary>
+		/// Reads all lines of characters from the current stream (from the begin to end) and returns the data as a collection of string.
+		/// </summary>
+		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
+		public List<string> ReadAllLines()
+		{
+			// create new stream if need
+			if (this._streamReader == null)
+				this._streamReader = new StreamReader(this._fileStream, this._encoding);
+
+			// jump to first
+			this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+			// read all lines
+			var lines = new List<string>();
+			var line = this._streamReader.ReadLine();
+			while (line != null)
+			{
+				// normalize UTF-16 BOM of all lines
+				if (line.Length > 0 && line[0] == '\uFEFF')
+					line = line.Substring(1);
+
+				// add the line into collection
+				lines.Add(line);
+				line = this._streamReader.ReadLine();
+			}
+
+			// assign position to end of file
+			this._position = this._length;
+
+			// return lines
+			return lines;
+		}
+
+		/// <summary>
+		/// Reads all lines of characters from the current stream (from the begin to end) and returns the data as a collection of string.
+		/// </summary>
+		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
+		public async Task<List<string>> ReadAllLinesAsync()
+		{
+			// create new stream if need
+			if (this._streamReader == null)
+				this._streamReader = new StreamReader(this._fileStream, this._encoding);
+
+			// jump to first
+			this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+			// read all lines
+			var lines = new List<string>();
+			var line = await this._streamReader.ReadLineAsync();
+			while (line != null)
+			{
+				// normalize UTF-16 BOM of all lines
+				if (line.Length > 0 && line[0] == '\uFEFF')
+					line = line.Substring(1);
+
+				// add the line into collection
+				lines.Add(line);
+				line = await this._streamReader.ReadLineAsync();
+			}
+
+			// assign position to end of file
+			this._position = this._length;
+
+			// return lines
+			return lines;
+		}
+
+		/// <summary>
+		/// Reads some lines of characters from the current stream at the current position and returns the data as a collection of string.
+		/// </summary>
+		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
+		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
+		public List<string> ReadLines(int totalOfLines)
+		{
+			// use StreamReader to read all lines (better performance)
+			if (totalOfLines < 1 && this.Position < this._encoding.GetPreamble().Length)
+				return this.ReadAllLines();
+
+			// read lines
+			var lines = new List<string>();
+			var counter = 0;
+			var line = this.ReadLine();
+			while (line != null)
+			{
+				// normalize UTF-16 BOM of all lines
+				if (line.Length > 0 && line[0] == '\uFEFF')
+					line = line.Substring(1);
+
+				// add the line into collection
+				lines.Add(line);
+
+				// check counter and read next line
+				counter++;
+				if (totalOfLines > 0 && counter >= totalOfLines)
+					break;
+
+				line = this.ReadLine();
+			}
+			return lines;
+		}
+
+		/// <summary>
+		/// Reads some lines of characters from the current stream at the current position and returns the data as a collection of string.
+		/// </summary>
+		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
+		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
+		public async Task<List<string>> ReadLinesAsync(int totalOfLines)
+		{
+			// use StreamReader to read all lines (better performance)
+			if (totalOfLines < 1 && this.Position < this._encoding.GetPreamble().Length)
+				return await this.ReadAllLinesAsync();
+
+			// read lines
+			var lines = new List<string>();
+			var counter = 0;
+			var line = await this.ReadLineAsync();
+			while (line != null)
+			{
+				// normalize UTF-16 BOM of all lines
+				if (line.Length > 0 && line[0] == '\uFEFF')
+					line = line.Substring(1);
+
+				// add the line into collection
+				lines.Add(line);
+
+				// check counter and read next line
+				counter++;
+				if (totalOfLines > 0 && counter >= totalOfLines)
+					break;
+
+				line = await this.ReadLineAsync();
+			}
+			return lines;
+		}
+
+		/// <summary>
+		/// Reads a line of characters from the current stream at the current position and returns the data as a string.
+		/// </summary>
+		/// <returns>The next line from the input stream, or null if the end of the input stream is reached</returns>
+		public string ReadLine()
+		{
+			// check to read next block
+			if (this._lines == null || this._lines.Count < 1)
+				this.ReadBlockOfLines();
+
+			// get first line from queue and assign position
+			var line = this._lines != null && this._lines.Count > 0
+				? this._lines.Dequeue()
+				: null;
+			this._position = line != null
+				? line.Position
+				: this._position = this._length;
+
+			// return line of characters
+			return line != null
+				? line.Line
+				: null;
+		}
+
+		/// <summary>
+		/// Reads a line of characters from the current stream at the current position and returns the data as a string.
+		/// </summary>
+		/// <returns>The next line from the input stream, or null if the end of the input stream is reached</returns>
+		public Task<string> ReadLineAsync()
+		{
+			return UtilityService.ExecuteTask<string>(() => this.ReadLine());
+		}
+
+		void ReadBlockOfLines()
+		{
+			// read one block
+			var data = new char[TextFileReader.BufferSize];
+			var readBytes = this._binReader.Read(data, 0, TextFileReader.BufferSize);
+
+			// build block of lines and continue read other blocks until reach end-of-line (\n)
+			while (readBytes > 0)
+			{
+				this._builder.Append(data);
+				readBytes = !this.BuildBlockOfLines()
+					? this._binReader.Read(data, 0, TextFileReader.BufferSize)
+					: 0;
+			}
+		}
+
+		bool BuildBlockOfLines()
+		{
+			// get current string and find the end-of-line (\n)
+			var theString = this._builder.ToString();
+			var eolPosition = theString.IndexOf("\n");
+			var endOfLineIsFound = eolPosition > -1;
+
+			// stop process if end-of-line is not found
+			if (!endOfLineIsFound)
+				return endOfLineIsFound;
+
+			// end-of-file flag
+			var endOfFileIsFound = false;
+
+			// process lines of characters and check end-of-file
+			while (eolPosition > -1)
+			{
+				// get line of characters
+				var line = theString.Substring(0, eolPosition + 1);
+
+				// prepare reading position of stream
+				this._position += this.Encoding.GetByteCount(line);
+
+				// refine line of characters
+				while (line.EndsWith("\n"))
+					line = line.Substring(0, line.Length - 1);
+				while (line.EndsWith("\r"))
+					line = line.Substring(0, line.Length - 1);
+
+				// normalize UTF-16 BOM of all lines
+				if (line.Length > 0 && line[0] == '\uFEFF')
+					line = line.Substring(1);
+
+				// update line of characters into queue
+				this._lines.Enqueue(new TextLine()
+				{
+					Line = line,
+					Position = this._position
+				});
+
+				// stop process if end of file
+				if (endOfFileIsFound)
+				{
+					theString = null;
+					break;
+				}
+
+				// remove the processed line
+				else
+					theString = theString.Remove(0, eolPosition + 1);
+
+				// check end-of-file position (\0)
+				if (theString.StartsWith("\0"))
+				{
+					endOfFileIsFound = true;
+					theString = null;
+					eolPosition = -1;
+				}
+
+				// if the string is not started by end-of-file, then check next end-of-line position
+				else
+				{
+					// check next end-of-line position
+					eolPosition = theString.IndexOf("\n");
+
+					// if next end-of-line position is not found, then check end-of-file position (\0)
+					if (eolPosition < 0)
+					{
+						eolPosition = theString.IndexOf("\0");
+						if (eolPosition > 0)
+						{
+							eolPosition--;
+							endOfFileIsFound = true;
+						}
+					}
+				}
+			}
+
+			// update builder
+			this._builder = new StringBuilder();
+			if (theString != null)
+				this._builder.Append(theString);
+
+			// return the flag
+			return endOfLineIsFound;
+		}
+
+		/// <summary>
+		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+		/// </summary>
+		public void Dispose()
+		{
+			this._binReader?.Close();
+			this._binReader?.Dispose();
+
+			this._streamReader?.Close();
+			this._streamReader?.Dispose();
+
+			this._fileStream?.Close();
+			this._fileStream?.Dispose();
+
+			GC.SuppressFinalize(this);
+		}
+
+		~TextFileReader()
+		{
+			this.Dispose();
 		}
 	}
 	#endregion
