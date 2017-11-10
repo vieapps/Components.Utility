@@ -11,6 +11,8 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static class DateTimeService
 	{
+		public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+
 		/// <summary>
 		/// Gets the default date-time for checking (1/1/1900)
 		/// </summary>
@@ -379,7 +381,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true)
 		{
-			return ((useUTC ? datetime.ToUniversalTime() : datetime) - new DateTime(1970, 1, 1, 0, 0, 0)).TotalSeconds.CastAs<long>();
+			return ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.CastAs<long>();
 		}
 
 		/// <summary>
@@ -390,10 +392,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static DateTime FromUnixTimestamp(this long unixTimestamp, bool useUTC = true)
 		{
-			var datetime = (new DateTime(1970, 1, 1, 0, 0, 0, 0)).AddSeconds(unixTimestamp);
 			return useUTC
-				? datetime
-				: datetime.ToLocalTime();
+				? DateTimeService.UnixEpoch.AddSeconds(unixTimestamp)
+				: DateTimeService.UnixEpoch.AddSeconds(unixTimestamp).ToLocalTime();
 		}
 
 		/// <summary>
@@ -427,6 +428,16 @@ namespace net.vieapps.Components.Utility
 		public static string ToIsoString(this DateTime datetime, bool useUTC = false)
 		{
 			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
+		}
+
+		/// <summary>
+		/// Converts this date-time to timespan
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <returns></returns>
+		public static TimeSpan ToTimeSpan(this DateTime datetime)
+		{
+			return datetime - DateTimeService.UnixEpoch;
 		}
 	}
 }
