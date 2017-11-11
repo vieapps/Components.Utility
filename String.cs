@@ -26,7 +26,7 @@ namespace net.vieapps.Components.Utility
 		public static string Left(this string @string, int length)
 		{
 			if (length < 0)
-				throw new ArgumentException("Argument 'length' must be greater or equal to zero", nameof(length));
+				throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero");
 
 			return @string.Equals("")
 				? string.Empty
@@ -44,7 +44,7 @@ namespace net.vieapps.Components.Utility
 		public static string Right(this string @string, int length)
 		{
 			if (length < 0)
-				throw new ArgumentException("Argument 'length' must be greater or equal to zero", nameof(length));
+				throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero");
 
 			return @string.Equals("")
 				? string.Empty : length >= @string.Length
@@ -194,9 +194,8 @@ namespace net.vieapps.Components.Utility
 				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
 				{
 					deflate.Write(data, 0, data.Length);
-					deflate.Close();
-					return stream.ToArray();
 				}
+				return stream.GetBuffer();
 			}
 		}
 
@@ -222,9 +221,8 @@ namespace net.vieapps.Components.Utility
 				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
 				{
 					await deflate.WriteAsync(data, 0, data.Length);
-					deflate.Close();
-					return stream.ToArray();
 				}
+				return stream.GetBuffer();
 			}
 		}
 
@@ -258,8 +256,7 @@ namespace net.vieapps.Components.Utility
 							output.Write(buffer, 0, readBytes);
 							readBytes = deflate.Read(buffer, 0, buffer.Length);
 						}
-						deflate.Close();
-						return output.ToArray();
+						return output.GetBuffer();
 					}
 				}
 			}
@@ -295,8 +292,7 @@ namespace net.vieapps.Components.Utility
 							await output.WriteAsync(buffer, 0, readBytes);
 							readBytes = await deflate.ReadAsync(buffer, 0, buffer.Length);
 						}
-						deflate.Close();
-						return output.ToArray();
+						return output.GetBuffer();
 					}
 				}
 			}
@@ -360,7 +356,7 @@ namespace net.vieapps.Components.Utility
 		public static object ToEnum(this string @string, Type type)
 		{
 			if (type == null || !type.IsEnum)
-				throw new ArgumentException("The type is not enum", nameof(type));
+				throw new ArgumentException($"The type '{nameof(type)}' is not enum");
 
 			return Enum.Parse(type, @string);
 		}

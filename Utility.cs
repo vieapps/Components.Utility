@@ -857,7 +857,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Working with task in the thread pool
 		/// <summary>
-		/// Executes a task the the thread pool with cancellation token
+		/// Executes a task in the thread pool with cancellation supported
 		/// </summary>
 		/// <param name="action"></param>
 		/// <param name="cancellationToken"></param>
@@ -867,14 +867,12 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<object>();
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				if (cancellationToken == null)
-					cancellationToken = default(CancellationToken);
-				cancellationToken.Register(() =>
-				{
-					tcs.SetCanceled();
-					return;
-				});
-
+				if (cancellationToken != null && cancellationToken != default(CancellationToken))
+					cancellationToken.Register(() =>
+					{
+						tcs.SetCanceled();
+						return;
+					});
 				try
 				{
 					action?.Invoke();
@@ -889,7 +887,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Executes a task the the thread pool with cancellation token
+		/// Executes a task in the thread pool with cancellation supported
 		/// </summary>
 		/// <typeparam name="TResult"></typeparam>
 		/// <param name="func"></param>
@@ -900,14 +898,12 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<TResult>();
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				if (cancellationToken == null)
-					cancellationToken = default(CancellationToken);
-				cancellationToken.Register(() =>
-				{
-					tcs.SetCanceled();
-					return;
-				});
-
+				if (cancellationToken != null && cancellationToken != default(CancellationToken))
+					cancellationToken.Register(() =>
+					{
+						tcs.SetCanceled();
+						return;
+					});
 				try
 				{
 					var result = func != null ? func.Invoke() : default(TResult);
@@ -1012,7 +1008,7 @@ namespace net.vieapps.Components.Utility
 		public static List<FileInfo> GetFiles(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null)
 		{
 			if (!Directory.Exists(path))
-				throw new DirectoryNotFoundException("The folder is not found [" + path + "]");
+				throw new DirectoryNotFoundException($"The folder is not found [{path}]");
 
 			var files = new List<FileInfo>();
 			var searchingPatterns = string.IsNullOrWhiteSpace(searchPatterns)
@@ -1218,13 +1214,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines)
 		{
-			using (var reader = new TextFileReader(filePath))
+			using (var reader = new TextFileReader(filePath, true, true))
 			{
 				try
 				{
-					reader.Seek(position);
-					var lines = await reader.ReadLinesAsync(totalOfLines);
-					return new Tuple<List<string>, long>(lines, reader.Position);
+					reader.Seek(position, SeekOrigin.Begin);
+					return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines), reader.Position);
 				}
 				catch (Exception)
 				{
@@ -1308,14 +1303,23 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="fileInfo"></param>
 		/// <returns></returns>
-		public static byte[] ReadFile(FileInfo fileInfo)
+		public static byte[] ReadBinaryFile(FileInfo fileInfo)
 		{
 			if (fileInfo != null && fileInfo.Exists)
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize))
 				{
-					var buffer = new byte[fileInfo.Length];
-					stream.Read(buffer, 0, (int)fileInfo.Length);
-					return buffer;
+					var data = new byte[fileInfo.Length];
+					var buffer = new byte[TextFileReader.BufferSize];
+					var offset = 0;
+					var count = stream.Read(buffer, offset, TextFileReader.BufferSize);
+					while (count > 0)
+					{
+						Buffer.BlockCopy(buffer, 0, data, offset, count);
+						offset += count;
+						buffer = new byte[TextFileReader.BufferSize];
+						count = stream.Read(buffer, offset, TextFileReader.BufferSize);
+					}
+					return data;
 				}
 			return null;
 		}
@@ -1325,36 +1329,56 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <returns></returns>
-		public static byte[] ReadFile(string filePath)
+		public static byte[] ReadBinaryFile(string filePath)
 		{
-			return UtilityService.ReadFile(new FileInfo(filePath));
+			return UtilityService.ReadBinaryFile(new FileInfo(filePath));
+		}
+
+		/// <summary>
+		/// Reads a binary file
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task<byte[]> ReadBinaryFileAsync(FileInfo fileInfo, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (fileInfo == null || !fileInfo.Exists)
+				return null;
+
+			else if (fileInfo.Length < (long)TextFileReader.BufferSize)
+				return UtilityService.ReadBinaryFile(fileInfo);
+
+			else
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true))
+				{
+					var data = new byte[fileInfo.Length];
+					var buffer = new byte[TextFileReader.BufferSize];
+					var offset = 0;
+					var count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken);
+					while (count > 0)
+					{
+						Buffer.BlockCopy(buffer, 0, data, offset, count);
+						offset += count;
+						buffer = new byte[TextFileReader.BufferSize];
+						count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken);
+					}
+					return data;
+				}
 		}
 
 		/// <summary>
 		/// Reads a binary file
 		/// </summary>
 		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<byte[]> ReadFileAsync(string filePath)
+		public static Task<byte[]> ReadBinaryFileAsync(string filePath, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			var fileInfo = new FileInfo(filePath);
-			if (!fileInfo.Exists)
-				return null;
-
-			else if (fileInfo.Length < 1024 * 1024)
-				return UtilityService.ReadFile(fileInfo);
-
-			else
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, 10240, true))
-				{
-					var data = new byte[fileInfo.Length];
-					await stream.ReadAsync(data, 0, (int)fileInfo.Length);
-					return data;
-				}
+			return UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken);
 		}
 
 		/// <summary>
-		/// Downloads a file from a remote uri
+		/// Downloads a file from a remote server
 		/// </summary>
 		/// <param name="url"></param>
 		/// <param name="filePath"></param>
@@ -1373,9 +1397,9 @@ namespace net.vieapps.Components.Utility
 				{
 					using (var webStream = await UtilityService.GetWebResourceAsync(url, referUri, cancellationToken))
 					{
-						using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, 1024, true))
+						using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
 						{
-							await webStream.CopyToAsync(fileStream, 1024, cancellationToken);
+							await webStream.CopyToAsync(fileStream, TextFileReader.BufferSize, cancellationToken);
 						}
 					}
 					onCompleted?.Invoke(url, filePath);
@@ -1671,12 +1695,7 @@ namespace net.vieapps.Components.Utility
 		{
 			// create streams and builders
 			if (this._fileStream == null)
-			{
-				if (useAsync)
-					this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true);
-				else
-					this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-			}
+				this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, useAsync);
 
 			if (this._binReader == null)
 				this._binReader = new BinaryReader(this._fileStream, encoding);
@@ -1771,8 +1790,9 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Reads all lines of characters from the current stream (from the begin to end) and returns the data as a collection of string.
 		/// </summary>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
-		public async Task<List<string>> ReadAllLinesAsync()
+		public async Task<List<string>> ReadAllLinesAsync(CancellationToken cancellationToken = default(CancellationToken))
 		{
 			// create new stream if need
 			if (this._streamReader == null)
@@ -1840,17 +1860,18 @@ namespace net.vieapps.Components.Utility
 		/// Reads some lines of characters from the current stream at the current position and returns the data as a collection of string.
 		/// </summary>
 		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
-		public async Task<List<string>> ReadLinesAsync(int totalOfLines)
+		public async Task<List<string>> ReadLinesAsync(int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			// use StreamReader to read all lines (better performance)
 			if (totalOfLines < 1 && this.Position < this._encoding.GetPreamble().Length)
-				return await this.ReadAllLinesAsync();
+				return await this.ReadAllLinesAsync(cancellationToken);
 
 			// read lines
 			var lines = new List<string>();
 			var counter = 0;
-			var line = await this.ReadLineAsync();
+			var line = await this.ReadLineAsync(cancellationToken);
 			while (line != null)
 			{
 				// normalize UTF-16 BOM of all lines
@@ -1865,7 +1886,7 @@ namespace net.vieapps.Components.Utility
 				if (totalOfLines > 0 && counter >= totalOfLines)
 					break;
 
-				line = await this.ReadLineAsync();
+				line = await this.ReadLineAsync(cancellationToken);
 			}
 			return lines;
 		}
@@ -1897,10 +1918,11 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Reads a line of characters from the current stream at the current position and returns the data as a string.
 		/// </summary>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from the input stream, or null if the end of the input stream is reached</returns>
-		public Task<string> ReadLineAsync()
+		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask<string>(() => this.ReadLine());
+			return UtilityService.ExecuteTask<string>(() => this.ReadLine(), cancellationToken);
 		}
 
 		void ReadBlockOfLines()

@@ -120,7 +120,7 @@ namespace net.vieapps.Components.Utility
 
 		public RepositoryOperationException(string message) : base(message) { }
 
-		public RepositoryOperationException(Exception innerException) : base("Error occured while operating with repository: " + innerException.Message, innerException) { }
+		public RepositoryOperationException(Exception innerException) : base($"Error occured while operating with repository: {innerException?.Message}", innerException) { }
 
 		public RepositoryOperationException(string message, Exception innerException) : base(message, innerException) { }
 
@@ -134,7 +134,7 @@ namespace net.vieapps.Components.Utility
 
 		public ServiceOperationException(string message) : base(message) { }
 
-		public ServiceOperationException(Exception innerException) : base("Error occured while operating with service: " + innerException.Message, innerException) { }
+		public ServiceOperationException(Exception innerException) : base($"Error occured while operating with service: {innerException?.Message}", innerException) { }
 
 		public ServiceOperationException(string message, Exception innerException) : base(message, innerException) { }
 
@@ -148,7 +148,7 @@ namespace net.vieapps.Components.Utility
 
 		public ServiceNotFoundException(string message) : base(message) { }
 
-		public ServiceNotFoundException(Exception innerException) : base("The requested service is not found: " + innerException.Message, innerException) { }
+		public ServiceNotFoundException(Exception innerException) : base($"The requested service is not found: {innerException?.Message}", innerException) { }
 
 		public ServiceNotFoundException(string message, Exception innerException) : base(message, innerException) { }
 
@@ -164,7 +164,7 @@ namespace net.vieapps.Components.Utility
 
 		public RemoteServerErrorException() : base("Error occured while operating with remote server") { }
 
-		public RemoteServerErrorException(Exception innerException) : base("Error occurred while operating with the remote server", innerException) { }
+		public RemoteServerErrorException(Exception innerException) : base($"Error occurred while operating with the remote server: {innerException?.Message}", innerException) { }
 
 		public RemoteServerErrorException(string message, Exception innerException) : base(message, innerException) { }
 
@@ -196,7 +196,7 @@ namespace net.vieapps.Components.Utility
 	{
 		public MethodNotAllowedException() : base("The method is not allowed") { }
 
-		public MethodNotAllowedException(string method) : base("The method is not allowed: " + method) { }
+		public MethodNotAllowedException(string method) : base($"The method is not allowed: {method}") { }
 
 		public MethodNotAllowedException(Exception innerException) : base("The method is not allowed", innerException) { }
 

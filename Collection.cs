@@ -61,7 +61,7 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 			else if (trim)
-				array.ForEach((item, index) => array[index] = item.Trim());
+				array = array.Select(item => item.Trim()).ToArray();
 
 			return array;
 		}
@@ -222,14 +222,17 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T[] RemoveAt<T>(this T[] @object, int index)
 		{
-			var array = new T[@object.Length - 1];
-			if (index > 0)
-				Array.Copy(@object, 0, array, 0, index);
-
-			if (index < @object.Length - 1)
-				Array.Copy(@object, index + 1, array, index, @object.Length - index - 1);
-
-			return array;
+			if (index > -1 && index < @object.Length)
+			{
+				var array = new T[@object.Length - 1];
+				if (index > 0)
+					Array.Copy(@object, 0, array, 0, index);
+				if (index < @object.Length - 1)
+					Array.Copy(@object, index + 1, array, index, @object.Length - index - 1);
+				return array;
+			}
+			else
+				return @object;
 		}
 
 		/// <summary>

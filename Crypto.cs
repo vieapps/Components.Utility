@@ -140,10 +140,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string FromBase64(this string @string, bool isBase64Url = false)
 		{
-			var base64Str = isBase64Url
-				? @string.ToBase64(false, true)
-				: @string;
-			return Convert.FromBase64String(base64Str).GetString();
+			return Convert.FromBase64String(isBase64Url ? @string.ToBase64(false, true) : @string).GetString();
 		}
 
 		/// <summary>
@@ -703,8 +700,7 @@ namespace net.vieapps.Components.Utility
 					var decrypted = isHexa
 						? @string.HexToBytes()
 						: @string.Base64ToBytes();
-					decrypted = decryptor.TransformFinalBlock(decrypted, 0, decrypted.Length);
-					return decrypted.GetString();
+					return decryptor.TransformFinalBlock(decrypted, 0, decrypted.Length).GetString();
 				}
 			}
 		}
