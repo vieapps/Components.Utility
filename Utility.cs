@@ -861,8 +861,8 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Executes a task in the thread pool with cancellation supported
 		/// </summary>
-		/// <param name="action"></param>
-		/// <param name="cancellationToken"></param>
+		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
 		{
@@ -892,8 +892,8 @@ namespace net.vieapps.Components.Utility
 		/// Executes a task in the thread pool with cancellation supported
 		/// </summary>
 		/// <typeparam name="TResult"></typeparam>
-		/// <param name="func"></param>
-		/// <param name="cancellationToken"></param>
+		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, CancellationToken cancellationToken = default(CancellationToken))
 		{
@@ -1090,15 +1090,15 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Reads a text file
 		/// </summary>
-		/// <param name="filePath"></param>
+		/// <param name="fileInfo"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static string ReadTextFile(string filePath, Encoding encoding = default(UTF8Encoding))
+		public static string ReadTextFile(FileInfo fileInfo, Encoding encoding = default(UTF8Encoding))
 		{
-			if (!File.Exists(filePath))
-				throw new FileNotFoundException("The file is not found [" + filePath + "]");
+			if (fileInfo == null || !fileInfo.Exists)
+				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 
-			using (var reader = new StreamReader(filePath, encoding ?? Encoding.UTF8, true))
+			using (var reader = new StreamReader(fileInfo.FullName, encoding ?? Encoding.UTF8, true))
 			{
 				try
 				{
@@ -1117,22 +1117,44 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static async Task<string> ReadTextFileAsync(string filePath, Encoding encoding = default(UTF8Encoding))
+		public static string ReadTextFile(string filePath, Encoding encoding = default(UTF8Encoding))
 		{
-			if (!File.Exists(filePath))
-				throw new FileNotFoundException("The file is not found [" + filePath + "]");
+			return UtilityService.ReadTextFile(new FileInfo(filePath), encoding);
+		}
 
-			using (var reader = new StreamReader(filePath, encoding ?? Encoding.UTF8, true))
+		/// <summary>
+		/// Reads a text file
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static Task<string> ReadTextFileAsync(FileInfo fileInfo, Encoding encoding = default(UTF8Encoding))
+		{
+			if (fileInfo == null || !fileInfo.Exists)
+				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
+
+			using (var reader = new StreamReader(fileInfo.FullName, encoding ?? Encoding.UTF8, true))
 			{
 				try
 				{
-					return await reader.ReadToEndAsync().ConfigureAwait(false);
+					return reader.ReadToEndAsync();
 				}
 				catch (Exception)
 				{
 					throw;
 				}
 			}
+		}
+
+		/// <summary>
+		/// Reads a text file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static Task<string> ReadTextFileAsync(string filePath, Encoding encoding = default(UTF8Encoding))
+		{
+			return UtilityService.ReadTextFileAsync(new FileInfo(filePath), encoding);
 		}
 
 		/// <summary>
@@ -1291,7 +1313,7 @@ namespace net.vieapps.Components.Utility
 						try
 						{
 							await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line).ConfigureAwait(false), CancellationToken.None, true, false).ConfigureAwait(false);
-							writer.Flush();
+							await writer.FlushAsync().ConfigureAwait(false);
 						}
 						catch { }
 					}
@@ -1356,13 +1378,13 @@ namespace net.vieapps.Components.Utility
 					var data = new byte[fileInfo.Length];
 					var buffer = new byte[TextFileReader.BufferSize];
 					var offset = 0;
-					var count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken);
+					var count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
 					while (count > 0)
 					{
 						Buffer.BlockCopy(buffer, 0, data, offset, count);
 						offset += count;
 						buffer = new byte[TextFileReader.BufferSize];
-						count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken);
+						count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
 					}
 					return data;
 				}
