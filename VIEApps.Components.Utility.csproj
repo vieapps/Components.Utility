@@ -6,20 +6,18 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utitlity</AssemblyTitle>
-		<AssemblyVersion>10.1.3.1712</AssemblyVersion>
-		<FileVersion>10.1.3.1712</FileVersion>
-		<InformationalVersion>10.1 (v10.1.nstd-2017)</InformationalVersion>
+		<AssemblyVersion>10.1.4.1801</AssemblyVersion>
+		<FileVersion>10.1.4.1801</FileVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2017.12.01</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.3.1712</Version>
+		<Version>10.1.4.1801</Version>
 		<Title>VIEApps NGX Utitlity</Title>
 		<Description>The general purpose utility library for developing apps with .NET Standard 2.0</Description>
-		<Summary>The general purpose utility library for developing apps with .NET Standard 2.0</Summary>
 		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2017 VIEApps.net</Copyright>
-		<PackageReleaseNotes></PackageReleaseNotes>
 		<PackageTags>utility;vieapps;vieapps.components</PackageTags>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>

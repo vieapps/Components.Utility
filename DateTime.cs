@@ -429,15 +429,5 @@ namespace net.vieapps.Components.Utility
 		{
 			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
 		}
-
-		/// <summary>
-		/// Converts this date-time to timespan
-		/// </summary>
-		/// <param name="datetime"></param>
-		/// <returns></returns>
-		public static TimeSpan ToTimeSpan(this DateTime datetime)
-		{
-			return datetime - DateTimeService.UnixEpoch;
-		}
 	}
 }

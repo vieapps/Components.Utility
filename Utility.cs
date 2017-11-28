@@ -234,7 +234,7 @@ namespace net.vieapps.Components.Utility
 			{
 				try
 				{
-					return await httpRequest.GetResponseAsync() as HttpWebResponse;
+					return await httpRequest.GetResponseAsync().ConfigureAwait(false) as HttpWebResponse;
 				}
 				catch (WebException ex)
 				{
@@ -317,9 +317,9 @@ namespace net.vieapps.Components.Utility
 				if (!string.IsNullOrWhiteSpace(contentType))
 					webRequest.ContentType = contentType;
 
-				using (var requestWriter = new StreamWriter(await webRequest.GetRequestStreamAsync()))
+				using (var requestWriter = new StreamWriter(await webRequest.GetRequestStreamAsync().ConfigureAwait(false)))
 				{
-					await requestWriter.WriteAsync(body);
+					await requestWriter.WriteAsync(body).ConfigureAwait(false);
 				}
 			}
 
@@ -332,7 +332,7 @@ namespace net.vieapps.Components.Utility
 			// make request and return response stream
 			try
 			{
-				return await webRequest.GetResponseAsync(cancellationToken);
+				return await webRequest.GetResponseAsync(cancellationToken).ConfigureAwait(false);
 			}
 			catch (SocketException ex)
 			{
@@ -350,7 +350,7 @@ namespace net.vieapps.Components.Utility
 					{
 						using (var reader = new StreamReader(stream, true))
 						{
-							responseBody = await reader.ReadToEndAsync();
+							responseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
 						}
 					}
 				}
@@ -392,7 +392,7 @@ namespace net.vieapps.Components.Utility
 				: null;
 
 			// make request
-			return await UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken);
+			return await UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -415,8 +415,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			var webResponse = await UtilityService.GetWebResponseAsync(method, uri, headers, body, contentType, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken);
-			return webResponse.GetResponseStream();
+			using (var webResponse = await UtilityService.GetWebResponseAsync(method, uri, headers, body, contentType, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken).ConfigureAwait(false))
+			{
+				return webResponse.GetResponseStream();
+			};
 		}
 
 		/// <summary>
@@ -454,13 +456,13 @@ namespace net.vieapps.Components.Utility
 
 			// get stream of external resource as HTML
 			var html = "";
-			using (var webResponse = await UtilityService.GetWebResponseAsync("GET", url, headers, null, null, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken))
+			using (var webResponse = await UtilityService.GetWebResponseAsync("GET", url, headers, null, null, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken).ConfigureAwait(false))
 			{
 				using (var stream = webResponse.GetResponseStream())
 				{
 					using (var reader = new StreamReader(stream, true))
 					{
-						html = await reader.ReadToEndAsync();
+						html = await reader.ReadToEndAsync().ConfigureAwait(false);
 					}
 				}
 			}
@@ -1124,7 +1126,7 @@ namespace net.vieapps.Components.Utility
 			{
 				try
 				{
-					return await reader.ReadToEndAsync();
+					return await reader.ReadToEndAsync().ConfigureAwait(false);
 				}
 				catch (Exception)
 				{
@@ -1172,7 +1174,7 @@ namespace net.vieapps.Components.Utility
 			{
 				try
 				{
-					await writer.WriteAsync(content);
+					await writer.WriteAsync(content).ConfigureAwait(false);
 				}
 				catch { }
 			}
@@ -1219,7 +1221,7 @@ namespace net.vieapps.Components.Utility
 				try
 				{
 					reader.Seek(position, SeekOrigin.Begin);
-					return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines), reader.Position);
+					return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines).ConfigureAwait(false), reader.Position);
 				}
 				catch (Exception)
 				{
@@ -1248,7 +1250,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines)
 		{
-			return (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines)).Item1;
+			return (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines).ConfigureAwait(false)).Item1;
 		}
 
 		/// <summary>
@@ -1288,7 +1290,7 @@ namespace net.vieapps.Components.Utility
 					{
 						try
 						{
-							await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line), CancellationToken.None, true, false);
+							await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line).ConfigureAwait(false), CancellationToken.None, true, false).ConfigureAwait(false);
 							writer.Flush();
 						}
 						catch { }
@@ -1395,11 +1397,11 @@ namespace net.vieapps.Components.Utility
 			else
 				try
 				{
-					using (var webStream = await UtilityService.GetWebResourceAsync(url, referUri, cancellationToken))
+					using (var webStream = await UtilityService.GetWebResourceAsync(url, referUri, cancellationToken).ConfigureAwait(false))
 					{
 						using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
 						{
-							await webStream.CopyToAsync(fileStream, TextFileReader.BufferSize, cancellationToken);
+							await webStream.CopyToAsync(fileStream, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
 						}
 					}
 					onCompleted?.Invoke(url, filePath);
@@ -1643,7 +1645,7 @@ namespace net.vieapps.Components.Utility
 			if (detectEncoding)
 			{
 				// create streams to detect encoding
-				this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+				this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, useAsync);
 				this._streamReader = new StreamReader(this._fileStream, true);
 
 				// get encoding
@@ -1803,7 +1805,7 @@ namespace net.vieapps.Components.Utility
 
 			// read all lines
 			var lines = new List<string>();
-			var line = await this._streamReader.ReadLineAsync();
+			var line = await this._streamReader.ReadLineAsync().ConfigureAwait(false);
 			while (line != null)
 			{
 				// normalize UTF-16 BOM of all lines
@@ -1812,7 +1814,7 @@ namespace net.vieapps.Components.Utility
 
 				// add the line into collection
 				lines.Add(line);
-				line = await this._streamReader.ReadLineAsync();
+				line = await this._streamReader.ReadLineAsync().ConfigureAwait(false);
 			}
 
 			// assign position to end of file
@@ -1866,12 +1868,12 @@ namespace net.vieapps.Components.Utility
 		{
 			// use StreamReader to read all lines (better performance)
 			if (totalOfLines < 1 && this.Position < this._encoding.GetPreamble().Length)
-				return await this.ReadAllLinesAsync(cancellationToken);
+				return await this.ReadAllLinesAsync(cancellationToken).ConfigureAwait(false);
 
 			// read lines
 			var lines = new List<string>();
 			var counter = 0;
-			var line = await this.ReadLineAsync(cancellationToken);
+			var line = await this.ReadLineAsync(cancellationToken).ConfigureAwait(false);
 			while (line != null)
 			{
 				// normalize UTF-16 BOM of all lines
@@ -1886,7 +1888,7 @@ namespace net.vieapps.Components.Utility
 				if (totalOfLines > 0 && counter >= totalOfLines)
 					break;
 
-				line = await this.ReadLineAsync(cancellationToken);
+				line = await this.ReadLineAsync(cancellationToken).ConfigureAwait(false);
 			}
 			return lines;
 		}
