@@ -5,7 +5,7 @@
 		<AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
-		<AssemblyTitle>VIEApps NGX Utitlity</AssemblyTitle>
+		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<AssemblyVersion>10.1.4.1801</AssemblyVersion>
 		<FileVersion>10.1.4.1801</FileVersion>
 		<InformationalVersion>v10.1.netstandard-2+rev:2017.12.01</InformationalVersion>
@@ -37,6 +37,7 @@
 		<None Remove=".DS_Store" />
 		<None Remove=".gitattributes" />
 		<None Remove=".gitignore" />
+		<None Remove="LICENSE" />
 		<None Remove="README.md" />
 	</ItemGroup>
 
