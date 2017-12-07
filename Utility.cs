@@ -286,15 +286,11 @@ namespace net.vieapps.Components.Utility
 				: referUri;
 
 			// headers
-			if (headers != null)
-				foreach (var header in headers)
-					if (!header.Key.IsEquals("accept-encoding"))
-						webRequest.Headers.Add(header.Key, header.Value);
+			headers?.Where(kvp => !kvp.Key.IsEquals("accept-encoding")).ForEach(kvp => webRequest.Headers.Add(kvp.Key, kvp.Value));
 
 			// cookies
-			if (cookies != null && cookies.Length > 0 && webRequest.SupportsCookieContainer)
-				foreach (var cookie in cookies)
-					webRequest.CookieContainer.Add(cookie);
+			if (webRequest.SupportsCookieContainer)
+				cookies?.ForEach(cookie => webRequest.CookieContainer.Add(cookie));
 
 			// compression
 			webRequest.Headers.Add("accept-encoding", "deflate,gzip");
@@ -317,9 +313,9 @@ namespace net.vieapps.Components.Utility
 				if (!string.IsNullOrWhiteSpace(contentType))
 					webRequest.ContentType = contentType;
 
-				using (var requestWriter = new StreamWriter(await webRequest.GetRequestStreamAsync().ConfigureAwait(false)))
+				using (var writer = new StreamWriter(await webRequest.GetRequestStreamAsync().ConfigureAwait(false)))
 				{
-					await requestWriter.WriteAsync(body).ConfigureAwait(false);
+					await writer.WriteAsync(body).ConfigureAwait(false);
 				}
 			}
 
@@ -345,14 +341,14 @@ namespace net.vieapps.Components.Utility
 			{
 				var responseBody = "";
 				if (ex.Status.Equals(WebExceptionStatus.ProtocolError))
-				{
 					using (var stream = (ex.Response as HttpWebResponse).GetResponseStream())
-					using (var reader = new StreamReader(stream, true))
 					{
-						responseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+						using (var reader = new StreamReader(stream, true))
+						{
+							responseBody = await reader.ReadToEndAsync().ConfigureAwait(false);
+						}
 					}
-				}
-				throw new RemoteServerErrorException("Error occurred at remote server", responseBody, ex.Response != null && ex.Response.ResponseUri != null ? ex.Response.ResponseUri.AbsoluteUri : uri, ex);
+				throw new RemoteServerErrorException("Error occurred at remote server", responseBody, ex?.Response?.ResponseUri.AbsoluteUri ?? uri, ex);
 			}
 			catch (Exception)
 			{
@@ -382,7 +378,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			// credential
 			var credential = !string.IsNullOrWhiteSpace(credentialAccount) && !string.IsNullOrWhiteSpace(credentialPassword)
@@ -390,7 +386,7 @@ namespace net.vieapps.Components.Utility
 				: null;
 
 			// make request
-			return await UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken).ConfigureAwait(false);
+			return UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken);
 		}
 
 		/// <summary>
@@ -457,9 +453,11 @@ namespace net.vieapps.Components.Utility
 			using (var webResponse = await UtilityService.GetWebResponseAsync("GET", url, headers, null, null, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken).ConfigureAwait(false))
 			{
 				using (var stream = webResponse.GetResponseStream())
-				using (var reader = new StreamReader(stream, true))
 				{
-					html = await reader.ReadToEndAsync().ConfigureAwait(false);
+					using (var reader = new StreamReader(stream, true))
+					{
+						html = await reader.ReadToEndAsync().ConfigureAwait(false);
+					}
 				}
 			}
 
@@ -1090,7 +1088,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 
-			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, false))
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, false))
 			{
 				using (var reader = new StreamReader(stream, encoding ?? Encoding.UTF8))
 				{
@@ -1128,7 +1126,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 
-			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, true))
 			{
 				using (var reader = new StreamReader(stream, encoding ?? Encoding.UTF8))
 				{
@@ -1167,7 +1165,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || content == null)
 				return;
 
-			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, false))
+			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, false))
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
@@ -1206,7 +1204,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || content == null)
 				return;
 
-			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
