@@ -1133,12 +1133,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			if (!parallelExecutions)
 				foreach (var item in enumerable)
-					await actionAsync(item, cancellationToken);
+					await actionAsync(item, cancellationToken).ConfigureAwait(captureContext);
 
 			else
 			{
@@ -1147,7 +1148,7 @@ namespace net.vieapps.Components.Utility
 					tasks.Add(actionAsync(item, cancellationToken));
 
 				if (waitForAllCompleted)
-					await Task.WhenAll(tasks);
+					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}
 		}
 
@@ -1160,15 +1161,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			var index = -1;
 			if (!parallelExecutions)
 				foreach (var item in enumerable)
 				{
 					index++;
-					await actionAsync(item, index, cancellationToken);
+					await actionAsync(item, index, cancellationToken).ConfigureAwait(captureContext);
 				}
 
 			else
@@ -1181,7 +1183,7 @@ namespace net.vieapps.Components.Utility
 				}
 
 				if (waitForAllCompleted)
-					await Task.WhenAll(tasks);
+					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}
 		}
 
@@ -1195,12 +1197,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			if (!parallelExecutions)
 				foreach (var item in enumerable)
-					await actionAsync(item.Value, cancellationToken);
+					await actionAsync(item.Value, cancellationToken).ConfigureAwait(captureContext);
 
 			else
 			{
@@ -1209,7 +1212,7 @@ namespace net.vieapps.Components.Utility
 					tasks.Add(actionAsync(item.Value, cancellationToken));
 
 				if (waitForAllCompleted)
-					await Task.WhenAll(tasks);
+					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}
 		}
 
@@ -1223,15 +1226,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			var index = -1;
 			if (!parallelExecutions)
 				foreach (var item in enumerable)
 				{
 					index++;
-					await actionAsync(item.Value, index, cancellationToken);
+					await actionAsync(item.Value, index, cancellationToken).ConfigureAwait(captureContext);
 				}
 
 			else
@@ -1244,7 +1248,7 @@ namespace net.vieapps.Components.Utility
 				}
 
 				if (waitForAllCompleted)
-					await Task.WhenAll(tasks);
+					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}
 		}
 		#endregion
@@ -1261,7 +1265,7 @@ namespace net.vieapps.Components.Utility
 	public class Collection : IDictionary
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection">Collection</see> class
+		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection"/> class
 		/// </summary>
 		public Collection() { }
 
@@ -1644,7 +1648,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="dictionary">Initialized values</param>
 		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()
 		{
-			dictionary?.ForEach(entry => this.Add(entry));
+			dictionary?.ForEach(kvp => this.Add(kvp));
 		}
 
 		#region Properties

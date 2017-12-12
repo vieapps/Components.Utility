@@ -20,7 +20,7 @@ using Newtonsoft.Json.Linq;
 namespace net.vieapps.Components.Utility
 {
 	/// <summary>
-	/// Static servicing methods
+	/// Utility servicing methods
 	/// </summary>
 	public static partial class UtilityService
 	{
@@ -853,7 +853,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Working with task in the thread pool
 		/// <summary>
-		/// Executes a task in the thread pool with cancellation supported
+		/// Executes a task (action) in the thread pool with cancellation supported
 		/// </summary>
 		/// <param name="action">The action to run in the thread pool</param>
 		/// <param name="cancellationToken">The cancellation token</param>
@@ -883,7 +883,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Executes a task in the thread pool with cancellation supported
+		/// Executes a task (action) in the thread pool with cancellation supported
 		/// </summary>
 		/// <typeparam name="TResult"></typeparam>
 		/// <param name="func">The function to run in the thread pool</param>
@@ -1337,15 +1337,15 @@ namespace net.vieapps.Components.Utility
 		{
 			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
 				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
-					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
+				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
+				{
+					try
 					{
-						try
-						{
-							await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line).ConfigureAwait(false), CancellationToken.None, true, false).ConfigureAwait(false);
-							await writer.FlushAsync().ConfigureAwait(false);
-						}
-						catch { }
+						await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line).ConfigureAwait(false), CancellationToken.None, true, false).ConfigureAwait(false);
+						await writer.FlushAsync().ConfigureAwait(false);
 					}
+					catch { }
+				}
 		}
 		#endregion
 
