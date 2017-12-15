@@ -11,7 +11,7 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static class DateTimeService
 	{
-		public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+		public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
 		/// <summary>
 		/// Gets the default date-time for checking (1/1/1900)

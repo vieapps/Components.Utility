@@ -478,7 +478,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Create new instance & Cast
-		static Dictionary<Type, Func<object>> TypeFactoryCache = new Dictionary<Type, Func<object>>();
+		static Dictionary<Type, Func<object>> Factories = new Dictionary<Type, Func<object>>();
 
 		/// <summary>
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
@@ -487,11 +487,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The newly created instance</returns>
 		public static object CreateInstance(this Type type)
 		{
-			if (!ObjectService.TypeFactoryCache.TryGetValue(type, out Func<object> func))
-				lock (ObjectService.TypeFactoryCache)
+			if (!ObjectService.Factories.TryGetValue(type, out Func<object> func))
+				lock (ObjectService.Factories)
 				{
-					if (!ObjectService.TypeFactoryCache.TryGetValue(type, out func))
-						ObjectService.TypeFactoryCache[type] = func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
+					if (!ObjectService.Factories.TryGetValue(type, out func))
+						ObjectService.Factories[type] = func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
 				}
 			return func();
 		}
