@@ -1349,19 +1349,10 @@ namespace net.vieapps.Components.Utility
 		public static byte[] ReadBinaryFile(FileInfo fileInfo)
 		{
 			if (fileInfo != null && fileInfo.Exists)
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize))
 				{
 					var data = new byte[fileInfo.Length];
-					var buffer = new byte[TextFileReader.BufferSize];
-					var offset = 0;
-					var count = stream.Read(buffer, offset, TextFileReader.BufferSize);
-					while (count > 0)
-					{
-						Buffer.BlockCopy(buffer, 0, data, offset, count);
-						offset += count;
-						buffer = new byte[TextFileReader.BufferSize];
-						count = stream.Read(buffer, offset, TextFileReader.BufferSize);
-					}
+					stream.Read(data, 0, fileInfo.Length.CastAs<int>());
 					return data;
 				}
 			return null;
@@ -1385,28 +1376,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> ReadBinaryFileAsync(FileInfo fileInfo, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (fileInfo == null || !fileInfo.Exists)
-				return null;
-
-			else if (fileInfo.Length < (long)TextFileReader.BufferSize)
-				return UtilityService.ReadBinaryFile(fileInfo);
-
-			else
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true))
+			if (fileInfo != null && fileInfo.Exists)
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, true))
 				{
 					var data = new byte[fileInfo.Length];
-					var buffer = new byte[TextFileReader.BufferSize];
-					var offset = 0;
-					var count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
-					while (count > 0)
-					{
-						Buffer.BlockCopy(buffer, 0, data, offset, count);
-						offset += count;
-						buffer = new byte[TextFileReader.BufferSize];
-						count = await stream.ReadAsync(buffer, offset, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
-					}
+					await stream.ReadAsync(data, 0, fileInfo.Length.CastAs<int>()).ConfigureAwait(false);
 					return data;
 				}
+			return null;
 		}
 
 		/// <summary>
@@ -1432,14 +1409,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task DownloadFileAsync(string url, string filePath, string referUri, Action<string, string, long> onCompleted, Action<string, Exception> onError, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (string.IsNullOrWhiteSpace(url) || !url.IsStartsWith("http"))
-				onCompleted?.Invoke(url, null, 0);
-
-			else
+			if (!string.IsNullOrWhiteSpace(url) && url.IsStartsWith("http"))
 				try
 				{
 					var stopwatch = new Stopwatch();
 					stopwatch.Start();
+
 					using (var webStream = await UtilityService.GetWebResourceAsync(url, referUri, cancellationToken).ConfigureAwait(false))
 					{
 						using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
@@ -1447,6 +1422,7 @@ namespace net.vieapps.Components.Utility
 							await webStream.CopyToAsync(fileStream, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
 						}
 					}
+
 					stopwatch.Stop();
 					onCompleted?.Invoke(url, filePath, stopwatch.ElapsedMilliseconds);
 				}
@@ -1454,6 +1430,9 @@ namespace net.vieapps.Components.Utility
 				{
 					onError?.Invoke(url, ex);
 				}
+
+			else
+				onCompleted?.Invoke(url, null, 0);
 		}
 
 		/// <summary>
