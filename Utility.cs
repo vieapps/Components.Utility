@@ -1013,7 +1013,7 @@ namespace net.vieapps.Components.Utility
 					if (excludedSubFolders != null && excludedSubFolders.Count > 0)
 						foreach (var excludedFolder in excludedSubFolders)
 						{
-							isExcluded = folderPath.IsEndsWith("\\" + excludedFolder);
+							isExcluded = folderPath.IsEndsWith(Path.DirectorySeparatorChar.ToString() + excludedFolder);
 							if (isExcluded)
 								break;
 						}
@@ -1066,6 +1066,18 @@ namespace net.vieapps.Components.Utility
 		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders), cancellationToken);
+		}
+
+		/// <summary>
+		/// Gets path to a file/folder with right seperator of OS Platform
+		/// </summary>
+		/// <param name="paths"></param>
+		/// <returns></returns>
+		public static string GetPath(params string[] paths)
+		{
+			return paths == null || paths.Length < 1
+				? null
+				: Path.Combine(paths);
 		}
 		#endregion
 

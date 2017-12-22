@@ -123,7 +123,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + "\\" + message.ID + ".msg", message.Encrypted);
+					UtilityService.WriteTextFile(folderPath + Path.DirectorySeparatorChar.ToString() + message.ID + ".msg", message.Encrypted);
 				}
 				catch { }
 		}
@@ -232,7 +232,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + "\\" + message.ID + ".msg", message.Encrypted);
+					UtilityService.WriteTextFile(folderPath + Path.DirectorySeparatorChar.ToString() + message.ID + ".msg", message.Encrypted);
 				}
 				catch { }
 		}
