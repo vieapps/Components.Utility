@@ -32,102 +32,126 @@ namespace net.vieapps.Components.Utility
 		/// Converts this string to an array
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="char"></param>
+		/// <param name="separator"></param>
 		/// <param name="removeEmptyElements"></param>
 		/// <param name="trim"></param>
 		/// <returns></returns>
-		public static string[] ToArray(this string @string, char @char = ',', bool removeEmptyElements = false, bool trim = true)
+		public static string[] ToArray(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
 		{
-			if (string.IsNullOrWhiteSpace(@string))
-				return new string[] { };
-
-			var array = trim
-				? @string.Trim().Split(@char)
-				: @string.Split(@char);
-
-			if (removeEmptyElements)
-			{
-				int index = 0;
-				while (index < array.Length)
-				{
-					if (string.IsNullOrWhiteSpace(array[index]))
-						array = array.RemoveAt(index);
-					else
-					{
-						if (trim)
-							array[index] = array[index].Trim();
-						index++;
-					}
-				}
-			}
-			else if (trim)
-				array = array.Select(item => item.Trim()).ToArray();
-
-			return array;
+			return @string == null
+				? new string[] { }
+				: (trim ? @string.Trim() : @string).Split(new[] { separator ?? "," }, removeEmptyElements ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None)
+					.Where(e => removeEmptyElements ? !string.IsNullOrWhiteSpace(e) : true)
+					.Select(e => trim ? e.Trim() : e)
+					.ToArray();
 		}
 
 		/// <summary>
 		/// Converts this string to an array
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="char"></param>
+		/// <param name="separator"></param>
 		/// <param name="removeEmptyElements"></param>
+		/// <param name="trim"></param>
 		/// <returns></returns>
-		public static List<string> ToList(this string @string, char @char = ',', bool removeEmptyElements = false)
+		public static string[] ToArray(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
 		{
-			return @string.ToArray(@char, removeEmptyElements).ToList();
+			return @string == null
+				? new string[] { }
+				: @string.ToArray(separator.ToString(), removeEmptyElements, trim);
+		}
+
+		/// <summary>
+		/// Converts this string to an array
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="separator"></param>
+		/// <param name="removeEmptyElements"></param>
+		/// <param name="trim"></param>
+		/// <returns></returns>
+		public static List<string> ToList(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
+		{
+			return @string == null
+				? new List<string>()
+				: (trim ? @string.Trim() : @string).Split(new[] { separator ?? "," }, removeEmptyElements ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None)
+					.Where(e => removeEmptyElements ? !string.IsNullOrWhiteSpace(e) : true)
+					.Select(e => trim ? e.Trim() : e)
+					.ToList();
+		}
+
+		/// <summary>
+		/// Converts this string to an array
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="separator"></param>
+		/// <param name="removeEmptyElements"></param>
+		/// <param name="trim"></param>
+		/// <returns></returns>
+		public static List<string> ToList(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
+		{
+			return @string.ToList(separator.ToString(), removeEmptyElements, trim);
 		}
 
 		/// <summary>
 		/// Converts this string to a hash-set
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="char"></param>
+		/// <param name="separator"></param>
 		/// <param name="removeEmptyElements"></param>
+		/// <param name="trim"></param>
 		/// <returns></returns>
-		public static HashSet<string> ToHashSet(this string @string, char @char = ',', bool removeEmptyElements = false)
+		public static HashSet<string> ToHashSet(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
 		{
-			return @string.ToArray(@char, removeEmptyElements).ToHashSet();
+			return new HashSet<string>(@string.ToArray(separator, removeEmptyElements, trim));
+		}
+
+		/// <summary>
+		/// Converts this string to a hash-set
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="separator"></param>
+		/// <param name="removeEmptyElements"></param>
+		/// <param name="trim"></param>
+		/// <returns></returns>
+		public static HashSet<string> ToHashSet(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
+		{
+			return @string.ToHashSet(separator.ToString(), removeEmptyElements, trim);
 		}
 
 		/// <summary>
 		/// Converts this collection to string
 		/// </summary>
 		/// <param name="object"></param>
-		/// <param name="seperate"></param>
+		/// <param name="separator"></param>
 		/// <returns></returns>
-		public static string ToString(this IEnumerable<string> @object, string seperate)
+		public static string ToString(this IEnumerable<string> @object, string separator)
 		{
-			var @string = "";
-			@object.ForEach(item => @string += (!@string.Equals("") ? seperate : "") + item);
-			return @string;
+			return string.Join(separator ?? "", @object);
 		}
 
 		/// <summary>
 		/// Converts this collection to string
 		/// </summary>
 		/// <param name="object"></param>
-		/// <param name="seperate"></param>
+		/// <param name="separator"></param>
 		/// <returns></returns>
-		public static string ToString<T>(this IEnumerable<T> @object, string seperate)
+		public static string ToString<T>(this IEnumerable<T> @object, string separator)
 		{
-			string @string = "";
-			@object.ForEach(item => @string += (!@string.Equals("") ? seperate : "") + item.ToString());
-			return @string;
+			return @object.Select(o => o != null ? o.ToString() : "null").ToString(separator);
 		}
 
 		/// <summary>
 		/// Converts this collection to string
 		/// </summary>
 		/// <param name="object"></param>
-		/// <param name="elementSeperate"></param>
-		/// <param name="valueSeperate"></param>
+		/// <param name="elementSeparator"></param>
+		/// <param name="valueSeparator"></param>
 		/// <returns></returns>
-		public static string ToString(this NameValueCollection @object, string elementSeperate, string valueSeperate = null)
+		public static string ToString(this NameValueCollection @object, string elementSeparator, string valueSeparator = null)
 		{
 			var @string = "";
 			foreach (string key in @object)
-				@string += (!@string.Equals("") ? elementSeperate : "") + key + (string.IsNullOrWhiteSpace(valueSeperate) ? ": " : valueSeperate) + @object[key];
+				@string += (!@string.Equals("") ? (elementSeparator ?? "") : "") + key + (valueSeparator ?? ": ") + @object[key];
 			return @string;
 		}
 		#endregion
@@ -383,10 +407,7 @@ namespace net.vieapps.Components.Utility
 			if (@object is HashSet<T>)
 				return @object as HashSet<T>;
 
-			var set = checkDuplicated
-				? new HashSet<T>()
-				: new HashSet<T>(@object);
-
+			var set = new HashSet<T>(checkDuplicated ? new T[] { } : @object);
 			if (checkDuplicated)
 				set.Append(@object);
 
