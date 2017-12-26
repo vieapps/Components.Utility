@@ -930,6 +930,36 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Gets size of a file in the friendly text
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <returns></returns>
+		public static string GetFileSize(FileInfo fileInfo)
+		{
+			return fileInfo == null || !fileInfo.Exists
+				? null
+				: fileInfo.Length >= (1024 * 1024 * 1024)
+					? (fileInfo.Length.CastAs<double>() / (1024 * 1024 * 1024)).ToString("##0.##") + " G"
+					: fileInfo.Length >= (1024 * 1024)
+						? (fileInfo.Length.CastAs<double>() / (1024 * 1024)).ToString("##0.##") + " M"
+						: fileInfo.Length >= 1024
+							? (fileInfo.Length.CastAs<double>() / 1024).ToString("##0.##") + " K"
+							: fileInfo.Length.ToString("###0") + " B";
+		}
+
+		/// <summary>
+		/// Gets size of a file in the friendly text
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <returns></returns>
+		public static string GetFileSize(string filePath)
+		{
+			return string.IsNullOrWhiteSpace(filePath)
+				? null
+				: UtilityService.GetFileSize(new FileInfo(filePath));
+		}
+
+		/// <summary>
 		/// Gets parts of file path (seperate path and file name)
 		/// </summary>
 		/// <param name="filePath">The string that presents full path (or full URI) of a file</param>
@@ -950,12 +980,12 @@ namespace net.vieapps.Components.Utility
 			catch
 			{
 				filename = filePath.Trim().Replace("\"", "");
-				var start = filename.PositionOf("\\");
+				var start = filename.PositionOf(@"\");
 				while (start > -1)
 				{
-					path += (!path.Equals("") ? "\\" : "") + filename.Substring(0, start);
+					path += (!path.Equals("") ? @"\" : "") + filename.Substring(0, start);
 					filename = filename.Remove(0, start + 1);
-					start = filename.PositionOf("\\");
+					start = filename.PositionOf(@"\");
 				}
 
 				start = filename.PositionOf("/");
