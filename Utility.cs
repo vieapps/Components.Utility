@@ -1023,8 +1023,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="searchPatterns"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
+		/// <param name="orderBy"></param>
+		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<FileInfo> GetFiles(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null)
+		public static List<FileInfo> GetFiles(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			if (!Directory.Exists(path))
 				throw new DirectoryNotFoundException($"The folder is not found [{path}]");
@@ -1034,7 +1036,19 @@ namespace net.vieapps.Components.Utility
 				? new string[] { "*.*" }
 				: searchPatterns.ToArray('|', true);
 
-			searchingPatterns.ForEach(searchingPattern => files.Append(Directory.GetFiles(path, searchingPattern).Select(f => new FileInfo(f)).OrderBy(f => f.Name)));
+			searchingPatterns.ForEach(searchingPattern =>
+			{
+				var results = Directory.GetFiles(path, searchingPattern).Select(filePath => new FileInfo(filePath));
+				if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
+					results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
+						? orderBy.IsStartsWith("Name")
+							? results.OrderBy(file => file.Name)
+							: results.OrderBy(file => file.LastWriteTime)
+						: orderBy.IsStartsWith("Name")
+							? results.OrderByDescending(file => file.Name)
+							: results.OrderByDescending(file => file.LastWriteTime);
+				files.Append(results);
+			});
 
 			if (searchInSubFolder)
 				Directory.GetDirectories(path)?.ForEach(folderPath =>
@@ -1049,7 +1063,19 @@ namespace net.vieapps.Components.Utility
 						}
 
 					if (!isExcluded)
-						searchingPatterns.ForEach(searchingPattern => files.Append(Directory.GetFiles(folderPath, searchingPattern).Select(f => new FileInfo(f)).OrderBy(f => f.Name)));
+						searchingPatterns.ForEach(searchingPattern =>
+						{
+							var results = Directory.GetFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
+							if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
+								results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
+									? orderBy.IsStartsWith("Name")
+										? results.OrderBy(file => file.Name)
+										: results.OrderBy(file => file.LastWriteTime)
+									: orderBy.IsStartsWith("Name")
+										? results.OrderByDescending(file => file.Name)
+										: results.OrderByDescending(file => file.LastWriteTime);
+							files.Append(results);
+						});
 				});
 
 			return files;
@@ -1062,11 +1088,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="searchPatterns"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
+		/// <param name="orderBy"></param>
+		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders), cancellationToken);
+			return UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 		}
 
 		/// <summary>
@@ -1076,10 +1104,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="searchPatterns"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
+		/// <param name="orderBy"></param>
+		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<string> GetFilePaths(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null)
+		public static List<string> GetFilePaths(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
-			return UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders)
+			return UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
 				.Select(f => f.FullName)
 				.ToList();
 		}
@@ -1091,11 +1121,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="searchPatterns"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
+		/// <param name="orderBy"></param>
+		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders), cancellationToken);
+			return UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 		}
 
 		/// <summary>
@@ -1108,6 +1140,41 @@ namespace net.vieapps.Components.Utility
 			return paths == null || paths.Length < 1
 				? null
 				: Path.Combine(paths);
+		}
+
+		/// <summary>
+		/// Moves file (searched by patterns) of a folder to other folders
+		/// </summary>
+		/// <param name="source"></param>
+		/// <param name="destination"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="deleteOldFilesBeforeMoving"></param>
+		public static void MoveFiles(string source, string destination, string searchPatterns, bool deleteOldFilesBeforeMoving = false)
+		{
+			if (!Directory.Exists(source) || !Directory.Exists(destination))
+				throw new InformationInvalidException("The paths are invalid");
+			else if (source.IsEquals(destination))
+				return;
+
+			UtilityService.GetFiles(source, searchPatterns).ForEach(file =>
+			{
+				var path = Path.Combine(destination, file.Name);
+				if (deleteOldFilesBeforeMoving && File.Exists(path))
+					File.Delete(path);
+				File.Move(file.FullName, path);
+			});
+		}
+
+		/// <summary>
+		/// Moves file (searched by patterns) of a folder to other folders
+		/// </summary>
+		/// <param name="source"></param>
+		/// <param name="destination"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="deleteOldFilesBeforeMoving"></param>
+		public static Task MoveFilesAsync(string source, string destination, string searchPatterns, bool deleteOldFilesBeforeMoving = false, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
 		}
 		#endregion
 
