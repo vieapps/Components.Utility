@@ -5,6 +5,7 @@ using System.Linq;
 using System.Xml;
 using System.Text;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
@@ -1449,7 +1450,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Read/Download binary files
+		#region Read binary files
 		/// <summary>
 		/// Reads a binary file
 		/// </summary>
@@ -1458,7 +1459,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] ReadBinaryFile(FileInfo fileInfo)
 		{
 			if (fileInfo != null && fileInfo.Exists)
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize))
 				{
 					var data = new byte[fileInfo.Length];
 					stream.Read(data, 0, fileInfo.Length.CastAs<int>());
@@ -1486,7 +1487,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task<byte[]> ReadBinaryFileAsync(FileInfo fileInfo, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (fileInfo != null && fileInfo.Exists)
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, true))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true))
 				{
 					var data = new byte[fileInfo.Length];
 					await stream.ReadAsync(data, 0, fileInfo.Length.CastAs<int>()).ConfigureAwait(false);
@@ -1505,6 +1506,56 @@ namespace net.vieapps.Components.Utility
 		{
 			return UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken);
 		}
+		#endregion
+
+		#region Upload/Download files
+		/// <summary>
+		/// Upload a file to a remote server
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="url"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="onError"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task UploadFileAsync(string filePath, string url, Action<string, string, string, long> onCompleted = null, Action<string, string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentNullException(nameof(filePath), "File path is null");
+
+			else if (!File.Exists(filePath))
+				throw new FileNotFoundException();
+
+			try
+			{
+				var stopwatch = new Stopwatch();
+				stopwatch.Start();
+
+				var results = "";
+				var fileInfo = new FileInfo(filePath);
+				using (var stream = new MemoryStream(await UtilityService.ReadBinaryFileAsync(fileInfo, cancellationToken).ConfigureAwait(false)))
+				{
+					using (var http = new HttpClient())
+					{
+						using (var content = new MultipartFormDataContent("VIEApps----" + DateTime.Now.ToIsoString()))
+						{
+							content.Add(new StreamContent(stream), "UploadedFile", fileInfo.Name);
+							using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
+							{
+								results = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+							}
+						}
+					}
+				}
+
+				stopwatch.Stop();
+				onCompleted?.Invoke(filePath, url, results, stopwatch.ElapsedMilliseconds);
+			}
+			catch (Exception ex)
+			{
+				onError?.Invoke(filePath, url, ex);
+			}
+		}
 
 		/// <summary>
 		/// Downloads a file from a remote server
@@ -1516,7 +1567,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task DownloadFileAsync(string url, string filePath, string referUri, Action<string, string, long> onCompleted, Action<string, Exception> onError, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task DownloadFileAsync(string url, string filePath, string referUri, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (!string.IsNullOrWhiteSpace(url) && url.IsStartsWith("http"))
 				try
