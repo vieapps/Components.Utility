@@ -1450,7 +1450,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Read binary files
+		#region Read/Write binary files
 		/// <summary>
 		/// Reads a binary file
 		/// </summary>
@@ -1506,9 +1506,88 @@ namespace net.vieapps.Components.Utility
 		{
 			return UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken);
 		}
+
+		/// <summary>
+		/// Writes a binary file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="content"></param>
+		/// <returns></returns>
+		public static void WriteBinaryFile(string filePath, byte[] content)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
+
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize))
+			{
+				stream.Write(content ?? new byte[0], 0, content?.Length ?? 0);
+			}
+		}
+
+		/// <summary>
+		/// Writes a binary file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="content"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task WriteBinaryFileAsync(string filePath, byte[] content, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
+
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
+			{
+				await stream.WriteAsync(content ?? new byte[0], 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
+			}
+		}
 		#endregion
 
-		#region Upload/Download files
+		#region Upload/Download
+		/// <summary>
+		/// Uploads data as file to a remote server
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="filename"></param>
+		/// <param name="url"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="onError"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task UploadAsync(byte[] data, string filename, string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (data == null)
+				throw new ArgumentNullException(nameof(data), "Data is invalid");
+
+			try
+			{
+				var stopwatch = new Stopwatch();
+				stopwatch.Start();
+
+				using (var stream = new MemoryStream(data))
+				{
+					using (var http = new HttpClient())
+					{
+						using (var content = new MultipartFormDataContent("VIEAppsNGX----" + DateTime.Now.ToIsoString()))
+						{
+							content.Add(new StreamContent(stream), "UploadedFile", filename);
+							using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
+							{
+								await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+							}
+						}
+					}
+				}
+
+				stopwatch.Stop();
+				onCompleted?.Invoke(url, stopwatch.ElapsedMilliseconds);
+			}
+			catch (Exception ex)
+			{
+				onError?.Invoke(url, ex);
+			}
+		}
+
 		/// <summary>
 		/// Upload a file to a remote server
 		/// </summary>
@@ -1537,7 +1616,7 @@ namespace net.vieapps.Components.Utility
 				{
 					using (var http = new HttpClient())
 					{
-						using (var content = new MultipartFormDataContent("VIEApps----" + DateTime.Now.ToIsoString()))
+						using (var content = new MultipartFormDataContent("VIEAppsNGX----" + DateTime.Now.ToIsoString()))
 						{
 							content.Add(new StreamContent(stream), "UploadedFile", fileInfo.Name);
 							using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
@@ -1554,6 +1633,41 @@ namespace net.vieapps.Components.Utility
 			catch (Exception ex)
 			{
 				onError?.Invoke(filePath, url, ex);
+			}
+		}
+
+		/// <summary>
+		/// Downloads data from a remote server
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="onError"></param>
+		/// <returns></returns>
+		public static async Task<byte[]> DownloadAsync(string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null)
+		{
+			if (string.IsNullOrWhiteSpace(url) || (!url.IsStartsWith("http://") && !url.IsStartsWith("https://")))
+				throw new ArgumentNullException(nameof(url), "URL is invalid");
+
+			try
+			{
+				var stopwatch = new Stopwatch();
+				stopwatch.Start();
+
+				byte[] data = null;
+				using (var webclient = new WebClient())
+				{
+					data = await webclient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+				}
+
+				stopwatch.Stop();
+				onCompleted?.Invoke(url, stopwatch.ElapsedMilliseconds);
+
+				return data;
+			}
+			catch (Exception ex)
+			{
+				onError?.Invoke(url, ex);
+				return null;
 			}
 		}
 

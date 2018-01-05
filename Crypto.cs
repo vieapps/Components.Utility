@@ -313,6 +313,23 @@ namespace net.vieapps.Components.Utility
 		};
 
 		/// <summary>
+		/// Gets hash
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		public static byte[] GetHash(this byte[] bytes, string mode = "MD5")
+		{
+			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
+				func = () => SHA512.Create();
+
+			using (var hasher = func())
+			{
+				return hasher.ComputeHash(bytes);
+			}
+		}
+
+		/// <summary>
 		/// Gets hash of this string
 		/// </summary>
 		/// <param name="string"></param>
@@ -320,12 +337,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHash(this string @string, string mode = "MD5")
 		{
-			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
-				func = () => SHA512.Create();
-			using (var hasher = func())
-			{
-				return hasher.ComputeHash(@string.ToBytes());
-			}
+			return @string.ToBytes().GetHash(mode);
 		}
 
 		/// <summary>
@@ -453,6 +465,24 @@ namespace net.vieapps.Components.Utility
 		};
 
 		/// <summary>
+		/// Gets HMAC hash
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="key"></param>
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
+		{
+			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
+				func = (k) => new HMACSHA512(k);
+
+			using (var hasher = func(key))
+			{
+				return hasher.ComputeHash(bytes);
+			}
+		}
+
+		/// <summary>
 		/// Gets HMAC hash of this string
 		/// </summary>
 		/// <param name="string"></param>
@@ -461,12 +491,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256")
 		{
-			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
-				func = (k) => new HMACSHA512(k);
-			using (var hasher = func(key))
-			{
-				return hasher.ComputeHash(@string.ToBytes());
-			}
+			return @string.ToBytes().GetHMACHash(key, mode);
 		}
 
 		/// <summary>
@@ -615,6 +640,29 @@ namespace net.vieapps.Components.Utility
 
 		#region Encrypt/Decrypt (using AES)
 		/// <summary>
+		/// Encrypts by specific key and initialize vector using AES
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="key"></param>
+		/// <param name="iv"></param>
+		/// <returns></returns>
+		public static byte[] Encrypt(byte[] data, byte[] key = null, byte[] iv = null)
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var crypto = new AesCryptoServiceProvider())
+			{
+				crypto.Key = key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey();
+				crypto.IV = iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV();
+				using (var encryptor = crypto.CreateEncryptor())
+				{
+					return encryptor.TransformFinalBlock(data, 0, data.Length);
+				}
+			}
+		}
+
+		/// <summary>
 		/// Encrypts this string by specific key and initialize vector using AES
 		/// </summary>
 		/// <param name="string"></param>
@@ -624,22 +672,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHexa = false)
 		{
-			if (string.IsNullOrWhiteSpace(@string))
-				return "";
-
-			using (var crypto = new AesCryptoServiceProvider())
-			{
-				crypto.Key = key;
-				crypto.IV = iv;
-				using (var encryptor = crypto.CreateEncryptor())
-				{
-					var encrypted = @string.ToBytes();
-					encrypted = encryptor.TransformFinalBlock(encrypted, 0, encrypted.Length);
-					return toHexa
-						? encrypted.ToHexa()
-						: encrypted.ToBase64();
-				}
-			}
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: toHexa
+					? CryptoService.Encrypt(@string.ToBytes(), key, iv).ToHexa()
+					: CryptoService.Encrypt(@string.ToBytes(), key, iv).ToBase64();
 		}
 
 		/// <summary>
@@ -651,7 +688,30 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Encrypt(this string @string, string passPhrase = null, bool toHexa = false)
 		{
-			return @string.Encrypt((passPhrase ?? CryptoService.DefaultEncryptionKey).GenerateEncryptionKey(), (passPhrase ?? CryptoService.DefaultEncryptionKey).GenerateEncryptionIV(), toHexa);
+			return @string.Encrypt(passPhrase?.GenerateEncryptionKey(), passPhrase?.GenerateEncryptionIV(), toHexa);
+		}
+
+		/// <summary>
+		/// Decrypts by specific key and initialize vector using AES
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="key"></param>
+		/// <param name="iv"></param>
+		/// <returns></returns>
+		public static byte[] Decrypt(byte[] data, byte[] key = null, byte[] iv = null)
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var crypto = new AesCryptoServiceProvider())
+			{
+				crypto.Key = key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey();
+				crypto.IV = iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV();
+				using (var decryptor = crypto.CreateDecryptor())
+				{
+					return decryptor.TransformFinalBlock(data, 0, data.Length);
+				}
+			}
 		}
 
 		/// <summary>
@@ -664,21 +724,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHexa = false)
 		{
-			if (string.IsNullOrWhiteSpace(@string))
-				return "";
-
-			using (var crypto = new AesCryptoServiceProvider())
-			{
-				crypto.Key = key;
-				crypto.IV = iv;
-				using (var decryptor = crypto.CreateDecryptor())
-				{
-					var decrypted = isHexa
-						? @string.HexToBytes()
-						: @string.Base64ToBytes();
-					return decryptor.TransformFinalBlock(decrypted, 0, decrypted.Length).GetString();
-				}
-			}
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: CryptoService.Decrypt(isHexa ? @string.HexToBytes() : @string.Base64ToBytes(), key, iv).GetString();
 		}
 
 		/// <summary>
@@ -690,7 +738,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHexa = false)
 		{
-			return @string.Decrypt((passPhrase ?? CryptoService.DefaultEncryptionKey).GenerateEncryptionKey(), (passPhrase ?? CryptoService.DefaultEncryptionKey).GenerateEncryptionIV(), isHexa);
+			return @string.Decrypt(passPhrase?.GenerateEncryptionKey(), passPhrase?.GenerateEncryptionIV(), isHexa);
 		}
 		#endregion
 
