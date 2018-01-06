@@ -13,8 +13,7 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static class OTPService
 	{
-		static string UrlEncodeAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~";
-		static string Base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+		static string Base32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 		static int InByteSize = 8;
 		static int OutByteSize = 5;
 		static int SizeOfInt32 = 4;
@@ -50,21 +49,20 @@ namespace net.vieapps.Components.Utility
 			if (BitConverter.IsLittleEndian)
 				Array.Reverse(bytes);
 
-			digits = digits > 0 && digits < 10 ? digits : 6;
+			digits = digits > 6 && digits < 11 ? digits : 6;
 			return ((BitConverter.ToInt32(bytes, 0) & 0x7FFFFFFF) % (int)Math.Pow(10, digits)).ToString(CultureInfo.InvariantCulture).PadLeft(digits, '0');
 		}
 
 		/// <summary>
-		/// Generates the QR Code image for provisioning
+		/// Generates the URI for provisioning
 		/// </summary>
 		/// <param name="identifier">The string that presents identity, usually is username/account or email</param>
 		/// <param name="secret">The secret key</param>
-		/// <param name="size">The number that presents the size of image</param>
 		/// <param name="issuer">The string that presents name of issuer</param>
-		/// <returns>The array of bytes that presents data of QR Code image (PNG) for provisioning</returns>
-		public static Task<byte[]> GenerateProvisioningImageAsync(string identifier, byte[] secret, int size = 300, string issuer = null)
+		/// <returns></returns>
+		public static string GenerateProvisioningUri(string identifier, byte[] secret, string issuer = null)
 		{
-			// encode the secret with Base32 string
+			// encode the secret key as Base32 string
 			int pos = 0, index = 0;
 			var builder = new StringBuilder((secret.Length + 7) * OTPService.InByteSize / OTPService.OutByteSize);
 			while (pos < secret.Length)
@@ -72,7 +70,7 @@ namespace net.vieapps.Components.Utility
 				var current = secret[pos];
 				int digit;
 
-				//Is the current digit going to span a byte boundary?
+				// is the current digit going to span a byte boundary?
 				if (index > (OTPService.InByteSize - OTPService.OutByteSize))
 				{
 					var next = (pos + 1) < secret.Length ? secret[pos + 1] : 0;
@@ -89,28 +87,39 @@ namespace net.vieapps.Components.Utility
 					if (index == 0)
 						pos++;
 				}
-				builder.Append(OTPService.Base32Alphabet[digit]);
+				builder.Append(OTPService.Base32[digit]);
 			}
-			var data = builder.ToString();
 
-			// encode the uri to build QR Code
-			var uri = $"otpauth://totp/{identifier}?secret={data}&issuer={issuer ?? "VIEApps.net"}";
-			builder = new StringBuilder();
-			for (index = 0; index < uri.Length; index++)
-			{
-				var symbol = uri[index];
-				if (OTPService.UrlEncodeAlphabet.IndexOf(symbol) != -1)
-					builder.Append(symbol);
-				else
-				{
-					builder.Append('%');
-					builder.Append(((int)symbol).ToString("X2"));
-				}
-			}
-			data = builder.ToString();
+			// return as URI
+			return $"otpauth://totp/{identifier}?secret={builder.ToString()}&issuer={issuer ?? "VIEApps.net"}";
+		}
 
-			// download data of QR Code image
-			return UtilityService.DownloadAsync($"https://chart.apis.google.com/chart?cht=qr&chs={size}x{size}&chl={data}");
+		/// <summary>
+		/// Generates the QR Code image for provisioning
+		/// </summary>
+		/// <param name="identifier">The string that presents identity, usually is username/account or email</param>
+		/// <param name="secret">The secret key</param>
+		/// <param name="issuer">The string that presents name of issuer</param>
+		/// <param name="size">The number that presents the size of image</param>
+		/// <returns>The array of bytes that presents data of QR Code image (PNG) for provisioning</returns>
+		public static byte[] GenerateProvisioningImage(string identifier, byte[] secret, string issuer = null, int size = 300)
+		{
+			var uri = OTPService.GenerateProvisioningUri(identifier, secret, issuer).UrlEncode();
+			return UtilityService.Download($"https://chart.apis.google.com/chart?cht=qr&chs={size}x{size}&chl={uri}");
+		}
+
+		/// <summary>
+		/// Generates the QR Code image for provisioning
+		/// </summary>
+		/// <param name="identifier">The string that presents identity, usually is username/account or email</param>
+		/// <param name="secret">The secret key</param>
+		/// <param name="issuer">The string that presents name of issuer</param>
+		/// <param name="size">The number that presents the size of image</param>
+		/// <returns>The array of bytes that presents data of QR Code image (PNG) for provisioning</returns>
+		public static Task<byte[]> GenerateProvisioningImageAsync(string identifier, byte[] secret, string issuer = null, int size = 300)
+		{
+			var uri = OTPService.GenerateProvisioningUri(identifier, secret, issuer).UrlEncode();
+			return UtilityService.DownloadAsync($"https://chart.apis.google.com/chart?cht=qr&chs={size}x{size}&chl={uri}");
 		}
 	}
 }

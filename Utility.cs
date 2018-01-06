@@ -1547,6 +1547,48 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Uploads data as file to a remote server
 		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="filename"></param>
+		/// <param name="url"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="onError"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task UploadAsync(Stream stream, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (stream == null)
+				throw new ArgumentNullException(nameof(stream), "Data stream is invalid");
+
+			try
+			{
+				var stopwatch = new Stopwatch();
+				stopwatch.Start();
+
+				var results = "";
+				using (var http = new HttpClient())
+				{
+					using (var content = new MultipartFormDataContent("VIEAppsNGX----" + DateTime.Now.ToIsoString()))
+					{
+						content.Add(new StreamContent(stream), "UploadedFile", filename);
+						using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
+						{
+							results = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+						}
+					}
+				}
+
+				stopwatch.Stop();
+				onCompleted?.Invoke(url, results, stopwatch.ElapsedMilliseconds);
+			}
+			catch (Exception ex)
+			{
+				onError?.Invoke(url, ex);
+			}
+		}
+
+		/// <summary>
+		/// Uploads data as file to a remote server
+		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="filename"></param>
 		/// <param name="url"></param>
@@ -1554,37 +1596,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task UploadAsync(byte[] data, string filename, string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task UploadAsync(byte[] data, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (data == null)
 				throw new ArgumentNullException(nameof(data), "Data is invalid");
 
-			try
+			using (var stream = new MemoryStream(data))
 			{
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
-
-				using (var stream = new MemoryStream(data))
-				{
-					using (var http = new HttpClient())
-					{
-						using (var content = new MultipartFormDataContent("VIEAppsNGX----" + DateTime.Now.ToIsoString()))
-						{
-							content.Add(new StreamContent(stream), "UploadedFile", filename);
-							using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
-							{
-								await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-							}
-						}
-					}
-				}
-
-				stopwatch.Stop();
-				onCompleted?.Invoke(url, stopwatch.ElapsedMilliseconds);
-			}
-			catch (Exception ex)
-			{
-				onError?.Invoke(url, ex);
+				await UtilityService.UploadAsync(stream, filename, url, onCompleted, onError, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -1605,34 +1624,60 @@ namespace net.vieapps.Components.Utility
 			else if (!File.Exists(filePath))
 				throw new FileNotFoundException();
 
+			var fileInfo = new FileInfo(filePath);
+			using (var stream = new MemoryStream(await UtilityService.ReadBinaryFileAsync(fileInfo, cancellationToken).ConfigureAwait(false)))
+			{
+				var stopwatch = new Stopwatch();
+				stopwatch.Start();
+				await UtilityService.UploadAsync(
+					stream, fileInfo.Name, url,
+					(uri, results, times) =>
+					{
+						stopwatch.Stop();
+						onCompleted?.Invoke(filePath, url, results, stopwatch.ElapsedMilliseconds);
+					},
+					(uri, ex) =>
+					{
+						stopwatch.Stop();
+						onError?.Invoke(filePath, url, ex);
+					},
+					cancellationToken
+				).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Downloads data from a remote server
+		/// </summary>
+		/// <param name="url"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="onError"></param>
+		/// <returns></returns>
+		public static byte[] Download(string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null)
+		{
+			if (string.IsNullOrWhiteSpace(url) || (!url.IsStartsWith("http://") && !url.IsStartsWith("https://")))
+				throw new ArgumentNullException(nameof(url), "URL is invalid");
+
 			try
 			{
 				var stopwatch = new Stopwatch();
 				stopwatch.Start();
 
-				var results = "";
-				var fileInfo = new FileInfo(filePath);
-				using (var stream = new MemoryStream(await UtilityService.ReadBinaryFileAsync(fileInfo, cancellationToken).ConfigureAwait(false)))
+				byte[] data = null;
+				using (var webclient = new WebClient())
 				{
-					using (var http = new HttpClient())
-					{
-						using (var content = new MultipartFormDataContent("VIEAppsNGX----" + DateTime.Now.ToIsoString()))
-						{
-							content.Add(new StreamContent(stream), "UploadedFile", fileInfo.Name);
-							using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
-							{
-								results = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-							}
-						}
-					}
+					data = webclient.DownloadData(url);
 				}
 
 				stopwatch.Stop();
-				onCompleted?.Invoke(filePath, url, results, stopwatch.ElapsedMilliseconds);
+				onCompleted?.Invoke(url, stopwatch.ElapsedMilliseconds);
+
+				return data;
 			}
 			catch (Exception ex)
 			{
-				onError?.Invoke(filePath, url, ex);
+				onError?.Invoke(url, ex);
+				return null;
 			}
 		}
 
