@@ -145,6 +145,16 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this array of bytes to Base64Url string
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static string ToBase64Url(this byte[] bytes)
+		{
+			return bytes.ToBase64().Split('=').First().Replace('+', '-').Replace('/', '_');
+		}
+
+		/// <summary>
 		/// Converts this string to Base64Url string
 		/// </summary>
 		/// <param name="string"></param>
