@@ -1526,13 +1526,7 @@ namespace net.vieapps.Components.Utility
 
 			// no multiple
 			if (names.Length < 2)
-			{
-				if (!dictionary.ContainsKey(name))
-					return false;
-
-				value = dictionary[name];
-				return true;
-			}
+				return dictionary.TryGetValue(name, out value) && value != null;
 
 			// got multiple
 			var index = 0;
@@ -1544,11 +1538,9 @@ namespace net.vieapps.Components.Utility
 				index++;
 			}
 
-			if (dictionary == null || !dictionary.ContainsKey(names[names.Length - 1]))
-				return false;
-
-			value = dictionary[names[names.Length - 1]];
-			return true;
+			return dictionary == null
+				? false
+				: dictionary.TryGetValue(names[names.Length - 1], out value) && value != null;
 		}
 
 		/// <summary>
@@ -1666,10 +1658,7 @@ namespace net.vieapps.Components.Utility
 			// no multiple
 			if (names.Length < 2)
 			{
-				if (!dictionary.ContainsKey(name))
-					dictionary.Add(name, value);
-				else
-					dictionary[name] = value;
+				dictionary[name] = value;
 				return true;
 			}
 
@@ -1686,10 +1675,7 @@ namespace net.vieapps.Components.Utility
 			if (dictionary == null)
 				return false;
 
-			if (!dictionary.ContainsKey(names[names.Length - 1]))
-				dictionary.Add(names[names.Length - 1], value);
-			else
-				dictionary[names[names.Length - 1]] = value;
+			dictionary[names[names.Length - 1]] = value;
 			return true;
 		}
 

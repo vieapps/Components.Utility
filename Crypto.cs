@@ -44,10 +44,38 @@ namespace net.vieapps.Components.Utility
 		/// Converts this Base64 string to array of bytes
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="isBase64Url"></param>
 		/// <returns></returns>
-		public static byte[] Base64ToBytes(this string @string)
+		public static byte[] Base64ToBytes(this string @string, bool isBase64Url = false)
 		{
-			return Convert.FromBase64String(@string);
+			if (!isBase64Url)
+				return Convert.FromBase64String(@string);
+
+			var base64 = @string.Trim().Replace('-', '+').Replace('_', '/');
+			switch (base64.Length % 4)
+			{
+				case 0:
+					break;
+				case 2:
+					base64 += "==";
+					break;
+				case 3:
+					base64 += "=";
+					break;
+				default:
+					throw new Exception("Illegal base64url string!");
+			}
+			return Convert.FromBase64String(base64);
+		}
+
+		/// <summary>
+		/// Converts this Base64Url string to array of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] Base64UrlToBytes(this string @string)
+		{
+			return @string.Base64ToBytes(true);
 		}
 
 		/// <summary>
@@ -313,7 +341,7 @@ namespace net.vieapps.Components.Utility
 		};
 
 		/// <summary>
-		/// Gets hash
+		/// Gets hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="mode"></param>
@@ -321,7 +349,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetHash(this byte[] bytes, string mode = "MD5")
 		{
 			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
-				func = () => SHA512.Create();
+				func = () => MD5.Create();
 
 			using (var hasher = func())
 			{
@@ -465,7 +493,7 @@ namespace net.vieapps.Components.Utility
 		};
 
 		/// <summary>
-		/// Gets HMAC hash
+		/// Gets HMAC hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="key"></param>
@@ -474,7 +502,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
 		{
 			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
-				func = (k) => new HMACSHA512(k);
+				func = (k) => new HMACSHA256(k);
 
 			using (var hasher = func(key))
 			{
@@ -841,6 +869,66 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Encrypt/Decrypt (extensions - using RSA)
+		/// <summary>
+		/// Encrypts the data by RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static byte[] Encrypt(this RSACryptoServiceProvider rsa, byte[] data)
+		{
+			return data == null || data.Length < 1
+				? new byte[0]
+				: rsa.Encrypt(data, false);
+		}
+
+		/// <summary>
+		/// Encrypts the data by RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="data"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string Encrypt(this RSACryptoServiceProvider rsa, string data, bool toHexa = false)
+		{
+			return string.IsNullOrWhiteSpace(data)
+				? ""
+				: toHexa
+					? rsa.Encrypt(data.ToBytes()).ToHexa()
+					: rsa.Encrypt(data.ToBytes()).ToBase64();
+		}
+
+		/// <summary>
+		/// Decrypts the data by RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="data"></param>
+		/// <returns></returns>
+		public static byte[] Decrypt(this RSACryptoServiceProvider rsa, byte[] data)
+		{
+			return data == null || data.Length < 1
+				? new byte[0]
+				: rsa.Decrypt(data, false);
+		}
+
+		/// <summary>
+		/// Decrypts the data by RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="data"></param>
+		/// <param name="isHexa"></param>
+		/// <returns></returns>
+		public static string Decrypt(this RSACryptoServiceProvider rsa, string data, bool isHexa = false)
+		{
+			return string.IsNullOrWhiteSpace(data)
+				? ""
+				: isHexa
+					? rsa.Decrypt(data.HexToBytes()).GetString()
+					: rsa.Decrypt(data.Base64ToBytes()).GetString();
+		}
+		#endregion
+
 		#region Create new instance of RSA Algorithm by a specific key
 		const string PEM_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
 		const string PEM_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
@@ -850,33 +938,43 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Creates an instance of RSA Algorithm
 		/// </summary>
-		/// <param name="key">The specifict key for the RSA instance, might be private or public key, and must be formated in XML or PEM</param>
-		/// <returns>An instance of RSA</returns>
-		public static RSACryptoServiceProvider CreateRSAInstance(string key)
-		{
-			return CryptoService.CreateRSAInstance(key, null);
-		}
-
-		/// <summary>
-		/// Creates an instance of RSA Algorithm
-		/// </summary>
 		/// <param name="key">Key for the RSA instance, might be private or public key, and must be formated in XML or PEM</param>
-		/// <param name="name">Additional for name of key-container. Default name of key-container is 'VIEPortalNGRSAContainer'. Ex: if the additional name is 'Passport', then the name of the key-container will be 'VIEPortalNGPassportRSAContainer'.</param>
+		/// <param name="size">The size of key, default is 2048 bit length</param>
+		/// <param name="name">Additional for name of key-container. Default name of key-container is 'VIEAppsRSAContainer'.
+		/// Ex: if the additional name is 'Passport', then the name of the key-container will be 'VIEAppsPassportRSAContainer'.</param>
 		/// <returns>An instance of RSA</returns>
-		public static RSACryptoServiceProvider CreateRSAInstance(string key, string name)
+		public static RSACryptoServiceProvider CreateRSAInstance(string key, int size = 2048, string name = null)
 		{
-			// check key
+			// prepare
 			if (string.IsNullOrWhiteSpace(key) || (!key.StartsWith("<RSAKeyValue>") && !key.StartsWith(CryptoService.PEM_PRIVATE_KEY_BEGIN) && !key.StartsWith(CryptoService.PEM_PUBLIC_KEY_BEGIN)))
 				throw new InvalidDataException("Invalid key to create new instance of RSA. Key must be formated in XML or PEM.");
 
-			// RSA instance
 			RSACryptoServiceProvider rsa = null;
+			var containerName = $"VIEApps{name ?? ""}RSAContainer";
 
 			// create RSACryptoServiceProvider instance and initialize with XML key
 			if (key.StartsWith("<RSAKeyValue>"))
 				try
 				{
-					rsa = CryptoService.CreateRSAInstance(key, 2048, name);
+					// create new instance of RSA and store in the machine key-store (C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys)
+					rsa = new RSACryptoServiceProvider(size, new CspParameters(1, "Microsoft Strong Cryptographic Provider")
+					{
+						Flags = CspProviderFlags.UseMachineKeyStore,
+						KeyContainerName = containerName
+					});
+					rsa.FromXmlString(key);
+					rsa.PersistKeyInCsp = true;
+				}
+				catch (CryptographicException ex)
+				{
+					/*	Object already exists:
+					- Update settings of IIS and impersonate user: https://pwnedcode.wordpress.com/2008/11/10/fixing-cryptographicexception-%E2%80%9Cobject-already-exists%E2%80%9D/
+					- Allow account of processes can modify folder C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys
+					 */
+					if (ex.Message.Contains("Object already exists"))
+						throw new CryptographicException($"Cannot create new instance of RSA. Please config your machine to allow to access to container '{containerName}' of machine key store (FAST & DANGEROUS method: change security of folder " + @"'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys' to allow account of processes can ascess and modify).", ex);
+					else
+						throw new CryptographicException($"Cannot create new instance of RSA in container '{containerName}' of the machine key store.", ex);
 				}
 				catch (Exception)
 				{
@@ -943,66 +1041,14 @@ namespace net.vieapps.Components.Utility
 			return rsa;
 		}
 
-		/// <summary>
-		/// Creates an instance of RSA Algorithm from XML key
-		/// </summary>
-		/// <param name="key">Key (in XML format) for the RSA instance</param>
-		/// <param name="size">The size of key</param>
-		/// <param name="name">Additional for name of key-container. Default name of key-container is 'VIEPortalNGRSAContainer'. Ex: if the additional name is 'Passport', then the name of the key-container will be 'VIEPortalNGPassportRSAContainer'.</param>
-		/// <returns>An instance of RSA</returns>
-		public static RSACryptoServiceProvider CreateRSAInstance(string key, int size, string name)
-		{
-			// check format of key
-			if (string.IsNullOrWhiteSpace(key) || !key.StartsWith("<RSAKeyValue>"))
-				throw new InvalidDataException("Invalid key to create new instance of RSA (key must be formated in XML)");
-
-			// preapare name of key container
-			if (name == null)
-				name = "";
-			var containerName = $"VIEPortalNG{name}RSAContainer";
-
-			// create new instance of RSA
-			try
-			{
-				// create parameters of key-store and container
-				var parameters = new CspParameters(1, "Microsoft Strong Cryptographic Provider");
-				parameters.Flags = CspProviderFlags.UseMachineKeyStore;
-				parameters.KeyContainerName = containerName;
-
-				// create new instance of RSA and store in the machine key-store
-				var rsa = new RSACryptoServiceProvider(size, parameters);
-				rsa.FromXmlString(key);
-
-				// store in Windows key-stores (C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys)
-				rsa.PersistKeyInCsp = true;
-
-				return rsa;
-			}
-			catch (CryptographicException ex)
-			{
-				/*	Object already exists:
-						- Update settings of IIS and impersonate user: https://pwnedcode.wordpress.com/2008/11/10/fixing-cryptographicexception-%E2%80%9Cobject-already-exists%E2%80%9D/
-						- Allow account of processes can modify folder C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys
-				 */
-				if (ex.Message.Contains("Object already exists"))
-					throw new CryptographicException("Cannot create new instance of RSA. Please config your machine to allow to access to container '" + containerName + "' of machine key store (FAST & DANGEROUS method: change security of folder " + @"'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys' to allow account of processes can ascess and modify).", ex);
-				else
-					throw new CryptographicException("Cannot create new instance of RSA in container '" + containerName + "' of the machine key store.", ex);
-			}
-			catch (Exception)
-			{
-				throw;
-			}
-		}
-
 		// from http://www.jensign.com/opensslkey/
 		static RSACryptoServiceProvider CreateRSAInstanceWithPrivateKey(byte[] key)
 		{
 			// set up stream to decode the asn.1 encoded RSA private key
-			using (MemoryStream stream = new MemoryStream(key))
+			using (var stream = new MemoryStream(key))
 			{
 				// wrap Memory Stream with BinaryReader for easy reading
-				using (BinaryReader reader = new BinaryReader(stream))
+				using (var reader = new BinaryReader(stream))
 				{
 					byte[] MODULUS, E, D, P, Q, DP, DQ, IQ;
 
@@ -1119,10 +1165,10 @@ namespace net.vieapps.Components.Utility
 		static RSACryptoServiceProvider CreateRSAInstanceWithPublicKey(byte[] key)
 		{
 			// set up stream to read the asn.1 encoded SubjectPublicKeyInfo blob
-			using (MemoryStream stream = new MemoryStream(key))
+			using (var stream = new MemoryStream(key))
 			{
 				// wrap Memory Stream with BinaryReader for easy reading
-				using (BinaryReader reader = new BinaryReader(stream))
+				using (var reader = new BinaryReader(stream))
 				{
 					// encoded OID sequence for  PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1"
 					byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
@@ -1180,9 +1226,9 @@ namespace net.vieapps.Components.Utility
 							return null;
 
 						byte[] modInt = { lowbyte, highbyte, 0x00, 0x00 };   //reverse byte order since asn.1 key uses big endian order
-						int modSize = BitConverter.ToInt32(modInt, 0);
+						var modSize = BitConverter.ToInt32(modInt, 0);
 
-						byte firstByte = reader.ReadByte();
+						var firstByte = reader.ReadByte();
 						reader.BaseStream.Seek(-1, SeekOrigin.Current);
 
 						//if first byte (highest order) of modulus is zero, don't include it
@@ -1192,12 +1238,12 @@ namespace net.vieapps.Components.Utility
 							modSize -= 1;   //reduce modulus buffer size by 1
 						}
 
-						byte[] modulus = reader.ReadBytes(modSize);  //read the modulus bytes
+						var modulus = reader.ReadBytes(modSize);  //read the modulus bytes
 						if (reader.ReadByte() != 0x02)           //expect an Integer for the exponent data
 							return null;
 
-						int expbytes = (int)reader.ReadByte();       // should only need one byte for actual exponent data (for all useful values)
-						byte[] exponent = reader.ReadBytes(expbytes);
+						var expbytes = (int)reader.ReadByte();       // should only need one byte for actual exponent data (for all useful values)
+						var exponent = reader.ReadBytes(expbytes);
 
 						// ------- create RSACryptoServiceProvider instance and initialize with public key -----
 						var rsa = new RSACryptoServiceProvider()
@@ -1263,9 +1309,9 @@ namespace net.vieapps.Components.Utility
 					Flags = CspProviderFlags.UseArchivableKey,
 					KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.GetUUID()
 				})
-				{
-					PersistKeyInCsp = false
-				}
+			{
+				PersistKeyInCsp = false
+			}
 			)
 			{
 				// create collection of keys
@@ -1290,7 +1336,11 @@ namespace net.vieapps.Components.Utility
 				// add modulus and exponent of public key in HEX format
 				var xmlDoc = new System.Xml.XmlDocument();
 				xmlDoc.LoadXml(publicKey);
-				keyPairs.Append(new List<string>() { xmlDoc.DocumentElement.ChildNodes[0].InnerText.ToHexa(true), xmlDoc.DocumentElement.ChildNodes[1].InnerText.ToHexa(true) });
+				keyPairs.Append(new List<string>()
+				{
+					xmlDoc.DocumentElement.ChildNodes[0].InnerText.ToHexa(true),
+					xmlDoc.DocumentElement.ChildNodes[1].InnerText.ToHexa(true)
+				});
 
 				// return the collection of keys
 				return keyPairs;

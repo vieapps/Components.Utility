@@ -63,8 +63,8 @@ namespace net.vieapps.Components.Utility
 		public static string GenerateProvisioningUri(string identifier, byte[] secret, string issuer = null)
 		{
 			// encode the secret key as Base32 string
-			int pos = 0, index = 0;
 			var builder = new StringBuilder((secret.Length + 7) * OTPService.InByteSize / OTPService.OutByteSize);
+			int pos = 0, index = 0;
 			while (pos < secret.Length)
 			{
 				var current = secret[pos];
@@ -91,7 +91,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// return as URI
-			return $"otpauth://totp/{identifier}?secret={builder.ToString()}&issuer={issuer ?? "VIEApps.net"}";
+			return $"otpauth://totp/{identifier}?secret={builder.ToString()}&issuer={(string.IsNullOrWhiteSpace(issuer) ? "VIEApps.net" : issuer)}";
 		}
 
 		/// <summary>
