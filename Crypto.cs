@@ -15,7 +15,7 @@ namespace net.vieapps.Components.Utility
 	public static class CryptoService
 	{
 
-		#region Conversions
+		#region Conversions & Encode/Decode
 		/// <summary>
 		/// Converts this string to array of bytes
 		/// </summary>
@@ -186,9 +186,110 @@ namespace net.vieapps.Components.Utility
 		{
 			return @string.FromBase64(true);
 		}
-		#endregion
 
-		#region Url/Html encoding/decoding
+		/// <summary>
+		/// Encodes this array of bytes to Base32 string
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static string Base32Encode(this byte[] bytes)
+		{
+			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+			var builder = new StringBuilder((bytes.Length + 7) * 8 / 5);
+			int pos = 0, index = 0;
+			while (pos < bytes.Length)
+			{
+				var current = bytes[pos];
+				int digit;
+
+				// is the current digit going to span a byte boundary?
+				if (index > (8 - 5))
+				{
+					var next = (pos + 1) < bytes.Length ? bytes[pos + 1] : 0;
+					digit = current & (0xFF >> index);
+					index = (index + 5) % 8;
+					digit <<= index;
+					digit |= next >> (8 - index);
+					pos++;
+				}
+				else
+				{
+					digit = (current >> (8 - (index + 5))) & 0x1F;
+					index = (index + 5) % 8;
+					if (index == 0)
+						pos++;
+				}
+				builder.Append(base32Alphabet[digit]);
+			}
+			return builder.ToString();
+		}
+
+		/// <summary>
+		/// Decodes this Base32 string to array of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] Base32Decode(this string @string)
+		{
+			var base32 = @string.ToUpperInvariant();
+			var output = new byte[base32.Length * 5 / 8];
+			if (output.Length == 0)
+				throw new ArgumentException("Specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
+
+			var pos = 0;
+			var subPos = 0;
+			var outputPos = 0;
+			var outputSubPos = 0;
+			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+			while (outputPos < output.Length)
+			{
+				var current = base32Alphabet.IndexOf(base32[pos]);
+				if (current < 0)
+					throw new ArgumentException($"Specified string is not valid Base32 format because character \"{@string[pos]}\" does not exist in Base32 alphabet");
+
+				var bits = Math.Min(5 - subPos, 8 - outputSubPos);
+				output[outputPos] <<= bits;
+				output[outputPos] |= (byte)(current >> (5 - (subPos + bits)));
+				outputSubPos += bits;
+
+				if (outputSubPos >= 8)
+				{
+					outputPos++;
+					outputSubPos = 0;
+				}
+
+				subPos += bits;
+				if (subPos >= 5)
+				{
+					pos++;
+					subPos = 0;
+				}
+			}
+
+			return output;
+		}
+
+		/// <summary>
+		/// Converts this string to Base32 string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string ToBase32(this string @string)
+		{
+			return @string.ToBytes().Base32Encode();
+		}
+
+		/// <summary>
+		/// Converts this Base32 string to plain string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string FromBase32(this string @string)
+		{
+			return @string.Base32Decode().GetString();
+		}
+
 		/// <summary>
 		/// Encodes this string to use in url
 		/// </summary>
@@ -262,7 +363,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Encryption key/initialize vector
+		#region Encryption key & Initialize vector
 		/// <summary>
 		/// Gets the default key for encrypting/decrypting data
 		/// </summary>
@@ -330,7 +431,17 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Generates an IV (initialize vector) from this string (for using with AES)
+		/// Generates a key from this string (for using with AES)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GenerateKey(this string @string)
+		{
+			return @string.GenerateEncryptionKey();
+		}
+
+		/// <summary>
+		/// Generates an initialize vector from this string (for using with AES)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
@@ -338,9 +449,19 @@ namespace net.vieapps.Components.Utility
 		{
 			return @string.GenerateEncryptionKey(false, true, 128);
 		}
+
+		/// <summary>
+		/// Generates an initialize vector from this string (for using with AES)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GenerateInitializeVector(this string @string)
+		{
+			return @string.GenerateEncryptionIV();
+		}
 		#endregion
 
-		#region Hashing
+		#region Hash array of bytes/string
 		static Dictionary<string, Func<HashAlgorithm>> HashFactories = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", () => MD5.Create() },
