@@ -8,13 +8,12 @@ using System.Reflection;
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 using System.Xml.Xsl;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using System.Dynamic;
+using System.Runtime.Serialization.Formatters.Binary;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -1444,7 +1443,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region ExpandoObject Conversions & Manipulations
+		#region Conversions & Manipulations of ExpandoObject
 		/// <summary>
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON string
 		/// </summary>

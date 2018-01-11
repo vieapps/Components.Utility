@@ -858,7 +858,7 @@ namespace net.vieapps.Components.Utility
 					{
 						tcs.SetCanceled();
 						return;
-					});
+					}, useSynchronizationContext: false);
 				try
 				{
 					action?.Invoke();
@@ -889,7 +889,7 @@ namespace net.vieapps.Components.Utility
 					{
 						tcs.SetCanceled();
 						return;
-					});
+					}, useSynchronizationContext: false);
 				try
 				{
 					var result = func != null ? func.Invoke() : default(TResult);

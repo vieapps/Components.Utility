@@ -335,7 +335,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.ToBase64(false, true).Base64ToBytes().GetString();
+				: @string.Base64ToBytes(true).GetString();
 		}
 
 		/// <summary>
@@ -441,7 +441,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Generates an initialize vector from this string (for using with AES)
+		/// Generates an initialization vector from this string (for using with AES)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
@@ -451,7 +451,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Generates an initialize vector from this string (for using with AES)
+		/// Generates an initialization vector from this string (for using with AES)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
@@ -686,6 +686,17 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACMD5Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "MD5");
+		}
+
+		/// <summary>
+		/// Gets HMAC MD5 hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
 		public static string GetHMACMD5(this string @string, string key, bool toHexa = true)
@@ -702,6 +713,17 @@ namespace net.vieapps.Components.Utility
 		public static string GetHMACMD5(this string @string, bool toHexa = true)
 		{
 			return @string.GetHMACMD5(CryptoService.DefaultEncryptionKey, toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC SHA1 hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACSHA1Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "SHA1");
 		}
 
 		/// <summary>
@@ -732,6 +754,17 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACSHA256Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "SHA256");
+		}
+
+		/// <summary>
+		/// Gets HMAC SHA256 hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
 		public static string GetHMACSHA256(this string @string, string key, bool toHexa = true)
@@ -750,6 +783,17 @@ namespace net.vieapps.Components.Utility
 			return @string.GetHMACSHA256(CryptoService.DefaultEncryptionKey, toHexa);
 		}
 
+
+		/// <summary>
+		/// Gets HMAC SHA384 hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACSHA384Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "SHA384");
+		}
 		/// <summary>
 		/// Gets HMAC SHA384 hash of this string
 		/// </summary>
@@ -773,6 +817,17 @@ namespace net.vieapps.Components.Utility
 			return @string.GetHMACSHA384(CryptoService.DefaultEncryptionKey, toHexa);
 		}
 
+
+		/// <summary>
+		/// Gets HMAC SHA512 hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACSHA512Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "SHA512");
+		}
 		/// <summary>
 		/// Gets HMAC SHA512 hash of this string
 		/// </summary>
@@ -799,7 +854,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Encrypt/Decrypt (using AES)
 		/// <summary>
-		/// Encrypts by specific key and initialize vector using AES
+		/// Encrypts by specific key and initialization vector using AES
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="key"></param>
@@ -822,7 +877,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Encrypts this string by specific key and initialize vector using AES
+		/// Encrypts this string by specific key and initialization vector using AES
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -851,7 +906,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Decrypts by specific key and initialize vector using AES
+		/// Decrypts by specific key and initialization vector using AES
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="key"></param>
@@ -874,7 +929,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Decrypts this encrypted string by specific key and initialize vector using AES
+		/// Decrypts this encrypted string by specific key and initialization vector using AES
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>

@@ -24,6 +24,7 @@ namespace net.vieapps.Components.Utility
 				Array.Reverse(bytes);
 
 			var hash = bytes.GetHMACHash(secret, "SHA1");
+
 			bytes = new byte[4];
 			Buffer.BlockCopy(hash, hash[hash.Length - 1] & 0xF, bytes, 0, 4);
 			if (BitConverter.IsLittleEndian)
