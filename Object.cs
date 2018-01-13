@@ -659,8 +659,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object to get data from</param>
 		/// <param name="destination">The destination object that will be copied to</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <returns>The object that presents data of object's attribute</returns>
-		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null)
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
 			if (object.ReferenceEquals(destination, null))
 				throw new ArgumentNullException(nameof(destination), "The destination is null");
@@ -684,6 +684,8 @@ namespace net.vieapps.Components.Utility
 					}
 					catch { }
 			});
+
+			onPreCompleted?.Invoke(destination);
 		}
 
 		/// <summary>
@@ -692,7 +694,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="source">Source object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null)
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
 			if (object.ReferenceEquals(source, null))
 				throw new ArgumentNullException(nameof(source), "The source is null");
@@ -716,6 +719,8 @@ namespace net.vieapps.Components.Utility
 					}
 					catch { }
 			});
+
+			onPreCompleted?.Invoke(@object);
 		}
 
 		/// <summary>
@@ -724,7 +729,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="json">JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null)
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
 			if (object.ReferenceEquals(json, null))
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
@@ -875,6 +881,8 @@ namespace net.vieapps.Components.Utility
 					}
 					catch { }
 			}
+
+			onPreCompleted?.Invoke(@object);
 		}
 
 		/// <summary>
@@ -883,7 +891,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="expandoObject">The <see cref="ExpandoObject">ExpandoObject</see> object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		public static void CopyFrom(this object @object, ExpandoObject expandoObject, HashSet<string> excluded = null)
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		public static void CopyFrom(this object @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
 			foreach (var attribute in @object.GetProperties())
 			{
@@ -933,6 +942,8 @@ namespace net.vieapps.Components.Utility
 				}
 				catch { }
 			}
+
+			onPreCompleted?.Invoke(@object);
 		}
 
 		/// <summary>
@@ -941,11 +952,13 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <returns></returns>
-		public static T Copy<T>(this T @object, HashSet<string> excluded = null)
+		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onPreCompleted = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(@object, excluded);
+			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
 
@@ -955,11 +968,13 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <returns></returns>
-		public static T Copy<T>(this JToken json, HashSet<string> excluded = null)
+		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(json, excluded);
+			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
 
@@ -969,11 +984,13 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="expandoObject">The ExpandoObject object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <returns></returns>
-		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null)
+		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(expandoObject, excluded);
+			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
 
@@ -982,8 +999,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">The type of object being copied</typeparam>
 		/// <param name="object">The object instance to copy</param>
+		/// <param name="onPreCompleted">The action to run before completing the clone process</param>
 		/// <returns>The copied object.</returns>
-		public static T Clone<T>(this T @object)
+		public static T Clone<T>(this T @object, Action<T> onPreCompleted = null)
 		{
 			// initialize the object
 			T instance;
@@ -1006,6 +1024,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// return the new instance of object
+			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
 		#endregion
