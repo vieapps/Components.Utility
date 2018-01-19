@@ -843,7 +843,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Working with task in the thread pool
 		/// <summary>
-		/// Executes a task (action) in the thread pool with cancellation supported
+		/// Executes an action in the thread pool with cancellation supported and return an awaitable task
 		/// </summary>
 		/// <param name="action">The action to run in the thread pool</param>
 		/// <param name="cancellationToken">The cancellation token</param>
@@ -853,27 +853,26 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<object>();
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				if (cancellationToken != null && cancellationToken != default(CancellationToken))
-					cancellationToken.Register(() =>
-					{
-						tcs.SetCanceled();
-						return;
-					}, useSynchronizationContext: false);
+				cancellationToken.Register(() =>
+				{
+					tcs.TrySetCanceled(cancellationToken);
+					return;
+				});
 				try
 				{
 					action?.Invoke();
-					tcs.SetResult(null);
+					tcs.TrySetResult(null);
 				}
 				catch (Exception ex)
 				{
-					tcs.SetException(ex);
+					tcs.TrySetException(ex);
 				}
 			});
 			return tcs.Task;
 		}
 
 		/// <summary>
-		/// Executes a task (action) in the thread pool with cancellation supported
+		/// Executes an action in the thread pool with cancellation supported and return an awaitable task
 		/// </summary>
 		/// <typeparam name="TResult"></typeparam>
 		/// <param name="func">The function to run in the thread pool</param>
@@ -884,20 +883,19 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<TResult>();
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				if (cancellationToken != null && cancellationToken != default(CancellationToken))
-					cancellationToken.Register(() =>
-					{
-						tcs.SetCanceled();
-						return;
-					}, useSynchronizationContext: false);
+				cancellationToken.Register(() =>
+				{
+					tcs.TrySetCanceled(cancellationToken);
+					return;
+				}, useSynchronizationContext: false);
 				try
 				{
 					var result = func != null ? func.Invoke() : default(TResult);
-					tcs.SetResult(result);
+					tcs.TrySetResult(result);
 				}
 				catch (Exception ex)
 				{
-					tcs.SetException(ex);
+					tcs.TrySetException(ex);
 				}
 			});
 			return tcs.Task;
@@ -1687,8 +1685,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="url"></param>
 		/// <param name="onCompleted"></param>
 		/// <param name="onError"></param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<byte[]> DownloadAsync(string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null)
+		public static async Task<byte[]> DownloadAsync(string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (string.IsNullOrWhiteSpace(url) || (!url.IsStartsWith("http://") && !url.IsStartsWith("https://")))
 				throw new ArgumentNullException(nameof(url), "URL is invalid");
@@ -1701,7 +1700,14 @@ namespace net.vieapps.Components.Utility
 				byte[] data = null;
 				using (var webclient = new WebClient())
 				{
-					data = await webclient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+					using (var ctr = cancellationToken.Register(() =>
+					{
+						webclient.CancelAsync();
+						throw new OperationCanceledException(cancellationToken);
+					}))
+					{
+						data = await webclient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+					}
 				}
 
 				stopwatch.Stop();
