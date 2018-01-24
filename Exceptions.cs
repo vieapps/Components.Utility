@@ -116,7 +116,7 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class RepositoryOperationException : AppException
 	{
-		public RepositoryOperationException() : base("Error occured while operating with repository") { }
+		public RepositoryOperationException() : base("Error occured while performing an action of repository") { }
 
 		public RepositoryOperationException(string message) : base(message) { }
 
@@ -124,7 +124,14 @@ namespace net.vieapps.Components.Utility
 
 		public RepositoryOperationException(string message, Exception innerException) : base(message, innerException) { }
 
+		public RepositoryOperationException(string message, string info, Exception innerException) : base(message, innerException)
+		{
+			this.Info = info;
+		}
+
 		public RepositoryOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+
+		public string Info { get; set; } = "";
 	}
 
 	[Serializable]

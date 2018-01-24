@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Configuration;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 using Newtonsoft.Json.Linq;
@@ -843,62 +844,93 @@ namespace net.vieapps.Components.Utility
 
 		#region Working with task in the thread pool
 		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported and return an awaitable task
+		/// Executes an action in the thread pool with cancellation supported
 		/// </summary>
 		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="onCancel">The action to callback when the operation is canceled</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
+		/// <returns>An awaitable task</returns>
+		public static Task ExecuteTask(Action action, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			var tcs = new TaskCompletionSource<object>();
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				cancellationToken.Register(() =>
+				using (cancellationToken.Register(() =>
 				{
+					onCancel?.Invoke();
 					tcs.TrySetCanceled(cancellationToken);
 					return;
-				});
-				try
+				}, useSynchronizationContext: false))
 				{
-					action?.Invoke();
-					tcs.TrySetResult(null);
-				}
-				catch (Exception ex)
-				{
-					tcs.TrySetException(ex);
+					try
+					{
+						action?.Invoke();
+						tcs.TrySetResult(null);
+					}
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
 				}
 			});
 			return tcs.Task;
 		}
 
 		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported and return an awaitable task
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask(action, null, cancellationToken);
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
 		/// </summary>
 		/// <typeparam name="TResult"></typeparam>
 		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="onCancel">The action to callback when the operation is canceled</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, CancellationToken cancellationToken = default(CancellationToken))
+		/// <returns>An awaitable task</returns>
+		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			var tcs = new TaskCompletionSource<TResult>();
 			ThreadPool.QueueUserWorkItem(_ =>
 			{
-				cancellationToken.Register(() =>
+				using (cancellationToken.Register(() =>
 				{
+					onCancel?.Invoke();
 					tcs.TrySetCanceled(cancellationToken);
 					return;
-				}, useSynchronizationContext: false);
-				try
+				}, useSynchronizationContext: false))
 				{
-					var result = func != null ? func.Invoke() : default(TResult);
-					tcs.TrySetResult(result);
-				}
-				catch (Exception ex)
-				{
-					tcs.TrySetException(ex);
+					try
+					{
+						var result = func != null ? func.Invoke() : default(TResult);
+						tcs.TrySetResult(result);
+					}
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
 				}
 			});
 			return tcs.Task;
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <typeparam name="TResult"></typeparam>
+		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask(func, null, cancellationToken);
 		}
 		#endregion
 
@@ -1041,12 +1073,12 @@ namespace net.vieapps.Components.Utility
 				if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
 					results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
 						? orderBy.IsStartsWith("Name")
-							? results.OrderBy(file => file.Name)
-							: results.OrderBy(file => file.LastWriteTime)
+							? results.OrderBy(file => file.Name).ThenByDescending(file => file.LastWriteTime)
+							: results.OrderBy(file => file.LastWriteTime).ThenBy(file => file.Name)
 						: orderBy.IsStartsWith("Name")
-							? results.OrderByDescending(file => file.Name)
-							: results.OrderByDescending(file => file.LastWriteTime);
-				files.Append(results);
+							? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
+							: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
+				files = files.Concat(results).ToList();
 			});
 
 			if (searchInSubFolder)
@@ -1068,12 +1100,12 @@ namespace net.vieapps.Components.Utility
 							if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
 								results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
 									? orderBy.IsStartsWith("Name")
-										? results.OrderBy(file => file.Name)
-										: results.OrderBy(file => file.LastWriteTime)
+										? results.OrderBy(file => file.Name).ThenByDescending(file => file.LastWriteTime)
+										: results.OrderBy(file => file.LastWriteTime).ThenBy(file => file.Name)
 									: orderBy.IsStartsWith("Name")
-										? results.OrderByDescending(file => file.Name)
-										: results.OrderByDescending(file => file.LastWriteTime);
-							files.Append(results);
+										? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
+										: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
+							files = files.Concat(results).ToList();
 						});
 				});
 
@@ -1109,7 +1141,7 @@ namespace net.vieapps.Components.Utility
 		public static List<string> GetFilePaths(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			return UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
-				.Select(f => f.FullName)
+				.Select(file => file.FullName)
 				.ToList();
 		}
 
@@ -1155,13 +1187,14 @@ namespace net.vieapps.Components.Utility
 			else if (source.IsEquals(destination))
 				return;
 
-			UtilityService.GetFiles(source, searchPatterns).ForEach(file =>
-			{
-				var path = Path.Combine(destination, file.Name);
-				if (deleteOldFilesBeforeMoving && File.Exists(path))
-					File.Delete(path);
-				File.Move(file.FullName, path);
-			});
+			UtilityService.GetFiles(source, searchPatterns)
+				.ForEach(file =>
+				{
+					var path = Path.Combine(destination, file.Name);
+					if (deleteOldFilesBeforeMoving && File.Exists(path))
+						File.Delete(path);
+					File.Move(file.FullName, path);
+				});
 		}
 
 		/// <summary>
@@ -1213,7 +1246,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ReadTextFile(string filePath, Encoding encoding = null)
 		{
-			return UtilityService.ReadTextFile(new FileInfo(filePath), encoding);
+			return !string.IsNullOrWhiteSpace(filePath)
+				? UtilityService.ReadTextFile(new FileInfo(filePath), encoding)
+				: throw new ArgumentException("File path is invalid", nameof(filePath));
 		}
 
 		/// <summary>
@@ -1222,22 +1257,25 @@ namespace net.vieapps.Components.Utility
 		/// <param name="fileInfo"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static async Task<string> ReadTextFileAsync(FileInfo fileInfo, Encoding encoding = null)
+		public static async Task<string> ReadTextFileAsync(FileInfo fileInfo, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 
 			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, true))
 			{
-				using (var reader = new StreamReader(stream, encoding ?? Encoding.UTF8))
+				using (var reader = encoding != null ? new StreamReader(stream, encoding) : new StreamReader(stream, true))
 				{
-					try
+					using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
 					{
-						return await reader.ReadToEndAsync().ConfigureAwait(false);
-					}
-					catch (Exception)
-					{
-						throw;
+						try
+						{
+							return await reader.ReadToEndAsync().ConfigureAwait(false);
+						}
+						catch (Exception)
+						{
+							throw;
+						}
 					}
 				}
 			}
@@ -1249,9 +1287,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static Task<string> ReadTextFileAsync(string filePath, Encoding encoding = null)
+		public static Task<string> ReadTextFileAsync(string filePath, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ReadTextFileAsync(string.IsNullOrWhiteSpace(filePath) ? null : new FileInfo(filePath), encoding);
+			return !string.IsNullOrWhiteSpace(filePath)
+				? UtilityService.ReadTextFileAsync(new FileInfo(filePath), encoding, cancellationToken)
+				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
 		}
 
 		/// <summary>
@@ -1263,7 +1303,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		public static void WriteTextFile(FileInfo fileInfo, string content, bool append = false, Encoding encoding = null)
 		{
-			if (fileInfo == null || content == null)
+			if (fileInfo == null)
+				throw new ArgumentException("File info is invalid", nameof(fileInfo));
+
+			else if (content == null)
 				return;
 
 			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, false))
@@ -1274,7 +1317,10 @@ namespace net.vieapps.Components.Utility
 					{
 						writer.Write(content);
 					}
-					catch { }
+					catch (Exception)
+					{
+						throw;
+					}
 				}
 			}
 		}
@@ -1288,8 +1334,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		public static void WriteTextFile(string filePath, string content, bool append = false, Encoding encoding = null)
 		{
-			if (!string.IsNullOrWhiteSpace(filePath) && content != null)
-				UtilityService.WriteTextFile(new FileInfo(filePath), content, append, encoding);
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("File path is invalid", nameof(filePath));
+			UtilityService.WriteTextFile(new FileInfo(filePath), content, append, encoding);
 		}
 
 		/// <summary>
@@ -1300,20 +1347,29 @@ namespace net.vieapps.Components.Utility
 		/// <param name="append"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static async Task WriteTextFileAsync(FileInfo fileInfo, string content, bool append = false, Encoding encoding = null)
+		public static async Task WriteTextFileAsync(FileInfo fileInfo, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (fileInfo == null || content == null)
+			if (fileInfo == null)
+				throw new ArgumentException("File info is invalid", nameof(fileInfo));
+
+			else if (content == null)
 				return;
 
 			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
-					try
+					using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
 					{
-						await writer.WriteAsync(content).ConfigureAwait(false);
+						try
+						{
+							await writer.WriteAsync(content).ConfigureAwait(false);
+						}
+						catch (Exception)
+						{
+							throw;
+						}
 					}
-					catch { }
 				}
 			}
 		}
@@ -1326,9 +1382,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="append"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = null)
+		public static Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.WriteTextFileAsync(string.IsNullOrWhiteSpace(filePath) ? null : new FileInfo(filePath), content, append, encoding);
+			return !string.IsNullOrWhiteSpace(filePath)
+				? UtilityService.WriteTextFileAsync(new FileInfo(filePath), content, append, encoding)
+				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
 		}
 		#endregion
 
@@ -1364,15 +1422,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="position"></param>
 		/// <param name="totalOfLines"></param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines)
+		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			using (var reader = new TextFileReader(filePath, true, true))
+			using (var reader = new TextFileReader(filePath, true))
 			{
 				try
 				{
-					reader.Seek(position, SeekOrigin.Begin);
-					return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines).ConfigureAwait(false), reader.Position);
+					reader.Seek(position);
+					return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
 				}
 				catch (Exception)
 				{
@@ -1398,10 +1457,11 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath">The path to text file</param>
 		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines)
+		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines).ConfigureAwait(false)).Item1;
+			return (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines, cancellationToken).ConfigureAwait(false)).Item1;
 		}
 
 		/// <summary>
@@ -1413,7 +1473,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		public static void WriteTextFile(string filePath, List<string> lines, bool append = true, Encoding encoding = null)
 		{
-			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("File path is invalid", nameof(filePath));
+
+			if (lines != null && lines.Count > 0)
 				using (var writer = new StreamWriter(filePath, append, encoding ?? Encoding.UTF8))
 				{
 					try
@@ -1421,7 +1484,10 @@ namespace net.vieapps.Components.Utility
 						lines.Where(line => line != null).ForEach(line => writer.WriteLine(line));
 						writer.Flush();
 					}
-					catch { }
+					catch (Exception)
+					{
+						throw;
+					}
 				}
 		}
 
@@ -1432,18 +1498,27 @@ namespace net.vieapps.Components.Utility
 		/// <param name="lines"></param>
 		/// <param name="append"></param>
 		/// <param name="encoding"></param>
-		public static async Task WriteTextFileAsync(string filePath, List<string> lines, bool append = true, Encoding encoding = null)
+		/// <param name="cancellationToken"></param>
+		public static async Task WriteTextFileAsync(string filePath, List<string> lines, bool append = true, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (!string.IsNullOrWhiteSpace(filePath) && lines != null && lines.Count > 0)
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("File path is invalid", nameof(filePath));
+
+			if (lines != null && lines.Count > 0)
 				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
-				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
-					try
+					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
-						await lines.Where(line => line != null).ForEachAsync(async (line, cancellationToken) => await writer.WriteLineAsync(line).ConfigureAwait(false), CancellationToken.None, true, false).ConfigureAwait(false);
-						await writer.FlushAsync().ConfigureAwait(false);
+						try
+						{
+							await lines.Where(line => line != null).ForEachAsync((line, token) => writer.WriteLineAsync(line), cancellationToken, true, false).ConfigureAwait(false);
+							await writer.FlushAsync().ConfigureAwait(false);
+						}
+						catch (Exception)
+						{
+							throw;
+						}
 					}
-					catch { }
 				}
 		}
 		#endregion
@@ -1463,7 +1538,7 @@ namespace net.vieapps.Components.Utility
 					stream.Read(data, 0, fileInfo.Length.CastAs<int>());
 					return data;
 				}
-			return null;
+			throw new ArgumentException("File info is invalid", nameof(fileInfo));
 		}
 
 		/// <summary>
@@ -1473,7 +1548,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] ReadBinaryFile(string filePath)
 		{
-			return UtilityService.ReadBinaryFile(new FileInfo(filePath));
+			return !string.IsNullOrWhiteSpace(filePath)
+				? UtilityService.ReadBinaryFile(new FileInfo(filePath))
+				: throw new ArgumentException("File path is invalid", nameof(filePath));
 		}
 
 		/// <summary>
@@ -1488,10 +1565,10 @@ namespace net.vieapps.Components.Utility
 				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true))
 				{
 					var data = new byte[fileInfo.Length];
-					await stream.ReadAsync(data, 0, fileInfo.Length.CastAs<int>()).ConfigureAwait(false);
+					await stream.ReadAsync(data, 0, fileInfo.Length.CastAs<int>(), cancellationToken).ConfigureAwait(false);
 					return data;
 				}
-			return null;
+			throw new ArgumentException("File info is invalid", nameof(fileInfo));
 		}
 
 		/// <summary>
@@ -1502,7 +1579,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<byte[]> ReadBinaryFileAsync(string filePath, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken);
+			return !string.IsNullOrWhiteSpace(filePath)
+				? UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken)
+				: Task.FromException<byte[]>(new ArgumentException("File path is invalid", nameof(filePath)));
 		}
 
 		/// <summary>
@@ -1519,6 +1598,7 @@ namespace net.vieapps.Components.Utility
 			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize))
 			{
 				stream.Write(content ?? new byte[0], 0, content?.Length ?? 0);
+				stream.Flush();
 			}
 		}
 
@@ -1537,6 +1617,7 @@ namespace net.vieapps.Components.Utility
 			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
 			{
 				await stream.WriteAsync(content ?? new byte[0], 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
+				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 			}
 		}
 		#endregion
@@ -1700,7 +1781,7 @@ namespace net.vieapps.Components.Utility
 				byte[] data = null;
 				using (var webclient = new WebClient())
 				{
-					using (var ctr = cancellationToken.Register(() =>
+					using (cancellationToken.Register(() =>
 					{
 						webclient.CancelAsync();
 						throw new OperationCanceledException(cancellationToken);
@@ -1963,239 +2044,166 @@ namespace net.vieapps.Components.Utility
 
 	#region Reader of a text file
 	/// <summary>
-	/// Implements a System.IO.BinaryReader that reads block of characters from a file stream in a particular encoding.
+	/// Extends the System.IO.StreamReader that reads lines from a file in a particular encoding
 	/// </summary>
 	public sealed class TextFileReader : IDisposable
 	{
-		// by default, one reading block of Windows is 4K (4096), then use 64K(65536)/128K(131072)/256K(262144)/512K(524288)
+		// by default, one reading block of Windows is 4K (4096), then use 16K(16384)/32K(32768)/64K(65536)/128K(131072)/256K(262144)/512K(524288)
 		// for better performance while working with text file has large line of characters
 		public static readonly int BufferSize = 65536;
 
-		internal sealed class TextLine
-		{
-			public TextLine() { }
-
-			public string Line { get; set; } = "";
-
-			public long Position { get; set; } = 0;
-		}
-
-		FileStream _fileStream = null;
-		BinaryReader _binReader = null;
-		StreamReader _streamReader = null;
-
-		Queue<TextLine> _lines = null;
-		StringBuilder _builder = null;
-
-		Encoding _encoding = Encoding.UTF8;
-		long _length = -1, _position = 0;
-
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TextFileReader"/> class.
 		/// </summary>
-		/// <param name="filePath">The path to text file.</param>
-		/// <param name="detectEncoding">if set to <c>true</c>, then detect encoding of text file.</param>
-		/// <param name="useAsync">true to use async</param>
-		public TextFileReader(string filePath, bool detectEncoding = true, bool useAsync = false)
+		/// <param name="filePath">The path to file</param>
+		/// <param name="useAsync">If set to <c>true</c>, then use asynchronous I/O while reading</param>
+		public TextFileReader(string filePath, bool useAsync = false)
 		{
-			// check existed
-			this.Existed(filePath);
-
-			// default encoding is UTF-8
-			var encoding = Encoding.UTF8;
-
-			// detect encoding
-			if (detectEncoding)
-			{
-				// create streams to detect encoding
-				this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, useAsync);
-				this._streamReader = new StreamReader(this._fileStream, true);
-
-				// get encoding
-				encoding = this._streamReader.CurrentEncoding;
-
-				// reset stream (jump to first)
-				this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
-			}
-
-			// initialize reader
-			this.Initialize(filePath, encoding, useAsync);
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="TextFileReader"/> class.
-		/// </summary>
-		/// <param name="filePath">The path to text file.</param>
-		/// <param name="encoding">The encoding of text file.</param>
-		/// <param name="useAsync">true to use async</param>
-		public TextFileReader(string filePath, Encoding encoding, bool useAsync = false)
-		{
-			// check existed
-			this.Existed(filePath);
-
-			// initialize reader
-			this.Initialize(filePath, encoding, useAsync);
-		}
-
-		/// <summary>
-		/// Checks existed of the file.
-		/// </summary>
-		/// <param name="filePath">The path to text file.</param>
-		void Existed(string filePath)
-		{
+			// check
 			if (string.IsNullOrWhiteSpace(filePath))
-				throw new ArgumentException("No file path", nameof(filePath));
+				throw new ArgumentException("File path is invalid", nameof(filePath));
 
 			else if (!File.Exists(filePath))
-				throw new FileNotFoundException("File (" + filePath + ") is not found.");
+				throw new FileNotFoundException($"File is not found ({filePath})");
+
+			// initialize
+			this._stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, useAsync);
+			this._reader = new StreamReader(this._stream, true);
 		}
 
-		/// <summary>
-		/// Initializes the reader.
-		/// </summary>
-		/// <param name="filePath">The path to text file.</param>
-		/// <param name="encoding">The encoding of text file.</param>
-		/// <param name="useAsync">true to use async</param>
-		void Initialize(string filePath, Encoding encoding, bool useAsync = false)
+		~TextFileReader()
 		{
-			// create streams and builders
-			if (this._fileStream == null)
-				this._fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, useAsync);
-
-			if (this._binReader == null)
-				this._binReader = new BinaryReader(this._fileStream, encoding);
-
-			if (this._builder == null)
-				this._builder = new StringBuilder();
-
-			if (this._lines == null)
-				this._lines = new Queue<TextLine>();
-
-			// assign some helper attributes
-			this._length = this._fileStream.Length;
-			this._encoding = encoding;
+			this.Dispose();
 		}
 
 		/// <summary>
-		/// Gets the position of file after reading last line.
+		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 		/// </summary>
-		public long Position { get { return this._position; } }
+		public void Dispose()
+		{
+			this._reader?.Close();
+			this._reader?.Dispose();
+
+			this._stream?.Close();
+			this._stream?.Dispose();
+
+			GC.SuppressFinalize(this);
+		}
+
+		FileStream _stream = null;
+		StreamReader _reader = null;
 
 		/// <summary>
 		/// Gets the current encoding of text file.
 		/// </summary>
-		public Encoding Encoding { get { return this._encoding; } }
+		public Encoding Encoding
+		{
+			get
+			{
+				return this._reader.CurrentEncoding;
+			}
+		}
 
 		/// <summary>
 		/// Gets the length of text file (in bytes).
 		/// </summary>
-		public long Length { get { return this._length; } }
-
-		/// <summary>
-		/// Sets the position within the current stream (from the beginning position)
-		/// </summary>
-		/// <param name="offset">A byte offset relative to the origin parameter</param>
-		/// <returns>The new position within the current stream</returns>
-		public long Seek(long offset)
+		public long Length
 		{
-			return this.Seek(offset, SeekOrigin.Begin);
-		}
-
-		/// <summary>
-		/// Sets the position within the current stream (read next line from this position)
-		/// </summary>
-		/// <param name="offset">A byte offset relative to the origin parameter</param>
-		/// <param name="origin">A value for indicating the reference point used to obtain the new position</param>
-		/// <returns>The new position within the current stream</returns>
-		public long Seek(long offset, SeekOrigin origin)
-		{
-			// seek and reset
-			this._position = this._binReader.BaseStream.Seek(offset, origin);
-			this._builder = new StringBuilder();
-			this._lines = new Queue<TextLine>();
-
-			// return new position
-			return this._position;
-		}
-
-		/// <summary>
-		/// Reads all lines of characters from the current stream (from the begin to end) and returns the data as a collection of string.
-		/// </summary>
-		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
-		public List<string> ReadAllLines()
-		{
-			// create new stream if need
-			if (this._streamReader == null)
-				this._streamReader = new StreamReader(this._fileStream, this._encoding);
-
-			// jump to first
-			this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
-
-			// read all lines
-			var lines = new List<string>();
-			var line = this._streamReader.ReadLine();
-			while (line != null)
+			get
 			{
-				// normalize UTF-16 BOM of all lines
-				if (line.Length > 0 && line[0] == '\uFEFF')
-					line = line.Substring(1);
-
-				// add the line into collection
-				lines.Add(line);
-				line = this._streamReader.ReadLine();
+				return this._stream.Length;
 			}
-
-			// assign position to end of file
-			this._position = this._length;
-
-			// return lines
-			return lines;
 		}
 
 		/// <summary>
-		/// Reads all lines of characters from the current stream (from the begin to end) and returns the data as a collection of string.
+		/// Gets the current position
+		/// </summary>
+		/// 
+		public long Position
+		{
+			get
+			{
+				return this.GetPosition();
+			}
+		}
+
+		long GetPosition()
+		{
+			try
+			{
+				// shift position back from BaseStream.Position by the number of bytes read into internal buffer
+				var charLen = (int)this._reader.GetType().InvokeMember("_charLen", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+				var position = this._reader.BaseStream.Position - charLen;
+
+				// if we have consumed chars from the buffer we need to calculate how many bytes they represent in the current encoding and add that to the position
+				var charPos = (int)this._reader.GetType().InvokeMember("_charPos", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+				if (charPos > 0)
+				{
+					var charBuffer = (char[])this._reader.GetType().InvokeMember("_charBuffer", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+					var bytesConsumed = this.Encoding.GetBytes(charBuffer, 0, charPos).Length;
+					position += bytesConsumed;
+				}
+
+				return position;
+			}
+			catch
+			{
+				return this._reader.BaseStream.Position;
+			}
+		}
+
+		/// <summary>
+		/// Seeks to the position (to read next lines from this position)
+		/// </summary>
+		/// <param name="offset">The offset relative to the origin parameter</param>
+		/// <param name="origin">Indicating the reference point used to obtain the new position</param>
+		/// <returns>The new position within the current stream</returns>
+		public long Seek(long offset, SeekOrigin origin = SeekOrigin.Begin)
+		{
+			this._reader.DiscardBufferedData();
+			return this._reader.BaseStream.Seek(offset > -1 ? offset : 0, origin);
+		}
+
+		/// <summary>
+		/// Seeks to the position (to read next lines from this position)
+		/// </summary>
+		/// <param name="offset">The offset relative to the origin parameter</param>
+		/// <param name="origin">Indicating the reference point used to obtain the new position</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>The new position within the current stream</returns>
+		public Task<long> SeekAsync(long offset, SeekOrigin origin = SeekOrigin.Begin, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask(() => this.Seek(offset, origin), cancellationToken);
+		}
+
+		/// <summary>
+		/// Reads a line of characters (from the current position)
+		/// </summary>
+		/// <returns>The next line from file, or null if the end of file is reached</returns>
+		public string ReadLine()
+		{
+			return this._reader.ReadLine();
+		}
+
+		/// <summary>
+		/// Reads a line of characters (from the current position)
 		/// </summary>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
-		public async Task<List<string>> ReadAllLinesAsync(CancellationToken cancellationToken = default(CancellationToken))
+		/// <returns>The next line from file, or null if the end of file is reached</returns>
+		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
 		{
-			// create new stream if need
-			if (this._streamReader == null)
-				this._streamReader = new StreamReader(this._fileStream, this._encoding);
-
-			// jump to first
-			this._streamReader.BaseStream.Seek(0, SeekOrigin.Begin);
-
-			// read all lines
-			var lines = new List<string>();
-			var line = await this._streamReader.ReadLineAsync().ConfigureAwait(false);
-			while (line != null)
-			{
-				// normalize UTF-16 BOM of all lines
-				if (line.Length > 0 && line[0] == '\uFEFF')
-					line = line.Substring(1);
-
-				// add the line into collection
-				lines.Add(line);
-				line = await this._streamReader.ReadLineAsync().ConfigureAwait(false);
-			}
-
-			// assign position to end of file
-			this._position = this._length;
-
-			// return lines
-			return lines;
+			return this._reader.ReadLineAsync(cancellationToken);
 		}
 
 		/// <summary>
-		/// Reads some lines of characters from the current stream at the current position and returns the data as a collection of string.
+		/// Reads some lines of characters (from the current position)
 		/// </summary>
 		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
-		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
+		/// <returns>The next lines from the file, or empty collectoin if the end of file is reached</returns>
 		public List<string> ReadLines(int totalOfLines)
 		{
 			// use StreamReader to read all lines (better performance)
-			if (totalOfLines < 1 && this.Position < this._encoding.GetPreamble().Length)
+			if (totalOfLines < 1 && this.Position < this.Encoding.GetPreamble().Length)
 				return this.ReadAllLines();
 
 			// read lines
@@ -2204,14 +2212,8 @@ namespace net.vieapps.Components.Utility
 			var line = this.ReadLine();
 			while (line != null)
 			{
-				// normalize UTF-16 BOM of all lines
-				if (line.Length > 0 && line[0] == '\uFEFF')
-					line = line.Substring(1);
-
-				// add the line into collection
 				lines.Add(line);
 
-				// check counter and read next line
 				counter++;
 				if (totalOfLines > 0 && counter >= totalOfLines)
 					break;
@@ -2222,197 +2224,101 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Reads some lines of characters from the current stream at the current position and returns the data as a collection of string.
+		/// Reads some lines of characters (from the current position)
 		/// </summary>
 		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>The next lines from the input stream, or empty collectoin if the end of the input stream is reached</returns>
+		/// <returns>The next lines from the file, or empty collectoin if the end of file is reached</returns>
 		public async Task<List<string>> ReadLinesAsync(int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			// use StreamReader to read all lines (better performance)
-			if (totalOfLines < 1 && this.Position < this._encoding.GetPreamble().Length)
+			if (totalOfLines < 1 && this.Position < this.Encoding.GetPreamble().Length)
 				return await this.ReadAllLinesAsync(cancellationToken).ConfigureAwait(false);
 
 			// read lines
 			var lines = new List<string>();
 			var counter = 0;
 			var line = await this.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+
 			while (line != null)
 			{
-				// normalize UTF-16 BOM of all lines
-				if (line.Length > 0 && line[0] == '\uFEFF')
-					line = line.Substring(1);
-
-				// add the line into collection
 				lines.Add(line);
 
-				// check counter and read next line
 				counter++;
 				if (totalOfLines > 0 && counter >= totalOfLines)
 					break;
 
 				line = await this.ReadLineAsync(cancellationToken).ConfigureAwait(false);
 			}
+
 			return lines;
 		}
 
 		/// <summary>
-		/// Reads a line of characters from the current stream at the current position and returns the data as a string.
+		/// Reads all lines of characters of the files
 		/// </summary>
-		/// <returns>The next line from the input stream, or null if the end of the input stream is reached</returns>
-		public string ReadLine()
+		/// <returns></returns>
+		public List<string> ReadAllLines()
 		{
-			// check to read next block
-			if (this._lines == null || this._lines.Count < 1)
-				this.ReadBlockOfLines();
+			// jump to first
+			this.Seek(0);
 
-			// get first line from queue and assign position
-			var line = this._lines != null && this._lines.Count > 0
-				? this._lines.Dequeue()
-				: null;
-			this._position = line != null
-				? line.Position
-				: this._position = this._length;
+			// read all lines
+			var lines = new List<string>();
+			var line = this._reader.ReadLine();
 
-			// return line of characters
-			return line != null
-				? line.Line
-				: null;
+			while (line != null)
+			{
+				lines.Add(line);
+				line = this._reader.ReadLine();
+			}
+
+			// return lines
+			return lines;
 		}
 
 		/// <summary>
-		/// Reads a line of characters from the current stream at the current position and returns the data as a string.
+		/// Reads all lines of characters of the files
 		/// </summary>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>The next line from the input stream, or null if the end of the input stream is reached</returns>
-		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
+		/// <returns></returns>
+		public async Task<List<string>> ReadAllLinesAsync(CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => this.ReadLine(), cancellationToken);
-		}
+			// jump to first
+			this.Seek(0);
 
-		void ReadBlockOfLines()
-		{
-			// read one block
-			var data = new char[TextFileReader.BufferSize];
-			var readBytes = this._binReader.Read(data, 0, TextFileReader.BufferSize);
+			// read all lines
+			var lines = new List<string>();
+			var line = await this._reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
 
-			// build block of lines and continue read other blocks until reach end-of-line (\n)
-			while (readBytes > 0)
+			while (line != null)
 			{
-				this._builder.Append(data);
-				readBytes = !this.BuildBlockOfLines()
-					? this._binReader.Read(data, 0, TextFileReader.BufferSize)
-					: 0;
-			}
-		}
-
-		bool BuildBlockOfLines()
-		{
-			// get current string and find the end-of-line (\n)
-			var theString = this._builder.ToString();
-			var eolPosition = theString.IndexOf("\n");
-			var endOfLineIsFound = eolPosition > -1;
-
-			// stop process if end-of-line is not found
-			if (!endOfLineIsFound)
-				return endOfLineIsFound;
-
-			// end-of-file flag
-			var endOfFileIsFound = false;
-
-			// process lines of characters and check end-of-file
-			while (eolPosition > -1)
-			{
-				// get line of characters
-				var line = theString.Substring(0, eolPosition + 1);
-
-				// prepare reading position of stream
-				this._position += this.Encoding.GetByteCount(line);
-
-				// refine line of characters
-				while (line.EndsWith("\n"))
-					line = line.Substring(0, line.Length - 1);
-				while (line.EndsWith("\r"))
-					line = line.Substring(0, line.Length - 1);
-
-				// normalize UTF-16 BOM of all lines
-				if (line.Length > 0 && line[0] == '\uFEFF')
-					line = line.Substring(1);
-
-				// update line of characters into queue
-				this._lines.Enqueue(new TextLine()
-				{
-					Line = line,
-					Position = this._position
-				});
-
-				// stop process if end of file
-				if (endOfFileIsFound)
-				{
-					theString = null;
-					break;
-				}
-
-				// remove the processed line
-				else
-					theString = theString.Remove(0, eolPosition + 1);
-
-				// check end-of-file position (\0)
-				if (theString.StartsWith("\0"))
-				{
-					endOfFileIsFound = true;
-					theString = null;
-					eolPosition = -1;
-				}
-
-				// if the string is not started by end-of-file, then check next end-of-line position
-				else
-				{
-					// check next end-of-line position
-					eolPosition = theString.IndexOf("\n");
-
-					// if next end-of-line position is not found, then check end-of-file position (\0)
-					if (eolPosition < 0)
-					{
-						eolPosition = theString.IndexOf("\0");
-						if (eolPosition > 0)
-						{
-							eolPosition--;
-							endOfFileIsFound = true;
-						}
-					}
-				}
+				lines.Add(line);
+				line = await this._reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
 			}
 
-			// update builder
-			this._builder = new StringBuilder();
-			if (theString != null)
-				this._builder.Append(theString);
-
-			// return the flag
-			return endOfLineIsFound;
+			// return lines
+			return lines;
 		}
+	}
 
-		/// <summary>
-		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-		/// </summary>
-		public void Dispose()
+	// ----------------------------------------------------------
+
+	internal static class TextFileReaderExtensions
+	{
+		internal static async Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
 		{
-			this._binReader?.Close();
-			this._binReader?.Dispose();
-
-			this._streamReader?.Close();
-			this._streamReader?.Dispose();
-
-			this._fileStream?.Close();
-			this._fileStream?.Dispose();
-
-			GC.SuppressFinalize(this);
-		}
-
-		~TextFileReader()
-		{
-			this.Dispose();
+			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
+			{
+				try
+				{
+					return await reader.ReadLineAsync().ConfigureAwait(false);
+				}
+				catch (Exception)
+				{
+					throw;
+				}
+			}
 		}
 	}
 	#endregion
