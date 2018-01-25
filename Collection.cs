@@ -24,7 +24,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Static servicing methods for working with collections
 	/// </summary>
-	public static class CollectionService
+	public static partial class CollectionService
 	{
 
 		#region String conversions

@@ -857,7 +857,11 @@ namespace net.vieapps.Components.Utility
 			{
 				using (cancellationToken.Register(() =>
 				{
-					onCancel?.Invoke();
+					try
+					{
+						onCancel?.Invoke();
+					}
+					catch { }
 					tcs.TrySetCanceled(cancellationToken);
 					return;
 				}, useSynchronizationContext: false))
@@ -902,7 +906,11 @@ namespace net.vieapps.Components.Utility
 			{
 				using (cancellationToken.Register(() =>
 				{
-					onCancel?.Invoke();
+					try
+					{
+						onCancel?.Invoke();
+					}
+					catch { }
 					tcs.TrySetCanceled(cancellationToken);
 					return;
 				}, useSynchronizationContext: false))
@@ -1226,14 +1234,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var reader = new StreamReader(stream, encoding ?? Encoding.UTF8))
 				{
-					try
-					{
-						return reader.ReadToEnd();
-					}
-					catch (Exception)
-					{
-						throw;
-					}
+					return reader.ReadToEnd();
 				}
 			}
 		}
@@ -1268,14 +1269,7 @@ namespace net.vieapps.Components.Utility
 				{
 					using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
 					{
-						try
-						{
-							return await reader.ReadToEndAsync().ConfigureAwait(false);
-						}
-						catch (Exception)
-						{
-							throw;
-						}
+						return await reader.ReadToEndAsync().ConfigureAwait(false);
 					}
 				}
 			}
@@ -1313,14 +1307,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
-					try
-					{
-						writer.Write(content);
-					}
-					catch (Exception)
-					{
-						throw;
-					}
+					writer.Write(content);
 				}
 			}
 		}
@@ -1361,14 +1348,7 @@ namespace net.vieapps.Components.Utility
 				{
 					using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
 					{
-						try
-						{
-							await writer.WriteAsync(content).ConfigureAwait(false);
-						}
-						catch (Exception)
-						{
-							throw;
-						}
+						await writer.WriteAsync(content).ConfigureAwait(false);
 					}
 				}
 			}
@@ -1403,16 +1383,9 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var reader = new TextFileReader(filePath))
 			{
-				try
-				{
-					reader.Seek(position);
-					lines = reader.ReadLines(totalOfLines);
-					newPosition = reader.Position;
-				}
-				catch (Exception)
-				{
-					throw;
-				}
+				reader.Seek(position);
+				lines = reader.ReadLines(totalOfLines);
+				newPosition = reader.Position;
 			}
 		}
 
@@ -1428,15 +1401,8 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var reader = new TextFileReader(filePath, true))
 			{
-				try
-				{
-					reader.Seek(position);
-					return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
-				}
-				catch (Exception)
-				{
-					throw;
-				}
+				reader.Seek(position);
+				return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
 			}
 		}
 
@@ -1477,16 +1443,12 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentException("File path is invalid", nameof(filePath));
 
 			if (lines != null && lines.Count > 0)
-				using (var writer = new StreamWriter(filePath, append, encoding ?? Encoding.UTF8))
+				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize))
 				{
-					try
+					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
 						lines.Where(line => line != null).ForEach(line => writer.WriteLine(line));
 						writer.Flush();
-					}
-					catch (Exception)
-					{
-						throw;
 					}
 				}
 		}
@@ -1509,15 +1471,8 @@ namespace net.vieapps.Components.Utility
 				{
 					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
-						try
-						{
-							await lines.Where(line => line != null).ForEachAsync((line, token) => writer.WriteLineAsync(line), cancellationToken, true, false).ConfigureAwait(false);
-							await writer.FlushAsync().ConfigureAwait(false);
-						}
-						catch (Exception)
-						{
-							throw;
-						}
+						await lines.Where(line => line != null).ForEachAsync((line, token) => writer.WriteLineAsync(line), cancellationToken, true, false).ConfigureAwait(false);
+						await writer.FlushAsync().ConfigureAwait(false);
 					}
 				}
 		}
@@ -1618,6 +1573,57 @@ namespace net.vieapps.Components.Utility
 			{
 				await stream.WriteAsync(content ?? new byte[0], 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
 				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Writes a binary file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="content"></param>
+		/// <returns></returns>
+		public static void WriteBinaryFile(string filePath, MemoryStream content)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
+
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize))
+			{
+				var buffer = new byte[TextFileReader.BufferSize];
+				var read = content.Read(buffer, 0, TextFileReader.BufferSize);
+				while (read > 0)
+				{
+					stream.Write(buffer, 0, read);
+					stream.Flush();
+					buffer = new byte[TextFileReader.BufferSize];
+					read = content.Read(buffer, 0, TextFileReader.BufferSize);
+				}
+			}
+		}
+
+		/// <summary>
+		/// Writes a binary file
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="content"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task WriteBinaryFileAsync(string filePath, MemoryStream content, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
+
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
+			{
+				var buffer = new byte[TextFileReader.BufferSize];
+				var read = await content.ReadAsync(buffer, 0, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+					await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+					buffer = new byte[TextFileReader.BufferSize];
+					read = await content.ReadAsync(buffer, 0, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
+				}
 			}
 		}
 		#endregion
@@ -1787,7 +1793,17 @@ namespace net.vieapps.Components.Utility
 						throw new OperationCanceledException(cancellationToken);
 					}))
 					{
-						data = await webclient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+						try
+						{
+							data = await webclient.DownloadDataTaskAsync(url).ConfigureAwait(false);
+						}
+						catch (Exception ex)
+						{
+							if (cancellationToken.IsCancellationRequested)
+								throw new OperationCanceledException(ex.Message, ex, cancellationToken);
+							else
+								throw ex;
+						}
 					}
 				}
 
@@ -1815,7 +1831,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task DownloadFileAsync(string url, string filePath, string referUri, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (!string.IsNullOrWhiteSpace(url) && url.IsStartsWith("http"))
+			if (!string.IsNullOrWhiteSpace(url) && (url.IsStartsWith("http://") || url.IsStartsWith("https://")))
 				try
 				{
 					var stopwatch = new Stopwatch();
@@ -2096,35 +2112,18 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the current encoding of text file.
 		/// </summary>
-		public Encoding Encoding
-		{
-			get
-			{
-				return this._reader.CurrentEncoding;
-			}
-		}
+		public Encoding Encoding { get { return this._reader.CurrentEncoding; } }
 
 		/// <summary>
 		/// Gets the length of text file (in bytes).
 		/// </summary>
-		public long Length
-		{
-			get
-			{
-				return this._stream.Length;
-			}
-		}
+		public long Length { get { return this._reader.BaseStream.Length; } }
 
 		/// <summary>
 		/// Gets the current position
 		/// </summary>
 		/// 
-		public long Position
-		{
-			get
-			{
-				return this.GetPosition();
-			}
+		public long Position { get { return this.GetPosition(); }
 		}
 
 		long GetPosition()
@@ -2310,14 +2309,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
 			{
-				try
-				{
-					return await reader.ReadLineAsync().ConfigureAwait(false);
-				}
-				catch (Exception)
-				{
-					throw;
-				}
+				return await reader.ReadLineAsync().ConfigureAwait(false);
 			}
 		}
 	}

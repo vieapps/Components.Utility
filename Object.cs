@@ -24,7 +24,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Static servicing methods for working with objects
 	/// </summary>
-	public static class ObjectService
+	public static partial class ObjectService
 	{
 
 		#region Attribute info

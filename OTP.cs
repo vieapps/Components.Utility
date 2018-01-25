@@ -8,7 +8,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// One-time password servicing methods
 	/// </summary>
-	public static class OTPService
+	public static partial class OTPService
 	{
 		/// <summary>
 		/// Generates the counter-based password (RFC 4226)

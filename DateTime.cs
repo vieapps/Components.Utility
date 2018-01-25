@@ -9,7 +9,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Static servicing methods for working with date-time
 	/// </summary>
-	public static class DateTimeService
+	public static partial class DateTimeService
 	{
 		/// <summary>
 		/// Unix Epoch

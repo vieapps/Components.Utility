@@ -257,7 +257,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Collection of global methods for sending a message (email and web hook)
 	/// </summary>
-	public static class MessageUtility
+	public static partial class MessageService
 	{
 
 		#region Helper methods
@@ -337,7 +337,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
 		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, string additionalFooter, HashSet<string> preventDomains)
 		{
-			MessageUtility.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, false, additionalFooter, preventDomains);
+			MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, false, additionalFooter, preventDomains);
 		}
 
 		/// <summary>
@@ -483,7 +483,7 @@ namespace net.vieapps.Components.Utility
 				:  null;
 
 			// send mail
-			MessageUtility.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl);
+			MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl);
 		}
 
 		/// <summary>
@@ -537,7 +537,7 @@ namespace net.vieapps.Components.Utility
 			smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
 
 			// send email
-			MessageUtility.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp);
+			MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp);
 		}
 
 		/// <summary>
@@ -654,7 +654,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
 		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl = true, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => MessageUtility.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null), cancellationToken);
+			return UtilityService.ExecuteTask(() => MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null), cancellationToken);
 		}
 
 		/// <summary>
@@ -680,7 +680,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
 		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => MessageUtility.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl), cancellationToken);
+			return UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl), cancellationToken);
 		}
 
 		/// <summary>
@@ -702,7 +702,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
 		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => MessageUtility.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp), cancellationToken);
+			return UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp), cancellationToken);
 		}
 		#endregion
 

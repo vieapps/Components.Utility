@@ -12,7 +12,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Static servicing methods for working with cryptos
 	/// </summary>
-	public static class CryptoService
+	public static partial class CryptoService
 	{
 
 		#region Conversions & Encode/Decode

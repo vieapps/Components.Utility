@@ -13,7 +13,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Static servicing methods for working with string
 	/// </summary>
-	public static class StringService
+	public static partial class StringService
 	{
 
 		#region Manipulations
