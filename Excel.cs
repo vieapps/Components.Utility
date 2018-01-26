@@ -47,7 +47,7 @@ namespace net.vieapps.Components.Utility
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>
 		public static Task<MemoryStream> CreateExcelStreamAsync(this DataSet dataset, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => ExcelService.CreateExcelStream(dataset), cancellationToken);
+			return UtilityService.ExecuteTask(() => dataset.CreateExcelStream(), cancellationToken);
 		}
 
 		#region Write a data-set to Excel document
