@@ -1667,7 +1667,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			using (var reader = new TextFileReader(filePath, true))
+			using (var reader = new TextFileReader(filePath))
 			{
 				reader.Seek(position);
 				return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
@@ -2319,15 +2319,13 @@ namespace net.vieapps.Components.Utility
 		// for better performance while working with text file has large line of characters
 		public static readonly int BufferSize = 65536;
 
-		FileStream _stream = null;
 		StreamReader _reader = null;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TextFileReader"/> class.
 		/// </summary>
 		/// <param name="filePath">The path to file</param>
-		/// <param name="useAsync">If set to <c>true</c>, then use asynchronous I/O while reading</param>
-		public TextFileReader(string filePath, bool useAsync = false)
+		public TextFileReader(string filePath)
 		{
 			// check
 			if (string.IsNullOrWhiteSpace(filePath))
@@ -2337,8 +2335,7 @@ namespace net.vieapps.Components.Utility
 				throw new FileNotFoundException($"File is not found ({filePath})");
 
 			// initialize
-			this._stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, useAsync);
-			this._reader = new StreamReader(this._stream, true);
+			this._reader = new StreamReader(filePath, true);
 		}
 
 		~TextFileReader()
@@ -2351,11 +2348,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		public void Dispose()
 		{
-			this._reader?.Close();
-			this._reader?.Dispose();
-
-			this._stream?.Close();
-			this._stream?.Dispose();
+			this._reader.Close();
+			this._reader.Dispose();
 
 			GC.SuppressFinalize(this);
 		}
@@ -2412,18 +2406,6 @@ namespace net.vieapps.Components.Utility
 		{
 			this._reader.DiscardBufferedData();
 			return this._reader.BaseStream.Seek(offset > -1 ? offset : 0, origin);
-		}
-
-		/// <summary>
-		/// Seeks to the position (to read next lines from this position)
-		/// </summary>
-		/// <param name="offset">The offset relative to the origin parameter</param>
-		/// <param name="origin">Indicating the reference point used to obtain the new position</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>The new position within the current stream</returns>
-		public Task<long> SeekAsync(long offset, SeekOrigin origin = SeekOrigin.Begin, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => this.Seek(offset, origin), cancellationToken);
 		}
 
 		/// <summary>
