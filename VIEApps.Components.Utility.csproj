@@ -8,7 +8,7 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<AssemblyVersion>10.1.7.1802</AssemblyVersion>
 		<FileVersion>10.1.7.1802</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.01.27-opxls.asyncEx</InformationalVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.01.31-ax</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
@@ -46,7 +46,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DocumentFormat.OpenXml" Version="2.8.0" />
+		<PackageReference Include="DocumentFormat.OpenXml" Version="2.8.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
