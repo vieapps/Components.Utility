@@ -81,7 +81,15 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Helper properties
-		internal static string EncryptionKey = "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys";
+		static string _EncryptionKey = null;
+
+		internal static string EncryptionKey
+		{
+			get
+			{
+				return EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys"));
+			}
+		}
 
 		/// <summary>
 		/// Gets or sets the identity of the email message.
@@ -114,6 +122,18 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Loads message from file and deserialize as object.
+		/// </summary>
+		/// <param name="filePath">The file path.</param>
+		/// <returns></returns>
+		public static async Task<EmailMessage> LoadAsync(string filePath)
+		{
+			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+				? new EmailMessage(await UtilityService.ReadTextFileAsync(filePath).ConfigureAwait(false))
+				: null;
+		}
+
+		/// <summary>
 		/// Serializes and saves message into file.
 		/// </summary>
 		/// <param name="message">The message.</param>
@@ -123,7 +143,22 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + Path.DirectorySeparatorChar.ToString() + message.ID + ".msg", message.Encrypted);
+					UtilityService.WriteTextFile(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted);
+				}
+				catch { }
+		}
+
+		/// <summary>
+		/// Serializes and saves message into file.
+		/// </summary>
+		/// <param name="message">The message.</param>
+		/// <param name="folderPath">The path to folder that stores queue of email messages.</param>
+		public static async Task SaveAsync(EmailMessage message, string folderPath)
+		{
+			if (message != null && Directory.Exists(folderPath))
+				try
+				{
+					await UtilityService.WriteTextFileAsync(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted).ConfigureAwait(false);
 				}
 				catch { }
 		}
@@ -196,7 +231,15 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Helper properties
-		internal static string EncryptionKey = "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys";
+		static string _EncryptionKey = null;
+
+		internal static string EncryptionKey
+		{
+			get
+			{
+				return WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys"));
+			}
+		}
 
 		/// <summary>
 		/// Gets or sets identity of the message.
@@ -223,6 +266,18 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Loads message from file and deserialize as object.
+		/// </summary>
+		/// <param name="filePath">The file path.</param>
+		/// <returns></returns>
+		public static async Task<WebHookMessage> LoadAsync(string filePath)
+		{
+			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+				? new WebHookMessage(await UtilityService.ReadTextFileAsync(filePath).ConfigureAwait(false))
+				: null;
+		}
+
+		/// <summary>
 		/// Serializes and saves message into file.
 		/// </summary>
 		/// <param name="message">The message.</param>
@@ -232,7 +287,22 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(folderPath))
 				try
 				{
-					UtilityService.WriteTextFile(folderPath + Path.DirectorySeparatorChar.ToString() + message.ID + ".msg", message.Encrypted);
+					UtilityService.WriteTextFile(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted);
+				}
+				catch { }
+		}
+
+		/// <summary>
+		/// Serializes and saves message into file.
+		/// </summary>
+		/// <param name="message">The message.</param>
+		/// <param name="folderPath">The path to folder that stores queue of messages.</param>
+		public static async Task SaveAsync(WebHookMessage message, string folderPath)
+		{
+			if (message != null && Directory.Exists(folderPath))
+				try
+				{
+					await UtilityService.WriteTextFileAsync(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted).ConfigureAwait(false);
 				}
 				catch { }
 		}
