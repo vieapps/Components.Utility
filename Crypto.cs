@@ -3,8 +3,11 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Linq;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using Konscious.Security.Cryptography;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -291,6 +294,61 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this big-integer to array of bytes
+		/// </summary>
+		/// <param name="bigint"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this BigInteger bigint)
+		{
+			return bigint.ToByteArray();
+		}
+
+		/// <summary>
+		/// Converts this array of bytes to big-integer
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this byte[] bytes)
+		{
+			return new BigInteger(bytes);
+		}
+
+		/// <summary>
+		/// Converts this hexa-string to big-integer
+		/// </summary>
+		/// <param name="string"></param>
+		/// <remarks>https://stackoverflow.com/questions/30119174/converting-a-hex-string-to-its-biginteger-equivalent-negates-the-value</remarks>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this string @string)
+		{
+			return BigInteger.Parse(@string, System.Globalization.NumberStyles.AllowHexSpecifier);
+		}
+
+		/// <summary>
+		/// Converts this big-integer to hexa string
+		/// </summary>
+		/// <param name="bigint"></param>
+		/// <returns></returns>
+		public static string ToHexa(this BigInteger bigint)
+		{
+			return bigint.ToByteArray().ToHexa();
+		}
+
+		/// <summary>
+		/// Gets the maximum big-integer number
+		/// </summary>
+		/// <param name="size"></param>
+		/// <param name="leadingZeroCount"></param>
+		/// <returns></returns>
+		public static BigInteger GetBigInteger(int size = 32, int leadingZeroCount = 0)
+		{
+			var hexa = Enumerable.Repeat<byte>(Byte.MaxValue, size).ToArray().ToHexa();
+			if (leadingZeroCount > 0 && leadingZeroCount < hexa.Length)
+				hexa = new string('0', leadingZeroCount) + hexa.Right(hexa.Length - leadingZeroCount);
+			return ("0" + hexa).ToBigInteger();
+		}
+
+		/// <summary>
 		/// Encodes this string to use in url
 		/// </summary>
 		/// <param name="string"></param>
@@ -468,8 +526,25 @@ namespace net.vieapps.Components.Utility
 			{ "sha1", () => SHA1.Create() },
 			{ "sha256", () => SHA256.Create() },
 			{ "sha384", () => SHA384.Create() },
-			{ "sha512", () => SHA512.Create() }
+			{ "sha512", () => SHA512.Create() },
+			{ "blake", () => new HMACBlake2B(128) },
+			{ "blake128", () => new HMACBlake2B(128) },
+			{ "blake256", () => new HMACBlake2B(256) },
+			{ "blake384", () => new HMACBlake2B(384) },
+			{ "blake512", () => new HMACBlake2B(512) },
 		};
+
+		/// <summary>
+		/// Gets a hashser
+		/// </summary>
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		public static HashAlgorithm GetHasher(string mode = "MD5")
+		{
+			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
+				func = () => MD5.Create();
+			return func();
+		}
 
 		/// <summary>
 		/// Gets hash of this array of bytes
@@ -479,10 +554,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHash(this byte[] bytes, string mode = "MD5")
 		{
-			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
-				func = () => MD5.Create();
-
-			using (var hasher = func())
+			using (var hasher = CryptoService.GetHasher(mode))
 			{
 				return hasher.ComputeHash(bytes);
 			}
@@ -614,14 +686,124 @@ namespace net.vieapps.Components.Utility
 				: @string.GetSHA512Hash().ToHexa();
 		}
 
+		/// <summary>
+		/// Gets BLAKE hash of this string (128 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GetBLAKEHash(this string @string)
+		{
+			return @string.GetHash("BLAKE");
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (128 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toBase64"></param>
+		/// <returns></returns>
+		public static string GetBLAKE(this string @string, bool toBase64 = false)
+		{
+			return toBase64
+				? @string.GetBLAKEHash().ToBase64()
+				: @string.GetBLAKEHash().ToHexa();
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (256 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GetBLAKE256Hash(this string @string)
+		{
+			return @string.GetHash("BLAKE256");
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (256 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toBase64"></param>
+		/// <returns></returns>
+		public static string GetBLAKE256(this string @string, bool toBase64 = false)
+		{
+			return toBase64
+				? @string.GetBLAKE256Hash().ToBase64()
+				: @string.GetBLAKE256Hash().ToHexa();
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (384 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GetBLAKE384Hash(this string @string)
+		{
+			return @string.GetHash("BLAKE384");
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (384 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toBase64"></param>
+		/// <returns></returns>
+		public static string GetBLAKE384(this string @string, bool toBase64 = false)
+		{
+			return toBase64
+				? @string.GetBLAKE384Hash().ToBase64()
+				: @string.GetBLAKE384Hash().ToHexa();
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (512 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GetBLAKE512Hash(this string @string)
+		{
+			return @string.GetHash("BLAKE512");
+		}
+
+		/// <summary>
+		/// Gets BLAKE hash of this string (512 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toBase64"></param>
+		/// <returns></returns>
+		public static string GetBLAKE512(this string @string, bool toBase64 = false)
+		{
+			return toBase64
+				? @string.GetBLAKE512Hash().ToBase64()
+				: @string.GetBLAKE512Hash().ToHexa();
+		}
+
 		static Dictionary<string, Func<byte[], HMAC>> HmacHashFactories = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", (key) => new HMACMD5(key) },
 			{ "sha1", (key) => new HMACSHA1(key) },
 			{ "sha256", (key) => new HMACSHA256(key) },
 			{ "sha384", (key) => new HMACSHA384(key) },
-			{ "sha512", (key) => new HMACSHA512(key) }
+			{ "sha512", (key) => new HMACSHA512(key) },
+			{ "blake", (key) => new HMACBlake2B(key, 128) },
+			{ "blake128", (key) => new HMACBlake2B(key, 128) },
+			{ "blake256", (key) => new HMACBlake2B(key, 256) },
+			{ "blake384", (key) => new HMACBlake2B(key, 384) },
+			{ "blake512", (key) => new HMACBlake2B(key, 512) },
 		};
+
+		/// <summary>
+		/// Gets a HMAC hashser
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="mode"></param>
+		/// <returns></returns>
+		public static HMAC GetHMACHasher(byte[] key, string mode = "MD5")
+		{
+			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
+				func = (k) => new HMACSHA256(k);
+			return func(key);
+		}
 
 		/// <summary>
 		/// Gets HMAC hash of this array of bytes
@@ -632,10 +814,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
 		{
-			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
-				func = (k) => new HMACSHA256(k);
-
-			using (var hasher = func(key))
+			using (var hasher = CryptoService.GetHMACHasher(key, mode))
 			{
 				return hasher.ComputeHash(bytes);
 			}
@@ -783,7 +962,6 @@ namespace net.vieapps.Components.Utility
 			return @string.GetHMACSHA256(CryptoService.DefaultEncryptionKey, toHexa);
 		}
 
-
 		/// <summary>
 		/// Gets HMAC SHA384 hash of this string
 		/// </summary>
@@ -794,6 +972,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return @string.GetHMACHash(key.ToBytes(), "SHA384");
 		}
+
 		/// <summary>
 		/// Gets HMAC SHA384 hash of this string
 		/// </summary>
@@ -817,7 +996,6 @@ namespace net.vieapps.Components.Utility
 			return @string.GetHMACSHA384(CryptoService.DefaultEncryptionKey, toHexa);
 		}
 
-
 		/// <summary>
 		/// Gets HMAC SHA512 hash of this string
 		/// </summary>
@@ -828,6 +1006,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return @string.GetHMACHash(key.ToBytes(), "SHA512");
 		}
+
 		/// <summary>
 		/// Gets HMAC SHA512 hash of this string
 		/// </summary>
@@ -849,6 +1028,142 @@ namespace net.vieapps.Components.Utility
 		public static string GetHMACSHA512(this string @string, bool toHexa = true)
 		{
 			return @string.GetHMACSHA512(CryptoService.DefaultEncryptionKey, toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (128 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACBLAKEHash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "BLAKE");
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (128 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE(this string @string, string key, bool toHexa = true)
+		{
+			return @string.GetHMAC(key, "BLAKE", toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (128 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE(this string @string, bool toHexa = true)
+		{
+			return @string.GetHMACBLAKE(CryptoService.DefaultEncryptionKey, toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (256 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACBLAKE256Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "BLAKE256");
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (256 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE256(this string @string, string key, bool toHexa = true)
+		{
+			return @string.GetHMAC(key, "BLAKE256", toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (256 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE256(this string @string, bool toHexa = true)
+		{
+			return @string.GetHMACBLAKE256(CryptoService.DefaultEncryptionKey, toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (384 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACBLAKE384Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "BLAKE384");
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (384 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE384(this string @string, string key, bool toHexa = true)
+		{
+			return @string.GetHMAC(key, "BLAKE384", toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (384 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE384(this string @string, bool toHexa = true)
+		{
+			return @string.GetHMACBLAKE384(CryptoService.DefaultEncryptionKey, toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (512 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACBLAKE512Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash(key.ToBytes(), "BLAKE512");
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (512 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE512(this string @string, string key, bool toHexa = true)
+		{
+			return @string.GetHMAC(key, "BLAKE512", toHexa);
+		}
+
+		/// <summary>
+		/// Gets HMAC BLAKE hash of this string (512 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACBLAKE512(this string @string, bool toHexa = true)
+		{
+			return @string.GetHMACBLAKE512(CryptoService.DefaultEncryptionKey, toHexa);
 		}
 		#endregion
 
@@ -1493,7 +1808,7 @@ namespace net.vieapps.Components.Utility
 				new CspParameters(1, "Microsoft Strong Cryptographic Provider")
 				{
 					Flags = CspProviderFlags.UseArchivableKey,
-					KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.GetUUID()
+					KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.NewUID
 				})
 			{
 				PersistKeyInCsp = false

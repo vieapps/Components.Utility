@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.Configuration;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Numerics;
 
 using Newtonsoft.Json.Linq;
 #endregion
@@ -54,7 +55,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets a new UUID (unique universal identity - in 128 bits)
+		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
 		/// </summary>
 		public static string NewUID
 		{
@@ -87,6 +88,19 @@ namespace net.vieapps.Components.Utility
 			{
 				return UtilityService.GetBlankUUID();
 			}
+		}
+
+		/// <summary>
+		/// Generate an UUID from this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="mode">BLAKE or MD5</param>
+		/// <returns></returns>
+		public static string GenerateUUID(string @string, string mode = "BLAKE")
+		{
+			return !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("blake")
+				? CryptoService.GetBLAKE(@string)
+				: CryptoService.GetMD5(@string);
 		}
 
 		static Regex Hexa = new Regex("[^0-9a-fA-F]+");

@@ -6,14 +6,14 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.1.8.1802</AssemblyVersion>
-		<FileVersion>10.1.8.1802</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.07-msgs</InformationalVersion>
+		<AssemblyVersion>10.1.9.1802</AssemblyVersion>
+		<FileVersion>10.1.9.1802</FileVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.09-blake</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
-		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.8.1802</Version>
+		<Version>10.1.9.1802-beta</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
@@ -47,6 +47,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="DocumentFormat.OpenXml" Version="2.8.1" />
+		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.5" />
 		<PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
