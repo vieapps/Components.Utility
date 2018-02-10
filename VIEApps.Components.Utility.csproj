@@ -8,12 +8,12 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<AssemblyVersion>10.1.9.1802</AssemblyVersion>
 		<FileVersion>10.1.9.1802</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.09-blake</InformationalVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.10-blake</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.9.1802-beta</Version>
+		<Version>10.1.9.1802</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>

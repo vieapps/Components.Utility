@@ -304,6 +304,16 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this big-integer to hexa string
+		/// </summary>
+		/// <param name="bigint"></param>
+		/// <returns></returns>
+		public static string ToHexa(this BigInteger bigint)
+		{
+			return bigint.ToBytes().ToHexa();
+		}
+
+		/// <summary>
 		/// Converts this array of bytes to big-integer
 		/// </summary>
 		/// <param name="bytes"></param>
@@ -322,30 +332,6 @@ namespace net.vieapps.Components.Utility
 		public static BigInteger ToBigInteger(this string @string)
 		{
 			return BigInteger.Parse(@string, System.Globalization.NumberStyles.AllowHexSpecifier);
-		}
-
-		/// <summary>
-		/// Converts this big-integer to hexa string
-		/// </summary>
-		/// <param name="bigint"></param>
-		/// <returns></returns>
-		public static string ToHexa(this BigInteger bigint)
-		{
-			return bigint.ToByteArray().ToHexa();
-		}
-
-		/// <summary>
-		/// Gets the maximum big-integer number
-		/// </summary>
-		/// <param name="size"></param>
-		/// <param name="leadingZeroCount"></param>
-		/// <returns></returns>
-		public static BigInteger GetBigInteger(int size = 32, int leadingZeroCount = 0)
-		{
-			var hexa = Enumerable.Repeat<byte>(Byte.MaxValue, size).ToArray().ToHexa();
-			if (leadingZeroCount > 0 && leadingZeroCount < hexa.Length)
-				hexa = new string('0', leadingZeroCount) + hexa.Right(hexa.Length - leadingZeroCount);
-			return ("0" + hexa).ToBigInteger();
 		}
 
 		/// <summary>
