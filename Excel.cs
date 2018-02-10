@@ -20,7 +20,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Creates a stream that contains Excel document from this data-set
 		/// </summary>
-		/// <param name="dataset">DataSet containing the data to be written to the Excel.</param>
+		/// <param name="dataset">DataSet containing the data to be written to the Excel in OpenXML format</param>
 		/// <returns>A stream that contains the Excel document</returns>
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>
 		public static MemoryStream SaveAsExcelStream(this DataSet dataset)
@@ -41,7 +41,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Creates a stream that contains Excel document from this data-set
 		/// </summary>
-		/// <param name="dataset">DataSet containing the data to be written to the Excel.</param>
+		/// <param name="dataset">DataSet containing the data to be written to the Excel in OpenXML format</param>
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>A stream that contains the Excel document</returns>
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>

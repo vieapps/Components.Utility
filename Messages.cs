@@ -19,8 +19,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Presents an email message
 	/// </summary>
-	[Serializable]
-	[DebuggerDisplay("Subject = {Subject}")]
+	[Serializable, DebuggerDisplay("Subject = {Subject}")]
 	public class EmailMessage
 	{
 		/// <summary>
@@ -181,8 +180,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Presents a web-hook message
 	/// </summary>
-	[Serializable]
-	[DebuggerDisplay("Endpoint = {EndpointURL}")]
+	[Serializable, DebuggerDisplay("Endpoint = {EndpointURL}")]
 	public class WebHookMessage
 	{
 		/// <summary>
@@ -195,8 +193,8 @@ namespace net.vieapps.Components.Utility
 			this.SendingTime = DateTime.Now;
 			this.EndpointURL = "";
 			this.Body = "";
-			this.Header = new Dictionary<string, string>();
-			this.Query = new Dictionary<string, string>();
+			this.Header = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			this.Query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try

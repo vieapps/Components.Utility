@@ -1913,7 +1913,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Upload/Download
 		/// <summary>
-		/// Uploads data as file to a remote server
+		/// Uploads the data stream as file to a remote server
 		/// </summary>
 		/// <param name="stream"></param>
 		/// <param name="filename"></param>
@@ -1922,7 +1922,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task UploadAsync(Stream stream, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task UploadAsync(this Stream stream, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (stream == null)
 				throw new ArgumentNullException(nameof(stream), "Data stream is invalid");
@@ -1971,7 +1971,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = new MemoryStream(data))
 			{
-				await UtilityService.UploadAsync(stream, filename, url, onCompleted, onError, cancellationToken).ConfigureAwait(false);
+				await stream.UploadAsync(filename, url, onCompleted, onError, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -1997,8 +1997,9 @@ namespace net.vieapps.Components.Utility
 			{
 				var stopwatch = new Stopwatch();
 				stopwatch.Start();
-				await UtilityService.UploadAsync(
-					stream, fileInfo.Name, url,
+				await stream.UploadAsync(
+					fileInfo.Name,
+					url,
 					(uri, results, times) =>
 					{
 						stopwatch.Stop();
@@ -2190,6 +2191,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Presents a parsed query for searching
 	/// </summary>
+	[Serializable]
 	public class SearchQuery
 	{
 		/// <summary>
@@ -2365,7 +2367,6 @@ namespace net.vieapps.Components.Utility
 		{
 			this._reader.Close();
 			this._reader.Dispose();
-
 			GC.SuppressFinalize(this);
 		}
 

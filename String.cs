@@ -25,14 +25,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Left(this string @string, int length)
 		{
-			if (length < 0)
-				throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero");
-
-			return @string.Equals("")
-				? string.Empty
-				: length >= @string.Length
-					? @string
-					: @string.Substring(0, length);
+			return length < 0
+				? throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero")
+				: @string.Equals("")
+					? string.Empty
+					: length >= @string.Length
+						? @string
+						: @string.Substring(0, length);
 		}
 
 		/// <summary>
@@ -43,13 +42,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Right(this string @string, int length)
 		{
-			if (length < 0)
-				throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero");
-
-			return @string.Equals("")
-				? string.Empty : length >= @string.Length
-					? @string
-					: @string.Substring(@string.Length - length);
+			return length < 0
+				? throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero")
+				: @string.Equals("")
+					? string.Empty
+					: length >= @string.Length
+						? @string
+						: @string.Substring(@string.Length - length);
 		}
 
 		/// <summary>
@@ -194,8 +193,8 @@ namespace net.vieapps.Components.Utility
 				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
 				{
 					deflate.Write(data, 0, data.Length);
+					return stream.GetBuffer();
 				}
-				return stream.GetBuffer();
 			}
 		}
 
@@ -211,8 +210,8 @@ namespace net.vieapps.Components.Utility
 				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
 				{
 					await deflate.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
+					return stream.GetBuffer();
 				}
-				return stream.GetBuffer();
 			}
 		}
 
@@ -355,10 +354,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static object ToEnum(this string @string, Type type)
 		{
-			if (type == null || !type.IsEnum)
-				throw new ArgumentException($"The type '{nameof(type)}' is not enum");
-
-			return Enum.Parse(type, @string);
+			return type != null && type.IsEnum
+				? Enum.Parse(type, @string)
+				: throw new ArgumentException($"The type '{nameof(type)}' is not enum");
 		}
 
 		/// <summary>
@@ -380,9 +378,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetString(this byte[] bytes, int count = 0)
 		{
-			return count > 0
-				? Encoding.UTF8.GetString(bytes, 0, count)
-				: Encoding.UTF8.GetString(bytes);
+			return Encoding.UTF8.GetString(bytes, 0, count > 0 ? count : bytes.Length);
 		}
 		#endregion
 

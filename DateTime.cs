@@ -294,7 +294,7 @@ namespace net.vieapps.Components.Utility
 				var hour = times[0];
 				var minute = times[1];
 				var second = times[2];
-				datetime = new DateTime(Convert.ToInt32(year), month.GetMonthFromHttpString(), Convert.ToInt32(day), Convert.ToInt32(hour), Convert.ToInt32(minute), Convert.ToInt32(second));
+				datetime = new DateTime(year.CastAs<int>(), month.GetMonthFromHttpString(), day.CastAs<int>(), hour.CastAs<int>(), minute.CastAs<int>(), second.CastAs<int>());
 				datetime = useUTC
 					? datetime.ToUniversalTime()
 					: datetime.ToLocalTime();
@@ -315,9 +315,7 @@ namespace net.vieapps.Components.Utility
 			var time = useUTC
 				? datetime.ToUniversalTime()
 				: datetime;
-			return time.GetWeekDayName() + ", " + $"0{time.Day}".Right(2)
-				+ " " + time.GetMonthName() + " " + time.Year.ToString() + " " + $"0{time.Hour}".Right(2)
-				+ ":" + $"0{time.Minute}".Right(2) + ":" + $"0{time.Second}".Right(2) + " GMT";
+			return $"{time.GetWeekDayName()}, {time.Day.ToString().PadLeft(2, '0')} {time.GetMonthName()} {time.Year} {time.Hour.ToString().PadLeft(2, '0')}:{time.Minute.ToString().PadLeft(2, '0')}:{time.Second.ToString().PadLeft(2, '0')} GMT";
 		}
 
 		/// <summary>

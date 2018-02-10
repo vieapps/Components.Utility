@@ -1450,7 +1450,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (CryptographicException ex)
 				{
-					/*	Object already exists:
+					/* Object already exists:
 					- Update settings of IIS and impersonate user: https://pwnedcode.wordpress.com/2008/11/10/fixing-cryptographicexception-%E2%80%9Cobject-already-exists%E2%80%9D/
 					- Allow account of processes can modify folder C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys
 					 */

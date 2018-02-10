@@ -171,19 +171,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets the last element
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <returns></returns>
-		public static T Last<T>(this T[] @object)
-		{
-			return @object.Length > 1
-				? @object[@object.Length - 1]
-				: default(T);
-		}
-
-		/// <summary>
 		/// Gets the first element
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -197,19 +184,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets the last element
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <returns></returns>
-		public static T Last<T>(this IList<T> @object)
-		{
-			return @object.Count > 1
-				? @object[@object.Count - 1]
-				: default(T);
-		}
-
-		/// <summary>
 		/// Gets the first element
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -219,6 +193,32 @@ namespace net.vieapps.Components.Utility
 		{
 			return @object.Count > 0
 				? (T)@object[0]
+				: default(T);
+		}
+
+		/// <summary>
+		/// Gets the last element
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static T Last<T>(this T[] @object)
+		{
+			return @object.Length > 1
+				? @object[@object.Length - 1]
+				: default(T);
+		}
+
+		/// <summary>
+		/// Gets the last element
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static T Last<T>(this IList<T> @object)
+		{
+			return @object.Count > 1
+				? @object[@object.Count - 1]
 				: default(T);
 		}
 
@@ -1275,8 +1275,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Represents a collection of key/value pairs that are accessible by key or index
 	/// </summary>
-	[Serializable]
-	[DebuggerDisplay("Count = {Count}")]
+	[Serializable, DebuggerDisplay("Count = {Count}")]
 	public class Collection : IDictionary
 	{
 		/// <summary>
@@ -1654,7 +1653,7 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	/// <typeparam name="TKey">The type of all keys</typeparam>
 	/// <typeparam name="TValue">The type of all values</typeparam>
-	[Serializable]
+	[Serializable, DebuggerDisplay("Count = {Count}")]
 	public class Collection<TKey, TValue> : Collection, IDictionary<TKey, TValue>
 	{
 		/// <summary>
@@ -1708,7 +1707,7 @@ namespace net.vieapps.Components.Utility
 		{
 			get
 			{
-				List<TKey> keys = new List<TKey>();
+				var keys = new List<TKey>();
 				foreach (TKey key in base.Keys)
 					keys.Add(key);
 				return keys;
@@ -1722,7 +1721,7 @@ namespace net.vieapps.Components.Utility
 		{
 			get
 			{
-				List<TValue> values = new List<TValue>();
+				var values = new List<TValue>();
 				foreach (TValue value in base.Values)
 					values.Add(value);
 				return values;
@@ -1869,6 +1868,28 @@ namespace net.vieapps.Components.Utility
 				value = default(TValue);
 				return false;
 			}
+		}
+
+		/// <summary>
+		/// Gets the first element
+		/// </summary>
+		/// <returns></returns>
+		public TValue First()
+		{
+			return this.Count > 0
+				? (TValue)base[0]
+				: default(TValue);
+		}
+
+		/// <summary>
+		/// Gets the last element
+		/// </summary>
+		/// <returns></returns>
+		public TValue Last()
+		{
+			return this.Count > 0
+				? (TValue)base[this.Count - 1]
+				: default(TValue);
 		}
 		#endregion
 

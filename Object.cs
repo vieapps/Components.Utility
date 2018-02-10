@@ -119,11 +119,10 @@ namespace net.vieapps.Components.Utility
 						var defaultMember = defaultMembers != null
 							? defaultMembers.FirstOrDefault() as DefaultMemberAttribute
 							: null;
-						properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+						ObjectService.ObjectProperties[type] = properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
 							.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
 							.Select(info => new AttributeInfo(info.Name, info))
 							.ToList();
-						ObjectService.ObjectProperties.Add(type, properties);
 					}
 				}
 			return predicate != null
@@ -164,13 +163,10 @@ namespace net.vieapps.Components.Utility
 				lock (ObjectService.ObjectFields)
 				{
 					if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
-					{
-						attributes = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+						ObjectService.ObjectFields[type] = attributes = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
 							.Where(info => !info.Name.StartsWith("<"))
 							.Select(info => new AttributeInfo(info.Name, info))
 							.ToList();
-						ObjectService.ObjectFields.Add(type, attributes);
-					}
 				}
 			return predicate != null
 				? attributes.Where(info => predicate(info)).ToList()

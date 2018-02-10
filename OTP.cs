@@ -13,9 +13,9 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Generates the counter-based password (RFC 4226)
 		/// </summary>
-		/// <param name="secret">The secret key to generate OTP</param>
-		/// <param name="counter">The counter to generate OTP from the secret key</param>
-		/// <param name="digits">The number of OTP digits</param>
+		/// <param name="secret">The secret key to generate password</param>
+		/// <param name="counter">The counter to generate password from the secret key</param>
+		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(byte[] secret, long counter, int digits = 6)
 		{
@@ -37,9 +37,9 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Generates the counter-based password (RFC 4226)
 		/// </summary>
-		/// <param name="secret">The secret key to generate OTP</param>
-		/// <param name="counter">The counter to generate OTP from the secret key</param>
-		/// <param name="digits">The number of OTP digits</param>
+		/// <param name="secret">The secret key to generate password</param>
+		/// <param name="counter">The counter to generate password from the secret key</param>
+		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(string secret, long counter, int digits = 6)
 		{
@@ -49,9 +49,9 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Generates the time-based password (RFC 6238)
 		/// </summary>
-		/// <param name="secret">The secret key to generate OTP</param>
-		/// <param name="interval">The interval length (seconds) to generate OTP - Authenticator app (just like Google /Microsoft) uses 30 seconds interval length</param>
-		/// <param name="digits">The number of OTP digits</param>
+		/// <param name="secret">The secret key to generate password</param>
+		/// <param name="interval">The interval length (seconds) to generate password - Authenticator app (just like Google /Microsoft) uses 30 seconds interval length</param>
+		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(byte[] secret, int interval = 30, int digits = 6)
 		{
@@ -61,9 +61,9 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Generates the time-based password (RFC 6238)
 		/// </summary>
-		/// <param name="secret">The secret key to generate OTP</param>
-		/// <param name="interval">The interval length (seconds) to generate OTP - Authenticator app (just like Google /Microsoft) uses 30 seconds interval length</param>
-		/// <param name="digits">The number of OTP digits</param>
+		/// <param name="secret">The secret key to generate password</param>
+		/// <param name="interval">The interval length (seconds) to generate password - Authenticator app (just like Google /Microsoft) uses 30 seconds interval length</param>
+		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(string secret, int interval = 30, int digits = 6)
 		{
