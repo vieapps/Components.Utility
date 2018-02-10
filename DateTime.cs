@@ -23,7 +23,7 @@ namespace net.vieapps.Components.Utility
 		{
 			get
 			{
-				return new DateTime(1900, 1, 1, 0, 0, 0);
+				return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 			}
 		}
 
@@ -315,9 +315,9 @@ namespace net.vieapps.Components.Utility
 			var time = useUTC
 				? datetime.ToUniversalTime()
 				: datetime;
-			return time.GetWeekDayName() + ", " + string.Format("0{0}", time.Day).Right(2)
-				+ " " + time.GetMonthName() + " " + time.Year.ToString() + " " + string.Format("0{0}", time.Hour).Right(2)
-				+ ":" + string.Format("0{0}", time.Minute).Right(2) + ":" + string.Format("0{0}", time.Second).Right(2) + " GMT";
+			return time.GetWeekDayName() + ", " + $"0{time.Day}".Right(2)
+				+ " " + time.GetMonthName() + " " + time.Year.ToString() + " " + $"0{time.Hour}".Right(2)
+				+ ":" + $"0{time.Minute}".Right(2) + ":" + $"0{time.Second}".Right(2) + " GMT";
 		}
 
 		/// <summary>

@@ -23,7 +23,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="dataset">DataSet containing the data to be written to the Excel.</param>
 		/// <returns>A stream that contains the Excel document</returns>
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>
-		public static MemoryStream CreateExcelStream(this DataSet dataset)
+		public static MemoryStream SaveAsExcelStream(this DataSet dataset)
 		{
 			// check dataset
 			if (dataset == null || dataset.Tables == null || dataset.Tables.Count < 1)
@@ -45,9 +45,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>A stream that contains the Excel document</returns>
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>
-		public static Task<MemoryStream> CreateExcelStreamAsync(this DataSet dataset, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<MemoryStream> SaveAsExcelStreamAsync(this DataSet dataset, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return UtilityService.ExecuteTask(() => dataset.CreateExcelStream(), cancellationToken);
+			return UtilityService.ExecuteTask(() => dataset.SaveAsExcelStream(), cancellationToken);
 		}
 
 		#region Write a data-set to Excel document

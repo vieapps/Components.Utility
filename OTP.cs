@@ -30,7 +30,7 @@ namespace net.vieapps.Components.Utility
 			if (BitConverter.IsLittleEndian)
 				Array.Reverse(bytes);
 
-			digits = digits > 6 && digits < 11 ? digits : 6;
+			digits = digits > 4 && digits < 11 ? digits : 6;
 			return ((BitConverter.ToInt32(bytes, 0) & 0x7FFFFFFF) % (int)Math.Pow(10, digits)).ToString(CultureInfo.InvariantCulture).PadLeft(digits, '0');
 		}
 

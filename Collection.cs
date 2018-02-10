@@ -1096,7 +1096,7 @@ namespace net.vieapps.Components.Utility
 		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
 		{
 			foreach (var item in enumerable)
-				action?.Invoke(item);
+				action(item);
 		}
 
 		/// <summary>
@@ -1111,7 +1111,7 @@ namespace net.vieapps.Components.Utility
 			foreach (var item in enumerable)
 			{
 				index++;
-				action?.Invoke(item, index);
+				action(item, index);
 			}
 		}
 
@@ -1125,7 +1125,7 @@ namespace net.vieapps.Components.Utility
 		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> enumerable, Action<TValue> action)
 		{
 			foreach (var item in enumerable)
-				action?.Invoke(item.Value);
+				action(item.Value);
 		}
 
 		/// <summary>
@@ -1141,7 +1141,7 @@ namespace net.vieapps.Components.Utility
 			foreach (var item in enumerable)
 			{
 				index++;
-				action?.Invoke(item.Value, index);
+				action(item.Value, index);
 			}
 		}
 
@@ -1164,10 +1164,7 @@ namespace net.vieapps.Components.Utility
 
 			else
 			{
-				var tasks = new List<Task>();
-				foreach (var item in enumerable)
-					tasks.Add(actionAsync(item, cancellationToken));
-
+				var tasks = enumerable.Select(item => actionAsync(item, cancellationToken)).ToList();
 				if (waitForAllCompleted)
 					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}
@@ -1228,10 +1225,7 @@ namespace net.vieapps.Components.Utility
 
 			else
 			{
-				var tasks = new List<Task>();
-				foreach (var item in enumerable)
-					tasks.Add(actionAsync(item.Value, cancellationToken));
-
+				var tasks = enumerable.Select(item => actionAsync(item.Value, cancellationToken)).ToList();
 				if (waitForAllCompleted)
 					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}

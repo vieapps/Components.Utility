@@ -55,6 +55,21 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Generate an UUID from this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="mode">BLAKE or MD5</param>
+		/// <returns></returns>
+		public static string GenerateUUID(string @string, string mode = "BLAKE")
+		{
+			return string.IsNullOrWhiteSpace(@string)
+				? Guid.NewGuid().ToString("N").ToLower()
+				: !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("blake")
+					? @string.GetBLAKE()
+					: @string.GetMD5();
+		}
+
+		/// <summary>
 		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
 		/// </summary>
 		public static string NewUID
@@ -73,9 +88,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetBlankUUID()
 		{
-			if (UtilityService._BlankUUID == null)
-				UtilityService._BlankUUID = new string('0', 32);
-			return UtilityService._BlankUUID;
+			return UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
 		}
 
 		/// <summary>
@@ -88,19 +101,6 @@ namespace net.vieapps.Components.Utility
 			{
 				return UtilityService.GetBlankUUID();
 			}
-		}
-
-		/// <summary>
-		/// Generate an UUID from this string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="mode">BLAKE or MD5</param>
-		/// <returns></returns>
-		public static string GenerateUUID(string @string, string mode = "BLAKE")
-		{
-			return !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("blake")
-				? CryptoService.GetBLAKE(@string)
-				: CryptoService.GetMD5(@string);
 		}
 
 		static Regex Hexa = new Regex("[^0-9a-fA-F]+");
@@ -437,31 +437,32 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Get external resource/webpage via HttpWebRequest object
-		internal static string[] UserAgents = new string[] {
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"SAMSUNG-SGH-E250/1.0 Profile/MIDP-2.0 Configuration/CLDC-1.1 UP.Browser/6.2.3.3.c.1.101 (GUI) MMP/2.0 (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Google (+https://developers.google.com/+/web/snippet/)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"Mozilla/5.0 (compatible; Exabot/3.0; +http://www.exabot.com/go/robot)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-				"ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)",
-				"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-			};
+		internal static string[] UserAgents = new string[]
+		{
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"SAMSUNG-SGH-E250/1.0 Profile/MIDP-2.0 Configuration/CLDC-1.1 UP.Browser/6.2.3.3.c.1.101 (GUI) MMP/2.0 (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Google (+https://developers.google.com/+/web/snippet/)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"Mozilla/5.0 (compatible; Exabot/3.0; +http://www.exabot.com/go/robot)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+			"ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)",
+			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+		};
 
 		/// <summary>
 		/// Gets an user-agent as spider-bot
@@ -481,7 +482,7 @@ namespace net.vieapps.Components.Utility
 		{
 			get
 			{
-				return "Mozilla/5.0 (iPhone; CPU iPhone OS 7_0_4 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11B554a Safari/9537.53";
+				return "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A356 Safari/604.1";
 			}
 		}
 
@@ -492,7 +493,7 @@ namespace net.vieapps.Components.Utility
 		{
 			get
 			{
-				return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.98 Safari/537.36";
+				return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36";
 			}
 		}
 
@@ -2512,7 +2513,6 @@ namespace net.vieapps.Components.Utility
 			// read all lines
 			var lines = new List<string>();
 			var line = this._reader.ReadLine();
-
 			while (line != null)
 			{
 				lines.Add(line);
@@ -2536,7 +2536,6 @@ namespace net.vieapps.Components.Utility
 			// read all lines
 			var lines = new List<string>();
 			var line = await this._reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-
 			while (line != null)
 			{
 				lines.Add(line);

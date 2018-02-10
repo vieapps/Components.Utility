@@ -528,7 +528,7 @@ namespace net.vieapps.Components.Utility
 		public static HashAlgorithm GetHasher(string mode = "MD5")
 		{
 			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
-				func = () => MD5.Create();
+				func = () => SHA256.Create();
 			return func();
 		}
 
@@ -1168,9 +1168,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var crypto = new AesCryptoServiceProvider())
 			{
-				crypto.Key = key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey();
-				crypto.IV = iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV();
-				using (var encryptor = crypto.CreateEncryptor())
+				using (var encryptor = crypto.CreateEncryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV()))
 				{
 					return encryptor.TransformFinalBlock(data, 0, data.Length);
 				}
@@ -1220,9 +1218,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var crypto = new AesCryptoServiceProvider())
 			{
-				crypto.Key = key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey();
-				crypto.IV = iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV();
-				using (var decryptor = crypto.CreateDecryptor())
+				using (var decryptor = crypto.CreateDecryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV()))
 				{
 					return decryptor.TransformFinalBlock(data, 0, data.Length);
 				}
