@@ -137,7 +137,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToString<T>(this IEnumerable<T> @object, string separator)
 		{
-			return @object.Select(o => o != null ? o.ToString() : "null").ToString(separator);
+			return @object.Select(obj => obj != null ? obj.ToString() : "null").ToString(separator);
 		}
 
 		/// <summary>
@@ -1547,6 +1547,30 @@ namespace net.vieapps.Components.Utility
 				? this.AsEnumerableDictionaryEntry.ElementAt(index).Key
 				: null;
 		}
+
+		/// <summary>
+		/// Gets value of the element at the specified index
+		/// </summary>
+		/// <param name="index">The zero-based index of the element</param>
+		/// <returns>The value object at the specified index</returns>
+		public object GetByIndex(int index)
+		{
+			return index > -1 && index < this.Count
+				? this._collection[index]
+				: null;
+		}
+
+		/// <summary>
+		/// Gets value of the element by specified key
+		/// </summary>
+		/// <param name="key">The object that presents the key of the element</param>
+		/// <returns>The value object that specified by the key</returns>
+		public object GetByKey(object key)
+		{
+			return key != null
+				? this._collection[key]
+				: null;
+		}
 		#endregion
 
 		#region Enumerator
@@ -1659,7 +1683,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection">Collection</see> class
 		/// </summary>
-		/// <param name="dictionary">Initialized values</param>
+		/// <param name="dictionary">The initialized values</param>
 		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()
 		{
 			dictionary?.ForEach(kvp => this.Add(kvp));
@@ -1871,25 +1895,43 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets the first element
+		/// Gets value of the element at the specified index
 		/// </summary>
-		/// <returns></returns>
-		public TValue First()
+		/// <param name="index">The zero-based index of the element</param>
+		/// <returns>The value object at the specified index</returns>
+		public new TValue GetByIndex(int index)
 		{
-			return this.Count > 0
-				? (TValue)base[0]
+			return index > -1 && index < this.Count
+				? (TValue)base.GetByIndex(index)
 				: default(TValue);
 		}
 
 		/// <summary>
-		/// Gets the last element
+		/// Gets value of the element by specified key
+		/// </summary>
+		/// <param name="key">The object that presents the key of the element</param>
+		/// <returns>The value object that specified by the key</returns>
+		public new TValue GetByKey(TKey key)
+		{
+			return (TValue)base.GetByKey(key);
+		}
+
+		/// <summary>
+		/// Gets value of the first element
+		/// </summary>
+		/// <returns></returns>
+		public TValue First()
+		{
+			return this.GetByIndex(0);
+		}
+
+		/// <summary>
+		/// Gets value of the last element
 		/// </summary>
 		/// <returns></returns>
 		public TValue Last()
 		{
-			return this.Count > 0
-				? (TValue)base[this.Count - 1]
-				: default(TValue);
+			return this.GetByIndex(this.Count - 1);
 		}
 		#endregion
 

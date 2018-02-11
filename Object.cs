@@ -110,6 +110,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns>Collection of public properties</returns>
 		public static List<AttributeInfo> GetProperties(Type type, Func<AttributeInfo, bool> predicate = null)
 		{
+			if (type == null)
+				return null;
+
 			if (!ObjectService.ObjectProperties.TryGetValue(type, out List<AttributeInfo> properties))
 				lock (ObjectService.ObjectProperties)
 				{
@@ -125,6 +128,7 @@ namespace net.vieapps.Components.Utility
 							.ToList();
 					}
 				}
+
 			return predicate != null
 				? properties.Where(info => predicate(info)).ToList()
 				: properties;
@@ -159,6 +163,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns>Collection of private fields/attributes</returns>
 		public static List<AttributeInfo> GetFields(Type type, Func<AttributeInfo, bool> predicate = null)
 		{
+			if (type == null)
+				return null;
+
 			if (!ObjectService.ObjectFields.TryGetValue(type, out List<AttributeInfo> attributes))
 				lock (ObjectService.ObjectFields)
 				{
@@ -168,6 +175,7 @@ namespace net.vieapps.Components.Utility
 							.Select(info => new AttributeInfo(info.Name, info))
 							.ToList();
 				}
+
 			return predicate != null
 				? attributes.Where(info => predicate(info)).ToList()
 				: attributes;
@@ -701,26 +709,24 @@ namespace net.vieapps.Components.Utility
 		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
 			if (object.ReferenceEquals(destination, null))
-				throw new ArgumentNullException(nameof(destination), "The destination is null");
+				throw new ArgumentNullException(nameof(destination), "The destination object is null");
 
-			@object.GetProperties().ForEach(attribute =>
+			@object.GetProperties(attribute => attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))).ForEach(attribute =>
 			{
-				if (attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)))
-					try
-					{
-						destination.SetAttributeValue(attribute, @object.GetAttributeValue(attribute));
-					}
-					catch { }
+				try
+				{
+					destination.SetAttributeValue(attribute, @object.GetAttributeValue(attribute));
+				}
+				catch { }
 			});
 
-			@object.GetFields().ForEach(attribute =>
+			@object.GetFields(attribute => excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)).ForEach(attribute =>
 			{
-				if (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))
-					try
-					{
-						destination.SetAttributeValue(attribute, @object.GetAttributeValue(attribute));
-					}
-					catch { }
+				try
+				{
+					destination.SetAttributeValue(attribute, @object.GetAttributeValue(attribute));
+				}
+				catch { }
 			});
 
 			onPreCompleted?.Invoke(destination);
@@ -736,26 +742,24 @@ namespace net.vieapps.Components.Utility
 		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
 			if (object.ReferenceEquals(source, null))
-				throw new ArgumentNullException(nameof(source), "The source is null");
+				throw new ArgumentNullException(nameof(source), "The source object is null");
 
-			@object.GetProperties().ForEach(attribute =>
+			@object.GetProperties(attribute => attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))).ForEach(attribute =>
 			{
-				if (attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)))
-					try
-					{
-						@object.SetAttributeValue(attribute, source.GetAttributeValue(attribute));
-					}
-					catch { }
+				try
+				{
+					@object.SetAttributeValue(attribute, source.GetAttributeValue(attribute));
+				}
+				catch { }
 			});
 
-			@object.GetFields().ForEach(attribute =>
+			@object.GetFields(attribute => excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)).ForEach(attribute =>
 			{
-				if (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))
-					try
-					{
-						@object.SetAttributeValue(attribute, source.GetAttributeValue(attribute));
-					}
-					catch { }
+				try
+				{
+					@object.SetAttributeValue(attribute, source.GetAttributeValue(attribute));
+				}
+				catch { }
 			});
 
 			onPreCompleted?.Invoke(@object);

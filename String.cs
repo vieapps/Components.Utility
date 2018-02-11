@@ -371,14 +371,15 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets the string from array of bytes with UTF8 encoding
+		/// Gets the string from array of bytes by specified encoding (default is UTF8)
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="count"></param>
+		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static string GetString(this byte[] bytes, int count = 0)
+		public static string GetString(this byte[] bytes, int count = 0, Encoding encoding = null)
 		{
-			return Encoding.UTF8.GetString(bytes, 0, count > 0 ? count : bytes.Length);
+			return (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
 		}
 		#endregion
 

@@ -23,10 +23,11 @@ namespace net.vieapps.Components.Utility
 		/// Converts this string to array of bytes
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this string @string)
+		public static byte[] ToBytes(this string @string, Encoding encoding = null)
 		{
-			return UTF8Encoding.UTF8.GetBytes(@string);
+			return (encoding ?? Encoding.UTF8).GetBytes(@string);
 		}
 
 		/// <summary>
@@ -36,9 +37,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] HexToBytes(this string @string)
 		{
-			var length = @string.Length;
-			var bytes = new byte[length / 2];
-			for (var index = 0; index < length; index += 2)
+			var bytes = new byte[@string.Length / 2];
+			for (var index = 0; index < @string.Length; index += 2)
 				bytes[index / 2] = Convert.ToByte(@string.Substring(index, 2), 16);
 			return bytes;
 		}
@@ -237,7 +237,7 @@ namespace net.vieapps.Components.Utility
 			var base32 = @string.ToUpperInvariant();
 			var output = new byte[base32.Length * 5 / 8];
 			if (output.Length == 0)
-				throw new ArgumentException("Specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
+				throw new ArgumentException("The specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
 
 			var pos = 0;
 			var subPos = 0;
@@ -249,7 +249,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var current = base32Alphabet.IndexOf(base32[pos]);
 				if (current < 0)
-					throw new ArgumentException($"Specified string is not valid Base32 format because character \"{@string[pos]}\" does not exist in Base32 alphabet");
+					throw new ArgumentException($"The specified string is not valid Base32 format because character \"{@string[pos]}\" does not exist in Base32 alphabet");
 
 				var bits = Math.Min(5 - subPos, 8 - outputSubPos);
 				output[outputPos] <<= bits;
@@ -523,7 +523,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets a hashser
 		/// </summary>
-		/// <param name="mode"></param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static HashAlgorithm GetHasher(string mode = "MD5")
 		{
@@ -536,7 +536,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="mode"></param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHash(this byte[] bytes, string mode = "MD5")
 		{
@@ -550,7 +550,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="mode"></param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHash(this string @string, string mode = "MD5")
 		{
@@ -782,7 +782,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets a HMAC hashser
 		/// </summary>
 		/// <param name="key"></param>
-		/// <param name="mode"></param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static HMAC GetHMACHasher(byte[] key, string mode = "MD5")
 		{
@@ -795,8 +795,8 @@ namespace net.vieapps.Components.Utility
 		/// Gets HMAC hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="key"></param>
-		/// <param name="mode"></param>
+		/// <param name="key">Keys for hashing (means salt)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
 		{
@@ -810,8 +810,8 @@ namespace net.vieapps.Components.Utility
 		/// Gets HMAC hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="key"></param>
-		/// <param name="mode"></param>
+		/// <param name="key">Keys for hashing (means salt)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256")
 		{
@@ -822,8 +822,8 @@ namespace net.vieapps.Components.Utility
 		/// Gets HMAC hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="key"></param>
-		/// <param name="mode"></param>
+		/// <param name="key">Keys for hashing (means salt)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
 		{
@@ -834,9 +834,9 @@ namespace net.vieapps.Components.Utility
 		/// Gets HMAC hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="key"></param>
-		/// <param name="mode"></param>
-		/// <param name="toHexa"></param>
+		/// <param name="key">Keys for hashing (means salt)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
+		/// <param name="toHexa">true to get hexa-string, otherwise get base64-string</param>
 		/// <returns></returns>
 		public static string GetHMAC(this string @string, string key, string mode = null, bool toHexa = true)
 		{
