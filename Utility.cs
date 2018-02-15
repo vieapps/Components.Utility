@@ -60,7 +60,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="mode">BLAKE or MD5</param>
 		/// <returns></returns>
-		public static string GenerateUUID(string @string, string mode = "BLAKE")
+		public static string GenerateUUID(string @string, string mode = "MD5")
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? Guid.NewGuid().ToString("N").ToLower()
