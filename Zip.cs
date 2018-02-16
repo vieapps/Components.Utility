@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace net.vieapps.Components.Utility
 {
 	/// <summary>
-	/// Helper class for working with ZIP file
+	/// Helper for working with ZIP archive
 	/// </summary>
 	public static partial class ZipService
 	{

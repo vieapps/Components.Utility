@@ -51,6 +51,7 @@ namespace net.vieapps.Components.Utility
 					id = id.Insert(pos, "-");
 				}
 			}
+
 			return id;
 		}
 
@@ -72,7 +73,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
 		/// </summary>
-		public static string NewUID
+		public static string NewUUID
 		{
 			get
 			{
@@ -86,24 +87,15 @@ namespace net.vieapps.Components.Utility
 		/// Gets the blank UUID
 		/// </summary>
 		/// <returns></returns>
-		public static string GetBlankUUID()
-		{
-			return UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
-		}
-
-		/// <summary>
-		/// Gets the blank UUID
-		/// </summary>
-		/// <returns></returns>
-		public static string BlankUID
+		public static string BlankUUID
 		{
 			get
 			{
-				return UtilityService.GetBlankUUID();
+				return UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
 			}
 		}
 
-		static Regex Hexa = new Regex("[^0-9a-fA-F]+");
+		static Regex _ValidHexa = new Regex("[^0-9a-fA-F]+");
 
 		/// <summary>
 		/// Validates the UUID string
@@ -116,7 +108,7 @@ namespace net.vieapps.Components.Utility
 			return string.IsNullOrWhiteSpace(uuid) || !uuid.Length.Equals(32)
 				? false
 				: onlyHexa
-					? UtilityService.Hexa.Replace(uuid, "").Equals(uuid)
+					? UtilityService._ValidHexa.Replace(uuid, "").Equals(uuid)
 					: !uuid.Contains(" ") && !uuid.Contains(";");
 		}
 
@@ -433,6 +425,106 @@ namespace net.vieapps.Components.Utility
 						throw ex;
 				}
 			}
+		}
+		#endregion
+
+		#region Working with task in the thread pool
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="onCancel">The action to callback when the operation is canceled</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task ExecuteTask(Action action, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<object>();
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				using (cancellationToken.Register(() =>
+				{
+					try
+					{
+						onCancel?.Invoke();
+					}
+					catch { }
+					tcs.TrySetCanceled(cancellationToken);
+					return;
+				}, useSynchronizationContext: false))
+				{
+					try
+					{
+						action?.Invoke();
+						tcs.TrySetResult(null);
+					}
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
+				}
+			});
+			return tcs.Task;
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask(action, null, cancellationToken);
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="onCancel">The action to callback when the operation is canceled</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task<T> ExecuteTask<T>(Func<T> func, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<T>();
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				using (cancellationToken.Register(() =>
+				{
+					try
+					{
+						onCancel?.Invoke();
+					}
+					catch { }
+					tcs.TrySetCanceled(cancellationToken);
+					return;
+				}, useSynchronizationContext: false))
+				{
+					try
+					{
+						var result = func != null ? func.Invoke() : default(T);
+						tcs.TrySetResult(result);
+					}
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
+				}
+			});
+			return tcs.Task;
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return UtilityService.ExecuteTask(func, null, cancellationToken);
 		}
 		#endregion
 
@@ -1131,112 +1223,12 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Working with task in the thread pool
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <param name="action">The action to run in the thread pool</param>
-		/// <param name="onCancel">The action to callback when the operation is canceled</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			var tcs = new TaskCompletionSource<object>();
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				using (cancellationToken.Register(() =>
-				{
-					try
-					{
-						onCancel?.Invoke();
-					}
-					catch { }
-					tcs.TrySetCanceled(cancellationToken);
-					return;
-				}, useSynchronizationContext: false))
-				{
-					try
-					{
-						action?.Invoke();
-						tcs.TrySetResult(null);
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-			});
-			return tcs.Task;
-		}
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <param name="action">The action to run in the thread pool</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(action, null, cancellationToken);
-		}
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <typeparam name="TResult"></typeparam>
-		/// <param name="func">The function to run in the thread pool</param>
-		/// <param name="onCancel">The action to callback when the operation is canceled</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			var tcs = new TaskCompletionSource<TResult>();
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				using (cancellationToken.Register(() =>
-				{
-					try
-					{
-						onCancel?.Invoke();
-					}
-					catch { }
-					tcs.TrySetCanceled(cancellationToken);
-					return;
-				}, useSynchronizationContext: false))
-				{
-					try
-					{
-						var result = func != null ? func.Invoke() : default(TResult);
-						tcs.TrySetResult(result);
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-			});
-			return tcs.Task;
-		}
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <typeparam name="TResult"></typeparam>
-		/// <param name="func">The function to run in the thread pool</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task<TResult> ExecuteTask<TResult>(Func<TResult> func, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(func, null, cancellationToken);
-		}
-		#endregion
-
 		#region Working with files & folders
 		static List<string> _FileRemovements = new List<string>() { "\\", "/", "*", "?", "<", ">", "|", ":", "\r", "\n", "\t" };
 		static List<string[]> _FileReplacements = new List<string[]>() { new string[] { "\"", "'" }, new string[] { "%20", " " }, new string[] { " ft. ", " & " } };
 
 		/// <summary>
-		/// Normalizes the file name
+		/// Normalizes the name of a file
 		/// </summary>
 		/// <param name="input"></param>
 		/// <returns></returns>
@@ -1354,14 +1346,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<FileInfo> GetFiles(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
+		public static List<FileInfo> GetFiles(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			if (!Directory.Exists(path))
 				throw new DirectoryNotFoundException($"The folder is not found [{path}]");
 
 			var files = new List<FileInfo>();
 			var searchingPatterns = string.IsNullOrWhiteSpace(searchPatterns)
-				? new string[] { "*.*" }
+				? new[] { "*.*" }
 				: searchPatterns.ToArray('|', true);
 
 			searchingPatterns.ForEach(searchingPattern =>
@@ -1379,18 +1371,21 @@ namespace net.vieapps.Components.Utility
 			});
 
 			if (searchInSubFolder)
-				Directory.GetDirectories(path)?.ForEach(folderPath =>
-				{
-					var isExcluded = false;
-					if (excludedSubFolders != null && excludedSubFolders.Count > 0)
-						foreach (var excludedFolder in excludedSubFolders)
-						{
-							isExcluded = folderPath.IsEndsWith(Path.DirectorySeparatorChar.ToString() + excludedFolder);
-							if (isExcluded)
-								break;
-						}
-
-					if (!isExcluded)
+				Directory.GetDirectories(path)
+					.Where(folderPath =>
+					{
+						var isExcluded = false;
+						if (excludedSubFolders != null && excludedSubFolders.Count > 0)
+							foreach (var excludedFolder in excludedSubFolders)
+							{
+								isExcluded = folderPath.IsEndsWith(Path.DirectorySeparatorChar.ToString() + excludedFolder);
+								if (isExcluded)
+									break;
+							}
+						return !isExcluded;
+					})
+					.ForEach(folderPath =>
+					{
 						searchingPatterns.ForEach(searchingPattern =>
 						{
 							var results = Directory.GetFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
@@ -1404,7 +1399,7 @@ namespace net.vieapps.Components.Utility
 										: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
 							files = files.Concat(results).ToList();
 						});
-				});
+					});
 
 			return files;
 		}
@@ -1420,7 +1415,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 		}
@@ -1435,7 +1430,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<string> GetFilePaths(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
+		public static List<string> GetFilePaths(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			return UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
 				.Select(file => file.FullName)
@@ -1453,13 +1448,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 		}
 
 		/// <summary>
-		/// Gets path to a file/folder with right seperator of OS Platform
+		/// Gets path to a file/folder with 'right' path separator on each OS Platform
 		/// </summary>
 		/// <param name="paths"></param>
 		/// <returns></returns>
@@ -2383,32 +2378,31 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the current position
 		/// </summary>
-		/// 
-		public long Position { get { return this.GetPosition(); }
-		}
-
-		long GetPosition()
+		public long Position
 		{
-			try
+			get
 			{
-				// shift position back from BaseStream.Position by the number of bytes read into internal buffer
-				var charLen = (int)this._reader.GetType().InvokeMember("_charLen", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
-				var position = this._reader.BaseStream.Position - charLen;
-
-				// if we have consumed chars from the buffer we need to calculate how many bytes they represent in the current encoding and add that to the position
-				var charPos = (int)this._reader.GetType().InvokeMember("_charPos", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
-				if (charPos > 0)
+				try
 				{
-					var charBuffer = (char[])this._reader.GetType().InvokeMember("_charBuffer", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
-					var bytesConsumed = this.Encoding.GetBytes(charBuffer, 0, charPos).Length;
-					position += bytesConsumed;
-				}
+					// shift position back from BaseStream.Position by the number of bytes read into internal buffer
+					var charLen = (int)this._reader.GetType().InvokeMember("_charLen", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+					var position = this._reader.BaseStream.Position - charLen;
 
-				return position;
-			}
-			catch
-			{
-				return this._reader.BaseStream.Position;
+					// if we have consumed chars from the buffer we need to calculate how many bytes they represent in the current encoding and add that to the position
+					var charPos = (int)this._reader.GetType().InvokeMember("_charPos", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+					if (charPos > 0)
+					{
+						var charBuffer = (char[])this._reader.GetType().InvokeMember("_charBuffer", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+						var bytesConsumed = this.Encoding.GetBytes(charBuffer, 0, charPos).Length;
+						position += bytesConsumed;
+					}
+
+					return position;
+				}
+				catch
+				{
+					return this._reader.BaseStream.Position;
+				}
 			}
 		}
 

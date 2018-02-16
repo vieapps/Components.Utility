@@ -1,11 +1,11 @@
 ﻿#region Related components
 using System;
+using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.IO;
-using System.IO.Compression;
-using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Globalization;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -108,9 +108,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static bool IsContains(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
-			return string.IsNullOrWhiteSpace(substring)
-				? false
-				: @string.PositionOf(substring, 0, comparisonType) > -1;
+			return substring != null
+				? @string.IndexOf(substring, 0, comparisonType) > -1
+				: false;
 		}
 
 		/// <summary>
@@ -182,40 +182,6 @@ namespace net.vieapps.Components.Utility
 
 		#region Compressions
 		/// <summary>
-		/// Compresses the array of bytes using Deflate compression method
-		/// </summary>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static byte[] Compress(this byte[] data)
-		{
-			using (var stream = new MemoryStream())
-			{
-				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
-				{
-					deflate.Write(data, 0, data.Length);
-					return stream.GetBuffer();
-				}
-			}
-		}
-
-		/// <summary>
-		/// Compresses the array of bytes using Deflate compression method
-		/// </summary>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static async Task<byte[]> CompressAsync(this byte[] data)
-		{
-			using (var stream = new MemoryStream())
-			{
-				using (var deflate = new DeflateStream(stream, CompressionMode.Compress))
-				{
-					await deflate.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
-					return stream.GetBuffer();
-				}
-			}
-		}
-
-		/// <summary>
 		/// Compresses the string using Deflate compression method
 		/// </summary>
 		/// <param name="data"></param>
@@ -229,62 +195,11 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the string using Deflate compression method
 		/// </summary>
 		/// <param name="data"></param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The compressed-string in Base64 format</returns>
-		public static async Task<string> CompressAsync(this string data)
+		public static async Task<string> CompressAsync(this string data, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return (await data.ToBytes().CompressAsync()).ToBase64();
-		}
-
-		/// <summary>
-		/// Decompresses the array of bytes using Deflate compression method
-		/// </summary>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static byte[] Decompress(this byte[] data)
-		{
-			using (var input = new MemoryStream(data))
-			{
-				using (var deflate = new DeflateStream(input, CompressionMode.Decompress))
-				{
-					using (var output = new MemoryStream())
-					{
-						var buffer = new byte[64];
-						var readBytes = deflate.Read(buffer, 0, buffer.Length);
-						while (readBytes > 0)
-						{
-							output.Write(buffer, 0, readBytes);
-							readBytes = deflate.Read(buffer, 0, buffer.Length);
-						}
-						return output.GetBuffer();
-					}
-				}
-			}
-		}
-
-		/// <summary>
-		/// Decompresses the array of bytes using Deflate compression method
-		/// </summary>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static async Task<byte[]> DecompressAsync(this byte[] data)
-		{
-			using (var input = new MemoryStream(data))
-			{
-				using (var deflate = new DeflateStream(input, CompressionMode.Decompress))
-				{
-					using (var output = new MemoryStream())
-					{
-						var buffer = new byte[64];
-						var readBytes = await deflate.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-						while (readBytes > 0)
-						{
-							await output.WriteAsync(buffer, 0, readBytes).ConfigureAwait(false);
-							readBytes = await deflate.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-						}
-						return output.GetBuffer();
-					}
-				}
-			}
+			return (await data.ToBytes().CompressAsync(null, cancellationToken).ConfigureAwait(false)).ToBase64();
 		}
 
 		/// <summary>
@@ -301,10 +216,11 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the Base64 string using Deflate compression method
 		/// </summary>
 		/// <param name="data"></param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<string> DecompressAsync(this string data)
+		public static async Task<string> DecompressAsync(this string data, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return (await data.Base64ToBytes().DecompressAsync().ConfigureAwait(false)).GetString();
+			return (await data.Base64ToBytes().DecompressAsync(null, cancellationToken).ConfigureAwait(false)).GetString();
 		}
 		#endregion
 

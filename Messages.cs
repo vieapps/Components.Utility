@@ -28,7 +28,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encryptedMessage"></param>
 		public EmailMessage(string encryptedMessage = null)
 		{
-			this.ID = UtilityService.NewUID;
+			this.ID = UtilityService.NewUUID;
 			this.SendingTime = DateTime.Now;
 			this.From = "";
 			this.ReplyTo = "";
@@ -189,7 +189,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encryptedMessage"></param>
 		public WebHookMessage(string encryptedMessage = null)
 		{
-			this.ID = UtilityService.NewUID;
+			this.ID = UtilityService.NewUUID;
 			this.SendingTime = DateTime.Now;
 			this.EndpointURL = "";
 			this.Body = "";

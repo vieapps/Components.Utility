@@ -1,10 +1,13 @@
 ﻿#region Related components
 using System;
-using System.IO;
 using System.Net;
 using System.Text;
 using System.Linq;
+using System.IO;
+using System.IO.Compression;
 using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using Konscious.Security.Cryptography;
@@ -407,6 +410,110 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Compressions
+		/// <summary>
+		/// Compresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Compress(this byte[] data, string mode = "deflate")
+		{
+			using (var stream = new MemoryStream())
+			{
+				using (var compressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
+					? new GZipStream(stream, CompressionMode.Compress) as Stream
+					: new DeflateStream(stream, CompressionMode.Compress) as Stream)
+				{
+					compressor.Write(data, 0, data.Length);
+					return stream.GetBuffer();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Compresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<byte[]> CompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			using (var stream = new MemoryStream())
+			{
+				using (var compressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
+					? new GZipStream(stream, CompressionMode.Compress) as Stream
+					: new DeflateStream(stream, CompressionMode.Compress) as Stream)
+				{
+					await compressor.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+					return stream.GetBuffer();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Decompress(this byte[] data, string mode = "deflate")
+		{
+			using (var input = new MemoryStream(data))
+			{
+				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
+					? new GZipStream(input, CompressionMode.Compress) as Stream
+					: new DeflateStream(input, CompressionMode.Decompress) as Stream)
+				{
+					using (var output = new MemoryStream())
+					{
+						var buffer = new byte[64];
+						var readBytes = decompressor.Read(buffer, 0, buffer.Length);
+						while (readBytes > 0)
+						{
+							output.Write(buffer, 0, readBytes);
+							buffer = new byte[64];
+							readBytes = decompressor.Read(buffer, 0, buffer.Length);
+						}
+						return output.GetBuffer();
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes using Deflate compression method
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<byte[]> DecompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			using (var input = new MemoryStream(data))
+			{
+				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
+					? new GZipStream(input, CompressionMode.Compress) as Stream
+					: new DeflateStream(input, CompressionMode.Decompress) as Stream)
+				{
+					using (var output = new MemoryStream())
+					{
+						var buffer = new byte[64];
+						var readBytes = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+						while (readBytes > 0)
+						{
+							await output.WriteAsync(buffer, 0, readBytes, cancellationToken).ConfigureAwait(false);
+							buffer = new byte[64];
+							readBytes = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+						}
+						return output.GetBuffer();
+					}
+				}
+			}
+		}
+		#endregion
+
 		#region Encryption key & Initialize vector
 		/// <summary>
 		/// Gets the default key for encrypting/decrypting data
@@ -525,7 +632,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static HashAlgorithm GetHasher(string mode = "MD5")
+		public static HashAlgorithm GetHasher(string mode = "SHA256")
 		{
 			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
 				func = () => SHA256.Create();
@@ -538,7 +645,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bytes"></param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHash(this byte[] bytes, string mode = "MD5")
+		public static byte[] GetHash(this byte[] bytes, string mode = "SHA256")
 		{
 			using (var hasher = CryptoService.GetHasher(mode))
 			{
@@ -552,7 +659,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHash(this string @string, string mode = "MD5")
+		public static byte[] GetHash(this string @string, string mode = "SHA256")
 		{
 			return @string.ToBytes().GetHash(mode);
 		}
@@ -784,7 +891,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static HMAC GetHMACHasher(byte[] key, string mode = "MD5")
+		public static HMAC GetHMACHasher(byte[] key, string mode = "SHA256")
 		{
 			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
 				func = (k) => new HMACSHA256(k);
@@ -1168,7 +1275,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var crypto = new AesCryptoServiceProvider())
 			{
-				using (var encryptor = crypto.CreateEncryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV()))
+				using (var encryptor = crypto.CreateEncryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateInitializeVector()))
 				{
 					return encryptor.TransformFinalBlock(data, 0, data.Length);
 				}
@@ -1218,7 +1325,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var crypto = new AesCryptoServiceProvider())
 			{
-				using (var decryptor = crypto.CreateDecryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateEncryptionIV()))
+				using (var decryptor = crypto.CreateDecryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateInitializeVector()))
 				{
 					return decryptor.TransformFinalBlock(data, 0, data.Length);
 				}
@@ -1249,7 +1356,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHexa = false)
 		{
-			return @string.Decrypt(passPhrase?.GenerateEncryptionKey(), passPhrase?.GenerateEncryptionIV(), isHexa);
+			return @string.Decrypt(passPhrase?.GenerateKey(), passPhrase?.GenerateInitializeVector(), isHexa);
 		}
 		#endregion
 
@@ -1412,7 +1519,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Create new instance of RSA Algorithm by a specific key
+		#region Create new instance of RSA from a specific key
 		const string PEM_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
 		const string PEM_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
 		const string PEM_PUBLIC_KEY_BEGIN = "-----BEGIN PUBLIC KEY-----";
@@ -1766,7 +1873,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Generate key-pairs for RSA Algorithm
+		#region Generate RSA key pair
 		/// <summary>
 		/// Generates the RSA key-pairs (with 2048 bits length).
 		/// </summary>
@@ -1790,7 +1897,7 @@ namespace net.vieapps.Components.Utility
 				new CspParameters(1, "Microsoft Strong Cryptographic Provider")
 				{
 					Flags = CspProviderFlags.UseArchivableKey,
-					KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.NewUID
+					KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.NewUUID
 				})
 			{
 				PersistKeyInCsp = false
