@@ -9,8 +9,6 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using Konscious.Security.Cryptography;
 #endregion
 
 namespace net.vieapps.Components.Utility
