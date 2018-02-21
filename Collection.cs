@@ -238,6 +238,43 @@ namespace net.vieapps.Components.Utility
 
 		#region Manipulations
 		/// <summary>
+		/// Concats other arrays with this array
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array"></param>
+		/// <param name="arrays"></param>
+		/// <returns></returns>
+		public static T[] Concat<T>(this T[] array, params T[][] arrays)
+		{
+			var result = new T[array.Length + arrays.Sum(a => a.Length)];
+			Buffer.BlockCopy(array, 0, result, 0, array.Length);
+
+			var offset = array.Length;
+			arrays.ForEach(a =>
+			{
+				Buffer.BlockCopy(a, 0, result, offset, a.Length);
+				offset += a.Length;
+			});
+
+			return result;
+		}
+
+		/// <summary>
+		/// Gets a sub-array from this array
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static T[] Sub<T>(this T[] array, int offset, int count = 0)
+		{
+			var result = new T[count > 0 ? count : array.Length - offset];
+			Buffer.BlockCopy(array, offset, result, 0, count > 0 ? count : array.Length - offset);
+			return result;
+		}
+
+		/// <summary>
 		/// Removes an element by index
 		/// </summary>
 		/// <typeparam name="T"></typeparam>

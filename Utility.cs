@@ -95,6 +95,31 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
+		/// </summary>
+		[Obsolete("Please change to use NewUUID")]
+		public static string NewUID
+		{
+			get
+			{
+				return UtilityService.NewUUID;
+			}
+		}
+
+		/// <summary>
+		/// Gets the blank UUID
+		/// </summary>
+		/// <returns></returns>
+		[Obsolete("Please change to use BlankUUID")]
+		public static string BlankUID
+		{
+			get
+			{
+				return UtilityService.BlankUUID;
+			}
+		}
+
 		static Regex _ValidHexa = new Regex("[^0-9a-fA-F]+");
 
 		/// <summary>
