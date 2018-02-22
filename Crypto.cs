@@ -17,104 +17,6 @@ namespace net.vieapps.Components.Utility
 	public static partial class CryptoService
 	{
 
-		#region Encryption key & Initialize vector
-		/// <summary>
-		/// Gets the default key for encrypting/decrypting data
-		/// </summary>
-		public static string DefaultEncryptionKey
-		{
-			get
-			{
-				return "C804BE43-VIEApps-0B43-Core-442B-Components-B635-Service-FD0616D11B01";
-			}
-		}
-
-		/// <summary>
-		/// Generates a key from this string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="reverse"></param>
-		/// <param name="hash"></param>
-		/// <param name="keySize"></param>
-		/// <returns></returns>
-		public static byte[] GenerateEncryptionKey(this string @string, bool reverse, bool hash, int keySize)
-		{
-			var passPhrase = reverse
-				? @string.Reverse()
-				: @string;
-
-			var fullKey = hash
-				? passPhrase.GetMD5Hash()
-				: passPhrase.ToBytes();
-
-			var maxIndex = 0;
-			if (keySize > 7)
-				maxIndex = keySize / 8;
-
-			else
-			{
-				var sizeOfBytes = fullKey.Length;
-				var bytes = 1;
-				var bits = bytes * 8;
-				while (bytes <= sizeOfBytes)
-				{
-					bits = bytes * 8;
-					if (bytes < 2)
-						bytes++;
-					else
-						bytes = bytes * 2;
-				}
-				maxIndex = bits / 8;
-			}
-
-			var keys = new byte[maxIndex];
-			for (var index = 0; index < maxIndex; index++)
-				keys[index] = fullKey[index];
-
-			return keys;
-		}
-
-		/// <summary>
-		/// Generates a key from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateEncryptionKey(this string @string)
-		{
-			return @string.GenerateEncryptionKey(true, false, 256);
-		}
-
-		/// <summary>
-		/// Generates a key from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateKey(this string @string)
-		{
-			return @string.GenerateEncryptionKey();
-		}
-
-		/// <summary>
-		/// Generates an initialization vector from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateEncryptionIV(this string @string)
-		{
-			return @string.GenerateEncryptionKey(false, true, 128);
-		}
-
-		/// <summary>
-		/// Generates an initialization vector from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateInitializeVector(this string @string)
-		{
-			return @string.GenerateEncryptionIV();
-		}
-		#endregion
-
 		#region Hash array of bytes/string
 		static Dictionary<string, Func<HashAlgorithm>> HashFactories = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
 		{
@@ -150,6 +52,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHash(this byte[] bytes, string mode = "SHA256")
 		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+
 			using (var hasher = CryptoService.GetHasher(mode))
 			{
 				return hasher.ComputeHash(bytes);
@@ -164,7 +69,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHash(this string @string, string mode = "SHA256")
 		{
-			return @string.ToBytes().GetHash(mode);
+			return string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetHash(mode);
 		}
 
 		/// <summary>
@@ -373,7 +280,9 @@ namespace net.vieapps.Components.Utility
 				? @string.GetBLAKE512Hash().ToBase64()
 				: @string.GetBLAKE512Hash().ToHexa();
 		}
+		#endregion
 
+		#region HMAC Hash array of bytes/string
 		static Dictionary<string, Func<byte[], HMAC>> HmacHashFactories = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", (key) => new HMACMD5(key) },
@@ -410,6 +319,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
 		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+			else if (key == null || key.Length < 1)
+				throw new ArgumentException("Invalid", nameof(key));
+
 			using (var hasher = CryptoService.GetHMACHasher(key, mode))
 			{
 				return hasher.ComputeHash(bytes);
@@ -425,7 +339,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256")
 		{
-			return @string.ToBytes().GetHMACHash(key, mode);
+			return string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetHMACHash(key, mode);
 		}
 
 		/// <summary>
@@ -437,7 +353,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
 		{
-			return @string.GetHMACHash(key.ToBytes(), mode);
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), mode);
 		}
 
 		/// <summary>
@@ -464,7 +380,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACMD5Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "MD5");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "MD5");
 		}
 
 		/// <summary>
@@ -487,7 +403,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACMD5(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACMD5(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACMD5(null, toHexa);
 		}
 
 		/// <summary>
@@ -498,7 +414,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA1Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "SHA1");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA1");
 		}
 
 		/// <summary>
@@ -521,7 +437,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACSHA1(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACSHA1(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACSHA1(null, toHexa);
 		}
 
 		/// <summary>
@@ -532,7 +448,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA256Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "SHA256");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA256");
 		}
 
 		/// <summary>
@@ -555,7 +471,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACSHA256(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACSHA256(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACSHA256(null, toHexa);
 		}
 
 		/// <summary>
@@ -566,7 +482,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA384Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "SHA384");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA384");
 		}
 
 		/// <summary>
@@ -589,7 +505,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACSHA384(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACSHA384(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACSHA384(null, toHexa);
 		}
 
 		/// <summary>
@@ -600,7 +516,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA512Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "SHA512");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA512");
 		}
 
 		/// <summary>
@@ -623,7 +539,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACSHA512(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACSHA512(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACSHA512(null, toHexa);
 		}
 
 		/// <summary>
@@ -634,7 +550,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKEHash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "BLAKE");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE");
 		}
 
 		/// <summary>
@@ -657,7 +573,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACBLAKE(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACBLAKE(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACBLAKE(null, toHexa);
 		}
 
 		/// <summary>
@@ -668,7 +584,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE256Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "BLAKE256");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE256");
 		}
 
 		/// <summary>
@@ -691,7 +607,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACBLAKE256(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACBLAKE256(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACBLAKE256(null, toHexa);
 		}
 
 		/// <summary>
@@ -702,7 +618,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE384Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "BLAKE384");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE384");
 		}
 
 		/// <summary>
@@ -725,7 +641,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACBLAKE384(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACBLAKE384(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACBLAKE384(null, toHexa);
 		}
 
 		/// <summary>
@@ -736,7 +652,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE512Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash(key.ToBytes(), "BLAKE512");
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE512");
 		}
 
 		/// <summary>
@@ -759,7 +675,105 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetHMACBLAKE512(this string @string, bool toHexa = true)
 		{
-			return @string.GetHMACBLAKE512(CryptoService.DefaultEncryptionKey, toHexa);
+			return @string.GetHMACBLAKE512(null, toHexa);
+		}
+		#endregion
+
+		#region Encryption key & Initialize vector (for working with AES)
+		/// <summary>
+		/// Gets the default key for encrypting/decrypting data
+		/// </summary>
+		public static string DefaultEncryptionKey
+		{
+			get
+			{
+				return "C804BE43-VIEApps-0B43-Core-442B-Components-B635-Service-FD0616D11B01";
+			}
+		}
+
+		/// <summary>
+		/// Generates a key from this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="reverse"></param>
+		/// <param name="hash"></param>
+		/// <param name="keySize"></param>
+		/// <returns></returns>
+		public static byte[] GenerateEncryptionKey(this string @string, bool reverse, bool hash, int keySize)
+		{
+			var passPhrase = reverse
+				? @string.Reverse()
+				: @string;
+
+			var fullKey = hash
+				? passPhrase.GetMD5Hash()
+				: passPhrase.ToBytes();
+
+			var maxIndex = 0;
+			if (keySize > 7)
+				maxIndex = keySize / 8;
+
+			else
+			{
+				var sizeOfBytes = fullKey.Length;
+				var bytes = 1;
+				var bits = bytes * 8;
+				while (bytes <= sizeOfBytes)
+				{
+					bits = bytes * 8;
+					if (bytes < 2)
+						bytes++;
+					else
+						bytes = bytes * 2;
+				}
+				maxIndex = bits / 8;
+			}
+
+			var keys = new byte[maxIndex];
+			for (var index = 0; index < maxIndex; index++)
+				keys[index] = fullKey[index];
+
+			return keys;
+		}
+
+		/// <summary>
+		/// Generates a key from this string (for using with AES)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GenerateEncryptionKey(this string @string)
+		{
+			return @string.GenerateEncryptionKey(true, false, 256);
+		}
+
+		/// <summary>
+		/// Generates a key from this string (for using with AES)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GenerateKey(this string @string)
+		{
+			return @string.GenerateEncryptionKey();
+		}
+
+		/// <summary>
+		/// Generates an initialization vector from this string (for using with AES)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GenerateEncryptionIV(this string @string)
+		{
+			return @string.GenerateEncryptionKey(false, true, 128);
+		}
+
+		/// <summary>
+		/// Generates an initialization vector from this string (for using with AES)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GenerateInitializeVector(this string @string)
+		{
+			return @string.GenerateEncryptionIV();
 		}
 		#endregion
 
@@ -1376,7 +1390,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Generate RSA key pair
+		#region Generate key pair of RSA
 		/// <summary>
 		/// Generates the RSA key-pairs (with 2048 bits length).
 		/// </summary>
@@ -1621,6 +1635,9 @@ namespace net.vieapps.Components.Utility
 					writer.Write(value[index]);
 			}
 		}
+		#endregion
+
+		#region Generate key pair of ECDH (Elliptic Curve Diffie-Hellman)
 		#endregion
 
 	}

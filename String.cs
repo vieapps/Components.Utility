@@ -52,6 +52,38 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Returns a new string that right-aligns the characters in this instance by padding them with spaces on the left, for a specified total length
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="totalWidth"></param>
+		/// <param name="paddingChar"></param>
+		/// <returns></returns>
+		public static string PadLeft(this string @string, int totalWidth, string paddingChar = null)
+		{
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: string.IsNullOrWhiteSpace(paddingChar)
+					? @string.PadLeft(totalWidth)
+					: @string.PadLeft(totalWidth, paddingChar[0]);
+		}
+
+		/// <summary>
+		/// Returns a new string that left-aligns the characters in this string by padding them with spaces on the right, for a specified total length
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="totalWidth"></param>
+		/// <param name="paddingChar"></param>
+		/// <returns></returns>
+		public static string PadRight(this string @string, int totalWidth, string paddingChar = null)
+		{
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: string.IsNullOrWhiteSpace(paddingChar)
+					? @string.PadRight(totalWidth)
+					: @string.PadRight(totalWidth, paddingChar[0]);
+		}
+
+		/// <summary>
 		/// Replaces
 		/// </summary>
 		/// <param name="string"></param>
@@ -184,43 +216,51 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Compresses the string using Deflate compression method
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="string"></param>
 		/// <returns>The compressed-string in Base64 format</returns>
-		public static string Compress(this string data)
+		public static string Compress(this string @string)
 		{
-			return data.ToBytes().Compress().ToBase64();
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: @string.ToBytes().Compress().ToBase64();
 		}
 
 		/// <summary>
 		/// Compresses the string using Deflate compression method
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="string"></param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The compressed-string in Base64 format</returns>
-		public static async Task<string> CompressAsync(this string data, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<string> CompressAsync(this string @string, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return (await data.ToBytes().CompressAsync(null, cancellationToken).ConfigureAwait(false)).ToBase64();
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: (await @string.ToBytes().CompressAsync(null, cancellationToken).ConfigureAwait(false)).ToBase64();
 		}
 
 		/// <summary>
 		/// Decompresses the Base64 string using Deflate compression method
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string Decompress(this string data)
+		public static string Decompress(this string @string)
 		{
-			return data.Base64ToBytes().Decompress().GetString();
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: @string.Base64ToBytes().Decompress().GetString();
 		}
 
 		/// <summary>
 		/// Decompresses the Base64 string using Deflate compression method
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="string"></param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<string> DecompressAsync(this string data, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<string> DecompressAsync(this string @string, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return (await data.Base64ToBytes().DecompressAsync(null, cancellationToken).ConfigureAwait(false)).GetString();
+			return string.IsNullOrWhiteSpace(@string)
+				? ""
+				: (await @string.Base64ToBytes().DecompressAsync(null, cancellationToken).ConfigureAwait(false)).GetString();
 		}
 		#endregion
 
@@ -295,7 +335,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetString(this byte[] bytes, int count = 0, Encoding encoding = null)
 		{
-			return (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
+			return bytes == null || bytes.Length < 1
+				? ""
+				: (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
 		}
 		#endregion
 

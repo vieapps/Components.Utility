@@ -6,14 +6,14 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.1.11.1802</AssemblyVersion>
-		<FileVersion>10.1.11.1802</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.20-zipblake</InformationalVersion>
+		<AssemblyVersion>10.1.12.1802</AssemblyVersion>
+		<FileVersion>10.1.12.1802</FileVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.22-zip/blake</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.11.1802</Version>
+		<Version>10.1.12.1802</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
@@ -22,7 +22,7 @@
 		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2018 VIEApps.net</Copyright>
 		<PackageTags>utility;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Add servicing methods of Base-58 encoding</PackageReleaseNotes>
+		<PackageReleaseNotes>Add more servicing methods</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 	</PropertyGroup>
@@ -48,7 +48,7 @@
 	<ItemGroup>
 		<PackageReference Include="DocumentFormat.OpenXml" Version="2.8.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.5" />
-		<PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+		<PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
 	</ItemGroup>

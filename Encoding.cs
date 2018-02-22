@@ -19,7 +19,7 @@ namespace net.vieapps.Components.Utility
 	public static partial class EncodingService
 	{
 
-		#region Conversions
+		#region To Bytes
 		/// <summary>
 		/// Converts this string to array of bytes
 		/// </summary>
@@ -83,6 +83,28 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this date-time to array of bytes
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this DateTime datetime)
+		{
+			return BitConverter.GetBytes(datetime.ToBinary());
+		}
+
+		/// <summary>
+		/// Converts this big-integer to array of bytes
+		/// </summary>
+		/// <param name="bigInt"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this BigInteger bigInt)
+		{
+			return bigInt.ToByteArray();
+		}
+		#endregion
+
+		#region To Hexa
+		/// <summary>
 		/// Converts this array of bytes to hexa string
 		/// </summary>
 		/// <param name="bytes"></param>
@@ -103,6 +125,250 @@ namespace net.vieapps.Components.Utility
 			return (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHexa();
 		}
 
+		/// <summary>
+		/// Converts this big-integer to hexa string
+		/// </summary>
+		/// <param name="bigInt"></param>
+		/// <returns></returns>
+		public static string ToHexa(this BigInteger bigInt)
+		{
+			return bigInt.ToBytes().ToHexa();
+		}
+		#endregion
+
+		#region To Big Integer
+		/// <summary>
+		/// Converts this array of bytes to big-integer
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this byte[] bytes)
+		{
+			return new BigInteger(bytes);
+		}
+
+		/// <summary>
+		/// Converts this hexa-string to big-integer
+		/// </summary>
+		/// <param name="string"></param>
+		/// <remarks>https://stackoverflow.com/questions/30119174/converting-a-hex-string-to-its-biginteger-equivalent-negates-the-value</remarks>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this string @string)
+		{
+			return BigInteger.Parse(@string, System.Globalization.NumberStyles.AllowHexSpecifier);
+		}
+		#endregion
+
+		#region Encode/Decode Base32
+		/// <summary>
+		/// Encodes this array of bytes to Base32 string
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static string Base32Encode(this byte[] bytes)
+		{
+			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+			var builder = new StringBuilder((bytes.Length + 7) * 8 / 5);
+			int pos = 0, index = 0;
+			while (pos < bytes.Length)
+			{
+				var current = bytes[pos];
+				int digit;
+
+				// is the current digit going to span a byte boundary?
+				if (index > (8 - 5))
+				{
+					var next = (pos + 1) < bytes.Length ? bytes[pos + 1] : 0;
+					digit = current & (0xFF >> index);
+					index = (index + 5) % 8;
+					digit <<= index;
+					digit |= next >> (8 - index);
+					pos++;
+				}
+				else
+				{
+					digit = (current >> (8 - (index + 5))) & 0x1F;
+					index = (index + 5) % 8;
+					if (index == 0)
+						pos++;
+				}
+				builder.Append(base32Alphabet[digit]);
+			}
+			return builder.ToString();
+		}
+
+		/// <summary>
+		/// Decodes this Base32 string to array of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] Base32Decode(this string @string)
+		{
+			var base32 = @string.ToUpperInvariant();
+			var output = new byte[base32.Length * 5 / 8];
+			if (output.Length == 0)
+				throw new ArgumentException("The specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
+
+			var pos = 0;
+			var subPos = 0;
+			var outputPos = 0;
+			var outputSubPos = 0;
+			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+			while (outputPos < output.Length)
+			{
+				var current = base32Alphabet.IndexOf(base32[pos]);
+				if (current < 0)
+					throw new FormatException($"Invalid Base32 character \"{@string[pos]}\" at position {pos}");
+
+				var bits = Math.Min(5 - subPos, 8 - outputSubPos);
+				output[outputPos] <<= bits;
+				output[outputPos] |= (byte)(current >> (5 - (subPos + bits)));
+				outputSubPos += bits;
+
+				if (outputSubPos >= 8)
+				{
+					outputPos++;
+					outputSubPos = 0;
+				}
+
+				subPos += bits;
+				if (subPos >= 5)
+				{
+					pos++;
+					subPos = 0;
+				}
+			}
+
+			return output;
+		}
+
+		/// <summary>
+		/// Converts this string to Base32 string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string ToBase32(this string @string)
+		{
+			return @string.ToBytes().Base32Encode();
+		}
+
+		/// <summary>
+		/// Converts this Base32 string to plain string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string FromBase32(this string @string)
+		{
+			return @string.Base32Decode().GetString();
+		}
+		#endregion
+
+		#region Encode/Decode Base58
+		/// <summary>
+		/// Encodes this array of bytes to Base58 string
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="addChecksum"></param>
+		/// <returns></returns>
+		public static string Base58Encode(this byte[] bytes, bool addChecksum = true)
+		{
+			// add check-sum
+			if (addChecksum)
+				using (var hasher = CryptoService.GetHasher("SHA256"))
+				{
+					var hash = hasher.ComputeHash(hasher.ComputeHash(bytes));
+					var checksum = new byte[4];
+					Buffer.BlockCopy(hash, 0, checksum, 0, checksum.Length);
+					bytes = bytes.Concat(checksum);
+				}
+
+			// decode byte[] to BigInteger
+			var bigInt = bytes.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
+
+			// encode BigInteger to Base58 string
+			var base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+			var result = string.Empty;
+			while (bigInt > 0)
+			{
+				result = base58Alphabet[(int)(bigInt % 58)] + result;
+				bigInt /= 58;
+			}
+
+			// append `1` for each leading 0 byte
+			for (var index = 0; index < bytes.Length && bytes[index] == 0; index++)
+				result = '1' + result;
+
+			return result;
+		}
+
+		/// <summary>
+		/// Decodes this Base58 string to array of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="verifyChecksum"></param>
+		/// <returns></returns>
+		public static byte[] Base58Decode(this string @string, bool verifyChecksum = true)
+		{
+			// decode Base58 string to BigInteger 
+			var base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+			var bigInt = new BigInteger(0);
+			for (var index = 0; index < @string.Length; index++)
+			{
+				var digit = base58Alphabet.IndexOf(@string[index]);
+				if (digit < 0)
+					throw new FormatException($"Invalid Base58 character \"{@string[index]}\" at position {index}");
+				bigInt = bigInt * 58 + digit;
+			}
+
+			// encode BigInteger to byte[] - leading zero bytes get encoded as leading `1` characters
+			var zeros = Enumerable.Repeat((byte)0, @string.TakeWhile(c => c == '1').Count());
+			var bytes = zeros.Concat(bigInt.ToBytes().Reverse().SkipWhile(b => b == 0)).ToArray();
+
+			// verify & remove check-sum
+			if (verifyChecksum)
+				using (var hasher = CryptoService.GetHasher("SHA256"))
+				{
+					var givenChecksum = bytes.Sub(bytes.Length - 4);
+					bytes = bytes.Sub(0, bytes.Length - 4);
+
+					var hash = hasher.ComputeHash(hasher.ComputeHash(bytes));
+					var correctChecksum = new byte[4];
+					Buffer.BlockCopy(hash, 0, correctChecksum, 0, correctChecksum.Length);
+
+					return givenChecksum.SequenceEqual(correctChecksum)
+						? bytes
+						: null;
+				}
+
+			// no check-sum
+			return bytes;
+		}
+
+		/// <summary>
+		/// Converts this string to Base58 string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="addChecksum"></param>
+		/// <returns></returns>
+		public static string ToBase58(this string @string, bool addChecksum = true)
+		{
+			return @string.ToBytes().Base58Encode(addChecksum);
+		}
+
+		/// <summary>
+		/// Converts this Base58 string to plain string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="verifyChecksum"></param>
+		/// <returns></returns>
+		public static string FromBase58(this string @string, bool verifyChecksum = true)
+		{
+			return @string.Base58Decode(verifyChecksum)?.GetString();
+		}
+		#endregion
+
+		#region Encode/Decode Base64
 		/// <summary>
 		/// Converts this array of bytes to Base64 string
 		/// </summary>
@@ -190,262 +456,9 @@ namespace net.vieapps.Components.Utility
 		{
 			return @string.FromBase64(true);
 		}
-
-		/// <summary>
-		/// Converts this big-integer to array of bytes
-		/// </summary>
-		/// <param name="bigint"></param>
-		/// <returns></returns>
-		public static byte[] ToBytes(this BigInteger bigint)
-		{
-			return bigint.ToByteArray();
-		}
-
-		/// <summary>
-		/// Converts this big-integer to hexa string
-		/// </summary>
-		/// <param name="bigint"></param>
-		/// <returns></returns>
-		public static string ToHexa(this BigInteger bigint)
-		{
-			return bigint.ToBytes().ToHexa();
-		}
-
-		/// <summary>
-		/// Converts this array of bytes to big-integer
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <returns></returns>
-		public static BigInteger ToBigInteger(this byte[] bytes)
-		{
-			return new BigInteger(bytes);
-		}
-
-		/// <summary>
-		/// Converts this hexa-string to big-integer
-		/// </summary>
-		/// <param name="string"></param>
-		/// <remarks>https://stackoverflow.com/questions/30119174/converting-a-hex-string-to-its-biginteger-equivalent-negates-the-value</remarks>
-		/// <returns></returns>
-		public static BigInteger ToBigInteger(this string @string)
-		{
-			return BigInteger.Parse(@string, System.Globalization.NumberStyles.AllowHexSpecifier);
-		}
 		#endregion
 
-		#region Encode/Decode Base32
-		/// <summary>
-		/// Encodes this array of bytes to Base32 string
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <returns></returns>
-		public static string Base32Encode(this byte[] bytes)
-		{
-			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-			var builder = new StringBuilder((bytes.Length + 7) * 8 / 5);
-			int pos = 0, index = 0;
-			while (pos < bytes.Length)
-			{
-				var current = bytes[pos];
-				int digit;
-
-				// is the current digit going to span a byte boundary?
-				if (index > (8 - 5))
-				{
-					var next = (pos + 1) < bytes.Length ? bytes[pos + 1] : 0;
-					digit = current & (0xFF >> index);
-					index = (index + 5) % 8;
-					digit <<= index;
-					digit |= next >> (8 - index);
-					pos++;
-				}
-				else
-				{
-					digit = (current >> (8 - (index + 5))) & 0x1F;
-					index = (index + 5) % 8;
-					if (index == 0)
-						pos++;
-				}
-				builder.Append(base32Alphabet[digit]);
-			}
-			return builder.ToString();
-		}
-
-		/// <summary>
-		/// Decodes this Base32 string to array of bytes
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] Base32Decode(this string @string)
-		{
-			var base32 = @string.ToUpperInvariant();
-			var output = new byte[base32.Length * 5 / 8];
-			if (output.Length == 0)
-				throw new ArgumentException("The specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
-
-			var pos = 0;
-			var subPos = 0;
-			var outputPos = 0;
-			var outputSubPos = 0;
-			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-
-			while (outputPos < output.Length)
-			{
-				var current = base32Alphabet.IndexOf(base32[pos]);
-				if (current < 0)
-					throw new ArgumentException($"The specified string is not valid Base32 format because character \"{@string[pos]}\" does not exist in Base32 alphabet");
-
-				var bits = Math.Min(5 - subPos, 8 - outputSubPos);
-				output[outputPos] <<= bits;
-				output[outputPos] |= (byte)(current >> (5 - (subPos + bits)));
-				outputSubPos += bits;
-
-				if (outputSubPos >= 8)
-				{
-					outputPos++;
-					outputSubPos = 0;
-				}
-
-				subPos += bits;
-				if (subPos >= 5)
-				{
-					pos++;
-					subPos = 0;
-				}
-			}
-
-			return output;
-		}
-
-		/// <summary>
-		/// Converts this string to Base32 string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string ToBase32(this string @string)
-		{
-			return @string.ToBytes().Base32Encode();
-		}
-
-		/// <summary>
-		/// Converts this Base32 string to plain string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string FromBase32(this string @string)
-		{
-			return @string.Base32Decode().GetString();
-		}
-		#endregion
-
-		#region Encode/Decode Base58
-		/// <summary>
-		/// Encodes this array of bytes to Base58 string
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="addChecksum"></param>
-		/// <returns></returns>
-		public static string Base58Encode(this byte[] bytes, bool addChecksum = true)
-		{
-			// add check-sum
-			if (addChecksum)
-				using (var hasher = CryptoService.GetHasher("SHA256"))
-				{
-					var hash = hasher.ComputeHash(hasher.ComputeHash(bytes));
-					var checksum = new byte[4];
-					Buffer.BlockCopy(hash, 0, checksum, 0, checksum.Length);
-					bytes = bytes.Concat(checksum);
-				}
-
-			// decode byte[] to BigInteger
-			var bigInt = bytes.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
-
-			// encode BigInteger to Base58 string
-			var base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-			var result = string.Empty;
-			while (bigInt > 0)
-			{
-				var remainder = (int)(bigInt % 58);
-				bigInt /= 58;
-				result = base58Alphabet[remainder] + result;
-			}
-
-			// append `1` for each leading 0 byte
-			for (var index = 0; index < bytes.Length && bytes[index] == 0; index++)
-				result = '1' + result;
-
-			return result;
-		}
-
-		/// <summary>
-		/// Decodes this Base58 string to array of bytes
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="verifyChecksum"></param>
-		/// <returns></returns>
-		public static byte[] Base58Decode(this string @string, bool verifyChecksum = true)
-		{
-			// decode Base58 string to BigInteger 
-			var base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-			BigInteger bigIn = 0;
-			for (var index = 0; index < @string.Length; index++)
-			{
-				var digit = base58Alphabet.IndexOf(@string[index]); //Slow
-				if (digit < 0)
-					throw new FormatException($"Invalid Base58 character `{@string[index]}` at position {index}");
-				bigIn = bigIn * 58 + digit;
-			}
-
-			// encode BigInteger to byte[] - leading zero bytes get encoded as leading `1` characters
-			var leadingZeroCount = @string.TakeWhile(c => c == '1').Count();
-			var leadingZeros = Enumerable.Repeat((byte)0, leadingZeroCount);
-			var bytesWithoutLeadingZeros = bigIn.ToByteArray()
-				.Reverse()										// to big endian
-				.SkipWhile(b => b == 0);			//strip sign byte
-			var bytes = leadingZeros.Concat(bytesWithoutLeadingZeros).ToArray();
-
-			// verify & remove check-sum
-			if (verifyChecksum)
-				using (var hasher = CryptoService.GetHasher("SHA256"))
-				{
-					var givenChecksum = bytes.Sub(bytes.Length - 4);
-					bytes = bytes.Sub(0, bytes.Length - 4);
-
-					var hash = hasher.ComputeHash(hasher.ComputeHash(bytes));
-					var correctChecksum = new byte[4];
-					Buffer.BlockCopy(hash, 0, correctChecksum, 0, correctChecksum.Length);
-
-					return givenChecksum.SequenceEqual(correctChecksum)
-						? bytes
-						: null;
-				}
-
-			// no check-sum
-			return bytes;
-		}
-
-		/// <summary>
-		/// Converts this string to Base58 string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string ToBase58(this string @string)
-		{
-			return @string.ToBytes().Base58Encode();
-		}
-
-		/// <summary>
-		/// Converts this Base58 string to plain string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string FromBase58(this string @string)
-		{
-			return @string.Base58Decode()?.GetString();
-		}
-		#endregion
-
-		#region Encode/Decode Url & Html 
+		#region Encode/Decode Url
 		/// <summary>
 		/// Encodes this string to use in url
 		/// </summary>
@@ -493,7 +506,9 @@ namespace net.vieapps.Components.Utility
 				? ""
 				: @string.Base64ToBytes(true).GetString();
 		}
+		#endregion
 
+		#region Encode/Decode Html
 		/// <summary>
 		/// Encodes this string to HTML string
 		/// </summary>
@@ -572,7 +587,7 @@ namespace net.vieapps.Components.Utility
 			using (var input = new MemoryStream(data))
 			{
 				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
-					? new GZipStream(input, CompressionMode.Compress) as Stream
+					? new GZipStream(input, CompressionMode.Decompress) as Stream
 					: new DeflateStream(input, CompressionMode.Decompress) as Stream)
 				{
 					using (var output = new MemoryStream())
@@ -603,18 +618,18 @@ namespace net.vieapps.Components.Utility
 			using (var input = new MemoryStream(data))
 			{
 				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
-					? new GZipStream(input, CompressionMode.Compress) as Stream
+					? new GZipStream(input, CompressionMode.Decompress) as Stream
 					: new DeflateStream(input, CompressionMode.Decompress) as Stream)
 				{
 					using (var output = new MemoryStream())
 					{
 						var buffer = new byte[64];
-						var readBytes = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-						while (readBytes > 0)
+						var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+						while (read > 0)
 						{
-							await output.WriteAsync(buffer, 0, readBytes, cancellationToken).ConfigureAwait(false);
+							await output.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
 							buffer = new byte[64];
-							readBytes = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+							read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 						}
 						return output.GetBuffer();
 					}

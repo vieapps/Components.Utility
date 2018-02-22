@@ -1,6 +1,7 @@
 ﻿#region Related components
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Xml;
 using System.Text;
@@ -1525,6 +1526,66 @@ namespace net.vieapps.Components.Utility
 		{
 			return UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
 		}
+
+		/// <summary>
+		/// Saves this GZipStream as .GZ file
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="gzFilePath"></param>
+		public static void SaveAsGzipFile(this GZipStream stream, string gzFilePath)
+		{
+			if (stream == null)
+				throw new ArgumentException("Invalid", nameof(stream));
+
+			gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
+			if (File.Exists(gzFilePath))
+				File.Delete(gzFilePath);
+
+			UtilityService.WriteBinaryFile(gzFilePath, stream);
+		}
+
+		/// <summary>
+		/// Saves this GZipStream as .GZ file
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="gzFilePath"></param>
+		/// <param name="cancellationToken"></param>
+		public static Task SaveAsGzipFileAsync(this GZipStream stream, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (stream == null)
+				return Task.FromException(new ArgumentException("Invalid", nameof(stream)));
+
+			gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
+			if (File.Exists(gzFilePath))
+				File.Delete(gzFilePath);
+
+			return UtilityService.WriteBinaryFileAsync(gzFilePath, stream);
+		}
+
+		/// <summary>
+		/// Compress and saves this array of bytes as .GZ file
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="gzFilePath"></param>
+		public static void SaveAsGzipFile(this byte[] bytes, string gzFilePath)
+		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+			UtilityService.SaveAsGzipFile(new GZipStream(new MemoryStream(bytes), CompressionMode.Compress), gzFilePath);
+		}
+
+		/// <summary>
+		/// Compress and saves this array of bytes as .GZ file
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="gzFilePath"></param>
+		/// <param name="cancellationToken"></param>
+		public static Task SaveAsGzipFileAsync(this byte[] bytes, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return bytes == null || bytes.Length < 1
+				? Task.FromException(new ArgumentException("Invalid", nameof(bytes)))
+				: UtilityService.SaveAsGzipFileAsync(new GZipStream(new MemoryStream(bytes), CompressionMode.Compress), gzFilePath, cancellationToken);
+		}
 		#endregion
 
 		#region Read/Write text files
@@ -1885,7 +1946,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="content"></param>
 		/// <returns></returns>
-		public static void WriteBinaryFile(string filePath, MemoryStream content)
+		public static void WriteBinaryFile(string filePath, Stream content)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
@@ -1911,7 +1972,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="content"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task WriteBinaryFileAsync(string filePath, MemoryStream content, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task WriteBinaryFileAsync(string filePath, Stream content, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
