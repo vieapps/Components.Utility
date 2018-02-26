@@ -270,25 +270,28 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="prefix"></param>
+		/// <param name="postfix"></param>
 		/// <returns></returns>
-		public static string Base58Encode(this byte[] bytes, bool addChecksum = true)
+		public static string Base58Encode(this byte[] bytes, bool addChecksum = true, byte[] prefix = null, byte[] postfix = null)
 		{
+			// add prefix / surfix
+			var data = (prefix ?? new byte[0]).Concat(bytes, postfix ?? new byte[0]);
+
 			// add check-sum
 			if (addChecksum)
 				using (var hasher = CryptoService.GetHasher("SHA256"))
 				{
-					var hash = hasher.ComputeHash(hasher.ComputeHash(bytes));
+					var hash = hasher.ComputeHash(hasher.ComputeHash(data));
 					var checksum = new byte[4];
 					Buffer.BlockCopy(hash, 0, checksum, 0, checksum.Length);
-					bytes = bytes.Concat(checksum);
+					data = data.Concat(checksum);
 				}
 
-			// decode byte[] to BigInteger
-			var bigInt = bytes.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
-
-			// encode BigInteger to Base58 string
+			// decode byte[] to BigInteger and encode BigInteger to Base58 string
+			var bigInt = data.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
 			var base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-			var result = string.Empty;
+			var result = "";
 			while (bigInt > 0)
 			{
 				result = base58Alphabet[(int)(bigInt % 58)] + result;
@@ -296,7 +299,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// append `1` for each leading 0 byte
-			for (var index = 0; index < bytes.Length && bytes[index] == 0; index++)
+			for (var index = 0; index < data.Length && data[index] == 0; index++)
 				result = '1' + result;
 
 			return result;
@@ -350,10 +353,12 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="prefix"></param>
+		/// <param name="postfix"></param>
 		/// <returns></returns>
-		public static string ToBase58(this string @string, bool addChecksum = true)
+		public static string ToBase58(this string @string, bool addChecksum = true, byte[] prefix = null, byte[] postfix = null)
 		{
-			return @string.ToBytes().Base58Encode(addChecksum);
+			return @string.ToBytes().Base58Encode(addChecksum, prefix, postfix);
 		}
 
 		/// <summary>
@@ -639,4 +644,5 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 	}
+
 }

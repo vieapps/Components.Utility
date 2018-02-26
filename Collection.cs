@@ -247,7 +247,8 @@ namespace net.vieapps.Components.Utility
 		public static T[] Concat<T>(this T[] array, params T[][] arrays)
 		{
 			var result = new T[array.Length + arrays.Sum(a => a.Length)];
-			Buffer.BlockCopy(array, 0, result, 0, array.Length);
+			if (array.Length > 0)
+				Buffer.BlockCopy(array, 0, result, 0, array.Length);
 
 			var offset = array.Length;
 			arrays.ForEach(a =>
