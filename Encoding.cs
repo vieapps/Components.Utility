@@ -83,13 +83,33 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this integer to array of bytes
+		/// </summary>
+		/// <param name="int"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this int @int)
+		{
+			return BitConverter.GetBytes(@int);
+		}
+
+		/// <summary>
+		/// Converts this integer 64 to array of bytes
+		/// </summary>
+		/// <param name="long"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this long @long)
+		{
+			return BitConverter.GetBytes(@long);
+		}
+
+		/// <summary>
 		/// Converts this date-time to array of bytes
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this DateTime datetime)
 		{
-			return BitConverter.GetBytes(datetime.ToBinary());
+			return datetime.ToBinary().ToBytes();
 		}
 
 		/// <summary>

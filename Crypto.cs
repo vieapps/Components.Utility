@@ -50,7 +50,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHash(this byte[] bytes, string mode = "SHA256")
 		{
@@ -67,7 +67,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHash(this string @string, string mode = "SHA256")
 		{

@@ -19,7 +19,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GeneratePassword(byte[] secret, long counter, int digits = 6)
 		{
-			var bytes = BitConverter.GetBytes(counter);
+			var bytes = counter.ToBytes();
 			if (BitConverter.IsLittleEndian)
 				Array.Reverse(bytes);
 
