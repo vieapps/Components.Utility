@@ -8,7 +8,7 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<AssemblyVersion>10.1.12.1802</AssemblyVersion>
 		<FileVersion>10.1.12.1802</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.22-zip/blake</InformationalVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.02.27-ripemd</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>

@@ -17,7 +17,7 @@ namespace net.vieapps.Components.Utility
 	public static partial class CryptoService
 	{
 
-		#region Hash array of bytes/string
+		#region Hash an array of bytes or a string
 		static Dictionary<string, Func<HashAlgorithm>> HashFactories = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", () => MD5.Create() },
@@ -307,7 +307,18 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region HMAC Hash array of bytes/string
+		#region HMAC an array of bytes or string
+		static byte[] GetHMACBlake2BKey(byte[] key)
+		{
+			if (key.Length < 64)
+				return key;
+
+			using (var hasher = new HMACBlake2B(64))
+			{
+				return hasher.ComputeHash(key);
+			}
+		}
+
 		static Dictionary<string, Func<byte[], HMAC>> HmacHashFactories = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", (key) => new HMACMD5(key) },
@@ -315,18 +326,20 @@ namespace net.vieapps.Components.Utility
 			{ "sha256", (key) => new HMACSHA256(key) },
 			{ "sha384", (key) => new HMACSHA384(key) },
 			{ "sha512", (key) => new HMACSHA512(key) },
-			{ "blake", (key) => new HMACBlake2B(key, 128) },
-			{ "blake128", (key) => new HMACBlake2B(key, 128) },
-			{ "blake256", (key) => new HMACBlake2B(key, 256) },
-			{ "blake384", (key) => new HMACBlake2B(key, 384) },
-			{ "blake512", (key) => new HMACBlake2B(key, 512) },
+			{ "ripemd", (key) => new HMACRIPEMD160(key) },
+			{ "ripemd160", (key) => new HMACRIPEMD160(key) },
+			{ "blake", (key) => new HMACBlake2B(CryptoService.GetHMACBlake2BKey(key), 128) },
+			{ "blake128", (key) => new HMACBlake2B(CryptoService.GetHMACBlake2BKey(key), 128) },
+			{ "blake256", (key) => new HMACBlake2B(CryptoService.GetHMACBlake2BKey(key), 256) },
+			{ "blake384", (key) => new HMACBlake2B(CryptoService.GetHMACBlake2BKey(key), 384) },
+			{ "blake512", (key) => new HMACBlake2B(CryptoService.GetHMACBlake2BKey(key), 512) },
 		};
 
 		/// <summary>
 		/// Gets a HMAC hashser
 		/// </summary>
 		/// <param name="key"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static HMAC GetHMACHasher(byte[] key, string mode = "SHA256")
 		{
@@ -336,11 +349,11 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC hash of this array of bytes
+		/// Gets HMAC of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
 		{
@@ -356,11 +369,11 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC hash of this string
+		/// Gets HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake/blake128, blake256, blake384, blake512)</param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake/blake128, blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256")
 		{
@@ -370,7 +383,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC hash of this string
+		/// Gets HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
@@ -382,7 +395,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC hash of this string
+		/// Gets HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
@@ -398,7 +411,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC MD5 hash of this string
+		/// Gets Gets MD5 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -409,7 +422,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC MD5 hash of this string
+		/// Gets Gets MD5 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -421,7 +434,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC MD5 hash of this string
+		/// Gets Gets MD5 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -432,7 +445,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA1 hash of this string
+		/// Gets Gets SHA1 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -443,7 +456,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA1 hash of this string
+		/// Gets Gets SHA1 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -455,7 +468,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA1 hash of this string
+		/// Gets Gets SHA1 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -466,7 +479,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA256 hash of this string
+		/// Gets Gets SHA256 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -477,7 +490,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA256 hash of this string
+		/// Gets Gets SHA256 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -489,7 +502,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA256 hash of this string
+		/// Gets Gets SHA256 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -500,7 +513,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA384 hash of this string
+		/// Gets Gets SHA384 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -511,7 +524,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA384 hash of this string
+		/// Gets Gets SHA384 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -523,7 +536,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA384 hash of this string
+		/// Gets Gets SHA384 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -534,7 +547,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA512 hash of this string
+		/// Gets Gets SHA512 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -545,7 +558,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA512 hash of this string
+		/// Gets Gets SHA512 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -557,7 +570,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC SHA512 hash of this string
+		/// Gets Gets SHA512 HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -568,7 +581,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (128 bits)
+		/// Gets Gets BLAKE HMAC of this string (128 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -579,7 +592,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (128 bits)
+		/// Gets Gets BLAKE HMAC of this string (128 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -591,7 +604,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (128 bits)
+		/// Gets Gets BLAKE HMAC of this string (128 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -602,7 +615,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (256 bits)
+		/// Gets Gets BLAKE HMAC of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -613,7 +626,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (256 bits)
+		/// Gets Gets BLAKE HMAC of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -625,7 +638,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (256 bits)
+		/// Gets Gets BLAKE HMAC of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -636,7 +649,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (384 bits)
+		/// Gets Gets BLAKE HMAC of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -647,7 +660,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (384 bits)
+		/// Gets Gets BLAKE HMAC of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -659,7 +672,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (384 bits)
+		/// Gets Gets BLAKE HMAC of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -670,7 +683,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (512 bits)
+		/// Gets Gets BLAKE HMAC of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -681,7 +694,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (512 bits)
+		/// Gets Gets BLAKE HMAC of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -693,7 +706,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Gets HMAC BLAKE hash of this string (512 bits)
+		/// Gets Gets BLAKE HMAC of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
@@ -701,6 +714,40 @@ namespace net.vieapps.Components.Utility
 		public static string GetHMACBLAKE512(this string @string, bool toHexa = true)
 		{
 			return @string.GetHMACBLAKE512(null, toHexa);
+		}
+
+		/// <summary>
+		/// Gets Gets RIPEMD HMAC of this string (160 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <returns></returns>
+		public static byte[] GetHMACRIPEMD160Hash(this string @string, string key)
+		{
+			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "RIPEMD160");
+		}
+
+		/// <summary>
+		/// Gets Gets RIPEMD HMAC of this string (160 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="key"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACRIPEMD160(this string @string, string key, bool toHexa = true)
+		{
+			return @string.GetHMAC(key, "RIPEMD160", toHexa);
+		}
+
+		/// <summary>
+		/// Gets Gets RIPEMD HMAC of this string (160 bits)
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="toHexa"></param>
+		/// <returns></returns>
+		public static string GetHMACRIPEMD160(this string @string, bool toHexa = true)
+		{
+			return @string.GetHMACRIPEMD160(null, toHexa);
 		}
 		#endregion
 
@@ -1664,464 +1711,1069 @@ namespace net.vieapps.Components.Utility
 
 	}
 
-	#region Replacement of System.Security.Cryptography.RIPEMD160
-	// darrenstarr - https://github.com/darrenstarr/RIPEMD160.net
-	public class RIPEMD160 : HashAlgorithm
+	// -------------------------------------------------------------------------------
+	// Replacement of System.Security.Cryptography.RIPEMD160 (SshNet.Security.Cryptography - https://github.com/sshnet/Cryptography)
+
+	#region RIPEMD160 Base
+	internal interface IHashProvider : IDisposable
 	{
+		/// <summary>
+		/// Gets the size, in bits, of the computed hash code.
+		/// </summary>
+		/// <returns>
+		/// The size, in bits, of the computed hash code.
+		/// </returns>
+		int HashSize { get; }
+
+		/// <summary>
+		/// Gets the input block size.
+		/// </summary>
+		/// <returns>
+		/// The input block size.
+		/// </returns>
+		int InputBlockSize { get; }
+
+		/// <summary>
+		/// Gets the output block size.
+		/// </summary>
+		/// <returns>
+		/// The output block size.
+		/// </returns>
+		int OutputBlockSize { get; }
+
+		/// <summary>
+		/// Gets the value of the computed hash code.
+		/// </summary>
+		/// <value>
+		/// The current value of the computed hash code.
+		/// </value>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		byte[] Hash { get; }
+
+		/// <summary>
+		/// Resets an implementation of the <see cref="IHashProvider"/> to its initial state.
+		/// </summary>
+		void Reset();
+
+		/// <summary>
+		/// Routes data written to the object into the hash algorithm for computing the hash.
+		/// </summary>
+		/// <param name="array">The input to compute the hash code for.</param>
+		/// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
+		/// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
+		void HashCore(byte[] array, int ibStart, int cbSize);
+
+		/// <summary>
+		/// Finalizes the hash computation after the last data is processed by the cryptographic stream object.
+		/// </summary>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
+		byte[] HashFinal();
+
+		/// <summary>
+		/// Computes the hash value for the specified region of the input byte array and copies the specified
+		/// region of the input byte array to the specified region of the output byte array.
+		/// </summary>
+		/// <param name="inputBuffer">The input to compute the hash code for.</param>
+		/// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
+		/// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
+		/// <param name="outputBuffer">A copy of the part of the input array used to compute the hash code.</param>
+		/// <param name="outputOffset">The offset into the output byte array from which to begin writing data.</param>
+		/// <returns>
+		/// The number of bytes written.
+		/// </returns>
+		/// <exception cref="ArgumentException">
+		/// <para><paramref name="inputCount"/> uses an invalid value.</para>
+		/// <para>-or-</para>
+		/// <para><paramref name="inputBuffer"/> has an invalid length.</para>
+		/// </exception>
+		/// <exception cref="ArgumentNullException"><paramref name="inputBuffer"/> is <c>null</c>.</exception>
+		/// <exception cref="ArgumentOutOfRangeException"><paramref name="inputOffset"/> is out of range. This parameter requires a non-negative number.</exception>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset);
+
+		/// <summary>
+		/// Computes the hash value for the specified region of the specified byte array.
+		/// </summary>
+		/// <param name="inputBuffer">The input to compute the hash code for.</param>
+		/// <param name="inputOffset">The offset into the byte array from which to begin using data.</param>
+		/// <param name="inputCount">The number of bytes in the byte array to use as data.</param>
+		/// <returns>
+		/// An array that is a copy of the part of the input that is hashed.
+		/// </returns>
+		/// <exception cref="ArgumentException">
+		/// <para><paramref name="inputCount"/> uses an invalid value.</para>
+		/// <para>-or-</para>
+		/// <para><paramref name="inputBuffer"/> has an invalid length.</para>
+		/// </exception>
+		/// <exception cref="ArgumentNullException"><paramref name="inputBuffer"/> is <c>null</c>.</exception>
+		/// <exception cref="ArgumentOutOfRangeException"><paramref name="inputOffset"/> is out of range. This parameter requires a non-negative number.</exception>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount);
+
+		/// <summary>
+		/// Computes the hash value for the input data.
+		/// </summary>
+		/// <param name="buffer">The input to compute the hash code for.</param>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
+		/// <exception cref="ArgumentNullException"><paramref name="buffer"/> is <c>null</c>.</exception>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		byte[] ComputeHash(byte[] buffer);
+	}
+
+	internal abstract class HashProviderBase : IHashProvider
+	{
+		bool _disposed;
+		byte[] _hashValue;
+
+		/// <summary>
+		/// Gets the value of the computed hash code.
+		/// </summary>
+		/// <value>
+		/// The current value of the computed hash code.
+		/// </value>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		public byte[] Hash
+		{
+			get
+			{
+				if (this._disposed)
+					throw new ObjectDisposedException(GetType().FullName);
+				return (byte[])this._hashValue.Clone();
+			}
+		}
+
+		/// <summary>
+		/// Computes the hash value for the specified region of the input byte array and copies the specified
+		/// region of the input byte array to the specified region of the output byte array.
+		/// </summary>
+		/// <param name="inputBuffer">The input to compute the hash code for.</param>
+		/// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
+		/// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
+		/// <param name="outputBuffer">A copy of the part of the input array used to compute the hash code.</param>
+		/// <param name="outputOffset">The offset into the output byte array from which to begin writing data.</param>
+		/// <returns>
+		/// The number of bytes written.
+		/// </returns>
+		/// <exception cref="ArgumentException">
+		/// <para><paramref name="inputCount"/> uses an invalid value.</para>
+		/// <para>-or-</para>
+		/// <para><paramref name="inputBuffer"/> has an invalid length.</para>
+		/// </exception>
+		/// <exception cref="ArgumentNullException"><paramref name="inputBuffer"/> is <c>null</c>.</exception>
+		/// <exception cref="ArgumentOutOfRangeException"><paramref name="inputOffset"/> is out of range. This parameter requires a non-negative number.</exception>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		public int TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
+		{
+			if (this._disposed)
+				throw new ObjectDisposedException(GetType().FullName);
+			if (inputBuffer == null)
+				throw new ArgumentNullException("inputBuffer");
+			if (inputOffset < 0)
+				throw new ArgumentOutOfRangeException("inputOffset");
+			if (inputCount < 0 || (inputCount > inputBuffer.Length))
+				throw new ArgumentException("XX");
+			if ((inputBuffer.Length - inputCount) < inputOffset)
+				throw new ArgumentException("xx");
+
+			this.HashCore(inputBuffer, inputOffset, inputCount);
+
+			// todo: optimize this by taking into account that inputBuffer and outputBuffer can be the same
+			Buffer.BlockCopy(inputBuffer, inputOffset, outputBuffer, outputOffset, inputCount);
+			return inputCount;
+		}
+
+		/// <summary>
+		/// Computes the hash value for the specified region of the specified byte array.
+		/// </summary>
+		/// <param name="inputBuffer">The input to compute the hash code for.</param>
+		/// <param name="inputOffset">The offset into the byte array from which to begin using data.</param>
+		/// <param name="inputCount">The number of bytes in the byte array to use as data.</param>
+		/// <returns>
+		/// An array that is a copy of the part of the input that is hashed.
+		/// </returns>
+		/// <exception cref="ArgumentException">
+		/// <para><paramref name="inputCount"/> uses an invalid value.</para>
+		/// <para>-or-</para>
+		/// <para><paramref name="inputBuffer"/> has an invalid length.</para>
+		/// </exception>
+		/// <exception cref="ArgumentNullException"><paramref name="inputBuffer"/> is <c>null</c>.</exception>
+		/// <exception cref="ArgumentOutOfRangeException"><paramref name="inputOffset"/> is out of range. This parameter requires a non-negative number.</exception>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		public byte[] TransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
+		{
+			if (this._disposed)
+				throw new ObjectDisposedException(GetType().FullName);
+			if (inputBuffer == null)
+				throw new ArgumentNullException("inputBuffer");
+			if (inputOffset < 0)
+				throw new ArgumentOutOfRangeException("inputOffset");
+			if (inputCount < 0 || (inputCount > inputBuffer.Length))
+				throw new ArgumentException("XX");
+			if ((inputBuffer.Length - inputCount) < inputOffset)
+				throw new ArgumentException("xx");
+
+			this.HashCore(inputBuffer, inputOffset, inputCount);
+			this._hashValue = this.HashFinal();
+
+			// from the MSDN docs:
+			// the return value of this method is not the hash value, but only a copy of the hashed part of the input data
+			var outputBytes = new byte[inputCount];
+			Buffer.BlockCopy(inputBuffer, inputOffset, outputBytes, 0, inputCount);
+			return outputBytes;
+		}
+
+		/// <summary>
+		/// Computes the hash value for the input data.
+		/// </summary>
+		/// <param name="buffer">The input to compute the hash code for.</param>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
+		/// <exception cref="ArgumentNullException"><paramref name="buffer"/> is <c>null</c>.</exception>
+		/// <exception cref="ObjectDisposedException">The object has already been disposed.</exception>
+		public byte[] ComputeHash(byte[] buffer)
+		{
+			if (this._disposed)
+				throw new ObjectDisposedException(GetType().FullName);
+			if (buffer == null)
+				throw new ArgumentNullException("buffer");
+
+			this.HashCore(buffer, 0, buffer.Length);
+			this._hashValue = HashFinal();
+			this.Reset();
+			return this.Hash;
+		}
+
+		/// <summary>
+		/// Releases all resources used by the current instance of the <see cref="HashProviderBase"/> class.
+		/// </summary>
+		public void Dispose()
+		{
+			GC.SuppressFinalize(this);
+			this.Dispose(true);
+		}
+
+		/// <summary>
+		/// Releases the unmanaged resources used by the <see cref="HashProviderBase"/> and optionally releases the managed resources.
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+				this._hashValue = null;
+			this._disposed = true;
+		}
+
+		/// <summary>
+		/// Gets the size, in bits, of the computed hash code.
+		/// </summary>
+		/// <returns>
+		/// The size, in bits, of the computed hash code.
+		/// </returns>
+		public abstract int HashSize { get; }
+
+		/// <summary>
+		/// Gets the input block size.
+		/// </summary>
+		/// <returns>
+		/// The input block size.
+		/// </returns>
+		public abstract int InputBlockSize { get; }
+
+		/// <summary>
+		/// Gets the output block size.
+		/// </summary>
+		/// <returns>
+		/// The output block size.
+		/// </returns>
+		public abstract int OutputBlockSize { get; }
+
+		/// <summary>
+		/// Resets an implementation of <see cref="HashProviderBase"/> to its initial state.
+		/// </summary>
+		public abstract void Reset();
+
+		/// <summary>
+		/// Routes data written to the object into the hash algorithm for computing the hash.
+		/// </summary>
+		/// <param name="array">The input to compute the hash code for.</param>
+		/// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
+		/// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
+		public abstract void HashCore(byte[] array, int ibStart, int cbSize);
+
+		/// <summary>
+		/// Finalizes the hash computation after the last data is processed by the cryptographic stream object.
+		/// </summary>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
+		public abstract byte[] HashFinal();
+	}
+
+	internal class RIPEMD160HashProvider : HashProviderBase
+	{
+		const int DigestSize = 20;
+
+		readonly byte[] _buffer;
+		int _bufferOffset;
+		long _byteCount;
+		int _offset;
+		int H0, H1, H2, H3, H4; // IV's
+
+		/// <summary>
+		/// The word buffer.
+		/// </summary>
+		readonly int[] X;
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RIPEMD160HashProvider" /> class.
+		/// </summary>
+		public RIPEMD160HashProvider()
+		{
+			this._buffer = new byte[4];
+			this.X = new int[16];
+			this.InitializeHashValue();
+		}
+
+		/// <summary>
+		/// Gets the size, in bits, of the computed hash code.
+		/// </summary>
+		/// <returns>
+		/// The size, in bits, of the computed hash code.
+		/// </returns>
+		public override int HashSize
+		{
+			get
+			{
+				return RIPEMD160HashProvider.DigestSize * 8;
+			}
+		}
+
+		/// <summary>
+		/// Gets the input block size.
+		/// </summary>
+		/// <returns>
+		/// The input block size.
+		/// </returns>
+		public override int InputBlockSize
+		{
+			get
+			{
+				return 64;
+			}
+		}
+
+		/// <summary>
+		/// Gets the output block size.
+		/// </summary>
+		/// <returns>
+		/// The output block size.
+		/// </returns>
+		public override int OutputBlockSize
+		{
+			get
+			{
+				return 64;
+			}
+		}
+
+		/// <summary>
+		/// Routes data written to the object into the hash algorithm for computing the hash.
+		/// </summary>
+		/// <param name="array">The input to compute the hash code for.</param>
+		/// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
+		/// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
+		public override void HashCore(byte[] array, int ibStart, int cbSize)
+		{
+			//
+			// fill the current word
+			//
+			while ((this._bufferOffset != 0) && (cbSize > 0))
+			{
+				this.Update(array[ibStart]);
+				ibStart++;
+				cbSize--;
+			}
+
+			//
+			// process whole words.
+			//
+			while (cbSize > this._buffer.Length)
+			{
+				this.ProcessWord(array, ibStart);
+
+				ibStart += this._buffer.Length;
+				cbSize -= this._buffer.Length;
+				this._byteCount += this._buffer.Length;
+			}
+
+			//
+			// load in the remainder.
+			//
+			while (cbSize > 0)
+			{
+				this.Update(array[ibStart]);
+
+				ibStart++;
+				cbSize--;
+			}
+		}
+
+		/// <summary>
+		/// Finalizes the hash computation after the last data is processed by the cryptographic stream object.
+		/// </summary>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
+		public override byte[] HashFinal()
+		{
+			var output = new byte[RIPEMD160HashProvider.DigestSize];
+			var bitLength = (this._byteCount << 3);
+
+			//
+			// add the pad bytes.
+			//
+			this.Update(128);
+
+			while (this._bufferOffset != 0)
+				this.Update(0);
+			this.ProcessLength(bitLength);
+			this.ProcessBlock();
+
+			this.UnpackWord(H0, output, 0);
+			this.UnpackWord(H1, output, 4);
+			this.UnpackWord(H2, output, 8);
+			this.UnpackWord(H3, output, 12);
+			this.UnpackWord(H4, output, 16);
+
+			return output;
+		}
+
+		/// <summary>
+		/// Resets <see cref="RIPEMD160HashProvider"/> to its initial state.
+		/// </summary>
+		public override void Reset()
+		{
+			this.InitializeHashValue();
+
+			this._byteCount = 0;
+			this._bufferOffset = 0;
+			for (var i = 0; i < this._buffer.Length; i++)
+			{
+				this._buffer[i] = 0;
+			}
+
+			this._offset = 0;
+
+			for (var i = 0; i != this.X.Length; i++)
+			{
+				this.X[i] = 0;
+			}
+		}
+
+		void InitializeHashValue()
+		{
+			H0 = unchecked(0x67452301);
+			H1 = unchecked((int)0xefcdab89);
+			H2 = unchecked((int)0x98badcfe);
+			H3 = unchecked(0x10325476);
+			H4 = unchecked((int)0xc3d2e1f0);
+		}
+
+		void ProcessWord(byte[] input, int inOff)
+		{
+			this.X[this._offset++] = (input[inOff] & 0xff) | ((input[inOff + 1] & 0xff) << 8) | ((input[inOff + 2] & 0xff) << 16) | ((input[inOff + 3] & 0xff) << 24);
+			if (this._offset == 16)
+				this.ProcessBlock();
+		}
+
+		void ProcessLength(long bitLength)
+		{
+			if (this._offset > 14)
+				this.ProcessBlock();
+			this.X[14] = (int)(bitLength & 0xffffffff);
+			this.X[15] = (int)((ulong)bitLength >> 32);
+		}
+
+		void UnpackWord(int word, byte[] outBytes, int outOff)
+		{
+			outBytes[outOff] = (byte)word;
+			outBytes[outOff + 1] = (byte)((uint)word >> 8);
+			outBytes[outOff + 2] = (byte)((uint)word >> 16);
+			outBytes[outOff + 3] = (byte)((uint)word >> 24);
+		}
+
+		void Update(byte input)
+		{
+			this._buffer[this._bufferOffset++] = input;
+
+			if (this._bufferOffset == this._buffer.Length)
+			{
+				this.ProcessWord(this._buffer, 0);
+				this._bufferOffset = 0;
+			}
+
+			this._byteCount++;
+		}
+
+		int RL(int x, int n)
+		{
+			return (x << n) | (int)((uint)x >> (32 - n));
+		}
+
+		/// <summary>
+		/// Rounds 0-15
+		/// </summary>
+		/// <param name="x">The x.</param>
+		/// <param name="y">The y.</param>
+		/// <param name="z">The z.</param>
+		/// <returns></returns>
+		int F1(int x, int y, int z)
+		{
+			return x ^ y ^ z;
+		}
+
+		/// <summary>
+		/// Rounds 16-31
+		/// </summary>
+		/// <param name="x">The x.</param>
+		/// <param name="y">The y.</param>
+		/// <param name="z">The z.</param>
+		/// <returns></returns>
+		int F2(int x, int y, int z)
+		{
+			return (x & y) | (~x & z);
+		}
+
+		/// <summary>
+		/// ounds 32-47
+		/// </summary>
+		/// <param name="x">The x.</param>
+		/// <param name="y">The y.</param>
+		/// <param name="z">The z.</param>
+		/// <returns></returns>
+		int F3(int x, int y, int z)
+		{
+			return (x | ~y) ^ z;
+		}
+
+		/// <summary>
+		/// Rounds 48-63
+		/// </summary>
+		/// <param name="x">The x.</param>
+		/// <param name="y">The y.</param>
+		/// <param name="z">The z.</param>
+		/// <returns></returns>
+		int F4(int x, int y, int z)
+		{
+			return (x & z) | (y & ~z);
+		}
+
+		/// <summary>
+		/// ounds 64-79
+		/// </summary>
+		/// <param name="x">The x.</param>
+		/// <param name="y">The y.</param>
+		/// <param name="z">The z.</param>
+		/// <returns></returns>
+		int F5(int x, int y, int z)
+		{
+			return x ^ (y | ~z);
+		}
+
+		void ProcessBlock()
+		{
+			int aa;
+			int bb;
+			int cc;
+			int dd;
+			int ee;
+
+			var a = aa = H0;
+			var b = bb = H1;
+			var c = cc = H2;
+			var d = dd = H3;
+			var e = ee = H4;
+
+			//
+			// Rounds 1 - 16
+			//
+			// left
+			a = RL(a + F1(b, c, d) + X[0], 11) + e; c = RL(c, 10);
+			e = RL(e + F1(a, b, c) + X[1], 14) + d; b = RL(b, 10);
+			d = RL(d + F1(e, a, b) + X[2], 15) + c; a = RL(a, 10);
+			c = RL(c + F1(d, e, a) + X[3], 12) + b; e = RL(e, 10);
+			b = RL(b + F1(c, d, e) + X[4], 5) + a; d = RL(d, 10);
+			a = RL(a + F1(b, c, d) + X[5], 8) + e; c = RL(c, 10);
+			e = RL(e + F1(a, b, c) + X[6], 7) + d; b = RL(b, 10);
+			d = RL(d + F1(e, a, b) + X[7], 9) + c; a = RL(a, 10);
+			c = RL(c + F1(d, e, a) + X[8], 11) + b; e = RL(e, 10);
+			b = RL(b + F1(c, d, e) + X[9], 13) + a; d = RL(d, 10);
+			a = RL(a + F1(b, c, d) + X[10], 14) + e; c = RL(c, 10);
+			e = RL(e + F1(a, b, c) + X[11], 15) + d; b = RL(b, 10);
+			d = RL(d + F1(e, a, b) + X[12], 6) + c; a = RL(a, 10);
+			c = RL(c + F1(d, e, a) + X[13], 7) + b; e = RL(e, 10);
+			b = RL(b + F1(c, d, e) + X[14], 9) + a; d = RL(d, 10);
+			a = RL(a + F1(b, c, d) + X[15], 8) + e; c = RL(c, 10);
+
+			// right
+			aa = RL(aa + F5(bb, cc, dd) + X[5] + unchecked((int)0x50a28be6), 8) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F5(aa, bb, cc) + X[14] + unchecked((int)0x50a28be6), 9) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F5(ee, aa, bb) + X[7] + unchecked((int)0x50a28be6), 9) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F5(dd, ee, aa) + X[0] + unchecked((int)0x50a28be6), 11) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F5(cc, dd, ee) + X[9] + unchecked((int)0x50a28be6), 13) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F5(bb, cc, dd) + X[2] + unchecked((int)0x50a28be6), 15) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F5(aa, bb, cc) + X[11] + unchecked((int)0x50a28be6), 15) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F5(ee, aa, bb) + X[4] + unchecked((int)0x50a28be6), 5) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F5(dd, ee, aa) + X[13] + unchecked((int)0x50a28be6), 7) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F5(cc, dd, ee) + X[6] + unchecked((int)0x50a28be6), 7) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F5(bb, cc, dd) + X[15] + unchecked((int)0x50a28be6), 8) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F5(aa, bb, cc) + X[8] + unchecked((int)0x50a28be6), 11) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F5(ee, aa, bb) + X[1] + unchecked((int)0x50a28be6), 14) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F5(dd, ee, aa) + X[10] + unchecked((int)0x50a28be6), 14) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F5(cc, dd, ee) + X[3] + unchecked((int)0x50a28be6), 12) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F5(bb, cc, dd) + X[12] + unchecked((int)0x50a28be6), 6) + ee; cc = RL(cc, 10);
+
+			//
+			// Rounds 16-31
+			//
+			// left
+			e = RL(e + F2(a, b, c) + X[7] + unchecked((int)0x5a827999), 7) + d; b = RL(b, 10);
+			d = RL(d + F2(e, a, b) + X[4] + unchecked((int)0x5a827999), 6) + c; a = RL(a, 10);
+			c = RL(c + F2(d, e, a) + X[13] + unchecked((int)0x5a827999), 8) + b; e = RL(e, 10);
+			b = RL(b + F2(c, d, e) + X[1] + unchecked((int)0x5a827999), 13) + a; d = RL(d, 10);
+			a = RL(a + F2(b, c, d) + X[10] + unchecked((int)0x5a827999), 11) + e; c = RL(c, 10);
+			e = RL(e + F2(a, b, c) + X[6] + unchecked((int)0x5a827999), 9) + d; b = RL(b, 10);
+			d = RL(d + F2(e, a, b) + X[15] + unchecked((int)0x5a827999), 7) + c; a = RL(a, 10);
+			c = RL(c + F2(d, e, a) + X[3] + unchecked((int)0x5a827999), 15) + b; e = RL(e, 10);
+			b = RL(b + F2(c, d, e) + X[12] + unchecked((int)0x5a827999), 7) + a; d = RL(d, 10);
+			a = RL(a + F2(b, c, d) + X[0] + unchecked((int)0x5a827999), 12) + e; c = RL(c, 10);
+			e = RL(e + F2(a, b, c) + X[9] + unchecked((int)0x5a827999), 15) + d; b = RL(b, 10);
+			d = RL(d + F2(e, a, b) + X[5] + unchecked((int)0x5a827999), 9) + c; a = RL(a, 10);
+			c = RL(c + F2(d, e, a) + X[2] + unchecked((int)0x5a827999), 11) + b; e = RL(e, 10);
+			b = RL(b + F2(c, d, e) + X[14] + unchecked((int)0x5a827999), 7) + a; d = RL(d, 10);
+			a = RL(a + F2(b, c, d) + X[11] + unchecked((int)0x5a827999), 13) + e; c = RL(c, 10);
+			e = RL(e + F2(a, b, c) + X[8] + unchecked((int)0x5a827999), 12) + d; b = RL(b, 10);
+
+			// right
+			ee = RL(ee + F4(aa, bb, cc) + X[6] + unchecked((int)0x5c4dd124), 9) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F4(ee, aa, bb) + X[11] + unchecked((int)0x5c4dd124), 13) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F4(dd, ee, aa) + X[3] + unchecked((int)0x5c4dd124), 15) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F4(cc, dd, ee) + X[7] + unchecked((int)0x5c4dd124), 7) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F4(bb, cc, dd) + X[0] + unchecked((int)0x5c4dd124), 12) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F4(aa, bb, cc) + X[13] + unchecked((int)0x5c4dd124), 8) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F4(ee, aa, bb) + X[5] + unchecked((int)0x5c4dd124), 9) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F4(dd, ee, aa) + X[10] + unchecked((int)0x5c4dd124), 11) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F4(cc, dd, ee) + X[14] + unchecked((int)0x5c4dd124), 7) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F4(bb, cc, dd) + X[15] + unchecked((int)0x5c4dd124), 7) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F4(aa, bb, cc) + X[8] + unchecked((int)0x5c4dd124), 12) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F4(ee, aa, bb) + X[12] + unchecked((int)0x5c4dd124), 7) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F4(dd, ee, aa) + X[4] + unchecked((int)0x5c4dd124), 6) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F4(cc, dd, ee) + X[9] + unchecked((int)0x5c4dd124), 15) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F4(bb, cc, dd) + X[1] + unchecked((int)0x5c4dd124), 13) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F4(aa, bb, cc) + X[2] + unchecked((int)0x5c4dd124), 11) + dd; bb = RL(bb, 10);
+
+			//
+			// Rounds 32-47
+			//
+			// left
+			d = RL(d + F3(e, a, b) + X[3] + unchecked((int)0x6ed9eba1), 11) + c; a = RL(a, 10);
+			c = RL(c + F3(d, e, a) + X[10] + unchecked((int)0x6ed9eba1), 13) + b; e = RL(e, 10);
+			b = RL(b + F3(c, d, e) + X[14] + unchecked((int)0x6ed9eba1), 6) + a; d = RL(d, 10);
+			a = RL(a + F3(b, c, d) + X[4] + unchecked((int)0x6ed9eba1), 7) + e; c = RL(c, 10);
+			e = RL(e + F3(a, b, c) + X[9] + unchecked((int)0x6ed9eba1), 14) + d; b = RL(b, 10);
+			d = RL(d + F3(e, a, b) + X[15] + unchecked((int)0x6ed9eba1), 9) + c; a = RL(a, 10);
+			c = RL(c + F3(d, e, a) + X[8] + unchecked((int)0x6ed9eba1), 13) + b; e = RL(e, 10);
+			b = RL(b + F3(c, d, e) + X[1] + unchecked((int)0x6ed9eba1), 15) + a; d = RL(d, 10);
+			a = RL(a + F3(b, c, d) + X[2] + unchecked((int)0x6ed9eba1), 14) + e; c = RL(c, 10);
+			e = RL(e + F3(a, b, c) + X[7] + unchecked((int)0x6ed9eba1), 8) + d; b = RL(b, 10);
+			d = RL(d + F3(e, a, b) + X[0] + unchecked((int)0x6ed9eba1), 13) + c; a = RL(a, 10);
+			c = RL(c + F3(d, e, a) + X[6] + unchecked((int)0x6ed9eba1), 6) + b; e = RL(e, 10);
+			b = RL(b + F3(c, d, e) + X[13] + unchecked((int)0x6ed9eba1), 5) + a; d = RL(d, 10);
+			a = RL(a + F3(b, c, d) + X[11] + unchecked((int)0x6ed9eba1), 12) + e; c = RL(c, 10);
+			e = RL(e + F3(a, b, c) + X[5] + unchecked((int)0x6ed9eba1), 7) + d; b = RL(b, 10);
+			d = RL(d + F3(e, a, b) + X[12] + unchecked((int)0x6ed9eba1), 5) + c; a = RL(a, 10);
+
+			// right
+			dd = RL(dd + F3(ee, aa, bb) + X[15] + unchecked((int)0x6d703ef3), 9) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F3(dd, ee, aa) + X[5] + unchecked((int)0x6d703ef3), 7) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F3(cc, dd, ee) + X[1] + unchecked((int)0x6d703ef3), 15) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F3(bb, cc, dd) + X[3] + unchecked((int)0x6d703ef3), 11) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F3(aa, bb, cc) + X[7] + unchecked((int)0x6d703ef3), 8) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F3(ee, aa, bb) + X[14] + unchecked((int)0x6d703ef3), 6) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F3(dd, ee, aa) + X[6] + unchecked((int)0x6d703ef3), 6) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F3(cc, dd, ee) + X[9] + unchecked((int)0x6d703ef3), 14) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F3(bb, cc, dd) + X[11] + unchecked((int)0x6d703ef3), 12) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F3(aa, bb, cc) + X[8] + unchecked((int)0x6d703ef3), 13) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F3(ee, aa, bb) + X[12] + unchecked((int)0x6d703ef3), 5) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F3(dd, ee, aa) + X[2] + unchecked((int)0x6d703ef3), 14) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F3(cc, dd, ee) + X[10] + unchecked((int)0x6d703ef3), 13) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F3(bb, cc, dd) + X[0] + unchecked((int)0x6d703ef3), 13) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F3(aa, bb, cc) + X[4] + unchecked((int)0x6d703ef3), 7) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F3(ee, aa, bb) + X[13] + unchecked((int)0x6d703ef3), 5) + cc; aa = RL(aa, 10);
+
+			//
+			// Rounds 48-63
+			//
+			// left
+			c = RL(c + F4(d, e, a) + X[1] + unchecked((int)0x8f1bbcdc), 11) + b; e = RL(e, 10);
+			b = RL(b + F4(c, d, e) + X[9] + unchecked((int)0x8f1bbcdc), 12) + a; d = RL(d, 10);
+			a = RL(a + F4(b, c, d) + X[11] + unchecked((int)0x8f1bbcdc), 14) + e; c = RL(c, 10);
+			e = RL(e + F4(a, b, c) + X[10] + unchecked((int)0x8f1bbcdc), 15) + d; b = RL(b, 10);
+			d = RL(d + F4(e, a, b) + X[0] + unchecked((int)0x8f1bbcdc), 14) + c; a = RL(a, 10);
+			c = RL(c + F4(d, e, a) + X[8] + unchecked((int)0x8f1bbcdc), 15) + b; e = RL(e, 10);
+			b = RL(b + F4(c, d, e) + X[12] + unchecked((int)0x8f1bbcdc), 9) + a; d = RL(d, 10);
+			a = RL(a + F4(b, c, d) + X[4] + unchecked((int)0x8f1bbcdc), 8) + e; c = RL(c, 10);
+			e = RL(e + F4(a, b, c) + X[13] + unchecked((int)0x8f1bbcdc), 9) + d; b = RL(b, 10);
+			d = RL(d + F4(e, a, b) + X[3] + unchecked((int)0x8f1bbcdc), 14) + c; a = RL(a, 10);
+			c = RL(c + F4(d, e, a) + X[7] + unchecked((int)0x8f1bbcdc), 5) + b; e = RL(e, 10);
+			b = RL(b + F4(c, d, e) + X[15] + unchecked((int)0x8f1bbcdc), 6) + a; d = RL(d, 10);
+			a = RL(a + F4(b, c, d) + X[14] + unchecked((int)0x8f1bbcdc), 8) + e; c = RL(c, 10);
+			e = RL(e + F4(a, b, c) + X[5] + unchecked((int)0x8f1bbcdc), 6) + d; b = RL(b, 10);
+			d = RL(d + F4(e, a, b) + X[6] + unchecked((int)0x8f1bbcdc), 5) + c; a = RL(a, 10);
+			c = RL(c + F4(d, e, a) + X[2] + unchecked((int)0x8f1bbcdc), 12) + b; e = RL(e, 10);
+
+			// right
+			cc = RL(cc + F2(dd, ee, aa) + X[8] + unchecked((int)0x7a6d76e9), 15) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F2(cc, dd, ee) + X[6] + unchecked((int)0x7a6d76e9), 5) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F2(bb, cc, dd) + X[4] + unchecked((int)0x7a6d76e9), 8) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F2(aa, bb, cc) + X[1] + unchecked((int)0x7a6d76e9), 11) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F2(ee, aa, bb) + X[3] + unchecked((int)0x7a6d76e9), 14) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F2(dd, ee, aa) + X[11] + unchecked((int)0x7a6d76e9), 14) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F2(cc, dd, ee) + X[15] + unchecked((int)0x7a6d76e9), 6) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F2(bb, cc, dd) + X[0] + unchecked((int)0x7a6d76e9), 14) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F2(aa, bb, cc) + X[5] + unchecked((int)0x7a6d76e9), 6) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F2(ee, aa, bb) + X[12] + unchecked((int)0x7a6d76e9), 9) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F2(dd, ee, aa) + X[2] + unchecked((int)0x7a6d76e9), 12) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F2(cc, dd, ee) + X[13] + unchecked((int)0x7a6d76e9), 9) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F2(bb, cc, dd) + X[9] + unchecked((int)0x7a6d76e9), 12) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F2(aa, bb, cc) + X[7] + unchecked((int)0x7a6d76e9), 5) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F2(ee, aa, bb) + X[10] + unchecked((int)0x7a6d76e9), 15) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F2(dd, ee, aa) + X[14] + unchecked((int)0x7a6d76e9), 8) + bb; ee = RL(ee, 10);
+
+			//
+			// Rounds 64-79
+			//
+			// left
+			b = RL(b + F5(c, d, e) + X[4] + unchecked((int)0xa953fd4e), 9) + a; d = RL(d, 10);
+			a = RL(a + F5(b, c, d) + X[0] + unchecked((int)0xa953fd4e), 15) + e; c = RL(c, 10);
+			e = RL(e + F5(a, b, c) + X[5] + unchecked((int)0xa953fd4e), 5) + d; b = RL(b, 10);
+			d = RL(d + F5(e, a, b) + X[9] + unchecked((int)0xa953fd4e), 11) + c; a = RL(a, 10);
+			c = RL(c + F5(d, e, a) + X[7] + unchecked((int)0xa953fd4e), 6) + b; e = RL(e, 10);
+			b = RL(b + F5(c, d, e) + X[12] + unchecked((int)0xa953fd4e), 8) + a; d = RL(d, 10);
+			a = RL(a + F5(b, c, d) + X[2] + unchecked((int)0xa953fd4e), 13) + e; c = RL(c, 10);
+			e = RL(e + F5(a, b, c) + X[10] + unchecked((int)0xa953fd4e), 12) + d; b = RL(b, 10);
+			d = RL(d + F5(e, a, b) + X[14] + unchecked((int)0xa953fd4e), 5) + c; a = RL(a, 10);
+			c = RL(c + F5(d, e, a) + X[1] + unchecked((int)0xa953fd4e), 12) + b; e = RL(e, 10);
+			b = RL(b + F5(c, d, e) + X[3] + unchecked((int)0xa953fd4e), 13) + a; d = RL(d, 10);
+			a = RL(a + F5(b, c, d) + X[8] + unchecked((int)0xa953fd4e), 14) + e; c = RL(c, 10);
+			e = RL(e + F5(a, b, c) + X[11] + unchecked((int)0xa953fd4e), 11) + d; b = RL(b, 10);
+			d = RL(d + F5(e, a, b) + X[6] + unchecked((int)0xa953fd4e), 8) + c; a = RL(a, 10);
+			c = RL(c + F5(d, e, a) + X[15] + unchecked((int)0xa953fd4e), 5) + b; e = RL(e, 10);
+			b = RL(b + F5(c, d, e) + X[13] + unchecked((int)0xa953fd4e), 6) + a; d = RL(d, 10);
+
+			// right
+			bb = RL(bb + F1(cc, dd, ee) + X[12], 8) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F1(bb, cc, dd) + X[15], 5) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F1(aa, bb, cc) + X[10], 12) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F1(ee, aa, bb) + X[4], 9) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F1(dd, ee, aa) + X[1], 12) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F1(cc, dd, ee) + X[5], 5) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F1(bb, cc, dd) + X[8], 14) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F1(aa, bb, cc) + X[7], 6) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F1(ee, aa, bb) + X[6], 8) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F1(dd, ee, aa) + X[2], 13) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F1(cc, dd, ee) + X[13], 6) + aa; dd = RL(dd, 10);
+			aa = RL(aa + F1(bb, cc, dd) + X[14], 5) + ee; cc = RL(cc, 10);
+			ee = RL(ee + F1(aa, bb, cc) + X[0], 15) + dd; bb = RL(bb, 10);
+			dd = RL(dd + F1(ee, aa, bb) + X[3], 13) + cc; aa = RL(aa, 10);
+			cc = RL(cc + F1(dd, ee, aa) + X[9], 11) + bb; ee = RL(ee, 10);
+			bb = RL(bb + F1(cc, dd, ee) + X[11], 11) + aa; dd = RL(dd, 10);
+
+			dd += c + H1;
+			H1 = H2 + d + ee;
+			H2 = H3 + e + aa;
+			H3 = H4 + a + bb;
+			H4 = H0 + b + cc;
+			H0 = dd;
+
+			//
+			// reset the offset and clean out the word buffer.
+			//
+			this._offset = 0;
+			for (var i = 0; i < this.X.Length; i++)
+				this.X[i] = 0;
+		}
+	}
+	#endregion
+
+	#region RIPEMD160
+	/// <summary>
+	/// Cryptographic hash function based upon the Merkle–Damgård construction.
+	/// </summary>
+	public sealed class RIPEMD160 : HashAlgorithm
+	{
+		/// <summary>
+		/// Creates a new instance of the <see cref="RIPEMD160"/> class.
+		/// </summary>
+		/// <returns></returns>
 		public new static RIPEMD160 Create()
 		{
 			return new RIPEMD160();
 		}
 
-		public new static RIPEMD160 Create(string hashname)
+		/// <summary>
+		/// Creates a new instance of the <see cref="RIPEMD160"/> class.
+		/// </summary>
+		/// <param name="hashName"></param>
+		/// <returns></returns>
+		public new static RIPEMD160 Create(string hashName)
 		{
 			return new RIPEMD160();
 		}
 
-		static public UInt32 ReadUInt32(byte[] buffer, long offset)
-		{
-			return
-				(Convert.ToUInt32(buffer[3 + offset]) << 24) |
-				(Convert.ToUInt32(buffer[2 + offset]) << 16) |
-				(Convert.ToUInt32(buffer[1 + offset]) << 8) |
-				(Convert.ToUInt32(buffer[0 + offset]));
-		}
+		IHashProvider _hashProvider;
 
-		static UInt32 RotateLeft(UInt32 value, int bits)
-		{
-			return (value << bits) | (value >> (32 - bits));
-		}
-
-		/* the five basic functions F(), G() and H() */
-		static UInt32 F(UInt32 x, UInt32 y, UInt32 z)
-		{
-			return x ^ y ^ z;
-		}
-
-		static UInt32 G(UInt32 x, UInt32 y, UInt32 z)
-		{
-			return (x & y) | (~x & z);
-		}
-
-		static UInt32 H(UInt32 x, UInt32 y, UInt32 z)
-		{
-			return (x | ~y) ^ z;
-		}
-
-		static UInt32 I(UInt32 x, UInt32 y, UInt32 z)
-		{
-			return (x & z) | (y & ~z);
-		}
-
-		static UInt32 J(UInt32 x, UInt32 y, UInt32 z)
-		{
-			return x ^ (y | ~z);
-		}
-
-		/* the ten basic operations FF() through III() */
-
-		static void FF(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += F(b, c, d) + x;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-
-		static void GG(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += G(b, c, d) + x + (UInt32)0x5a827999;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-
-		static void HH(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += H(b, c, d) + x + (UInt32)0x6ed9eba1;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void II(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += I(b, c, d) + x + (UInt32)0x8f1bbcdc;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void JJ(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += J(b, c, d) + x + (UInt32)0xa953fd4e;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void FFF(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += F(b, c, d) + x;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void GGG(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += G(b, c, d) + x + (UInt32)0x7a6d76e9;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void HHH(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += H(b, c, d) + x + (UInt32)0x6d703ef3;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void III(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += I(b, c, d) + x + (UInt32)0x5c4dd124;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		static void JJJ(ref UInt32 a, UInt32 b, ref UInt32 c, UInt32 d, UInt32 e, UInt32 x, int s)
-		{
-			a += J(b, c, d) + x + (UInt32)0x50a28be6;
-			a = RotateLeft(a, s) + e;
-			c = RotateLeft(c, 10);
-		}
-
-		/// initializes MDbuffer to "magic constants"
-		static public void MDinit(ref UInt32[] MDbuf)
-		{
-			MDbuf[0] = (UInt32)0x67452301;
-			MDbuf[1] = (UInt32)0xefcdab89;
-			MDbuf[2] = (UInt32)0x98badcfe;
-			MDbuf[3] = (UInt32)0x10325476;
-			MDbuf[4] = (UInt32)0xc3d2e1f0;
-		}
-
-		///  the compression function.
-		///  transforms MDbuf using message bytes X[0] through X[15]
-		static public void compress(ref UInt32[] MDbuf, UInt32[] X)
-		{
-			UInt32 aa = MDbuf[0];
-			UInt32 bb = MDbuf[1];
-			UInt32 cc = MDbuf[2];
-			UInt32 dd = MDbuf[3];
-			UInt32 ee = MDbuf[4];
-			UInt32 aaa = MDbuf[0];
-			UInt32 bbb = MDbuf[1];
-			UInt32 ccc = MDbuf[2];
-			UInt32 ddd = MDbuf[3];
-			UInt32 eee = MDbuf[4];
-
-			/* round 1 */
-			FF(ref aa, bb, ref cc, dd, ee, X[0], 11);
-			FF(ref ee, aa, ref bb, cc, dd, X[1], 14);
-			FF(ref dd, ee, ref aa, bb, cc, X[2], 15);
-			FF(ref cc, dd, ref ee, aa, bb, X[3], 12);
-			FF(ref bb, cc, ref dd, ee, aa, X[4], 5);
-			FF(ref aa, bb, ref cc, dd, ee, X[5], 8);
-			FF(ref ee, aa, ref bb, cc, dd, X[6], 7);
-			FF(ref dd, ee, ref aa, bb, cc, X[7], 9);
-			FF(ref cc, dd, ref ee, aa, bb, X[8], 11);
-			FF(ref bb, cc, ref dd, ee, aa, X[9], 13);
-			FF(ref aa, bb, ref cc, dd, ee, X[10], 14);
-			FF(ref ee, aa, ref bb, cc, dd, X[11], 15);
-			FF(ref dd, ee, ref aa, bb, cc, X[12], 6);
-			FF(ref cc, dd, ref ee, aa, bb, X[13], 7);
-			FF(ref bb, cc, ref dd, ee, aa, X[14], 9);
-			FF(ref aa, bb, ref cc, dd, ee, X[15], 8);
-
-			/* round 2 */
-			GG(ref ee, aa, ref bb, cc, dd, X[7], 7);
-			GG(ref dd, ee, ref aa, bb, cc, X[4], 6);
-			GG(ref cc, dd, ref ee, aa, bb, X[13], 8);
-			GG(ref bb, cc, ref dd, ee, aa, X[1], 13);
-			GG(ref aa, bb, ref cc, dd, ee, X[10], 11);
-			GG(ref ee, aa, ref bb, cc, dd, X[6], 9);
-			GG(ref dd, ee, ref aa, bb, cc, X[15], 7);
-			GG(ref cc, dd, ref ee, aa, bb, X[3], 15);
-			GG(ref bb, cc, ref dd, ee, aa, X[12], 7);
-			GG(ref aa, bb, ref cc, dd, ee, X[0], 12);
-			GG(ref ee, aa, ref bb, cc, dd, X[9], 15);
-			GG(ref dd, ee, ref aa, bb, cc, X[5], 9);
-			GG(ref cc, dd, ref ee, aa, bb, X[2], 11);
-			GG(ref bb, cc, ref dd, ee, aa, X[14], 7);
-			GG(ref aa, bb, ref cc, dd, ee, X[11], 13);
-			GG(ref ee, aa, ref bb, cc, dd, X[8], 12);
-
-			/* round 3 */
-			HH(ref dd, ee, ref aa, bb, cc, X[3], 11);
-			HH(ref cc, dd, ref ee, aa, bb, X[10], 13);
-			HH(ref bb, cc, ref dd, ee, aa, X[14], 6);
-			HH(ref aa, bb, ref cc, dd, ee, X[4], 7);
-			HH(ref ee, aa, ref bb, cc, dd, X[9], 14);
-			HH(ref dd, ee, ref aa, bb, cc, X[15], 9);
-			HH(ref cc, dd, ref ee, aa, bb, X[8], 13);
-			HH(ref bb, cc, ref dd, ee, aa, X[1], 15);
-			HH(ref aa, bb, ref cc, dd, ee, X[2], 14);
-			HH(ref ee, aa, ref bb, cc, dd, X[7], 8);
-			HH(ref dd, ee, ref aa, bb, cc, X[0], 13);
-			HH(ref cc, dd, ref ee, aa, bb, X[6], 6);
-			HH(ref bb, cc, ref dd, ee, aa, X[13], 5);
-			HH(ref aa, bb, ref cc, dd, ee, X[11], 12);
-			HH(ref ee, aa, ref bb, cc, dd, X[5], 7);
-			HH(ref dd, ee, ref aa, bb, cc, X[12], 5);
-
-			/* round 4 */
-			II(ref cc, dd, ref ee, aa, bb, X[1], 11);
-			II(ref bb, cc, ref dd, ee, aa, X[9], 12);
-			II(ref aa, bb, ref cc, dd, ee, X[11], 14);
-			II(ref ee, aa, ref bb, cc, dd, X[10], 15);
-			II(ref dd, ee, ref aa, bb, cc, X[0], 14);
-			II(ref cc, dd, ref ee, aa, bb, X[8], 15);
-			II(ref bb, cc, ref dd, ee, aa, X[12], 9);
-			II(ref aa, bb, ref cc, dd, ee, X[4], 8);
-			II(ref ee, aa, ref bb, cc, dd, X[13], 9);
-			II(ref dd, ee, ref aa, bb, cc, X[3], 14);
-			II(ref cc, dd, ref ee, aa, bb, X[7], 5);
-			II(ref bb, cc, ref dd, ee, aa, X[15], 6);
-			II(ref aa, bb, ref cc, dd, ee, X[14], 8);
-			II(ref ee, aa, ref bb, cc, dd, X[5], 6);
-			II(ref dd, ee, ref aa, bb, cc, X[6], 5);
-			II(ref cc, dd, ref ee, aa, bb, X[2], 12);
-
-			/* round 5 */
-			JJ(ref bb, cc, ref dd, ee, aa, X[4], 9);
-			JJ(ref aa, bb, ref cc, dd, ee, X[0], 15);
-			JJ(ref ee, aa, ref bb, cc, dd, X[5], 5);
-			JJ(ref dd, ee, ref aa, bb, cc, X[9], 11);
-			JJ(ref cc, dd, ref ee, aa, bb, X[7], 6);
-			JJ(ref bb, cc, ref dd, ee, aa, X[12], 8);
-			JJ(ref aa, bb, ref cc, dd, ee, X[2], 13);
-			JJ(ref ee, aa, ref bb, cc, dd, X[10], 12);
-			JJ(ref dd, ee, ref aa, bb, cc, X[14], 5);
-			JJ(ref cc, dd, ref ee, aa, bb, X[1], 12);
-			JJ(ref bb, cc, ref dd, ee, aa, X[3], 13);
-			JJ(ref aa, bb, ref cc, dd, ee, X[8], 14);
-			JJ(ref ee, aa, ref bb, cc, dd, X[11], 11);
-			JJ(ref dd, ee, ref aa, bb, cc, X[6], 8);
-			JJ(ref cc, dd, ref ee, aa, bb, X[15], 5);
-			JJ(ref bb, cc, ref dd, ee, aa, X[13], 6);
-
-			/* parallel round 1 */
-			JJJ(ref aaa, bbb, ref ccc, ddd, eee, X[5], 8);
-			JJJ(ref eee, aaa, ref bbb, ccc, ddd, X[14], 9);
-			JJJ(ref ddd, eee, ref aaa, bbb, ccc, X[7], 9);
-			JJJ(ref ccc, ddd, ref eee, aaa, bbb, X[0], 11);
-			JJJ(ref bbb, ccc, ref ddd, eee, aaa, X[9], 13);
-			JJJ(ref aaa, bbb, ref ccc, ddd, eee, X[2], 15);
-			JJJ(ref eee, aaa, ref bbb, ccc, ddd, X[11], 15);
-			JJJ(ref ddd, eee, ref aaa, bbb, ccc, X[4], 5);
-			JJJ(ref ccc, ddd, ref eee, aaa, bbb, X[13], 7);
-			JJJ(ref bbb, ccc, ref ddd, eee, aaa, X[6], 7);
-			JJJ(ref aaa, bbb, ref ccc, ddd, eee, X[15], 8);
-			JJJ(ref eee, aaa, ref bbb, ccc, ddd, X[8], 11);
-			JJJ(ref ddd, eee, ref aaa, bbb, ccc, X[1], 14);
-			JJJ(ref ccc, ddd, ref eee, aaa, bbb, X[10], 14);
-			JJJ(ref bbb, ccc, ref ddd, eee, aaa, X[3], 12);
-			JJJ(ref aaa, bbb, ref ccc, ddd, eee, X[12], 6);
-
-			/* parallel round 2 */
-			III(ref eee, aaa, ref bbb, ccc, ddd, X[6], 9);
-			III(ref ddd, eee, ref aaa, bbb, ccc, X[11], 13);
-			III(ref ccc, ddd, ref eee, aaa, bbb, X[3], 15);
-			III(ref bbb, ccc, ref ddd, eee, aaa, X[7], 7);
-			III(ref aaa, bbb, ref ccc, ddd, eee, X[0], 12);
-			III(ref eee, aaa, ref bbb, ccc, ddd, X[13], 8);
-			III(ref ddd, eee, ref aaa, bbb, ccc, X[5], 9);
-			III(ref ccc, ddd, ref eee, aaa, bbb, X[10], 11);
-			III(ref bbb, ccc, ref ddd, eee, aaa, X[14], 7);
-			III(ref aaa, bbb, ref ccc, ddd, eee, X[15], 7);
-			III(ref eee, aaa, ref bbb, ccc, ddd, X[8], 12);
-			III(ref ddd, eee, ref aaa, bbb, ccc, X[12], 7);
-			III(ref ccc, ddd, ref eee, aaa, bbb, X[4], 6);
-			III(ref bbb, ccc, ref ddd, eee, aaa, X[9], 15);
-			III(ref aaa, bbb, ref ccc, ddd, eee, X[1], 13);
-			III(ref eee, aaa, ref bbb, ccc, ddd, X[2], 11);
-
-			/* parallel round 3 */
-			HHH(ref ddd, eee, ref aaa, bbb, ccc, X[15], 9);
-			HHH(ref ccc, ddd, ref eee, aaa, bbb, X[5], 7);
-			HHH(ref bbb, ccc, ref ddd, eee, aaa, X[1], 15);
-			HHH(ref aaa, bbb, ref ccc, ddd, eee, X[3], 11);
-			HHH(ref eee, aaa, ref bbb, ccc, ddd, X[7], 8);
-			HHH(ref ddd, eee, ref aaa, bbb, ccc, X[14], 6);
-			HHH(ref ccc, ddd, ref eee, aaa, bbb, X[6], 6);
-			HHH(ref bbb, ccc, ref ddd, eee, aaa, X[9], 14);
-			HHH(ref aaa, bbb, ref ccc, ddd, eee, X[11], 12);
-			HHH(ref eee, aaa, ref bbb, ccc, ddd, X[8], 13);
-			HHH(ref ddd, eee, ref aaa, bbb, ccc, X[12], 5);
-			HHH(ref ccc, ddd, ref eee, aaa, bbb, X[2], 14);
-			HHH(ref bbb, ccc, ref ddd, eee, aaa, X[10], 13);
-			HHH(ref aaa, bbb, ref ccc, ddd, eee, X[0], 13);
-			HHH(ref eee, aaa, ref bbb, ccc, ddd, X[4], 7);
-			HHH(ref ddd, eee, ref aaa, bbb, ccc, X[13], 5);
-
-			/* parallel round 4 */
-			GGG(ref ccc, ddd, ref eee, aaa, bbb, X[8], 15);
-			GGG(ref bbb, ccc, ref ddd, eee, aaa, X[6], 5);
-			GGG(ref aaa, bbb, ref ccc, ddd, eee, X[4], 8);
-			GGG(ref eee, aaa, ref bbb, ccc, ddd, X[1], 11);
-			GGG(ref ddd, eee, ref aaa, bbb, ccc, X[3], 14);
-			GGG(ref ccc, ddd, ref eee, aaa, bbb, X[11], 14);
-			GGG(ref bbb, ccc, ref ddd, eee, aaa, X[15], 6);
-			GGG(ref aaa, bbb, ref ccc, ddd, eee, X[0], 14);
-			GGG(ref eee, aaa, ref bbb, ccc, ddd, X[5], 6);
-			GGG(ref ddd, eee, ref aaa, bbb, ccc, X[12], 9);
-			GGG(ref ccc, ddd, ref eee, aaa, bbb, X[2], 12);
-			GGG(ref bbb, ccc, ref ddd, eee, aaa, X[13], 9);
-			GGG(ref aaa, bbb, ref ccc, ddd, eee, X[9], 12);
-			GGG(ref eee, aaa, ref bbb, ccc, ddd, X[7], 5);
-			GGG(ref ddd, eee, ref aaa, bbb, ccc, X[10], 15);
-			GGG(ref ccc, ddd, ref eee, aaa, bbb, X[14], 8);
-
-			/* parallel round 5 */
-			FFF(ref bbb, ccc, ref ddd, eee, aaa, X[12], 8);
-			FFF(ref aaa, bbb, ref ccc, ddd, eee, X[15], 5);
-			FFF(ref eee, aaa, ref bbb, ccc, ddd, X[10], 12);
-			FFF(ref ddd, eee, ref aaa, bbb, ccc, X[4], 9);
-			FFF(ref ccc, ddd, ref eee, aaa, bbb, X[1], 12);
-			FFF(ref bbb, ccc, ref ddd, eee, aaa, X[5], 5);
-			FFF(ref aaa, bbb, ref ccc, ddd, eee, X[8], 14);
-			FFF(ref eee, aaa, ref bbb, ccc, ddd, X[7], 6);
-			FFF(ref ddd, eee, ref aaa, bbb, ccc, X[6], 8);
-			FFF(ref ccc, ddd, ref eee, aaa, bbb, X[2], 13);
-			FFF(ref bbb, ccc, ref ddd, eee, aaa, X[13], 6);
-			FFF(ref aaa, bbb, ref ccc, ddd, eee, X[14], 5);
-			FFF(ref eee, aaa, ref bbb, ccc, ddd, X[0], 15);
-			FFF(ref ddd, eee, ref aaa, bbb, ccc, X[3], 13);
-			FFF(ref ccc, ddd, ref eee, aaa, bbb, X[9], 11);
-			FFF(ref bbb, ccc, ref ddd, eee, aaa, X[11], 11);
-
-			// combine results */
-			ddd += cc + MDbuf[1];               /* final result for MDbuf[0] */
-			MDbuf[1] = MDbuf[2] + dd + eee;
-			MDbuf[2] = MDbuf[3] + ee + aaa;
-			MDbuf[3] = MDbuf[4] + aa + bbb;
-			MDbuf[4] = MDbuf[0] + bb + ccc;
-			MDbuf[0] = ddd;
-		}
-
-		///  puts bytes from strptr into X and pad out; appends length 
-		///  and finally, compresses the last block(s)
-		///  note: length in bits == 8 * (lswlen + 2^32 mswlen).
-		///  note: there are (lswlen mod 64) bytes left in strptr.
-		static public void MDfinish(ref UInt32[] MDbuf, byte[] strptr, long index, UInt32 lswlen, UInt32 mswlen)
-		{
-			//UInt32 i;                                 /* counter       */
-			var X = Enumerable.Repeat((UInt32)0, 16).ToArray();                             /* message words */
-
-
-			/* put bytes from strptr into X */
-			for (var i = 0; i < (lswlen & 63); i++)
-			{
-				/* byte i goes into word X[i div 4] at pos.  8*(i mod 4)  */
-				X[i >> 2] ^= Convert.ToUInt32(strptr[i + index]) << (8 * (i & 3));
-			}
-
-			/* append the bit m_n == 1 */
-			X[(lswlen >> 2) & 15] ^= (UInt32)1 << Convert.ToInt32(8 * (lswlen & 3) + 7);
-
-			if ((lswlen & 63) > 55)
-			{
-				/* length goes to next block */
-				compress(ref MDbuf, X);
-				X = Enumerable.Repeat((UInt32)0, 16).ToArray();
-			}
-
-			/* append length in bits*/
-			X[14] = lswlen << 3;
-			X[15] = (lswlen >> 29) | (mswlen << 3);
-			compress(ref MDbuf, X);
-		}
-		static int RMDsize = 160;
-		UInt32[] MDbuf = new UInt32[RMDsize / 32];
-		UInt32[] X = new UInt32[16];               /* current 16-word chunk        */
-		byte[] UnhashedBuffer = new byte[64];
-		int UnhashedBufferLength = 0;
-		long HashedLength = 0;
-
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RIPEMD160"/> class.
+		/// </summary>
 		public RIPEMD160()
 		{
-			Initialize();
+			this._hashProvider = new RIPEMD160HashProvider();
 		}
 
+		/// <summary>
+		/// Gets the size, in bits, of the computed hash code.
+		/// </summary>
+		/// <returns>
+		/// The size, in bits, of the computed hash code.
+		/// </returns>
+		public override int HashSize
+		{
+			get
+			{
+				return this._hashProvider.HashSize;
+			}
+		}
+
+		/// <summary>
+		/// Routes data written to the object into the hash algorithm for computing the hash.
+		/// </summary>
+		/// <param name="array">The input to compute the hash code for.</param>
+		/// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
+		/// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
 		protected override void HashCore(byte[] array, int ibStart, int cbSize)
 		{
-			var index = 0;
-			while (index < cbSize)
-			{
-				var bytesRemaining = cbSize - index;
-				if (UnhashedBufferLength > 0)
-				{
-					if ((bytesRemaining + UnhashedBufferLength) >= (UnhashedBuffer.Length))
-					{
-						Array.Copy(array, ibStart + index, UnhashedBuffer, UnhashedBufferLength, (UnhashedBuffer.Length) - UnhashedBufferLength);
-						index += (UnhashedBuffer.Length) - UnhashedBufferLength;
-						UnhashedBufferLength = UnhashedBuffer.Length;
-
-						for (var i = 0; i < 16; i++)
-							X[i] = ReadUInt32(UnhashedBuffer, i * 4);
-
-						compress(ref MDbuf, X);
-						UnhashedBufferLength = 0;
-					}
-					else
-					{
-						Array.Copy(array, ibStart + index, UnhashedBuffer, UnhashedBufferLength, bytesRemaining);
-						UnhashedBufferLength += bytesRemaining;
-						index += bytesRemaining;
-					}
-				}
-				else
-				{
-					if (bytesRemaining >= (UnhashedBuffer.Length))
-					{
-						for (var i = 0; i < 16; i++)
-							X[i] = ReadUInt32(array, index + (i * 4));
-						index += UnhashedBuffer.Length;
-
-						compress(ref MDbuf, X);
-					}
-					else
-					{
-						Array.Copy(array, ibStart + index, UnhashedBuffer, 0, bytesRemaining);
-						UnhashedBufferLength = bytesRemaining;
-						index += bytesRemaining;
-					}
-				}
-			}
-
-			HashedLength += cbSize;
+			this._hashProvider.HashCore(array, ibStart, cbSize);
 		}
 
+		/// <summary>
+		/// Finalizes the hash computation after the last data is processed by the cryptographic stream object.
+		/// </summary>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
 		protected override byte[] HashFinal()
 		{
-			MDfinish(ref MDbuf, UnhashedBuffer, 0, Convert.ToUInt32(HashedLength), 0);
-
-			var result = new byte[RMDsize / 8];
-
-			for (var i = 0; i < RMDsize / 8; i += 4)
-			{
-				result[i] = Convert.ToByte(MDbuf[i >> 2] & 0xFF);         /* implicit cast to byte  */
-				result[i + 1] = Convert.ToByte((MDbuf[i >> 2] >> 8) & 0xFF);  /*  extracts the 8 least  */
-				result[i + 2] = Convert.ToByte((MDbuf[i >> 2] >> 16) & 0xFF);  /*  significant bits.     */
-				result[i + 3] = Convert.ToByte((MDbuf[i >> 2] >> 24) & 0xFF);
-			}
-
-			return result;
+			return this._hashProvider.HashFinal();
 		}
 
+		/// <summary>
+		/// Initializes an implementation of the <see cref="HashAlgorithm"/> class.
+		/// </summary>
 		public override void Initialize()
 		{
-			MDinit(ref MDbuf);
-			X = Enumerable.Repeat((UInt32)0, 16).ToArray();
-			HashedLength = 0;
-			UnhashedBufferLength = 0;
+			this._hashProvider.Reset();
+		}
+
+		/// <summary>
+		/// Releases the unmanaged resources used by the <see cref="RIPEMD160"/> and optionally releases the managed resources.
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
+			if (disposing)
+			{
+				this._hashProvider.Dispose();
+				this._hashProvider = null;
+			}
+		}
+	}
+	#endregion
+
+	#region HMAC RIPEMD160
+	// SshNet.Security.Cryptography - https://github.com/sshnet/Cryptography
+	/// <summary>
+	/// Computes a Hash-based Message Authentication Code (HMAC) by using the <see cref="RIPEMD160"/> hash function.
+	/// </summary>
+	public sealed class HMACRIPEMD160 : HMAC
+	{
+		IHashProvider _hashProvider;
+		byte[] _innerPadding;
+		byte[] _outerPadding;
+		readonly int _hashSize;
+
+		/// <summary>
+		/// Holds value indicating whether the inner padding was already written.
+		/// </summary>
+		bool _innerPaddingWritten;
+
+		/// <summary>
+		/// Gets or sets the block size, in bytes, to use in the hash value.
+		/// </summary>
+		/// <value>
+		/// The block size to use in the hash value. For <see cref="HMACRIPEMD160"/> this is 64 bytes.
+		/// </value>
+		protected int BlockSize
+		{
+			get { return 64; }
+		}
+
+		/// <summary>
+		/// Gets the size, in bits, of the computed hash code.
+		/// </summary>
+		/// <value>
+		/// The size, in bits, of the computed hash code.
+		/// </value>
+		public override int HashSize
+		{
+			get { return this._hashSize; }
+		}
+
+		/// <summary>
+		/// Gets or sets the key to use in the hash algorithm.
+		/// </summary>
+		/// <returns>
+		/// The key to use in the hash algorithm.
+		/// </returns>
+		public override byte[] Key
+		{
+			get
+			{
+				return base.Key;
+			}
+			set
+			{
+				this.SetKey(value);
+			}
+		}
+
+		/// <summary>
+		/// Initializes a <see cref="HMACRIPEMD160"/> with the specified key.
+		/// </summary>
+		/// <param name="key">The key.</param>
+		public HMACRIPEMD160(byte[] key)
+		{
+			this._hashProvider = new RIPEMD160HashProvider();
+			this._hashSize = this._hashProvider.HashSize;
+			this.SetKey(key);
+		}
+
+		/// <summary>
+		/// Initializes an implementation of the <see cref="T:System.Security.Cryptography.HashAlgorithm" /> class.
+		/// </summary>
+		public override void Initialize()
+		{
+			this._hashProvider.Reset();
+			this._innerPaddingWritten = false;
+		}
+
+		/// <summary>
+		/// Hashes the core.
+		/// </summary>
+		/// <param name="rgb">The RGB.</param>
+		/// <param name="ib">The ib.</param>
+		/// <param name="cb">The cb.</param>
+		protected override void HashCore(byte[] rgb, int ib, int cb)
+		{
+			if (!this._innerPaddingWritten)
+			{
+				// write the inner padding
+				this._hashProvider.TransformBlock(this._innerPadding, 0, BlockSize, _innerPadding, 0);
+
+				// ensure we only write inner padding once
+				this._innerPaddingWritten = true;
+			}
+
+			this._hashProvider.HashCore(rgb, ib, cb);
+		}
+
+		/// <summary>
+		/// Finalizes the hash computation after the last data is processed by the cryptographic stream object.
+		/// </summary>
+		/// <returns>
+		/// The computed hash code.
+		/// </returns>
+		protected override byte[] HashFinal()
+		{
+			// finalize the original hash
+			var hashValue = this._hashProvider.ComputeHash(new byte[0]);
+
+			// write the outer padding
+			this._hashProvider.TransformBlock(this._outerPadding, 0, BlockSize, _outerPadding, 0);
+
+			// write the inner hash and finalize the hash
+			this._hashProvider.TransformFinalBlock(hashValue, 0, hashValue.Length);
+
+			var hash = this._hashProvider.Hash;
+
+			return this.GetTruncatedHash(hash);
+		}
+
+		/// <summary>
+		/// Releases unmanaged and - optionally - managed resources
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged ResourceMessages.</param>
+		protected override void Dispose(bool disposing)
+		{
+			base.Dispose(disposing);
+			if (this._hashProvider != null)
+			{
+				this._hashProvider.Dispose();
+				this._hashProvider = null;
+			}
+		}
+
+		byte[] GetTruncatedHash(byte[] hash)
+		{
+			var hashSizeBytes = this.HashSize / 8;
+			if (hash.Length == hashSizeBytes)
+				return hash;
+
+			var truncatedHash = new byte[hashSizeBytes];
+			Buffer.BlockCopy(hash, 0, truncatedHash, 0, hashSizeBytes);
+			return truncatedHash;
+		}
+
+		void SetKey(byte[] value)
+		{
+			var shortenedKey = value.Length > this.BlockSize
+				? this._hashProvider.ComputeHash(value)
+				: value;
+
+			this._innerPadding = new byte[this.BlockSize];
+			this._outerPadding = new byte[this.BlockSize];
+
+			// compute inner and outer padding.
+			for (var i = 0; i < shortenedKey.Length; i++)
+			{
+				this._innerPadding[i] = (byte)(0x36 ^ shortenedKey[i]);
+				this._outerPadding[i] = (byte)(0x5C ^ shortenedKey[i]);
+			}
+
+			for (var i = shortenedKey.Length; i < BlockSize; i++)
+			{
+				this._innerPadding[i] = 0x36;
+				this._outerPadding[i] = 0x5C;
+			}
+
+			// no need to explicitly clone as this is already done in the setter
+			base.Key = shortenedKey;
 		}
 	}
 	#endregion
