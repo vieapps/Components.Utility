@@ -67,7 +67,7 @@ namespace net.vieapps.Components.Utility
 			return string.IsNullOrWhiteSpace(@string)
 				? Guid.NewGuid().ToString("N").ToLower()
 				: !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("blake")
-					? @string.GetBLAKE()
+					? @string.GetBLAKE128()
 					: @string.GetMD5();
 		}
 
