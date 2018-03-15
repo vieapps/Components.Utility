@@ -1719,7 +1719,7 @@ namespace net.vieapps.Components.Utility
 	public class Collection<TKey, TValue> : Collection, IDictionary<TKey, TValue>
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection">Collection</see> class
+		/// Initializes a new instance of the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="dictionary">The initialized values</param>
 		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()

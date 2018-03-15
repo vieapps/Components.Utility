@@ -300,7 +300,7 @@ namespace net.vieapps.Components.Utility
 
 			// add check-sum
 			if (addChecksum)
-				using (var hasher = CryptoService.GetHasher("SHA256"))
+				using (var hasher = CryptoService.GetHasher())
 				{
 					var hash = hasher.ComputeHash(hasher.ComputeHash(data));
 					var checksum = new byte[4];
@@ -350,7 +350,7 @@ namespace net.vieapps.Components.Utility
 
 			// verify & remove check-sum
 			if (verifyChecksum)
-				using (var hasher = CryptoService.GetHasher("SHA256"))
+				using (var hasher = CryptoService.GetHasher())
 				{
 					var givenChecksum = bytes.Sub(bytes.Length - 4);
 					bytes = bytes.Sub(0, bytes.Length - 4);
@@ -618,12 +618,12 @@ namespace net.vieapps.Components.Utility
 					using (var output = new MemoryStream())
 					{
 						var buffer = new byte[64];
-						var readBytes = decompressor.Read(buffer, 0, buffer.Length);
-						while (readBytes > 0)
+						var read = decompressor.Read(buffer, 0, buffer.Length);
+						while (read > 0)
 						{
-							output.Write(buffer, 0, readBytes);
+							output.Write(buffer, 0, read);
 							buffer = new byte[64];
-							readBytes = decompressor.Read(buffer, 0, buffer.Length);
+							read = decompressor.Read(buffer, 0, buffer.Length);
 						}
 						return output.GetBuffer();
 					}

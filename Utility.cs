@@ -30,7 +30,7 @@ namespace net.vieapps.Components.Utility
 	public static partial class UtilityService
 	{
 
-		#region UUID & Random number
+		#region UUID
 		/// <summary>
 		/// Gets the UUID (unique universal identity - in 128 bits)
 		/// </summary>
@@ -62,11 +62,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="mode">BLAKE or MD5</param>
 		/// <returns></returns>
-		public static string GenerateUUID(string @string, string mode = "MD5")
+		public static string GenerateUUID(this string @string, string mode = "MD5")
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? Guid.NewGuid().ToString("N").ToLower()
-				: !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("blake")
+				: !string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake")
 					? @string.GetBLAKE128()
 					: @string.GetMD5();
 		}
@@ -137,7 +137,9 @@ namespace net.vieapps.Components.Utility
 					? UtilityService._ValidHexa.Replace(uuid, "").Equals(uuid)
 					: !uuid.Contains(" ") && !uuid.Contains(";");
 		}
+		#endregion
 
+		#region Random number
 		static Random _Random = new Random();
 
 		/// <summary>
@@ -149,6 +151,18 @@ namespace net.vieapps.Components.Utility
 		public static int GetRandomNumber(int min = 0, int max = Int32.MaxValue)
 		{
 			return UtilityService._Random.Next(min, max);
+		}
+
+		static RandomBigInteger _RandomBigInteger = new RandomBigInteger();
+
+		/// <summary>
+		/// Gets the random number of big integer
+		/// </summary>
+		/// <param name="bitsLength"></param>
+		/// <returns></returns>
+		public static BigInteger GetRandomNumber(int bitsLength)
+		{
+			return UtilityService._RandomBigInteger.Next(bitsLength);
 		}
 		#endregion
 
@@ -451,6 +465,16 @@ namespace net.vieapps.Components.Utility
 						throw ex;
 				}
 			}
+		}
+
+		/// <summary>
+		/// Returns the array of unsigned bytes from which this stream was created.
+		/// </summary>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task<byte[]> GetBufferAsync(this MemoryStream stream, CancellationToken cancellationToken)
+		{
+			return UtilityService.ExecuteTask(() => stream.GetBuffer(), cancellationToken);
 		}
 		#endregion
 
@@ -2625,6 +2649,94 @@ namespace net.vieapps.Components.Utility
 
 			// return lines
 			return lines;
+		}
+	}
+	#endregion
+
+	//  --------------------------------------------------------------------------------------------
+
+	#region Random of BigInteger
+	/// <summary>
+	/// Represents a pseudo-random number generator, which is a device that produces a sequence of numbers that meet certain statistical requirements for randomness.
+	/// </summary>
+	public class RandomBigInteger : Random
+	{
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RandomBigInteger">RandomBigInteger</see> class, using a time-dependent default seed value.
+		/// </summary>
+		public RandomBigInteger() : base() { }
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="RandomBigInteger">RandomBigInteger</see> class, using the specified seed value.
+		/// </summary>
+		/// <param name="seed"></param>
+		public RandomBigInteger(int seed) : base(seed) { }
+
+		/// <summary>
+		/// Generates a random positive BigInteger between 0 and 2^bitLength (non-inclusive).
+		/// </summary>
+		/// <param name="length">The number of random bits to generate.</param>
+		/// <returns>A random positive BigInteger between 0 and 2^bitLength (non-inclusive).</returns>
+		public new BigInteger Next(int length)
+		{
+			if (length < 1)
+				return BigInteger.Zero;
+
+			var lengthOfBytes = length / 8;
+			var lengthOfBits = length % 8;
+
+			// generates enough random bytes to cover our bits
+			var bytes = new byte[lengthOfBytes + 1];
+			this.NextBytes(bytes);
+
+			// mask out the unnecessary bits
+			var mask = (byte)(0xFF >> (8 - lengthOfBits));
+			bytes[bytes.Length - 1] &= mask;
+
+			// return the BigInteger with the bits-length
+			return new BigInteger(bytes.Sub(1, bytes.Length - 1));
+		}
+
+		/// <summary>
+		/// Generates a random BigInteger between start and end (non-inclusive).
+		/// </summary>
+		/// <param name="minValue">The lower bound.</param>
+		/// <param name="maxValue">The upper bound (non-inclusive).</param>
+		/// <returns>A random BigInteger between start and end (non-inclusive)</returns>
+		public new BigInteger Next(BigInteger minValue, BigInteger maxValue)
+		{
+			// initialize
+			if (minValue == maxValue)
+				return minValue;
+
+			var bigInt = maxValue;
+
+			// swap start and end if given in reverse order
+			if (minValue > maxValue)
+			{
+				maxValue = minValue;
+				minValue = bigInt;
+				bigInt = maxValue - minValue;
+			}
+			else
+				// the distance between start and end to generate a random BigIntger between 0 and (end-start) (non-inclusive)
+				bigInt -= minValue;
+
+			// count the number of bits necessary
+			var bytes = bigInt.ToBytes();
+			var bits = 8;
+			byte mask = 0x7F;
+			while ((bytes[bytes.Length - 1] & mask) == bytes[bytes.Length - 1])
+			{
+				bits--;
+				mask >>= 1;
+			}
+			bits += 8 * bytes.Length;
+
+			// generate a random BigInteger that is the first power of 2 larger than the number, 
+			// then scale the range down to the size of the number,
+			// finally add start back on to shift back to the desired range and return.
+			return ((this.Next(bits + 1) * bigInt) / BigInteger.Pow(2, bits + 1)) + minValue;
 		}
 	}
 	#endregion

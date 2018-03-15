@@ -12,7 +12,7 @@ namespace net.vieapps.Components.Utility
 	public static partial class DateTimeService
 	{
 		/// <summary>
-		/// Unix Epoch
+		/// The Unix Epoch
 		/// </summary>
 		public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
