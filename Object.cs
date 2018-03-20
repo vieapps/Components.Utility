@@ -708,7 +708,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
-			if (object.ReferenceEquals(destination, null))
+			if (destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
 
 			@object.GetProperties(attribute => attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))).ForEach(attribute =>
@@ -741,7 +741,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
-			if (object.ReferenceEquals(source, null))
+			if (source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
 
 			@object.GetProperties(attribute => attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))).ForEach(attribute =>
@@ -774,7 +774,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
 		{
-			if (object.ReferenceEquals(json, null))
+			if (json == null)
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
 
 			var serializer = new JsonSerializer();
@@ -812,7 +812,7 @@ namespace net.vieapps.Components.Utility
 								foreach (var item in token as JObject)
 									if (gotSpecialAttributes)
 									{
-										object child = attribute.Type.GenericTypeArguments[0].CreateInstance();
+										var child = attribute.Type.GenericTypeArguments[0].CreateInstance();
 										child.CopyFrom(item.Value);
 										data.Add(JObject.FromObject(child));
 									}
@@ -859,13 +859,13 @@ namespace net.vieapps.Components.Utility
 										child.CopyFrom(item);
 										var keyValue = child.GetAttributeValue(keyAttribute);
 										if (keyValue != null)
-											data.Add(new JProperty(keyValue.ToString(), JObject.FromObject(child)));
+											data.Add(keyValue.ToString(), JObject.FromObject(child));
 									}
 									else
 									{
 										var keyValue = item[keyAttribute];
 										if (keyValue != null && keyValue is JValue && (keyValue as JValue).Value != null)
-											data.Add(new JProperty((keyValue as JValue).Value.ToString(), item));
+											data.Add((keyValue as JValue).Value.ToString(), item);
 									}
 							}
 						}
@@ -943,36 +943,37 @@ namespace net.vieapps.Components.Utility
 					continue;
 
 				// get and check the value
-				object value = null;
-				if (!expandoObject.TryGet(attribute.Name, out value))
+				if (!expandoObject.TryGet(attribute.Name, out object value))
 					continue;
 
 				// normalize the value
 				if (value != null)
 				{
-					// value is generic list/hash-set
+					// generic list/hash-set
 					if (value is List<object> && attribute.Type.IsGenericListOrHashSet())
 						value = attribute.Type.IsGenericList()
 							? (value as List<object>).ToList(attribute.Type.GenericTypeArguments[0])
 							: (value as List<object>).ToHashSet(attribute.Type.GenericTypeArguments[0]);
 
-					// value is generic dictionary/collection or object
-					else if (value is ExpandoObject)
-					{
-						if (attribute.Type.IsGenericDictionaryOrCollection())
-							value = attribute.Type.IsGenericDictionary()
-								? (value as ExpandoObject).ToDictionary(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
-								: (value as ExpandoObject).ToCollection(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
+					// generic dictionary/collection
+					else if (value is ExpandoObject && attribute.Type.IsGenericDictionaryOrCollection())
+						value = attribute.Type.IsGenericDictionary()
+							? (value as ExpandoObject).ToDictionary(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
+							: (value as ExpandoObject).ToCollection(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
 
-						else if (attribute.Type.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
-						{
-							var obj = attribute.Type.CreateInstance();
-							obj.CopyFrom(value as ExpandoObject);
-							value = obj;
-						}
+					// class/array
+					else if (value is ExpandoObject && attribute.Type.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
+					{
+						var obj = attribute.Type.CreateInstance();
+						obj.CopyFrom(value as ExpandoObject);
+						value = obj;
 					}
 
-					// value is primitive type
+					// enum
+					else if (attribute.Type.IsEnum)
+						value = value.ToString().ToEnum(attribute.Type);
+
+					// primitive type
 					else if (attribute.Type.IsPrimitiveType())
 						value = value.CastAs(attribute.Type);
 				}
@@ -1247,8 +1248,10 @@ namespace net.vieapps.Components.Utility
 
 			// deserialize the object from JSON
 			else
-				@object = (new JsonSerializer()).Deserialize<T>(new JTokenReader(json));
-
+				@object = typeof(T).IsPrimitiveType() && json is JValue
+					? (json as JValue).Value.CastAs<T>()
+					: new JsonSerializer().Deserialize<T>(new JTokenReader(json));
+			
 			// run the handler
 			onPreCompleted?.Invoke(@object, json);
 
@@ -1522,7 +1525,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject(this JToken json)
 		{
-			return (new JsonSerializer()).Deserialize<ExpandoObject>(new JTokenReader(json));
+			return new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
 		}
 
 		/// <summary>
@@ -1533,12 +1536,7 @@ namespace net.vieapps.Components.Utility
 		public static ExpandoObject ToExpandoObject(this IDictionary<string, object> @object)
 		{
 			var expando = new ExpandoObject();
-			@object.ForEach(entry =>
-			{
-				(expando as IDictionary<string, object>)[entry.Key] = entry.Value is IDictionary<string, object>
-					? (entry.Value as IDictionary<string, object>).ToExpandoObject()
-					: entry.Value;
-			});
+			@object.ForEach(kvp => (expando as IDictionary<string, object>)[kvp.Key] = kvp.Value is IDictionary<string, object> ? (kvp.Value as IDictionary<string, object>).ToExpandoObject() : kvp.Value);
 			return expando;
 		}
 
@@ -1550,7 +1548,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class
 		{
-			return (@object is JToken ? @object as JToken : @object.ToJson<T>()).ToExpandoObject();
+			return (@object is JToken ? @object as JToken : @object.ToJson()).ToExpandoObject();
 		}
 
 		/// <summary>
@@ -1617,40 +1615,39 @@ namespace net.vieapps.Components.Utility
 			value = default(T);
 
 			// get value & normalize
-			object theValue = null;
-			if (@object.TryGet(name, out theValue))
+			if (@object.TryGet(name, out object tempValue))
 			{
 				// get type
 				var type = typeof(T);
 
 				// generic list/hash-set
-				if (theValue is List<object> && type.IsGenericListOrHashSet())
-					theValue = type.IsGenericList()
-						? (theValue as List<object>).ToList<T>()
-						: (theValue as List<object>).ToHashSet<T>();
+				if (tempValue is List<object> && type.IsGenericListOrHashSet())
+					tempValue = type.IsGenericList()
+						? (tempValue as List<object>).ToList<T>()
+						: (tempValue as List<object>).ToHashSet<T>();
 
 				// generic dictionary/collection or object
-				else if (theValue is ExpandoObject)
+				else if (tempValue is ExpandoObject)
 				{
 					if (type.IsGenericDictionaryOrCollection())
-						theValue = type.IsGenericDictionary()
-							? (theValue as ExpandoObject).ToDictionary<T>()
-							: (theValue as ExpandoObject).ToCollection<T>();
+						tempValue = type.IsGenericDictionary()
+							? (tempValue as ExpandoObject).ToDictionary<T>()
+							: (tempValue as ExpandoObject).ToCollection<T>();
 
 					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
 					{
-						var obj = type.CreateInstance();
-						obj.CopyFrom(theValue as ExpandoObject);
-						theValue = obj;
+						var tempObj = type.CreateInstance();
+						tempObj.CopyFrom(tempValue as ExpandoObject);
+						tempValue = tempObj;
 					}
 				}
 
 				// other (primitive or other)
 				else
-					theValue = theValue.CastAs(type);
+					tempValue = tempValue.CastAs(type);
 
 				// cast the value & return state
-				value = (T)theValue;
+				value = (T)tempValue;
 				return true;
 			}
 
@@ -1676,13 +1673,13 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="defaultValue">Default value when the attribute is not found</param>
+		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Get<T>(this ExpandoObject @object, string name, T defaultValue = default(T))
+		public static T Get<T>(this ExpandoObject @object, string name, T @default = default(T))
 		{
-			return @object.TryGet<T>(name, out T value)
+			return @object.TryGet(name, out T value)
 				? value
-				: defaultValue;
+				: @default;
 		}
 
 		/// <summary>
@@ -1759,13 +1756,9 @@ namespace net.vieapps.Components.Utility
 
 			// no multiple
 			if (names.Length < 2)
-			{
-				if (!dictionary.ContainsKey(name))
-					return false;
-
-				dictionary.Remove(name);
-				return true;
-			}
+				return !dictionary.ContainsKey(name)
+					? false
+					: dictionary.Remove(name);
 
 			// got multiple
 			var index = 0;
@@ -1777,11 +1770,9 @@ namespace net.vieapps.Components.Utility
 				index++;
 			}
 
-			if (dictionary == null || !dictionary.ContainsKey(names[names.Length - 1]))
-				return false;
-
-			dictionary.Remove(names[names.Length - 1]);
-			return true;
+			return dictionary == null || !dictionary.ContainsKey(names[names.Length - 1])
+				? false
+				: dictionary.Remove(names[names.Length - 1]);
 		}
 		#endregion
 
