@@ -2288,6 +2288,48 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Query DNS records using Google DNS API
+		/// <summary>
+		/// Gets the DNS records of a host (using Google DNS API)
+		/// </summary>
+		/// <param name="host">The host name to query, ex: microsoft.com</param>
+		/// <param name="type">The type of DNS record, default is A (IPv4) - use AAAA for IPv6</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>The JSON object with 'Question' node that contains request and 'Answer' node that contains all posible results (as an array)</returns>
+		public static async Task<JObject> GetDNSAsync(string host, string type = "A", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			try
+			{
+				var json = await UtilityService.GetWebPageAsync($"https://dns.google.com/resolve?name={host}&type={type}", null, null, cancellationToken).ConfigureAwait(false);
+				return JObject.Parse(json);
+			}
+			catch (RemoteServerErrorException)
+			{
+				throw;
+			}
+			catch (Exception ex)
+			{
+				throw new RemoteServerErrorException($"Error occurred while querying with Google DNS API", ex);
+			}
+		}
+
+		/// <summary>
+		/// Gets the DNS records of a host (using Google DNS API)
+		/// </summary>
+		/// <param name="host">The host name to query, ex: microsoft.com</param>
+		/// <param name="type">The type of DNS record, default is A (IPv4) - use AAAA for IPv6</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>The collection that contains IP addresses</returns>
+		public static async Task<List<string>> GetIPsAsync(string host, string type = "A", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var json = await UtilityService.GetDNSAsync(host, type, cancellationToken).ConfigureAwait(false);
+			var ips = new List<string>();
+			foreach (JObject answer in json["Answer"] as JArray)
+				ips.Add((answer["data"] as JValue).Value as string);
+			return ips;
+		}
+		#endregion
+
 	}
 
 	// -----------------------------------------------------------

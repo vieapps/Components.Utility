@@ -83,7 +83,67 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this integer to array of bytes
+		/// Converts this boolean to array of bytes
+		/// </summary>
+		/// <param name="bool"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this bool @bool)
+		{
+			return BitConverter.GetBytes(@bool);
+		}
+
+		/// <summary>
+		/// Converts this char to array of bytes
+		/// </summary>
+		/// <param name="char"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this char @char)
+		{
+			return BitConverter.GetBytes(@char);
+		}
+
+		/// <summary>
+		/// Converts this byte to array of bytes
+		/// </summary>
+		/// <param name="byte"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this byte @byte)
+		{
+			return BitConverter.GetBytes(@byte);
+		}
+
+		/// <summary>
+		/// Converts this sbyte to array of bytes
+		/// </summary>
+		/// <param name="sbyte"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this sbyte @sbyte)
+		{
+			return BitConverter.GetBytes(@sbyte);
+		}
+
+		/// <summary>
+		/// Converts this short to array of bytes
+		/// </summary>
+		/// <param name="short"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this short @short)
+		{
+			return BitConverter.GetBytes(@short);
+		}
+
+		/// <summary>
+		/// Converts this ushort to array of bytes
+		/// </summary>
+		/// <param name="ushort"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this ushort @ushort)
+		{
+			return BitConverter.GetBytes(@ushort);
+		}
+
+		/// <summary>
+		/// Converts this int to array of bytes
 		/// </summary>
 		/// <param name="int"></param>
 		/// <returns></returns>
@@ -93,13 +153,65 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this integer 64 to array of bytes
+		/// Converts this uint to array of bytes
+		/// </summary>
+		/// <param name="uint"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this uint @uint)
+		{
+			return BitConverter.GetBytes(@uint);
+		}
+
+		/// <summary>
+		/// Converts this long to array of bytes
 		/// </summary>
 		/// <param name="long"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this long @long)
 		{
 			return BitConverter.GetBytes(@long);
+		}
+
+		/// <summary>
+		/// Converts this ulong to array of bytes
+		/// </summary>
+		/// <param name="ulong"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this ulong @ulong)
+		{
+			return BitConverter.GetBytes(@ulong);
+		}
+
+		/// <summary>
+		/// Converts this float to array of bytes
+		/// </summary>
+		/// <param name="float"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this float @float)
+		{
+			return BitConverter.GetBytes(@float);
+		}
+
+		/// <summary>
+		/// Converts this double to array of bytes
+		/// </summary>
+		/// <param name="double"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this double @double)
+		{
+			return BitConverter.GetBytes(@double);
+		}
+
+		/// <summary>
+		/// Converts this decimal to array of bytes
+		/// </summary>
+		/// <param name="decimal"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this decimal @decimal)
+		{
+			var bytes = new byte[0];
+			Decimal.GetBits(@decimal).ForEach(@int => bytes = bytes.Concat(@int.ToBytes()));
+			return bytes;
 		}
 
 		/// <summary>
@@ -572,11 +684,12 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var compressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
 					? new GZipStream(stream, CompressionMode.Compress) as Stream
-					: new DeflateStream(stream, CompressionMode.Compress) as Stream)
+					: new DeflateStream(stream, CompressionMode.Compress) as Stream
+				)
 				{
 					compressor.Write(data, 0, data.Length);
-					return stream.GetBuffer();
 				}
+				return stream.GetBuffer();
 			}
 		}
 
@@ -593,11 +706,12 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var compressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
 					? new GZipStream(stream, CompressionMode.Compress) as Stream
-					: new DeflateStream(stream, CompressionMode.Compress) as Stream)
+					: new DeflateStream(stream, CompressionMode.Compress) as Stream
+				)
 				{
 					await compressor.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
-					return stream.GetBuffer();
 				}
+				return stream.GetBuffer();
 			}
 		}
 
@@ -613,7 +727,8 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
 					? new GZipStream(input, CompressionMode.Decompress) as Stream
-					: new DeflateStream(input, CompressionMode.Decompress) as Stream)
+					: new DeflateStream(input, CompressionMode.Decompress) as Stream
+				)
 				{
 					using (var output = new MemoryStream())
 					{
@@ -644,7 +759,8 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
 					? new GZipStream(input, CompressionMode.Decompress) as Stream
-					: new DeflateStream(input, CompressionMode.Decompress) as Stream)
+					: new DeflateStream(input, CompressionMode.Decompress) as Stream
+				)
 				{
 					using (var output = new MemoryStream())
 					{
