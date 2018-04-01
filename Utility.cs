@@ -735,9 +735,12 @@ namespace net.vieapps.Components.Utility
 				webRequest.PreAuthenticate = true;
 			}
 
-			// proxy
-			if (!RuntimeInformation.FrameworkDescription.Contains(".NET Core"))
+			// service point
+			// remark: only available on Windows
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				webRequest.ServicePoint.Expect100Continue = false;
+
+			// proxy
 			if (proxy != null)
 				webRequest.Proxy = proxy;
 
@@ -754,10 +757,12 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
-			ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
-			{
-				return true;
-			};
+			// remark: not available on OSX
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+				webRequest.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+				{
+					return true;
+				};
 
 			// make request and return response stream
 			try
@@ -2309,7 +2314,7 @@ namespace net.vieapps.Components.Utility
 			}
 			catch (Exception ex)
 			{
-				throw new RemoteServerErrorException($"Error occurred while querying with Google DNS API", ex);
+				throw new RemoteServerErrorException($"Error occurred while querying with Google DNS API: {ex.Message}", ex);
 			}
 		}
 

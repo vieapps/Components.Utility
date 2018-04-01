@@ -412,13 +412,7 @@ namespace net.vieapps.Components.Utility
 
 			// add check-sum
 			if (addChecksum)
-				using (var hasher = CryptoService.GetHasher())
-				{
-					var hash = hasher.ComputeHash(hasher.ComputeHash(data));
-					var checksum = new byte[4];
-					Buffer.BlockCopy(hash, 0, checksum, 0, checksum.Length);
-					data = data.Concat(checksum);
-				}
+				data = data.Concat(data.GetCheckSum());
 
 			// decode byte[] to BigInteger and encode BigInteger to Base58 string
 			var bigInt = data.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
@@ -462,19 +456,14 @@ namespace net.vieapps.Components.Utility
 
 			// verify & remove check-sum
 			if (verifyChecksum)
-				using (var hasher = CryptoService.GetHasher())
-				{
-					var givenChecksum = bytes.Sub(bytes.Length - 4);
-					bytes = bytes.Sub(0, bytes.Length - 4);
-
-					var hash = hasher.ComputeHash(hasher.ComputeHash(bytes));
-					var correctChecksum = new byte[4];
-					Buffer.BlockCopy(hash, 0, correctChecksum, 0, correctChecksum.Length);
-
-					return givenChecksum.SequenceEqual(correctChecksum)
-						? bytes
-						: null;
-				}
+			{
+				var givenChecksum = bytes.Sub(bytes.Length - 4);
+				bytes = bytes.Sub(0, bytes.Length - 4);
+				var correctChecksum = bytes.GetCheckSum();
+				return givenChecksum.SequenceEqual(correctChecksum)
+					? bytes
+					: null;
+			}
 
 			// no check-sum
 			return bytes;
@@ -490,7 +479,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToBase58(this string @string, bool addChecksum = true, byte[] prefix = null, byte[] postfix = null)
 		{
-			return @string.ToBytes().Base58Encode(addChecksum, prefix, postfix);
+			return string.IsNullOrWhiteSpace(@string)
+				? null
+				: @string.ToBytes().Base58Encode(addChecksum, prefix, postfix);
 		}
 
 		/// <summary>
@@ -501,7 +492,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string FromBase58(this string @string, bool verifyChecksum = true)
 		{
-			return @string.Base58Decode(verifyChecksum)?.GetString();
+			return string.IsNullOrWhiteSpace(@string)
+				? null
+				: @string.Base58Decode(verifyChecksum)?.GetString();
 		}
 		#endregion
 

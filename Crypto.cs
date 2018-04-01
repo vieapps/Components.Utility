@@ -861,6 +861,99 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Special Hash & Check-Sum of an array of bytes or a string
+		/// <summary>
+		/// Gets the double-hash of this array of bytes
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="firstMode">Mode of the first hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="secondMode">Mode of the second hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <returns></returns>
+		public static byte[] GetDoubleHash(this byte[] bytes, string firstMode = "SHA256", string secondMode = null)
+		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+
+			using (var firstHasher = CryptoService.GetHasher(firstMode))
+			{
+				var firstHash = firstHasher.ComputeHash(bytes);
+				if (string.IsNullOrWhiteSpace(secondMode) || secondMode.IsEquals(firstMode))
+					return firstHasher.ComputeHash(firstHash);
+				else
+					using (var secondHasher = CryptoService.GetHasher(secondMode))
+					{
+						return secondHasher.ComputeHash(firstHash);
+					}
+			}
+		}
+
+		/// <summary>
+		/// Gets the double-hash of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="firstMode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="secondMode">Mode of the second hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <returns></returns>
+		public static byte[] GetDoubleHash(this string @string, string firstMode = "SHA256", string secondMode = null)
+		{
+			return string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetDoubleHash(firstMode, secondMode);
+		}
+
+		/// <summary>
+		/// Gets the double-hash of this array of bytes with first hash is SHA256, second hash is RIPEMD160
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static byte[] GetHash160(this byte[] bytes)
+		{
+			return bytes == null || bytes.Length < 1
+				? throw new ArgumentException("Invalid", nameof(bytes))
+				: bytes.GetDoubleHash("SHA256", "RIPEMD160");
+		}
+
+		/// <summary>
+		/// Gets the double-hash of this string with first hash is SHA256, second hash is RIPEMD160
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] GetHash160(this string @string)
+		{
+			return string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetHash160();
+		}
+
+		/// <summary>
+		/// Gets the check-sum of this array of bytes using double-hash
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="length">Length of the check-sum</param>
+		/// <returns></returns>
+		public static byte[] GetCheckSum(this byte[] bytes, string mode = "SHA256", int length = 4)
+		{
+			return bytes == null || bytes.Length < 1
+				? throw new ArgumentException("Invalid", nameof(bytes))
+				: bytes.GetDoubleHash(mode).Sub(0, length);
+		}
+
+		/// <summary>
+		/// Gets the check-sum of this string using double-hash
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="length">Length of the check-sum</param>
+		/// <returns></returns>
+		public static byte[] GetCheckSum(this string @string, string mode = "SHA256", int length = 4)
+		{
+			return string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetCheckSum(mode, length);
+		}
+		#endregion
+
 		#region Encryption key & Initialize vector (for working with AES)
 		/// <summary>
 		/// Gets the default key for encrypting/decrypting data
@@ -2887,5 +2980,9 @@ namespace net.vieapps.Components.Utility
 		}
 	}
 	#endregion
+
+	// -------------------------------------------------------------------------------
+	// ECDSA - Elliptic Curve Digital Signature Algorithm (TangibleCryptography - https://github.com/TangibleCryptography/Secp256k1)
+
 
 }
