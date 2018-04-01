@@ -156,13 +156,13 @@ namespace net.vieapps.Components.Utility
 		static RandomBigInteger _RandomBigInteger = new RandomBigInteger();
 
 		/// <summary>
-		/// Gets the random number of big integer
+		/// Gets the random of big integer number
 		/// </summary>
-		/// <param name="bitsLength"></param>
+		/// <param name="length">The number of random bits to generate.</param>
 		/// <returns></returns>
-		public static BigInteger GetRandomNumber(int bitsLength)
+		public static BigInteger GetRandomNumber(int length)
 		{
-			return UtilityService._RandomBigInteger.Next(bitsLength);
+			return UtilityService._RandomBigInteger.Next(length);
 		}
 		#endregion
 
@@ -650,7 +650,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static CredentialCache GetWebCredential(string uri, string account, string password, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3)
 		{
-			if (useSecureProtocol)
+			// check
+			if (string.IsNullOrWhiteSpace(account) || string.IsNullOrWhiteSpace(password))
+				return null;
+
+			// remark: not available on OSX
+			if (useSecureProtocol && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 				ServicePointManager.SecurityProtocol = secureProtocol;
 
 			return new CredentialCache
@@ -670,16 +675,16 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static WebProxy GetWebProxy(string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList = null)
 		{
-			WebProxy proxy = null;
-			if (!string.IsNullOrWhiteSpace(proxyHost))
-			{
-				proxy = proxyBypassList == null || proxyBypassList.Length < 1
-					? new WebProxy(proxyHost, proxyPort)
-					: new WebProxy(new Uri("http://" + proxyHost + ":" + proxyPort.ToString()), true, proxyBypassList);
+			if (string.IsNullOrWhiteSpace(proxyHost))
+				return null;
 
-				if (!string.IsNullOrWhiteSpace(proxyUsername) && !string.IsNullOrWhiteSpace(proxyUserPassword))
-					proxy.Credentials = new NetworkCredential(proxyUsername, proxyUserPassword);
-			}
+			var proxy = proxyBypassList == null || proxyBypassList.Length < 1
+				? new WebProxy(proxyHost, proxyPort)
+				: new WebProxy(new Uri("http://" + proxyHost + ":" + proxyPort.ToString()), true, proxyBypassList);
+
+			if (!string.IsNullOrWhiteSpace(proxyUsername) && !string.IsNullOrWhiteSpace(proxyUserPassword))
+				proxy.Credentials = new NetworkCredential(proxyUsername, proxyUserPassword);
+
 			return proxy;
 		}
 
@@ -735,8 +740,7 @@ namespace net.vieapps.Components.Utility
 				webRequest.PreAuthenticate = true;
 			}
 
-			// service point
-			// remark: only available on Windows
+			// service point - only available on Windows
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 				webRequest.ServicePoint.Expect100Continue = false;
 
@@ -756,8 +760,8 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
-			// remark: not available on OSX
+			// switch off certificate validation - not available on OSX
+			// source: http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 				webRequest.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
 				{
@@ -819,13 +823,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			// credential
-			var credential = !string.IsNullOrWhiteSpace(credentialAccount) && !string.IsNullOrWhiteSpace(credentialPassword)
-				? UtilityService.GetWebCredential(uri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol)
-				: null;
-
-			// make request
-			return UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken);
+			return UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, UtilityService.GetWebCredential(uri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol), proxy, cancellationToken);
 		}
 
 		/// <summary>
@@ -1555,40 +1553,48 @@ namespace net.vieapps.Components.Utility
 		{
 			return UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
 		}
+		#endregion
 
+		#region Working with .GZ files
 		/// <summary>
-		/// Saves this GZipStream as .GZ file
+		/// Compress and saves this stream as .GZ file
 		/// </summary>
 		/// <param name="stream"></param>
 		/// <param name="gzFilePath"></param>
-		public static void SaveAsGzipFile(this GZipStream stream, string gzFilePath)
+		public static void SaveAsGzipFile(this Stream stream, string gzFilePath)
 		{
 			if (stream == null)
 				throw new ArgumentException("Invalid", nameof(stream));
 
-			gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
-			if (File.Exists(gzFilePath))
-				File.Delete(gzFilePath);
+			using (var compressedStream = stream.CompressAsStream("gzip"))
+			{
+				gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
+				if (File.Exists(gzFilePath))
+					File.Delete(gzFilePath);
 
-			UtilityService.WriteBinaryFile(gzFilePath, stream);
+				UtilityService.WriteBinaryFile(gzFilePath, compressedStream);
+			}
 		}
 
 		/// <summary>
-		/// Saves this GZipStream as .GZ file
+		/// Compress and saves this stream as .GZ file
 		/// </summary>
 		/// <param name="stream"></param>
 		/// <param name="gzFilePath"></param>
 		/// <param name="cancellationToken"></param>
-		public static Task SaveAsGzipFileAsync(this GZipStream stream, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task SaveAsGzipFileAsync(this Stream stream, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (stream == null)
-				return Task.FromException(new ArgumentException("Invalid", nameof(stream)));
+				throw new ArgumentException("Invalid", nameof(stream));
 
-			gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
-			if (File.Exists(gzFilePath))
-				File.Delete(gzFilePath);
+			using (var compressedStream = await stream.CompressAsStreamAsync("gzip", cancellationToken).ConfigureAwait(false))
+			{
+				gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
+				if (File.Exists(gzFilePath))
+					File.Delete(gzFilePath);
 
-			return UtilityService.WriteBinaryFileAsync(gzFilePath, stream);
+				await UtilityService.WriteBinaryFileAsync(gzFilePath, compressedStream, cancellationToken).ConfigureAwait(false);
+			}
 		}
 
 		/// <summary>
@@ -1600,7 +1606,11 @@ namespace net.vieapps.Components.Utility
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
-			UtilityService.SaveAsGzipFile(new GZipStream(new MemoryStream(bytes), CompressionMode.Compress), gzFilePath);
+
+			using (var stream = new MemoryStream(bytes))
+			{
+				stream.SaveAsGzipFile(gzFilePath);
+			}
 		}
 
 		/// <summary>
@@ -1609,11 +1619,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bytes"></param>
 		/// <param name="gzFilePath"></param>
 		/// <param name="cancellationToken"></param>
-		public static Task SaveAsGzipFileAsync(this byte[] bytes, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task SaveAsGzipFileAsync(this byte[] bytes, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return bytes == null || bytes.Length < 1
-				? Task.FromException(new ArgumentException("Invalid", nameof(bytes)))
-				: UtilityService.SaveAsGzipFileAsync(new GZipStream(new MemoryStream(bytes), CompressionMode.Compress), gzFilePath, cancellationToken);
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+
+			using (var stream = new MemoryStream(bytes))
+			{
+				await stream.SaveAsGzipFileAsync(gzFilePath, cancellationToken).ConfigureAwait(false);
+			}
 		}
 		#endregion
 

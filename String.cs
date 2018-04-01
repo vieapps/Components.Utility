@@ -222,7 +222,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.ToBytes().Compress().ToBase64();
+				: @string.ToBytes().Compress("deflate")?.ToBase64();
 		}
 
 		/// <summary>
@@ -235,7 +235,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: (await @string.ToBytes().CompressAsync(null, cancellationToken).ConfigureAwait(false)).ToBase64();
+				: (await @string.ToBytes().CompressAsync("deflate", cancellationToken).ConfigureAwait(false))?.ToBase64();
 		}
 
 		/// <summary>
@@ -247,7 +247,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.Base64ToBytes().Decompress().GetString();
+				: @string.Base64ToBytes().Decompress("deflate")?.GetString();
 		}
 
 		/// <summary>
@@ -260,7 +260,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: (await @string.Base64ToBytes().DecompressAsync(null, cancellationToken).ConfigureAwait(false)).GetString();
+				: (await @string.Base64ToBytes().DecompressAsync("deflate", cancellationToken).ConfigureAwait(false))?.GetString();
 		}
 		#endregion
 

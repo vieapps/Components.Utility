@@ -297,20 +297,26 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <returns></returns>
-		public static string Base32Encode(this byte[] bytes)
+		public static string Base32Encode(this byte[] bytes, bool addChecksum = false)
 		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+
 			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-			var builder = new StringBuilder((bytes.Length + 7) * 8 / 5);
+			var data = addChecksum
+				? bytes.Concat(bytes.GetCheckSum("SHA1", 4))
+				: bytes;
+			var builder = new StringBuilder((data.Length + 7) * 8 / 5);
 			int pos = 0, index = 0;
-			while (pos < bytes.Length)
+			while (pos < data.Length)
 			{
-				var current = bytes[pos];
+				var current = data[pos];
 				int digit;
 
 				// is the current digit going to span a byte boundary?
 				if (index > (8 - 5))
 				{
-					var next = (pos + 1) < bytes.Length ? bytes[pos + 1] : 0;
+					var next = (pos + 1) < data.Length ? data[pos + 1] : 0;
 					digit = current & (0xFF >> index);
 					index = (index + 5) % 8;
 					digit <<= index;
@@ -333,9 +339,13 @@ namespace net.vieapps.Components.Utility
 		/// Decodes this Base32 string to array of bytes
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="verifyChecksum"></param>
 		/// <returns></returns>
-		public static byte[] Base32Decode(this string @string)
+		public static byte[] Base32Decode(this string @string, bool verifyChecksum = false)
 		{
+			if (string.IsNullOrWhiteSpace(@string))
+				throw new ArgumentNullException(nameof(@string), "Invalid");
+
 			var base32 = @string.ToUpperInvariant();
 			var output = new byte[base32.Length * 5 / 8];
 			if (output.Length == 0)
@@ -372,6 +382,18 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
+			// verify & remove check-sum
+			if (verifyChecksum)
+			{
+				var givenChecksum = output.Sub(output.Length - 4);
+				output = output.Sub(0, output.Length - 4);
+				var correctChecksum = output.GetCheckSum("SHA1", 4);
+				return givenChecksum.SequenceEqual(correctChecksum)
+					? output
+					: null;
+			}
+
+			// no check-sum
 			return output;
 		}
 
@@ -379,10 +401,13 @@ namespace net.vieapps.Components.Utility
 		/// Converts this string to Base32 string
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase32(this string @string)
+		public static string ToBase32(this string @string, bool addChecksum = false)
 		{
-			return @string.ToBytes().Base32Encode();
+			return string.IsNullOrWhiteSpace(@string)
+				? throw new ArgumentNullException(nameof(@string), "Invalid")
+				: @string.ToBytes().Base32Encode(addChecksum);
 		}
 
 		/// <summary>
@@ -390,9 +415,11 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string FromBase32(this string @string)
+		public static string FromBase32(this string @string, bool verifyChecksum = false)
 		{
-			return @string.Base32Decode().GetString();
+			return string.IsNullOrWhiteSpace(@string)
+				? throw new ArgumentNullException(nameof(@string), "Invalid")
+				: @string.Base32Decode(verifyChecksum).GetString();
 		}
 		#endregion
 
@@ -412,7 +439,7 @@ namespace net.vieapps.Components.Utility
 
 			// add check-sum
 			if (addChecksum)
-				data = data.Concat(data.GetCheckSum());
+				data = data.Concat(data.GetCheckSum("SHA256", 4));
 
 			// decode byte[] to BigInteger and encode BigInteger to Base58 string
 			var bigInt = data.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
@@ -452,21 +479,21 @@ namespace net.vieapps.Components.Utility
 
 			// encode BigInteger to byte[] - leading zero bytes get encoded as leading `1` characters
 			var zeros = Enumerable.Repeat((byte)0, @string.TakeWhile(c => c == '1').Count());
-			var bytes = zeros.Concat(bigInt.ToBytes().Reverse().SkipWhile(b => b == 0)).ToArray();
+			var output = zeros.Concat(bigInt.ToBytes().Reverse().SkipWhile(b => b == 0)).ToArray();
 
 			// verify & remove check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = bytes.Sub(bytes.Length - 4);
-				bytes = bytes.Sub(0, bytes.Length - 4);
-				var correctChecksum = bytes.GetCheckSum();
+				var givenChecksum = output.Sub(output.Length - 4);
+				output = output.Sub(0, output.Length - 4);
+				var correctChecksum = output.GetCheckSum("SHA256", 4);
 				return givenChecksum.SequenceEqual(correctChecksum)
-					? bytes
+					? output
 					: null;
 			}
 
 			// no check-sum
-			return bytes;
+			return output;
 		}
 
 		/// <summary>
@@ -666,28 +693,135 @@ namespace net.vieapps.Components.Utility
 
 		#region Compressions
 		/// <summary>
-		/// Compresses the array of bytes using Deflate compression method
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static MemoryStream CompressAsStream(this byte[] data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			var output = new MemoryStream();
+			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+			{
+				compressor.Write(data, 0, data.Length);
+			}
+			return output;
+		}
+
+		/// <summary>
+		/// Compresses the stream
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static MemoryStream CompressAsStream(this Stream data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			var output = new MemoryStream();
+			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+			{
+				var buffer = new byte[64];
+				var read = data.Read(buffer, 0, buffer.Length);
+				while (read > 0)
+				{
+					compressor.Write(buffer, 0, read);
+					buffer = new byte[64];
+					read = data.Read(buffer, 0, buffer.Length);
+				}
+			}
+			return output;
+		}
+
+		/// <summary>
+		/// Compresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <returns></returns>
 		public static byte[] Compress(this byte[] data, string mode = "deflate")
 		{
-			using (var stream = new MemoryStream())
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = data.CompressAsStream(mode))
 			{
-				using (var compressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
-					? new GZipStream(stream, CompressionMode.Compress) as Stream
-					: new DeflateStream(stream, CompressionMode.Compress) as Stream
-				)
-				{
-					compressor.Write(data, 0, data.Length);
-				}
-				return stream.GetBuffer();
+				return stream?.GetBuffer();
 			}
 		}
 
 		/// <summary>
-		/// Compresses the array of bytes using Deflate compression method
+		/// Compresses the stream
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Compress(this Stream data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = data.CompressAsStream(mode))
+			{
+				return stream?.GetBuffer();
+			}
+		}
+		#endregion
+
+		#region Compressions (Async)
+		/// <summary>
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<MemoryStream> CompressAsStreamAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			var output = new MemoryStream();
+			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+			{
+				await compressor.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+			}
+			return output;
+		}
+
+		/// <summary>
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<MemoryStream> CompressAsStreamAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			var output = new MemoryStream();
+			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+			{
+				var buffer = new byte[64];
+				var read = await data.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+					buffer = new byte[64];
+					read = await data.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				}
+			}
+			return output;
+		}
+
+		/// <summary>
+		/// Compresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
@@ -695,83 +829,191 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> CompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			using (var stream = new MemoryStream())
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = await data.CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				using (var compressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
-					? new GZipStream(stream, CompressionMode.Compress) as Stream
-					: new DeflateStream(stream, CompressionMode.Compress) as Stream
-				)
-				{
-					await compressor.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
-				}
-				return stream.GetBuffer();
+				return stream?.GetBuffer();
 			}
 		}
 
 		/// <summary>
-		/// Decompresses the array of bytes using Deflate compression method
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static byte[] Decompress(this byte[] data, string mode = "deflate")
-		{
-			using (var input = new MemoryStream(data))
-			{
-				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
-					? new GZipStream(input, CompressionMode.Decompress) as Stream
-					: new DeflateStream(input, CompressionMode.Decompress) as Stream
-				)
-				{
-					using (var output = new MemoryStream())
-					{
-						var buffer = new byte[64];
-						var read = decompressor.Read(buffer, 0, buffer.Length);
-						while (read > 0)
-						{
-							output.Write(buffer, 0, read);
-							buffer = new byte[64];
-							read = decompressor.Read(buffer, 0, buffer.Length);
-						}
-						return output.GetBuffer();
-					}
-				}
-			}
-		}
-
-		/// <summary>
-		/// Decompresses the array of bytes using Deflate compression method
+		/// Compresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<byte[]> DecompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<byte[]> CompressAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			using (var input = new MemoryStream(data))
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = await data.CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				using (var decompressor = !string.IsNullOrWhiteSpace(mode) && mode.IsEquals("gzip")
-					? new GZipStream(input, CompressionMode.Decompress) as Stream
-					: new DeflateStream(input, CompressionMode.Decompress) as Stream
-				)
-				{
-					using (var output = new MemoryStream())
-					{
-						var buffer = new byte[64];
-						var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-						while (read > 0)
-						{
-							await output.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-							buffer = new byte[64];
-							read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-						}
-						return output.GetBuffer();
-					}
-				}
+				return stream?.GetBuffer();
 			}
 		}
 		#endregion
 
-	}
+		#region Decompressions
+		/// <summary>
+		/// Decompresses the stream
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static MemoryStream DecompressAsStream(this Stream data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
 
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(data, CompressionMode.Decompress) as Stream : new DeflateStream(data, CompressionMode.Decompress) as Stream)
+			{
+				var output = new MemoryStream();
+				var buffer = new byte[64];
+				var read = decompressor.Read(buffer, 0, buffer.Length);
+				while (read > 0)
+				{
+					output.Write(buffer, 0, read);
+					buffer = new byte[64];
+					read = decompressor.Read(buffer, 0, buffer.Length);
+				}
+				return output;
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static MemoryStream DecompressAsStream(this byte[] data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = new MemoryStream(data))
+			{
+				return stream.DecompressAsStream(mode);
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Decompress(this byte[] data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = data.DecompressAsStream())
+			{
+				return stream?.GetBuffer();
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the stream
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Decompress(this Stream data, string mode = "deflate")
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = data.DecompressAsStream())
+			{
+				return stream?.GetBuffer();
+			}
+		}
+		#endregion
+
+		#region Decompressions (Async)
+		/// <summary>
+		/// Decompresses the stream
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<MemoryStream> DecompressAsStreamAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(data, CompressionMode.Decompress) as Stream : new DeflateStream(data, CompressionMode.Decompress) as Stream)
+			{
+				var output = new MemoryStream();
+				var buffer = new byte[64];
+				var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					await output.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+					buffer = new byte[64];
+					read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				}
+				return output;
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<MemoryStream> DecompressAsStreamAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = new MemoryStream(data))
+			{
+				return await stream.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<byte[]> DecompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
+			{
+				return stream?.GetBuffer();
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the stream
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<byte[]> DecompressAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return data == null || data.Length < 1
+				? null
+				: (await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))?.GetBuffer();
+		}
+		#endregion
+
+	}
 }
