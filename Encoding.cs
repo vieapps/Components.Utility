@@ -291,6 +291,169 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region To ArraySegment<byte>
+		/// <summary>
+		/// Converts this string to array segment of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this string @string, Encoding encoding = null)
+		{
+			return new ArraySegment<byte>(@string.ToBytes(encoding));
+		}
+
+		/// <summary>
+		/// Converts this boolean to array segment of bytes
+		/// </summary>
+		/// <param name="bool"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this bool @bool)
+		{
+			return new ArraySegment<byte>(@bool.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this char to array segment of bytes
+		/// </summary>
+		/// <param name="char"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this char @char)
+		{
+			return new ArraySegment<byte>(@char.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this byte to array segment of bytes
+		/// </summary>
+		/// <param name="byte"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this byte @byte)
+		{
+			return new ArraySegment<byte>(@byte.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this sbyte to array segment of bytes
+		/// </summary>
+		/// <param name="sbyte"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this sbyte @sbyte)
+		{
+			return new ArraySegment<byte>(@sbyte.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this short to array segment of bytes
+		/// </summary>
+		/// <param name="short"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this short @short)
+		{
+			return new ArraySegment<byte>(@short.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this ushort to array segment of bytes
+		/// </summary>
+		/// <param name="ushort"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this ushort @ushort)
+		{
+			return new ArraySegment<byte>(@ushort.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this int to array segment of bytes
+		/// </summary>
+		/// <param name="int"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this int @int)
+		{
+			return new ArraySegment<byte>(@int.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this uint to array segment of bytes
+		/// </summary>
+		/// <param name="uint"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this uint @uint)
+		{
+			return new ArraySegment<byte>(@uint.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this long to array segment of bytes
+		/// </summary>
+		/// <param name="long"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this long @long)
+		{
+			return new ArraySegment<byte>(@long.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this ulong to array segment of bytes
+		/// </summary>
+		/// <param name="ulong"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this ulong @ulong)
+		{
+			return new ArraySegment<byte>(@ulong.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this float to array segment of bytes
+		/// </summary>
+		/// <param name="float"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this float @float)
+		{
+			return new ArraySegment<byte>(@float.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this double to array segment of bytes
+		/// </summary>
+		/// <param name="double"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this double @double)
+		{
+			return new ArraySegment<byte>(@double.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this decimal to array segment of bytes
+		/// </summary>
+		/// <param name="decimal"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this decimal @decimal)
+		{
+			return new ArraySegment<byte>(@decimal.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this date-time to array segment of bytes
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this DateTime datetime)
+		{
+			return new ArraySegment<byte>(datetime.ToBytes());
+		}
+
+		/// <summary>
+		/// Converts this big-integer to array segment of bytes
+		/// </summary>
+		/// <param name="bigInt"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this BigInteger bigInt)
+		{
+			return new ArraySegment<byte>(bigInt.ToBytes());
+		}
+		#endregion
+
 		#region Encode/Decode Base32
 		/// <summary>
 		/// Encodes this array of bytes to Base32 string
@@ -755,6 +918,17 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
+		{
+			return new ArraySegment<byte>(data == null ? new byte[0] : data.Array.Sub(data.Offset, data.Count).Compress(mode));
+		}
+
+		/// <summary>
 		/// Compresses the stream
 		/// </summary>
 		/// <param name="data"></param>
@@ -845,6 +1019,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
+		public static async Task<ArraySegment<byte>> CompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Array.Sub(data.Offset, data.Count).CompressAsync(mode, cancellationToken).ConfigureAwait(false));
+		}
+
+		/// <summary>
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
 		public static async Task<byte[]> CompressAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (data == null || data.Length < 1)
@@ -916,6 +1102,17 @@ namespace net.vieapps.Components.Utility
 			{
 				return stream?.GetBuffer();
 			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
+		{
+			return new ArraySegment<byte>(data == null ? new byte[0] : data.Array.Sub(data.Offset, data.Count).Decompress(mode));
 		}
 
 		/// <summary>
@@ -1001,6 +1198,18 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<ArraySegment<byte>> DecompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Array.Sub(data.Offset, data.Count).DecompressAsync(mode, cancellationToken).ConfigureAwait(false));
+		}
+
+		/// <summary>
 		/// Decompresses the stream
 		/// </summary>
 		/// <param name="data"></param>
@@ -1009,9 +1218,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> DecompressAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return data == null || data.Length < 1
-				? null
-				: (await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))?.GetBuffer();
+			if (data == null || data.Length < 1)
+				return null;
+
+			using (var stream = await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
+			{
+				return stream?.GetBuffer();
+			}
 		}
 		#endregion
 

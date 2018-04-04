@@ -339,6 +339,20 @@ namespace net.vieapps.Components.Utility
 				? ""
 				: (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
 		}
+
+		/// <summary>
+		/// Gets the string from array of bytes by specified encoding (default is UTF8)
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="count"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static string GetString(this ArraySegment<byte> bytes, int count = 0, Encoding encoding = null)
+		{
+			var data = new byte[count > 0 ? count : bytes.Count];
+			Buffer.BlockCopy(bytes.Array, bytes.Offset, data, 0, count > 0 ? count : bytes.Count);
+			return data.GetString(0, encoding);
+		}
 		#endregion
 
 		#region Conversions (Vietnamese)
