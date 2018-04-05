@@ -19,6 +19,53 @@ namespace net.vieapps.Components.Utility
 	public static partial class EncodingService
 	{
 
+		#region Constructor
+		static string[] ByteToHex = new[]
+		{
+			"00", "01", "02", "03", "04", "05", "06", "07",
+			"08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
+			"10", "11", "12", "13", "14", "15", "16", "17",
+			"18", "19", "1a", "1b", "1c", "1d", "1e", "1f",
+			"20", "21", "22", "23", "24", "25", "26", "27",
+			"28", "29", "2a", "2b", "2c", "2d", "2e", "2f",
+			"30", "31", "32", "33", "34", "35", "36", "37",
+			"38", "39", "3a", "3b", "3c", "3d", "3e", "3f",
+			"40", "41", "42", "43", "44", "45", "46", "47",
+			"48", "49", "4a", "4b", "4c", "4d", "4e", "4f",
+			"50", "51", "52", "53", "54", "55", "56", "57",
+			"58", "59", "5a", "5b", "5c", "5d", "5e", "5f",
+			"60", "61", "62", "63", "64", "65", "66", "67",
+			"68", "69", "6a", "6b", "6c", "6d", "6e", "6f",
+			"70", "71", "72", "73", "74", "75", "76", "77",
+			"78", "79", "7a", "7b", "7c", "7d", "7e", "7f",
+			"80", "81", "82", "83", "84", "85", "86", "87",
+			"88", "89", "8a", "8b", "8c", "8d", "8e", "8f",
+			"90", "91", "92", "93", "94", "95", "96", "97",
+			"98", "99", "9a", "9b", "9c", "9d", "9e", "9f",
+			"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+			"a8", "a9", "aa", "ab", "ac", "ad", "ae", "af",
+			"b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7",
+			"b8", "b9", "ba", "bb", "bc", "bd", "be", "bf",
+			"c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7",
+			"c8", "c9", "ca", "cb", "cc", "cd", "ce", "cf",
+			"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
+			"d8", "d9", "da", "db", "dc", "dd", "de", "df",
+			"e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7",
+			"e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef",
+			"f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
+			"f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"
+		};
+
+		static Dictionary<string, byte> HexToByte = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+
+		static EncodingService()
+		{
+			for (byte @byte = 0; @byte < 255; @byte++)
+				EncodingService.HexToByte[ByteToHex[@byte]] = @byte;
+			EncodingService.HexToByte["ff"] = 255;
+		}
+		#endregion
+
 		#region To Bytes
 		/// <summary>
 		/// Converts this string to array of bytes
@@ -29,57 +76,6 @@ namespace net.vieapps.Components.Utility
 		public static byte[] ToBytes(this string @string, Encoding encoding = null)
 		{
 			return (encoding ?? Encoding.UTF8).GetBytes(@string);
-		}
-
-		/// <summary>
-		/// Converts this hexa-string to array of bytes
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] HexToBytes(this string @string)
-		{
-			var bytes = new byte[@string.Length / 2];
-			for (var index = 0; index < @string.Length; index += 2)
-				bytes[index / 2] = Convert.ToByte(@string.Substring(index, 2), 16);
-			return bytes;
-		}
-
-		/// <summary>
-		/// Converts this Base64 string to array of bytes
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="isBase64Url"></param>
-		/// <returns></returns>
-		public static byte[] Base64ToBytes(this string @string, bool isBase64Url = false)
-		{
-			if (!isBase64Url)
-				return Convert.FromBase64String(@string);
-
-			var base64 = @string.Trim().Replace('-', '+').Replace('_', '/');
-			switch (base64.Length % 4)
-			{
-				case 0:
-					break;
-				case 2:
-					base64 += "==";
-					break;
-				case 3:
-					base64 += "=";
-					break;
-				default:
-					throw new Exception("Illegal base64url string!");
-			}
-			return Convert.FromBase64String(base64);
-		}
-
-		/// <summary>
-		/// Converts this Base64Url string to array of bytes
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] Base64UrlToBytes(this string @string)
-		{
-			return @string.Base64ToBytes(true);
 		}
 
 		/// <summary>
@@ -228,14 +224,81 @@ namespace net.vieapps.Components.Utility
 		/// Converts this big-integer to array of bytes
 		/// </summary>
 		/// <param name="bigInt"></param>
+		/// <param name="toUnsigned"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this BigInteger bigInt)
+		public static byte[] ToBytes(this BigInteger bigInt, bool toUnsigned = false)
 		{
-			return bigInt.ToByteArray();
+			var bytes = bigInt.ToByteArray();
+			if (toUnsigned && bytes[bytes.Length - 1] == 0x00)
+				Array.Resize(ref bytes, bytes.Length - 1);
+			if (BitConverter.IsLittleEndian)
+				Array.Reverse(bytes, 0, bytes.Length);
+			return bytes;
+		}
+
+		/// <summary>
+		/// Converts this big-integer to unsigned array of bytes
+		/// </summary>
+		/// <param name="bigInt"></param>
+		/// <returns></returns>
+		public static byte[] ToUnsignedBytes(this BigInteger bigInt)
+		{
+			return bigInt.ToBytes(true);
+		}
+
+		/// <summary>
+		/// Converts this Base64 string to array of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="isBase64Url"></param>
+		/// <returns></returns>
+		public static byte[] Base64ToBytes(this string @string, bool isBase64Url = false)
+		{
+			if (!isBase64Url)
+				return Convert.FromBase64String(@string);
+
+			var base64 = @string.Trim().Replace('-', '+').Replace('_', '/');
+			switch (base64.Length % 4)
+			{
+				case 0:
+					break;
+				case 2:
+					base64 += "==";
+					break;
+				case 3:
+					base64 += "=";
+					break;
+				default:
+					throw new Exception("Illegal base64url string!");
+			}
+			return Convert.FromBase64String(base64);
+		}
+
+		/// <summary>
+		/// Converts this Base64Url string to array of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static byte[] Base64UrlToBytes(this string @string)
+		{
+			return @string.Base64ToBytes(true);
 		}
 		#endregion
 
-		#region To Hexa
+		#region To Hex
+		/// <summary>
+		/// Converts this array of bytes to hexa string
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static string ToHex(this byte[] bytes)
+		{
+			var hex = new StringBuilder(bytes.Length * 2);
+			foreach (var @byte in bytes)
+				hex.Append(EncodingService.ByteToHex[@byte]);
+			return hex.ToString();
+		}
+
 		/// <summary>
 		/// Converts this array of bytes to hexa string
 		/// </summary>
@@ -243,7 +306,18 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToHexa(this byte[] bytes)
 		{
-			return BitConverter.ToString(bytes).Replace("-", "").ToLower();
+			return bytes.ToHex();
+		}
+
+		/// <summary>
+		/// Converts this string to hexa string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="isBase64"></param>
+		/// <returns></returns>
+		public static string ToHex(this string @string, bool isBase64 = false)
+		{
+			return (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHex();
 		}
 
 		/// <summary>
@@ -254,7 +328,17 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToHexa(this string @string, bool isBase64 = false)
 		{
-			return (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHexa();
+			return @string.ToHex(isBase64);
+		}
+
+		/// <summary>
+		/// Converts this big-integer to hexa string
+		/// </summary>
+		/// <param name="bigInt"></param>
+		/// <returns></returns>
+		public static string ToHex(this BigInteger bigInt)
+		{
+			return bigInt.ToUnsignedBytes().ToHex();
 		}
 
 		/// <summary>
@@ -264,31 +348,35 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToHexa(this BigInteger bigInt)
 		{
-			return bigInt.ToBytes().ToHexa();
+			return bigInt.ToHex();
 		}
 		#endregion
 
-		#region To Big Integer
+		#region Hex to Bytes
 		/// <summary>
-		/// Converts this array of bytes to big-integer
+		/// Converts this hexa-string to array of bytes
 		/// </summary>
-		/// <param name="bytes"></param>
+		/// <param name="hex"></param>
 		/// <returns></returns>
-		public static BigInteger ToBigInteger(this byte[] bytes)
+		public static byte[] HexToBytes(this string hex)
 		{
-			return new BigInteger(bytes);
+			hex = (hex.Length % 2 != 0 ? "0" + hex : hex).ToLower();
+			var bytes = new byte[hex.Length / 2];
+			for (var index = 0; index < hex.Length / 2; index++)
+				bytes[index] = EncodingService.HexToByte[hex.Substring(index * 2, 2)];
+			return bytes;
 		}
 
 		/// <summary>
-		/// Converts this hexa-string to big-integer
+		/// Converts this hexa-string to array of bytes
 		/// </summary>
-		/// <param name="string"></param>
-		/// <remarks>https://stackoverflow.com/questions/30119174/converting-a-hex-string-to-its-biginteger-equivalent-negates-the-value</remarks>
+		/// <param name="hex"></param>
 		/// <returns></returns>
-		public static BigInteger ToBigInteger(this string @string)
+		public static byte[] HexaToBytes(this string hex)
 		{
-			return BigInteger.Parse(@string, System.Globalization.NumberStyles.AllowHexSpecifier);
+			return hex.HexToBytes();
 		}
+
 		#endregion
 
 		#region To ArraySegment<byte>
@@ -450,7 +538,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this BigInteger bigInt)
 		{
-			return new ArraySegment<byte>(bigInt.ToBytes());
+			return new ArraySegment<byte>(bigInt.ToUnsignedBytes());
 		}
 		#endregion
 
@@ -1225,6 +1313,197 @@ namespace net.vieapps.Components.Utility
 			{
 				return stream?.GetBuffer();
 			}
+		}
+		#endregion
+
+		#region BigInteger extensions
+		/// <summary>
+		/// Converts this array of bytes to big-integer
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this byte[] bytes)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] clone = new byte[bytes.Length];
+				Buffer.BlockCopy(bytes, 0, clone, 0, bytes.Length);
+				Array.Reverse(clone);
+				return new BigInteger(clone);
+			}
+			else
+				return new BigInteger(bytes);
+		}
+
+		public static BigInteger ToUnsignedBigInteger(this byte[] bytes)
+		{
+			byte[] clone;
+			if (BitConverter.IsLittleEndian)
+			{
+				if (bytes[0] != 0x00)
+				{
+					clone = new byte[bytes.Length + 1];
+					Buffer.BlockCopy(bytes, 0, clone, 1, bytes.Length);
+					Array.Reverse(clone);
+					return new BigInteger(clone);
+				}
+				clone = new byte[bytes.Length];
+				Buffer.BlockCopy(bytes, 0, clone, 0, bytes.Length);
+				Array.Reverse(clone);
+				return new BigInteger(clone);
+			}
+
+			if (bytes[bytes.Length - 1] == 0x00)
+				return new BigInteger(bytes);
+
+			clone = new byte[bytes.Length + 1];
+			Buffer.BlockCopy(bytes, 0, clone, 0, bytes.Length);
+			return new BigInteger(clone);
+		}
+
+		/// <summary>
+		/// Converts this hexa-string to big-integer
+		/// </summary>
+		/// <param name="hex"></param>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this string hex)
+		{
+			var bytes = hex.HexToBytes();
+			if (BitConverter.IsLittleEndian)
+				Array.Reverse(bytes);
+			Array.Resize(ref bytes, bytes.Length + 1);
+			bytes[bytes.Length - 1] = 0x00;
+			return new BigInteger(bytes);
+		}
+
+		public static BigInteger ModInverse(this BigInteger n, BigInteger p)
+		{
+			BigInteger x = 1;
+			BigInteger y = 0;
+			BigInteger a = p;
+			BigInteger b = n;
+
+			while (b != 0)
+			{
+				BigInteger t = b;
+				BigInteger q = BigInteger.Divide(a, t);
+				b = a - q * t;
+				a = t;
+				t = x;
+				x = y - q * t;
+				y = t;
+			}
+
+			if (y < 0)
+				return y + p;
+			//else
+			return y;
+		}
+
+		public static bool TestBit(this BigInteger i, int n)
+		{
+			//[resharper:unused local variable] int bitLength = i.BitLength();
+			return !(i >> n).IsEven;
+		}
+
+		public static int BitLength(this BigInteger i)
+		{
+			int bitLength = 0;
+			do
+			{
+				bitLength++;
+			}
+			while ((i >>= 1) != 0);
+			return bitLength;
+		}
+
+		public static BigInteger Order(this BigInteger b, BigInteger p)
+		{
+			BigInteger m = 1;
+			BigInteger e = 0;
+
+			while (BigInteger.ModPow(b, m, p) != 1)
+			{
+				m *= 2;
+				e++;
+			}
+
+			return e;
+		}
+
+		private static BigInteger FindS(BigInteger p)
+		{
+			BigInteger s = p - 1;
+			BigInteger e = 0;
+
+			while (s % 2 == 0)
+			{
+				s /= 2;
+				e += 1;
+			}
+
+			return s;
+		}
+
+		private static BigInteger FindE(BigInteger p)
+		{
+			BigInteger s = p - 1;
+			BigInteger e = 0;
+
+			while (s % 2 == 0)
+			{
+				s /= 2;
+				e += 1;
+			}
+
+			return e;
+		}
+
+		private static BigInteger TwoExp(BigInteger e)
+		{
+			BigInteger a = 1;
+
+			while (e > 0)
+			{
+				a *= 2;
+				e--;
+			}
+
+			return a;
+		}
+
+		public static BigInteger ShanksSqrt(this BigInteger a, BigInteger p)
+		{
+			if (BigInteger.ModPow(a, (p - 1) / 2, p) == (p - 1))
+				return -1;
+
+			if (p % 4 == 3)
+				return BigInteger.ModPow(a, (p + 1) / 4, p);
+
+			//Initialize 
+			BigInteger s = FindS(p);
+			BigInteger e = FindE(p);
+			BigInteger n = 2;
+
+			while (BigInteger.ModPow(n, (p - 1) / 2, p) == 1)
+				n++;
+
+			BigInteger x = BigInteger.ModPow(a, (s + 1) / 2, p);
+			BigInteger b = BigInteger.ModPow(a, s, p);
+			BigInteger g = BigInteger.ModPow(n, s, p);
+			BigInteger r = e;
+			BigInteger m = b.Order(p);
+
+			while (m > 0)
+			{
+				x = (x * BigInteger.ModPow(g, TwoExp(r - m - 1), p)) % p;
+				b = (b * BigInteger.ModPow(g, TwoExp(r - m), p)) % p;
+				g = BigInteger.ModPow(g, TwoExp(r - m), p);
+				r = m;
+				m = b.Order(p);
+			}
+
+			return x;
 		}
 		#endregion
 

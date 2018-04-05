@@ -4,8 +4,10 @@ using System.Net;
 using System.Text;
 using System.Linq;
 using System.IO;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+
 using Konscious.Security.Cryptography;
 #endregion
 
@@ -954,7 +956,19 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Encryption key & Initialize vector (for working with AES)
+		#region Encryption key & Initialize vector
+		/// <summary>
+		/// Generates a random key using RNGCryptoServiceProvider
+		/// </summary>
+		/// <param name="length">The bit-length of the key</param>
+		/// <returns></returns>
+		public static byte[] GenerateRandomKey(int length = 256)
+		{
+			var key = new byte[length > 0 ? length : 256];
+			new RNGCryptoServiceProvider().GetBytes(key);
+			return key;
+		}
+
 		/// <summary>
 		/// Gets the default key for encrypting/decrypting data
 		/// </summary>
@@ -2982,7 +2996,673 @@ namespace net.vieapps.Components.Utility
 	#endregion
 
 	// -------------------------------------------------------------------------------
-	// ECDSA - Elliptic Curve Digital Signature Algorithm (TangibleCryptography - https://github.com/TangibleCryptography/Secp256k1)
+	// Elliptic Curve Cryptography that follow secp256k1 (Bitcoin) => [TangibleCryptography - https://github.com/TangibleCryptography/Secp256k1]
 
+	/// <summary>
+	/// Elliptic Curve Cryptography that follow Secp256k1 specs (Bitcoin)
+	/// </summary>
+	public class ECCsecp256k1
+	{
+		public static readonly BigInteger P = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F".ToBigInteger();
+		public static readonly Point G = Point.Decode("0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8".HexToBytes());
+		public static readonly BigInteger N = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141".ToBigInteger();
 
+		public static DSA ECCDSA = new DSA();
+		public static Encryption ECCEncryption = new Encryption();
+
+		#region Point
+		public class Point : ICloneable
+		{
+			private Point()
+			{
+				this.IsInfinity = true;
+			}
+
+			public Point(BigInteger x, BigInteger y, bool isInfinity = false)
+			{
+				this.X = x;
+				this.Y = y;
+				this.IsInfinity = isInfinity;
+			}
+
+			public BigInteger X { get; private set; }
+
+			public BigInteger Y { get; private set; }
+
+			public static Point Infinity { get { return new Point(); } }
+
+			public bool IsInfinity { get; }
+
+			public object Clone()
+			{
+				return new Point(this.X, this.Y);
+			}
+
+			public byte[] Encode(bool compressed)
+			{
+				if (this.IsInfinity)
+					return new byte[1];
+
+				byte[] x = this.X.ToUnsignedBytes();
+				byte[] encoded;
+				if (!compressed)
+				{
+					byte[] y = this.Y.ToUnsignedBytes();
+					encoded = new byte[65];
+					encoded[0] = 0x04;
+					Buffer.BlockCopy(y, 0, encoded, 33 + (32 - y.Length), y.Length);
+				}
+				else
+				{
+					encoded = new byte[33];
+					encoded[0] = (byte)(this.Y.TestBit(0) ? 0x03 : 0x02);
+				}
+
+				Buffer.BlockCopy(x, 0, encoded, 1 + (32 - x.Length), x.Length);
+				return encoded;
+			}
+
+			public static Point Decode(byte[] encoded)
+			{
+				if (encoded == null || ((encoded.Length != 33 && encoded[0] != 0x02 && encoded[0] != 0x03) && (encoded.Length != 65 && encoded[0] != 0x04)))
+					throw new FormatException("Invalid encoded point");
+
+				var unsigned = new byte[32];
+				Buffer.BlockCopy(encoded, 1, unsigned, 0, 32);
+				BigInteger x = unsigned.ToUnsignedBigInteger();
+				BigInteger y;
+				byte prefix = encoded[0];
+
+				// uncompressed PubKey
+				if (prefix == 0x04)
+				{
+					Buffer.BlockCopy(encoded, 33, unsigned, 0, 32);
+					y = unsigned.ToUnsignedBigInteger();
+				}
+				// compressed PubKey
+				else
+				{
+					// solve y
+					y = ((x * x * x + 7) % ECCsecp256k1.P).ShanksSqrt(ECCsecp256k1.P);
+
+					if (y.IsEven ^ prefix == 0x02) // negate y for prefix (0x02 indicates y is even, 0x03 indicates y is odd)
+						y = -y + ECCsecp256k1.P;      // TODO:  DRY replace this and body of Negate() with call to static method
+				}
+				return new Point(x, y);
+			}
+
+			public Point Negate()
+			{
+				var r = (Point)this.Clone();
+				r.Y = -r.Y + ECCsecp256k1.P;
+				return r;
+			}
+
+			public Point Subtract(Point point)
+			{
+				return this.Add(point.Negate());
+			}
+
+			public Point Add(Point point)
+			{
+				BigInteger m;
+
+				if (this.IsInfinity)
+					return point;
+
+				if (point.IsInfinity)
+					return this;
+
+				if (this.X - point.X == 0)
+				{
+					if (this.Y - point.Y == 0)
+						m = 3 * this.X * this.X * (2 * this.Y).ModInverse(ECCsecp256k1.P);
+					else
+						return Infinity;
+				}
+				else
+				{
+					var mx = (this.X - point.X);
+					if (mx < 0)
+						mx += ECCsecp256k1.P;
+					m = (Y - point.Y) * mx.ModInverse(ECCsecp256k1.P);
+				}
+
+				m = m % ECCsecp256k1.P;
+
+				var v = Y - m * X;
+				var x3 = (m * m - X - point.X);
+				x3 = x3 % ECCsecp256k1.P;
+				if (x3 < 0)
+					x3 += ECCsecp256k1.P;
+				var y3 = -(m * x3 + v);
+				y3 = y3 % ECCsecp256k1.P;
+				if (y3 < 0)
+					y3 += ECCsecp256k1.P;
+
+				return new Point(x3, y3);
+			}
+
+			public Point Twice()
+			{
+				return this.Add(this);
+			}
+
+			public Point Multiply(BigInteger bigInt)
+			{
+				if (bigInt.Sign == -1)
+					throw new FormatException("The multiplicator cannot be negative");
+
+				bigInt = bigInt % ECCsecp256k1.N;
+
+				Point result = Point.Infinity;
+				Point temp = null;
+				do
+				{
+					temp = temp == null
+						? this
+						: temp.Twice();
+
+					if (!bigInt.IsEven)
+						result = result.Add(temp);
+				}
+				while ((bigInt >>= 1) != 0);
+
+				return result;
+			}
+		}
+		#endregion
+
+		#region Elgamal
+		public class Elgamal
+		{
+			RNGCryptoServiceProvider RNGCsp = new RNGCryptoServiceProvider();
+
+			public Point GenerateKey(Point publicKey, out byte[] key)
+			{
+				return this.GenerateKey(publicKey, out key, null);
+			}
+
+			public Point GenerateKey(Point publicKey, out byte[] key, BigInteger? k)
+			{
+				for (int i = 0; i < 100; i++)
+				{
+					if (k == null)
+					{
+						byte[] kBytes = new byte[33];
+						this.RNGCsp.GetBytes(kBytes);
+						kBytes[32] = 0;
+
+						k = new BigInteger(kBytes);
+					}
+
+					if (k.Value.IsZero || k.Value >= ECCsecp256k1.N)
+						continue;
+
+					var tag = ECCsecp256k1.G.Multiply(k.Value);
+					var keyPoint = publicKey.Multiply(k.Value);
+
+					if (keyPoint.IsInfinity || tag.IsInfinity)
+						continue;
+
+					key = keyPoint.Encode(false).GetDoubleHash("SHA256");
+
+					return tag;
+				}
+
+				throw new Exception("Unable to generate key");
+			}
+
+			public byte[] DecipherKey(BigInteger privateKey, Point tag)
+			{
+				return tag.Multiply(privateKey).Encode(false).GetDoubleHash("SHA256");
+			}
+		}
+		#endregion
+
+		#region Encryption
+		public class Encryption
+		{
+			Elgamal Elgamal = new Elgamal();
+			RijndaelManaged Rijndael = new RijndaelManaged();
+			RNGCryptoServiceProvider RNGCsp = new RNGCryptoServiceProvider();
+
+			public Encryption()
+			{
+				Rijndael.KeySize = 256;
+				Rijndael.BlockSize = 128;
+				Rijndael.Mode = CipherMode.CBC;
+				Rijndael.Padding = PaddingMode.PKCS7;
+			}
+
+			public byte[] Encrypt(Point publicKey, string message)
+			{
+				return this.Encrypt(publicKey, message.ToBytes());
+			}
+
+			public byte[] Encrypt(Point publicKey, byte[] data)
+			{
+				var tag = this.Elgamal.GenerateKey(publicKey, out byte[] key);
+				var tagBytes = tag.Encode(false);
+
+				var iv = new byte[16];
+				this.RNGCsp.GetBytes(iv);
+				this.Rijndael.IV = iv;
+				this.Rijndael.Key = key;
+
+				var crypto = Rijndael.CreateEncryptor();
+				var cipherData = crypto.TransformFinalBlock(data, 0, data.Length);
+
+				var cipher = new byte[cipherData.Length + 65 + 16];
+				Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
+				Buffer.BlockCopy(Rijndael.IV, 0, cipher, 65, 16);
+				Buffer.BlockCopy(cipherData, 0, cipher, 65 + 16, cipherData.Length);
+				return cipher;
+			}
+
+			public byte[] Decrypt(BigInteger privateKey, byte[] cipherData)
+			{
+				var tagBytes = new byte[65];
+				Buffer.BlockCopy(cipherData, 0, tagBytes, 0, tagBytes.Length);
+				var keyPoint = Point.Decode(tagBytes);
+
+				var iv = new byte[16];
+				Buffer.BlockCopy(cipherData, 65, iv, 0, iv.Length);
+
+				var cipher = new byte[cipherData.Length - 16 - 65];
+				Buffer.BlockCopy(cipherData, 65 + 16, cipher, 0, cipher.Length);
+
+				var key = this.Elgamal.DecipherKey(privateKey, keyPoint);
+
+				this.Rijndael.IV = iv;
+				this.Rijndael.Key = key;
+
+				var decryptor = this.Rijndael.CreateDecryptor();
+				return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+			}
+		}
+		#endregion
+
+		#region DSA
+		public class DSA
+		{
+			RNGCryptoServiceProvider RNGCsp = new RNGCryptoServiceProvider();
+
+			public BigInteger[] Sign(BigInteger privateKey, byte[] hash)
+			{
+				return this.Sign(privateKey, hash, null);
+			}
+
+			public BigInteger[] Sign(BigInteger privateKey, byte[] hash, BigInteger? k)
+			{
+				for (int i = 0; i < 100; i++)
+				{
+					if (k == null)
+					{
+						var kBytes = new byte[33];
+						this.RNGCsp.GetBytes(kBytes);
+						kBytes[32] = 0;
+
+						k = new BigInteger(kBytes);
+					}
+					var z = hash.ToUnsignedBigInteger();
+
+					if (k.Value.IsZero || k >= ECCsecp256k1.N)
+						continue;
+
+					var r = ECCsecp256k1.G.Multiply(k.Value).X % ECCsecp256k1.N;
+
+					if (r.IsZero)
+						continue;
+
+					var ss = (z + r * privateKey);
+					var s = (ss * (k.Value.ModInverse(ECCsecp256k1.N))) % ECCsecp256k1.N;
+
+					if (s.IsZero)
+						continue;
+
+					return new BigInteger[] { r, s };
+				}
+
+				throw new Exception("Unable to sign");
+			}
+
+			public bool Verify(Point publicKey, byte[] hash, BigInteger r, BigInteger s)
+			{
+				if (r >= ECCsecp256k1.N || r.IsZero || s >= ECCsecp256k1.N || s.IsZero)
+					return false;
+
+				var z = hash.ToUnsignedBigInteger();
+				var w = s.ModInverse(ECCsecp256k1.N);
+				var u1 = (z * w) % ECCsecp256k1.N;
+				var u2 = (r * w) % ECCsecp256k1.N;
+				var pt = ECCsecp256k1.G.Multiply(u1).Add(publicKey.Multiply(u2));
+				var pmod = pt.X % ECCsecp256k1.N;
+
+				return pmod == r;
+			}
+		}
+		#endregion
+
+		#region Generate keys
+		/// <summary>
+		/// Generates a random key using RNGCryptoServiceProvider
+		/// </summary>
+		/// <param name="length">The bit-length of the key</param>
+		/// <returns></returns>
+		public static byte[] GenerateKey(int length = 256)
+		{
+			return CryptoService.GenerateRandomKey(length);
+		}
+
+		/// <summary>
+		/// Generates the public key from the private key (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key</param>
+		/// <returns></returns>
+		public static Point GeneratePublicKey(BigInteger privateKey)
+		{
+			return ECCsecp256k1.G.Multiply(privateKey);
+		}
+
+		/// <summary>
+		/// Generates the public key from the private key (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key</param>
+		/// <returns></returns>
+		public static byte[] GeneratePublicKey(byte[] privateKey)
+		{
+			return ECCsecp256k1.GeneratePublicKey(privateKey.ToUnsignedBigInteger()).Encode(true);
+		}
+
+		/// <summary>
+		/// Generates (Decodes) the public key (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key</param>
+		/// <returns></returns>
+		public static Point GetPublicKey(byte[] publicKey)
+		{
+			return ECCsecp256k1.Point.Decode(publicKey);
+		}
+
+		/// <summary>
+		/// Generates the public address from the public key (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to generate public address</param>
+		/// <param name="compressed">Do compress the address</param>
+		/// <returns></returns>
+		public static string GeneratePublicAddress(Point publicKey, bool compressed = true)
+		{
+			var publicKeyHash = publicKey.Encode(compressed).GetHash160();
+			var publicAddress = new byte[publicKeyHash.Length + 1];
+			Buffer.BlockCopy(publicKeyHash, 0, publicAddress, 1, publicKeyHash.Length);
+			return publicAddress.Base58Encode();
+		}
+
+		/// <summary>
+		/// Generates the public address from the public key (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to generate public address</param>
+		/// <param name="compressed">Do compress the address</param>
+		/// <returns></returns>
+		public static string GeneratePublicAddress(byte[] publicKey, bool compressed = true)
+		{
+			return ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed);
+		}
+		#endregion
+
+		#region Encrypt
+		/// <summary>
+		/// Encrypts data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to encrypt data</param>
+		/// <param name="data">The array of bytes that contains data to encrypt</param>
+		/// <returns></returns>
+		public static byte[] Encrypt(Point publicKey, byte[] data)
+		{
+			return ECCsecp256k1.ECCEncryption.Encrypt(publicKey, data);
+		}
+
+		/// <summary>
+		/// Encrypts data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to encrypt data</param>
+		/// <param name="data">The array of bytes that contains data to encrypt</param>
+		/// <returns></returns>
+		public static byte[] Encrypt(byte[] publicKey, byte[] data)
+		{
+			return ECCsecp256k1.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
+		}
+		#endregion
+
+		#region Decrypt
+		/// <summary>
+		/// Decrypts data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to decrypt data</param>
+		/// <param name="data">The array of bytes that contains data to decrypt</param>
+		/// <returns></returns>
+		public static byte[] Decrypt(BigInteger privateKey, byte[] data)
+		{
+			return ECCsecp256k1.ECCEncryption.Decrypt(privateKey, data);
+		}
+
+		/// <summary>
+		/// Decrypts data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to decrypt data</param>
+		/// <param name="data">The array of bytes that contains data to decrypt</param>
+		/// <returns></returns>
+		public static byte[] Decrypt(byte[] privateKey, byte[] data)
+		{
+			return ECCsecp256k1.Decrypt(privateKey.ToUnsignedBigInteger(), data);
+		}
+		#endregion
+
+		#region Sign
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <returns></returns>
+		public static BigInteger[] Sign(BigInteger privateKey, byte[] hash)
+		{
+			return ECCsecp256k1.ECCDSA.Sign(privateKey, hash);
+		}
+
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <returns></returns>
+		public static BigInteger[] Sign(byte[] privateKey, byte[] hash)
+		{
+			return ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), hash);
+		}
+
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="data">The data to compute hash</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <returns></returns>
+		public static BigInteger[] Sign(BigInteger privateKey, byte[] data, string hashMode)
+		{
+			return ECCsecp256k1.Sign(privateKey, data.GetHash(hashMode));
+		}
+
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="data">The data to compute hash</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <returns></returns>
+		public static BigInteger[] Sign(byte[] privateKey, byte[] data, string hashMode)
+		{
+			return ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), data, hashMode);
+		}
+		#endregion
+
+		#region Sign (as hex)
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <returns></returns>
+		public static string SignAsHex(BigInteger privateKey, byte[] hash)
+		{
+			var signature = ECCsecp256k1.Sign(privateKey, hash);
+			return $"{signature[0].ToHex()}{signature[1].ToHex()}";
+		}
+
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <returns></returns>
+		public static string SignAsHex(byte[] privateKey, byte[] hash)
+		{
+			return ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), hash);
+		}
+
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="data">The data to compute hash</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <returns></returns>
+		public static string SignAsHex(BigInteger privateKey, byte[] data, string hashMode)
+		{
+			return ECCsecp256k1.SignAsHex(privateKey, data.GetHash(hashMode));
+		}
+
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="data">The data to compute hash</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <returns></returns>
+		public static string SignAsHex(byte[] privateKey, byte[] data, string hashMode)
+		{
+			return ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), data, hashMode);
+		}
+		#endregion
+
+		#region Verify
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(Point publicKey, byte[] hash, BigInteger[] signature)
+		{
+			return signature == null || signature.Length < 2
+				? false
+				: ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature[0], signature[1]);
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(byte[] publicKey, byte[] hash, BigInteger[] signature)
+		{
+			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="data">The data to compute hash to verify with signature</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(Point publicKey, byte[] data, string hashMode, BigInteger[] signature)
+		{
+			return ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="data">The data to compute hash to verify with signature</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, BigInteger[] signature)
+		{
+			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
+		}
+		#endregion
+
+		#region Verify (as hex)
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(Point publicKey, byte[] hash, string signature)
+		{
+			return string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128)
+				? false
+				: ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature.Left(64).ToBigInteger(), signature.Right(64).ToBigInteger());
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(byte[] publicKey, byte[] hash, string signature)
+		{
+			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="data">The data to compute hash to verify with signature</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(Point publicKey, byte[] data, string hashMode, string signature)
+		{
+			return ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="data">The data to compute hash to verify with signature</param>
+		/// <param name="hashMode">The hash mode</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, string signature)
+		{
+			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
+		}
+		#endregion
+
+	}
 }

@@ -6,14 +6,14 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.1.14.1804</AssemblyVersion>
-		<FileVersion>10.1.14.1804</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.04.01</InformationalVersion>
+		<AssemblyVersion>10.1.15.1804</AssemblyVersion>
+		<FileVersion>10.1.15.1804</FileVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.04.05</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.14.1804</Version>
+		<Version>10.1.15.1804</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
@@ -22,7 +22,7 @@
 		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2018 VIEApps.net</Copyright>
 		<PackageTags>utility;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Fix bugs of ExpandoObject, compress/decompress and add more extension methods</PackageReleaseNotes>
+		<PackageReleaseNotes>Add more extension methods to conversion to array segment and string</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 	</PropertyGroup>
@@ -51,6 +51,7 @@
 		<PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
+		<PackageReference Include="System.Security.Cryptography.Cng" Version="4.4.0" />
 	</ItemGroup>
 
 </Project>
