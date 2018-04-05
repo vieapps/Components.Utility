@@ -51,7 +51,6 @@
 		<PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />
-		<PackageReference Include="System.Security.Cryptography.Cng" Version="4.4.0" />
 	</ItemGroup>
 
 </Project>
