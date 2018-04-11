@@ -6,14 +6,14 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.1.15.1804</AssemblyVersion>
-		<FileVersion>10.1.15.1804</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.04.05</InformationalVersion>
+		<AssemblyVersion>10.1.17.1804</AssemblyVersion>
+		<FileVersion>10.1.17.1804</FileVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.04.11</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.15.1804</Version>
+		<Version>10.1.17.1804</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
@@ -22,7 +22,7 @@
 		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2018 VIEApps.net</Copyright>
 		<PackageTags>utility;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Add more extension methods to conversion to array segment and string</PackageReleaseNotes>
+		<PackageReleaseNotes>Add helper methods for working with Elliptic Curve Cryptography that follow secp256k1 (Bitcoin)</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 	</PropertyGroup>

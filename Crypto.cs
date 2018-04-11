@@ -1994,6 +1994,31 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Sign/Verify (using ECC)
+		/// <summary>
+		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <returns></returns>
+		public static BigInteger[] ECCSign(BigInteger privateKey, byte[] hash)
+		{
+			return ECCsecp256k1.Sign(privateKey, hash);
+		}
+
+		/// <summary>
+		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(byte[] publicKey, byte[] hash, BigInteger[] signature)
+		{
+			return ECCsecp256k1.Verify(publicKey, hash, signature);
+		}
+		#endregion
+
 		#region Generate key pair of ECC
 		/// <summary>
 		/// Generates key-pair of ECC
