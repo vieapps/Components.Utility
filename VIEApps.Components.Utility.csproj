@@ -6,14 +6,14 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.1.17.1804</AssemblyVersion>
-		<FileVersion>10.1.17.1804</FileVersion>
-		<InformationalVersion>v10.1.netstandard-2+rev:2018.04.11</InformationalVersion>
+		<AssemblyVersion>10.1.18.1805</AssemblyVersion>
+		<FileVersion>10.1.18.1805</FileVersion>
+		<InformationalVersion>v10.1.netstandard-2+rev:2018.05.01</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.17.1804</Version>
+		<Version>10.1.18.1805</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>

@@ -2021,13 +2021,13 @@ namespace net.vieapps.Components.Utility
 
 		#region Generate key pair of ECC
 		/// <summary>
-		/// Generates key-pair of ECC
+		/// Generates key-pair of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
 		/// <param name="length">The bit-length of the private key</param>
 		/// <returns></returns>
 		public static Tuple<BigInteger, ECCsecp256k1.Point> GenerateECCKeyPair(int length = 256)
 		{
-			var privateKey = ECCsecp256k1.GenerateKey(length).ToUnsignedBigInteger();
+			var privateKey = ECCsecp256k1.GeneratePrivateKey(length);
 			var publicKey = ECCsecp256k1.GeneratePublicKey(privateKey);
 			return new Tuple<BigInteger, ECCsecp256k1.Point>(privateKey, publicKey);
 		}
@@ -3463,6 +3463,16 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Generates a random private key using RNGCryptoServiceProvider
+		/// </summary>
+		/// <param name="length">The bit-length of the key</param>
+		/// <returns></returns>
+		public static BigInteger GeneratePrivateKey(int length = 256)
+		{
+			return CryptoService.GenerateRandomKey(length).ToUnsignedBigInteger();
+		}
+
+		/// <summary>
 		/// Generates the public key from the private key (follow Secp256k1 specs)
 		/// </summary>
 		/// <param name="privateKey">The private key</param>
@@ -3493,6 +3503,16 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Generates (Encodes) the public key (follow Secp256k1 specs)
+		/// </summary>
+		/// <param name="publicKey">The public key</param>
+		/// <returns></returns>
+		public static byte[] GetPublicKey(Point publicKey, bool compress = true)
+		{
+			return publicKey.Encode(compress);
+		}
+
+		/// <summary>
 		/// Generates the public address from the public key (follow Secp256k1 specs)
 		/// </summary>
 		/// <param name="publicKey">The public key to generate public address</param>
@@ -3500,10 +3520,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GeneratePublicAddress(Point publicKey, bool compressed = true)
 		{
-			var publicKeyHash = publicKey.Encode(compressed).GetHash160();
-			var publicAddress = new byte[publicKeyHash.Length + 1];
-			Buffer.BlockCopy(publicKeyHash, 0, publicAddress, 1, publicKeyHash.Length);
-			return publicAddress.Base58Encode();
+			return new byte[1].Concat(publicKey.Encode(compressed).GetHash160()).Base58Encode();
 		}
 
 		/// <summary>
@@ -3673,7 +3690,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static bool Verify(Point publicKey, byte[] hash, BigInteger[] signature)
 		{
-			return signature == null || signature.Length < 2
+			return publicKey == null || signature == null || signature.Length < 2
 				? false
 				: ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature[0], signature[1]);
 		}
@@ -3727,7 +3744,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static bool Verify(Point publicKey, byte[] hash, string signature)
 		{
-			return string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128)
+			return publicKey == null || string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128)
 				? false
 				: ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature.Left(64).ToBigInteger(), signature.Right(64).ToBigInteger());
 		}

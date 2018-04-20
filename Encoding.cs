@@ -547,16 +547,18 @@ namespace net.vieapps.Components.Utility
 		/// Encodes this array of bytes to Base32 string
 		/// </summary>
 		/// <param name="bytes"></param>
+		/// <param name="addChecksum"></param>
 		/// <returns></returns>
 		public static string Base32Encode(this byte[] bytes, bool addChecksum = false)
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
-			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 			var data = addChecksum
 				? bytes.Concat(bytes.GetCheckSum("SHA1", 4))
 				: bytes;
+
+			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 			var builder = new StringBuilder((data.Length + 7) * 8 / 5);
 			int pos = 0, index = 0;
 			while (pos < data.Length)
@@ -678,15 +680,13 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Encodes this array of bytes to Base58 string
 		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="addChecksum"></param>
-		/// <param name="prefix"></param>
-		/// <param name="postfix"></param>
+		/// <param name="bytes">The array of bytes to encode</param>
+		/// <param name="addChecksum">Add SHA256 checksum</param>
 		/// <returns></returns>
-		public static string Base58Encode(this byte[] bytes, bool addChecksum = true, byte[] prefix = null, byte[] postfix = null)
+		public static string Base58Encode(this byte[] bytes, bool addChecksum = true)
 		{
 			// add prefix / surfix
-			var data = (prefix ?? new byte[0]).Concat(bytes, postfix ?? new byte[0]);
+			var data = bytes ?? new byte[0];
 
 			// add check-sum
 			if (addChecksum)
@@ -712,8 +712,8 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Decodes this Base58 string to array of bytes
 		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="verifyChecksum"></param>
+		/// <param name="string">The string to decode</param>
+		/// <param name="verifyChecksum">true to verify SHA256 checksum</param>
 		/// <returns></returns>
 		public static byte[] Base58Decode(this string @string, bool verifyChecksum = true)
 		{
@@ -750,23 +750,21 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Converts this string to Base58 string
 		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="addChecksum"></param>
-		/// <param name="prefix"></param>
-		/// <param name="postfix"></param>
+		/// <param name="string">The string to convert</param>
+		/// <param name="addChecksum">true to add SHA256 checksum</param>
 		/// <returns></returns>
-		public static string ToBase58(this string @string, bool addChecksum = true, byte[] prefix = null, byte[] postfix = null)
+		public static string ToBase58(this string @string, bool addChecksum = true)
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? null
-				: @string.ToBytes().Base58Encode(addChecksum, prefix, postfix);
+				: @string.ToBytes().Base58Encode(addChecksum);
 		}
 
 		/// <summary>
 		/// Converts this Base58 string to plain string
 		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="verifyChecksum"></param>
+		/// <param name="string">The string to convert</param>
+		/// <param name="verifyChecksum">true to verify with SHA256 checksum</param>
 		/// <returns></returns>
 		public static string FromBase58(this string @string, bool verifyChecksum = true)
 		{
@@ -778,13 +776,58 @@ namespace net.vieapps.Components.Utility
 
 		#region Encode/Decode Base64
 		/// <summary>
+		/// Encodes this array of bytes to Base64 string
+		/// </summary>
+		/// <param name="bytes">The array of bytes to encode</param>
+		/// <param name="addChecksum">Add SHA256 checksum</param>
+		/// <returns></returns>
+		public static string Base64Encode(this byte[] bytes, bool addChecksum = false)
+		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid", nameof(bytes));
+
+			var data = addChecksum
+				? bytes.Concat(bytes.GetCheckSum("SHA256", 4))
+				: bytes;
+
+			return Convert.ToBase64String(data);
+		}
+
+		/// <summary>
+		/// Decodes this Base64 string to array of bytes
+		/// </summary>
+		/// <param name="string">The string to decode</param>
+		/// <param name="verifyChecksum">true to verify SHA256 checksum</param>
+		/// <returns></returns>
+		public static byte[] Base64Decode(this string @string, bool verifyChecksum = false)
+		{
+			// convert to array of bytes
+			var output = Convert.FromBase64String(@string);
+
+			// verify & remove check-sum
+			if (verifyChecksum)
+			{
+				var givenChecksum = output.Sub(output.Length - 4);
+				output = output.Sub(0, output.Length - 4);
+				var correctChecksum = output.GetCheckSum("SHA256", 4);
+				return givenChecksum.SequenceEqual(correctChecksum)
+					? output
+					: null;
+			}
+
+			// no check-sum
+			return output;
+		}
+
+		/// <summary>
 		/// Converts this array of bytes to Base64 string
 		/// </summary>
 		/// <param name="bytes"></param>
+		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64(this byte[] bytes)
+		public static string ToBase64(this byte[] bytes, bool addChecksum = false)
 		{
-			return Convert.ToBase64String(bytes);
+			return bytes.Base64Encode(addChecksum);
 		}
 
 		/// <summary>
@@ -793,14 +836,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="isHexa"></param>
 		/// <param name="isBase64Url"></param>
+		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64(this string @string, bool isHexa = false, bool isBase64Url = false)
+		public static string ToBase64(this string @string, bool isHexa = false, bool isBase64Url = false, bool addChecksum = false)
 		{
 			if (isHexa)
-				return @string.HexToBytes().ToBase64();
+				return @string.HexToBytes().ToBase64(addChecksum);
 
 			else if (!isBase64Url)
-				return @string.ToBytes().ToBase64();
+				return @string.ToBytes().ToBase64(addChecksum);
 
 			else
 			{
@@ -826,10 +870,11 @@ namespace net.vieapps.Components.Utility
 		/// Converts this array of bytes to Base64Url string
 		/// </summary>
 		/// <param name="bytes"></param>
+		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64Url(this byte[] bytes)
+		public static string ToBase64Url(this byte[] bytes, bool addChecksum = false)
 		{
-			return bytes.ToBase64().Split('=').First().Replace('+', '-').Replace('/', '_');
+			return bytes.ToBase64(addChecksum).Split('=').First().Replace('+', '-').Replace('/', '_');
 		}
 
 		/// <summary>
@@ -838,10 +883,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="isBase64"></param>
 		/// <param name="isHexa"></param>
+		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHexa = false)
+		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHexa = false, bool addChecksum = false)
 		{
-			return (isBase64 ? @string : @string.ToBase64(isHexa, false)).Split('=').First().Replace('+', '-').Replace('/', '_');
+			return (isBase64 ? @string : @string.ToBase64(isHexa, false, addChecksum)).Split('=').First().Replace('+', '-').Replace('/', '_');
 		}
 
 		/// <summary>
@@ -849,10 +895,11 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="isBase64Url"></param>
+		/// <param name="verifyChecksum"></param>
 		/// <returns></returns>
-		public static string FromBase64(this string @string, bool isBase64Url = false)
+		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false)
 		{
-			return Convert.FromBase64String(isBase64Url ? @string.ToBase64(false, true) : @string).GetString();
+			return (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum)?.GetString();
 		}
 
 		/// <summary>
@@ -1402,7 +1449,6 @@ namespace net.vieapps.Components.Utility
 
 		public static bool TestBit(this BigInteger i, int n)
 		{
-			//[resharper:unused local variable] int bitLength = i.BitLength();
 			return !(i >> n).IsEven;
 		}
 
