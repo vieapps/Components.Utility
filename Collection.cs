@@ -277,11 +277,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T[] Take<T>(this T[] array, int offset, int count = 0)
 		{
-			if (array.Length < 1)
+			if (array.Length < 1 || (offset == 0 && count == array.Length))
 				return array;
 
 			offset = offset > -1 && offset < array.Length ? offset : 0;
 			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
+			if (offset == 0 && count == array.Length)
+				return array;
 
 			if (typeof(T).IsPrimitive)
 			{
