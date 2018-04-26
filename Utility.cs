@@ -168,6 +168,41 @@ namespace net.vieapps.Components.Utility
 
 		#region Async extensions to support cancellation token
 		/// <summary>
+		/// Performs an awaitable task with cancellation token supported
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task WithCancellationToken(this Task task, CancellationToken cancellationToken)
+		{
+			var tcs = new TaskCompletionSource<bool>();
+			using (cancellationToken.Register(state => ((TaskCompletionSource<bool>)state).TrySetResult(true), tcs, false))
+			{
+				if (task != await Task.WhenAny(task, tcs.Task))
+					throw new OperationCanceledException(cancellationToken);
+			}
+			await task;
+		}
+
+		/// <summary>
+		/// Performs an awaitable task with cancellation token supported
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="task"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task<T> WithCancellationToken<T>(this Task<T> task, CancellationToken cancellationToken)
+		{
+			var tcs = new TaskCompletionSource<bool>();
+			using (cancellationToken.Register(state => ((TaskCompletionSource<bool>)state).TrySetResult(true), tcs, false))
+			{
+				if (task != await Task.WhenAny(task, tcs.Task))
+					throw new OperationCanceledException(cancellationToken);
+			}
+			return await task;
+		}
+
+		/// <summary>
 		/// Performs a web request and get response in async
 		/// </summary>
 		/// <param name="httpRequest"></param>
@@ -196,78 +231,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Reads a line of characters asynchronously from the current stream and returns the data as a string.
-		/// </summary>
-		/// <param name="reader"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
-		{
-			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
-			{
-				return await reader.ReadLineAsync().ConfigureAwait(false);
-			}
-		}
-
-		/// <summary>
-		/// Reads all characters from the current position to the end of the stream asynchronously and returns them as one string.
-		/// </summary>
-		/// <param name="reader"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task<string> ReadToEndAsync(this StreamReader reader, CancellationToken cancellationToken)
-		{
-			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
-			{
-				return await reader.ReadToEndAsync().ConfigureAwait(false);
-			}
-		}
-
-		/// <summary>
-		/// Writes a string to the stream asynchronously.
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task WriteAsync(this StreamWriter writer, string value, CancellationToken cancellationToken)
-		{
-			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
-			{
-				await writer.WriteAsync(value).ConfigureAwait(false);
-			}
-		}
-
-		/// <summary>
-		/// Writes a string followed by a line terminator asynchronously to the stream.
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task WriteLineAsync(this StreamWriter writer, string value, CancellationToken cancellationToken)
-		{
-			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
-			{
-				await writer.WriteLineAsync(value).ConfigureAwait(false);
-			}
-		}
-
-		/// <summary>
-		/// Clears all buffers for this stream asynchronously and causes any buffered data to be written to the underlying device.
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task FlushAsync(this StreamWriter writer, CancellationToken cancellationToken)
-		{
-			using (cancellationToken.Register(() => throw new OperationCanceledException(cancellationToken), useSynchronizationContext: false))
-			{
-				await writer.FlushAsync().ConfigureAwait(false);
-			}
-		}
-
-		/// <summary>
 		/// Downloads the resource as a <see cref="System.Byte"/>  array from the URI specified as an asynchronous operation using a task object.
 		/// </summary>
 		/// <param name="webclient"></param>
@@ -276,19 +239,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> DownloadDataTaskAsync(this WebClient webclient, string address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() =>
-			{
-				webclient.CancelAsync();
-				throw new OperationCanceledException(cancellationToken);
-			}, useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
 			{
 				try
 				{
 					return await webclient.DownloadDataTaskAsync(address).ConfigureAwait(false);
-				}
-				catch (OperationCanceledException)
-				{
-					throw;
 				}
 				catch (Exception ex)
 				{
@@ -309,19 +264,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> DownloadDataTaskAsync(this WebClient webclient, Uri address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() =>
-			{
-				webclient.CancelAsync();
-				throw new OperationCanceledException(cancellationToken);
-			}, useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
 			{
 				try
 				{
 					return await webclient.DownloadDataTaskAsync(address).ConfigureAwait(false);
-				}
-				catch (OperationCanceledException)
-				{
-					throw;
 				}
 				catch (Exception ex)
 				{
@@ -342,19 +289,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<string> DownloadStringTaskAsync(this WebClient webclient, string address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() =>
-			{
-				webclient.CancelAsync();
-				throw new OperationCanceledException(cancellationToken);
-			}, useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
 			{
 				try
 				{
 					return await webclient.DownloadStringTaskAsync(address).ConfigureAwait(false);
-				}
-				catch (OperationCanceledException)
-				{
-					throw;
 				}
 				catch (Exception ex)
 				{
@@ -375,19 +314,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<string> DownloadStringTaskAsync(this WebClient webclient, Uri address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() =>
-			{
-				webclient.CancelAsync();
-				throw new OperationCanceledException(cancellationToken);
-			}, useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
 			{
 				try
 				{
 					return await webclient.DownloadStringTaskAsync(address).ConfigureAwait(false);
-				}
-				catch (OperationCanceledException)
-				{
-					throw;
 				}
 				catch (Exception ex)
 				{
@@ -409,19 +340,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task DownloadFileTaskAsync(this WebClient webclient, string address, string fileName, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() =>
-			{
-				webclient.CancelAsync();
-				throw new OperationCanceledException(cancellationToken);
-			}, useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
 			{
 				try
 				{
 					await webclient.DownloadFileTaskAsync(address, fileName).ConfigureAwait(false);
-				}
-				catch (OperationCanceledException)
-				{
-					throw;
 				}
 				catch (Exception ex)
 				{
@@ -443,19 +366,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task DownloadFileTaskAsync(this WebClient webclient, Uri address, string fileName, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() =>
-			{
-				webclient.CancelAsync();
-				throw new OperationCanceledException(cancellationToken);
-			}, useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
 			{
 				try
 				{
 					await webclient.DownloadFileTaskAsync(address, fileName).ConfigureAwait(false);
-				}
-				catch (OperationCanceledException)
-				{
-					throw;
 				}
 				catch (Exception ex)
 				{
@@ -465,16 +380,6 @@ namespace net.vieapps.Components.Utility
 						throw ex;
 				}
 			}
-		}
-
-		/// <summary>
-		/// Returns the array of unsigned bytes from which this stream was created.
-		/// </summary>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task<byte[]> GetBufferAsync(this MemoryStream stream, CancellationToken cancellationToken)
-		{
-			return UtilityService.ExecuteTask(() => stream.GetBuffer(), cancellationToken);
 		}
 		#endregion
 
@@ -756,7 +661,7 @@ namespace net.vieapps.Components.Utility
 
 				using (var writer = new StreamWriter(await webRequest.GetRequestStreamAsync().ConfigureAwait(false)))
 				{
-					await writer.WriteAsync(body, cancellationToken).ConfigureAwait(false);
+					await writer.WriteAsync(body).WithCancellationToken(cancellationToken).ConfigureAwait(false);
 				}
 			}
 
@@ -788,7 +693,7 @@ namespace net.vieapps.Components.Utility
 					{
 						using (var reader = new StreamReader(stream, true))
 						{
-							responseBody = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+							responseBody = await reader.ReadToEndAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
 						}
 					}
 				throw new RemoteServerErrorException("Error occurred at remote server", responseBody, ex?.Response?.ResponseUri.AbsoluteUri ?? uri, ex);
@@ -885,7 +790,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var reader = new StreamReader(stream, true))
 				{
-					return (await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false)).HtmlDecode();
+					return (await reader.ReadToEndAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false)).HtmlDecode();
 				}
 			}
 		}
@@ -1680,7 +1585,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var reader = encoding != null ? new StreamReader(stream, encoding) : new StreamReader(stream, true))
 				{
-					return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+					return await reader.ReadToEndAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}
@@ -1756,7 +1661,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
-					await writer.WriteAsync(content, cancellationToken).ConfigureAwait(false);
+					await writer.WriteAsync(content).WithCancellationToken(cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}
@@ -1878,8 +1783,8 @@ namespace net.vieapps.Components.Utility
 				{
 					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
-						await lines.Where(line => line != null).ForEachAsync((line, token) => writer.WriteLineAsync(line, token), cancellationToken, true, false).ConfigureAwait(false);
-						await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+						await lines.Where(line => line != null).ForEachAsync((line, token) => writer.WriteLineAsync(line).WithCancellationToken(token), cancellationToken, true, false).ConfigureAwait(false);
+						await writer.FlushAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
 					}
 				}
 		}
@@ -2563,7 +2468,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
 		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return this._reader.ReadLineAsync(cancellationToken);
+			return this._reader.ReadLineAsync().WithCancellationToken(cancellationToken);
 		}
 
 		/// <summary>
@@ -2659,11 +2564,11 @@ namespace net.vieapps.Components.Utility
 
 			// read all lines
 			var lines = new List<string>();
-			var line = await this._reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+			var line = await this._reader.ReadLineAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
 			while (line != null)
 			{
 				lines.Add(line);
-				line = await this._reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+				line = await this._reader.ReadLineAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
 			}
 
 			// return lines
@@ -2713,7 +2618,7 @@ namespace net.vieapps.Components.Utility
 			bytes[bytes.Length - 1] &= mask;
 
 			// return the BigInteger with the bits-length
-			return new BigInteger(bytes.Sub(1, bytes.Length - 1));
+			return new BigInteger(bytes.Take(1));
 		}
 
 		/// <summary>

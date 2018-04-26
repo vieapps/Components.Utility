@@ -246,55 +246,61 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T[] Concat<T>(this T[] array, params T[][] arrays)
 		{
-			var result = new T[array.Length + arrays.Sum(a => a.Length)];
-			if (array.Length > 0)
-				Buffer.BlockCopy(array, 0, result, 0, array.Length);
-
-			var offset = array.Length;
-			arrays.ForEach(a =>
+			if (typeof(T).IsPrimitive)
 			{
-				Buffer.BlockCopy(a, 0, result, offset, a.Length);
-				offset += a.Length;
-			});
-
-			return result;
+				var result = new T[array.Length + arrays.Sum(a => a.Length)];
+				if (array.Length > 0)
+					Buffer.BlockCopy(array, 0, result, 0, array.Length);
+				var offset = array.Length;
+				arrays.ForEach(a =>
+				{
+					Buffer.BlockCopy(a, 0, result, offset, a.Length);
+					offset += a.Length;
+				});
+				return result;
+			}
+			else
+			{
+				var result = array.Select(e => e);
+				arrays.ForEach(a => result = result.Concat(a));
+				return result.ToArray();
+			}
 		}
 
 		/// <summary>
-		/// Gets a sub-array from this array
+		/// Takes a sub-array from this array
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="array"></param>
 		/// <param name="offset"></param>
 		/// <param name="count"></param>
 		/// <returns></returns>
-		public static T[] Sub<T>(this T[] array, int offset, int count = 0)
+		public static T[] Take<T>(this T[] array, int offset, int count = 0)
 		{
-			var result = new T[count > 0 ? count : array.Length - offset];
-			Buffer.BlockCopy(array, offset, result, 0, count > 0 ? count : array.Length - offset);
-			return result;
+			if (array.Length < 1)
+				return array;
+
+			offset = offset > -1 && offset < array.Length ? offset : 0;
+			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
+
+			if (typeof(T).IsPrimitive)
+			{
+				var result = new T[count];
+				Buffer.BlockCopy(array, offset, result, 0, count);
+				return result;
+			}
+			else
+				return array.Skip(offset).Take(count).ToArray();
 		}
 
 		/// <summary>
-		/// Removes an element by index
+		/// Takes the array from this array segment
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <param name="index"></param>
+		/// <param name="segment"></param>
 		/// <returns></returns>
-		public static T[] RemoveAt<T>(this T[] @object, int index)
+		public static T[] Take<T>(this ArraySegment<T> segment)
 		{
-			if (index > -1 && index < @object.Length)
-			{
-				var array = new T[@object.Length - 1];
-				if (index > 0)
-					Array.Copy(@object, 0, array, 0, index);
-				if (index < @object.Length - 1)
-					Array.Copy(@object, index + 1, array, index, @object.Length - index - 1);
-				return array;
-			}
-			else
-				return @object;
+			return segment.Array.Take(segment.Offset, segment.Count);
 		}
 
 		/// <summary>

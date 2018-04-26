@@ -279,7 +279,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(@string))
 				return DateTimeService.CheckingDateTime;
-			else if (!@string.EndsWith(" GMT", StringComparison.OrdinalIgnoreCase))
+			else if (!@string.IsEndsWith(" GMT"))
 				return DateTimeService.CheckingDateTime;
 
 			// get date-time

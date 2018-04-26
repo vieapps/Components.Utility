@@ -938,7 +938,7 @@ namespace net.vieapps.Components.Utility
 		{
 			return bytes == null || bytes.Length < 1
 				? throw new ArgumentException("Invalid", nameof(bytes))
-				: bytes.GetDoubleHash(mode).Sub(0, length);
+				: bytes.GetDoubleHash(mode).Take(0, length);
 		}
 
 		/// <summary>
@@ -965,7 +965,10 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GenerateRandomKey(int length = 256)
 		{
 			var key = new byte[length > 0 ? length : 256];
-			new RNGCryptoServiceProvider().GetBytes(key);
+			using (var crypto = new RNGCryptoServiceProvider())
+			{
+				crypto.GetBytes(key);
+			}
 			return key;
 		}
 

@@ -61,7 +61,7 @@ namespace net.vieapps.Components.Utility
 		static EncodingService()
 		{
 			for (byte @byte = 0; @byte < 255; @byte++)
-				EncodingService.HexToByte[ByteToHex[@byte]] = @byte;
+				EncodingService.HexToByte[EncodingService.ByteToHex[@byte]] = @byte;
 			EncodingService.HexToByte["ff"] = 255;
 		}
 		#endregion
@@ -379,7 +379,22 @@ namespace net.vieapps.Components.Utility
 
 		#endregion
 
-		#region To ArraySegment<byte>
+		#region To ArraySegment
+		/// <summary>
+		/// Converts this array to array segment of bytes
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static ArraySegment<T> ToArraySegment<T>(this T[] array, int offset = 0, int count = 0)
+		{
+			offset = offset > -1 && offset < array.Length ? offset : 0;
+			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
+			return new ArraySegment<T>(array, offset, count);
+		}
+
 		/// <summary>
 		/// Converts this string to array segment of bytes
 		/// </summary>
@@ -388,7 +403,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this string @string, Encoding encoding = null)
 		{
-			return new ArraySegment<byte>(@string.ToBytes(encoding));
+			return @string.ToBytes(encoding).ToArraySegment();
 		}
 
 		/// <summary>
@@ -398,7 +413,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this bool @bool)
 		{
-			return new ArraySegment<byte>(@bool.ToBytes());
+			return @bool.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -408,7 +423,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this char @char)
 		{
-			return new ArraySegment<byte>(@char.ToBytes());
+			return @char.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -418,7 +433,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this byte @byte)
 		{
-			return new ArraySegment<byte>(@byte.ToBytes());
+			return @byte.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -428,7 +443,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this sbyte @sbyte)
 		{
-			return new ArraySegment<byte>(@sbyte.ToBytes());
+			return @sbyte.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -438,7 +453,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this short @short)
 		{
-			return new ArraySegment<byte>(@short.ToBytes());
+			return @short.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -448,7 +463,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this ushort @ushort)
 		{
-			return new ArraySegment<byte>(@ushort.ToBytes());
+			return @ushort.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -458,7 +473,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this int @int)
 		{
-			return new ArraySegment<byte>(@int.ToBytes());
+			return @int.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -468,7 +483,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this uint @uint)
 		{
-			return new ArraySegment<byte>(@uint.ToBytes());
+			return @uint.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -478,7 +493,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this long @long)
 		{
-			return new ArraySegment<byte>(@long.ToBytes());
+			return @long.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -488,7 +503,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this ulong @ulong)
 		{
-			return new ArraySegment<byte>(@ulong.ToBytes());
+			return @ulong.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -498,7 +513,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this float @float)
 		{
-			return new ArraySegment<byte>(@float.ToBytes());
+			return @float.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -508,7 +523,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this double @double)
 		{
-			return new ArraySegment<byte>(@double.ToBytes());
+			return @double.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -518,7 +533,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this decimal @decimal)
 		{
-			return new ArraySegment<byte>(@decimal.ToBytes());
+			return @decimal.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -528,7 +543,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this DateTime datetime)
 		{
-			return new ArraySegment<byte>(datetime.ToBytes());
+			return datetime.ToBytes().ToArraySegment();
 		}
 
 		/// <summary>
@@ -538,7 +553,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this BigInteger bigInt)
 		{
-			return new ArraySegment<byte>(bigInt.ToUnsignedBytes());
+			return bigInt.ToUnsignedBytes().ToArraySegment();
 		}
 		#endregion
 
@@ -638,8 +653,8 @@ namespace net.vieapps.Components.Utility
 			// verify & remove check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = output.Sub(output.Length - 4);
-				output = output.Sub(0, output.Length - 4);
+				var givenChecksum = output.Take(output.Length - 4);
+				output = output.Take(0, output.Length - 4);
 				var correctChecksum = output.GetCheckSum("SHA1", 4);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
@@ -735,8 +750,8 @@ namespace net.vieapps.Components.Utility
 			// verify & remove check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = output.Sub(output.Length - 4);
-				output = output.Sub(0, output.Length - 4);
+				var givenChecksum = output.Take(output.Length - 4);
+				output = output.Take(0, output.Length - 4);
 				var correctChecksum = output.GetCheckSum("SHA256", 4);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
@@ -807,8 +822,8 @@ namespace net.vieapps.Components.Utility
 			// verify & remove check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = output.Sub(output.Length - 4);
-				output = output.Sub(0, output.Length - 4);
+				var givenChecksum = output.Take(output.Length - 4);
+				output = output.Take(0, output.Length - 4);
 				var correctChecksum = output.GetCheckSum("SHA256", 4);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
@@ -1060,7 +1075,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : data.Array.Sub(data.Offset, data.Count).Compress(mode));
+			return new ArraySegment<byte>(data == null ? new byte[0] : data.Take().Compress(mode));
 		}
 
 		/// <summary>
@@ -1156,7 +1171,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<ArraySegment<byte>> CompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Array.Sub(data.Offset, data.Count).CompressAsync(mode, cancellationToken).ConfigureAwait(false));
+			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Take().CompressAsync(mode, cancellationToken).ConfigureAwait(false));
 		}
 
 		/// <summary>
@@ -1247,7 +1262,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : data.Array.Sub(data.Offset, data.Count).Decompress(mode));
+			return new ArraySegment<byte>(data == null ? new byte[0] : data.Take().Decompress(mode));
 		}
 
 		/// <summary>
@@ -1341,7 +1356,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<ArraySegment<byte>> DecompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Array.Sub(data.Offset, data.Count).DecompressAsync(mode, cancellationToken).ConfigureAwait(false));
+			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Take().DecompressAsync(mode, cancellationToken).ConfigureAwait(false));
 		}
 
 		/// <summary>
