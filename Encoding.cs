@@ -381,7 +381,7 @@ namespace net.vieapps.Components.Utility
 
 		#region To ArraySegment
 		/// <summary>
-		/// Converts this array to array segment of bytes
+		/// Converts this array to array segment
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="array"></param>
@@ -393,6 +393,21 @@ namespace net.vieapps.Components.Utility
 			offset = offset > -1 && offset < array.Length ? offset : 0;
 			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
 			return new ArraySegment<T>(array, offset, count);
+		}
+
+		/// <summary>
+		/// Converts this list to array segment
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="list"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static ArraySegment<T> ToArraySegment<T>(this List<T> list, int offset = 0, int count = 0)
+		{
+			offset = offset > -1 && offset < list.Count ? offset : 0;
+			count = count > 0 && count < list.Count - offset ? count : list.Count - offset;
+			return new ArraySegment<T>(list.Skip(offset).Take(count).ToArray(), offset, count);
 		}
 
 		/// <summary>
@@ -1077,9 +1092,9 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var stream = data.Take().CompressAsStream(mode))
 			{
-				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
-					buffer = stream.ToArray().ToArraySegment();
-				return buffer;
+				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
+					? stream.ToArray().ToArraySegment()
+					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
 			}
 		}
 
@@ -1178,9 +1193,9 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var stream = await data.Take().CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
-					buffer = stream.ToArray().ToArraySegment();
-				return buffer;
+				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
+					? stream.ToArray().ToArraySegment()
+					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
 			}
 		}
 
@@ -1274,9 +1289,9 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var stream = data.Take().DecompressAsStream(mode))
 			{
-				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
-					buffer = stream.ToArray().ToArraySegment();
-				return buffer;
+				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
+					? stream.ToArray().ToArraySegment()
+					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
 			}
 		}
 
@@ -1373,9 +1388,9 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var stream = await data.Take().DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
-					buffer = stream.ToArray().ToArraySegment();
-				return buffer;
+				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
+					? stream.ToArray().ToArraySegment()
+					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
 			}
 		}
 
