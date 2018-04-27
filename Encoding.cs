@@ -1063,7 +1063,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = data.CompressAsStream(mode))
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 
@@ -1075,7 +1075,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : data.Take().Compress(mode));
+			using (var stream = data.Take().CompressAsStream(mode))
+			{
+				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
+					buffer = stream.ToArray().ToArraySegment();
+				return buffer;
+			}
 		}
 
 		/// <summary>
@@ -1091,7 +1096,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = data.CompressAsStream(mode))
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 		#endregion
@@ -1158,7 +1163,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = await data.CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 
@@ -1171,7 +1176,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<ArraySegment<byte>> CompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Take().CompressAsync(mode, cancellationToken).ConfigureAwait(false));
+			using (var stream = await data.Take().CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
+			{
+				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
+					buffer = stream.ToArray().ToArraySegment();
+				return buffer;
+			}
 		}
 
 		/// <summary>
@@ -1188,7 +1198,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = await data.CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 		#endregion
@@ -1250,7 +1260,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = data.DecompressAsStream())
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 
@@ -1262,7 +1272,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : data.Take().Decompress(mode));
+			using (var stream = data.Take().DecompressAsStream(mode))
+			{
+				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
+					buffer = stream.ToArray().ToArraySegment();
+				return buffer;
+			}
 		}
 
 		/// <summary>
@@ -1278,7 +1293,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = data.DecompressAsStream())
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 		#endregion
@@ -1343,7 +1358,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 
@@ -1356,7 +1371,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<ArraySegment<byte>> DecompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			return new ArraySegment<byte>(data == null ? new byte[0] : await data.Take().DecompressAsync(mode, cancellationToken).ConfigureAwait(false));
+			using (var stream = await data.Take().DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
+			{
+				if (!stream.TryGetBuffer(out ArraySegment<byte> buffer))
+					buffer = stream.ToArray().ToArraySegment();
+				return buffer;
+			}
 		}
 
 		/// <summary>
@@ -1373,7 +1393,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
 			{
-				return stream?.GetBuffer();
+				return stream?.ToArray();
 			}
 		}
 		#endregion

@@ -178,10 +178,10 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<bool>();
 			using (cancellationToken.Register(state => ((TaskCompletionSource<bool>)state).TrySetResult(true), tcs, false))
 			{
-				if (task != await Task.WhenAny(task, tcs.Task))
+				if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
 					throw new OperationCanceledException(cancellationToken);
 			}
-			await task;
+			await task.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -196,10 +196,10 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<bool>();
 			using (cancellationToken.Register(state => ((TaskCompletionSource<bool>)state).TrySetResult(true), tcs, false))
 			{
-				if (task != await Task.WhenAny(task, tcs.Task))
+				if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
 					throw new OperationCanceledException(cancellationToken);
 			}
-			return await task;
+			return await task.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -404,7 +404,6 @@ namespace net.vieapps.Components.Utility
 					}
 					catch { }
 					tcs.TrySetCanceled(cancellationToken);
-					return;
 				}, useSynchronizationContext: false))
 				{
 					try
@@ -453,7 +452,6 @@ namespace net.vieapps.Components.Utility
 					}
 					catch { }
 					tcs.TrySetCanceled(cancellationToken);
-					return;
 				}, useSynchronizationContext: false))
 				{
 					try
@@ -1969,7 +1967,7 @@ namespace net.vieapps.Components.Utility
 						content.Add(new StreamContent(stream), "UploadedFile", filename);
 						using (var message = await http.PostAsync(url, content, cancellationToken).ConfigureAwait(false))
 						{
-							results = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+							results = await message.Content.ReadAsStringAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
 						}
 					}
 				}
@@ -2171,16 +2169,17 @@ namespace net.vieapps.Components.Utility
 
 		#region Get setting/parameter of the app
 		/// <summary>
-		/// Gets a setting of the app (from the 'appSettings' section of configuration file with prefix 'vieapps:')
+		/// Gets a setting of the app (from the 'appSettings' section of configuration file) with special prefix
 		/// </summary>
 		/// <param name="name">The name of the setting</param>
 		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <param name="prefix">The special name prefix of the parameter</param>
 		/// <returns></returns>
-		public static string GetAppSetting(string name, string defaultValue = null)
+		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
 		{
 			var value = string.IsNullOrEmpty(name)
 				? null
-				: ConfigurationManager.AppSettings["vieapps:" + name.Trim()];
+				: ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()];
 
 			return string.IsNullOrEmpty(value)
 				? defaultValue
