@@ -68,6 +68,26 @@ namespace net.vieapps.Components.Utility
 
 		#region To Bytes
 		/// <summary>
+		/// Converts this array segment of bytes to array of bytes
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this ArraySegment<byte> bytes)
+		{
+			return bytes.Take();
+		}
+
+		/// <summary>
+		/// Converts this memory stream to array of bytes
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this MemoryStream stream)
+		{
+			return stream.ToArraySegment().ToBytes();
+		}
+
+		/// <summary>
 		/// Converts this string to array of bytes
 		/// </summary>
 		/// <param name="string"></param>
@@ -379,20 +399,45 @@ namespace net.vieapps.Components.Utility
 
 		#endregion
 
+		#region To MemoryStream
+		/// <summary>
+		/// Converts this array of bytes to memory stream
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <param name="writable"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this byte[] bytes, int index = 0, int count = 0, bool writable = true)
+		{
+			index = index > -1 && index < bytes.Length ? index : 0;
+			count = count > 0 && count < bytes.Length - index ? count : bytes.Length - index;
+			return new MemoryStream(bytes, index, count, writable);
+		}
+
+		/// <summary>
+		/// Converts this array segment of bytes to memory stream
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="writable"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this ArraySegment<byte> bytes, bool writable = true)
+		{
+			return new MemoryStream(bytes.Array, bytes.Offset, bytes.Count, writable);
+		}
+		#endregion
+
 		#region To ArraySegment
 		/// <summary>
-		/// Converts this array to array segment
+		/// Converts this memory stream to array segment of byte
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="array"></param>
-		/// <param name="offset"></param>
-		/// <param name="count"></param>
+		/// <param name="stream"></param>
 		/// <returns></returns>
-		public static ArraySegment<T> ToArraySegment<T>(this T[] array, int offset = 0, int count = 0)
+		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
 		{
-			offset = offset > -1 && offset < array.Length ? offset : 0;
-			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
-			return new ArraySegment<T>(array, offset, count);
+			return stream.TryGetBuffer(out ArraySegment<byte> buffer)
+				? new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position)
+				: stream.ToArray().ToArraySegment();
 		}
 
 		/// <summary>
@@ -407,7 +452,22 @@ namespace net.vieapps.Components.Utility
 		{
 			offset = offset > -1 && offset < list.Count ? offset : 0;
 			count = count > 0 && count < list.Count - offset ? count : list.Count - offset;
-			return new ArraySegment<T>(list.Skip(offset).Take(count).ToArray(), offset, count);
+			return new ArraySegment<T>(list.ToArray(), offset, count);
+		}
+
+		/// <summary>
+		/// Converts this array to array segment
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static ArraySegment<T> ToArraySegment<T>(this T[] array, int offset = 0, int count = 0)
+		{
+			offset = offset > -1 && offset < array.Length ? offset : 0;
+			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
+			return new ArraySegment<T>(array, offset, count);
 		}
 
 		/// <summary>
@@ -1021,48 +1081,54 @@ namespace net.vieapps.Components.Utility
 
 		#region Compressions
 		/// <summary>
-		/// Compresses the array of bytes
+		/// Compresses the stream
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="stream"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static MemoryStream CompressAsStream(this byte[] data, string mode = "deflate")
+		public static byte[] Compress(this Stream stream, string mode = "deflate")
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			var output = new MemoryStream();
-			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+			using (var output = new MemoryStream())
 			{
-				compressor.Write(data, 0, data.Length);
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				{
+					var buffer = new byte[TextFileReader.BufferSize];
+					var read = stream.Read(buffer, 0, buffer.Length);
+					while (read > 0)
+					{
+						compressor.Write(buffer, 0, read);
+						compressor.Flush();
+						read = stream.Read(buffer, 0, buffer.Length);
+					}
+					return output.ToBytes();
+				}
 			}
-			return output;
 		}
 
 		/// <summary>
 		/// Compresses the stream
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="stream"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static MemoryStream CompressAsStream(this Stream data, string mode = "deflate")
+		public static async Task<byte[]> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			var output = new MemoryStream();
-			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+			using (var output = new MemoryStream())
 			{
-				var buffer = new byte[64];
-				var read = data.Read(buffer, 0, buffer.Length);
-				while (read > 0)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
 				{
-					compressor.Write(buffer, 0, read);
-					buffer = new byte[64];
-					read = data.Read(buffer, 0, buffer.Length);
+					var buffer = new byte[TextFileReader.BufferSize];
+					var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					while (read > 0)
+					{
+						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+						await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
+						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					}
+					return output.ToBytes();
 				}
 			}
-			return output;
 		}
 
 		/// <summary>
@@ -1073,172 +1139,44 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] Compress(this byte[] data, string mode = "deflate")
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = data.CompressAsStream(mode))
+			using (var output = new MemoryStream())
 			{
-				return stream?.ToArray();
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				{
+					compressor.Write(data, 0, data.Length);
+					compressor.Flush();
+					return output.ToBytes();
+				}
 			}
 		}
 
 		/// <summary>
-		/// Compresses the array of bytes
+		/// Compresses the array segment of bytes
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			using (var stream = data.Take().CompressAsStream(mode))
-			{
-				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
-					? stream.ToArray().ToArraySegment()
-					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
-			}
+			return data.Take().Compress(mode).ToArraySegment();
 		}
 
-		/// <summary>
-		/// Compresses the stream
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static byte[] Compress(this Stream data, string mode = "deflate")
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = data.CompressAsStream(mode))
-			{
-				return stream?.ToArray();
-			}
-		}
-		#endregion
-
-		#region Compressions (Async)
-		/// <summary>
-		/// Compresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<MemoryStream> CompressAsStreamAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			var output = new MemoryStream();
-			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
-			{
-				await compressor.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
-			}
-			return output;
-		}
-
-		/// <summary>
-		/// Compresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<MemoryStream> CompressAsStreamAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			var output = new MemoryStream();
-			using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
-			{
-				var buffer = new byte[64];
-				var read = await data.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-				while (read > 0)
-				{
-					await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-					buffer = new byte[64];
-					read = await data.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-				}
-			}
-			return output;
-		}
-
-		/// <summary>
-		/// Compresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<byte[]> CompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = await data.CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
-			{
-				return stream?.ToArray();
-			}
-		}
-
-		/// <summary>
-		/// Compresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<ArraySegment<byte>> CompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			using (var stream = await data.Take().CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
-			{
-				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
-					? stream.ToArray().ToArraySegment()
-					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
-			}
-		}
-
-		/// <summary>
-		/// Compresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<byte[]> CompressAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = await data.CompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
-			{
-				return stream?.ToArray();
-			}
-		}
-		#endregion
-
-		#region Decompressions
 		/// <summary>
 		/// Decompresses the stream
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="stream"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static MemoryStream DecompressAsStream(this Stream data, string mode = "deflate")
+		public static byte[] Decompress(this Stream stream, string mode = "deflate")
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(data, CompressionMode.Decompress) as Stream : new DeflateStream(data, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 			{
-				var output = new MemoryStream();
-				var buffer = new byte[64];
+				var output = new byte[0];
+				var buffer = new byte[TextFileReader.BufferSize];
 				var read = decompressor.Read(buffer, 0, buffer.Length);
 				while (read > 0)
 				{
-					output.Write(buffer, 0, read);
-					buffer = new byte[64];
+					output = output.Concat(buffer.Take(0, read).ToArray());
 					read = decompressor.Read(buffer, 0, buffer.Length);
 				}
 				return output;
@@ -1246,95 +1184,22 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Decompresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static MemoryStream DecompressAsStream(this byte[] data, string mode = "deflate")
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = new MemoryStream(data))
-			{
-				return stream.DecompressAsStream(mode);
-			}
-		}
-
-		/// <summary>
-		/// Decompresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static byte[] Decompress(this byte[] data, string mode = "deflate")
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = data.DecompressAsStream())
-			{
-				return stream?.ToArray();
-			}
-		}
-
-		/// <summary>
-		/// Decompresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
-		{
-			using (var stream = data.Take().DecompressAsStream(mode))
-			{
-				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
-					? stream.ToArray().ToArraySegment()
-					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
-			}
-		}
-
-		/// <summary>
 		/// Decompresses the stream
 		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static byte[] Decompress(this Stream data, string mode = "deflate")
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = data.DecompressAsStream())
-			{
-				return stream?.ToArray();
-			}
-		}
-		#endregion
-
-		#region Decompressions (Async)
-		/// <summary>
-		/// Decompresses the stream
-		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="stream"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<MemoryStream> DecompressAsStreamAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(data, CompressionMode.Decompress) as Stream : new DeflateStream(data, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 			{
-				var output = new MemoryStream();
-				var buffer = new byte[64];
+				var output = new byte[0];
+				var buffer = new byte[TextFileReader.BufferSize];
 				var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				while (read > 0)
 				{
-					await output.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-					buffer = new byte[64];
+					output = output.Concat(buffer.Take(0, read).ToArray());
 					read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				}
 				return output;
@@ -1346,70 +1211,21 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<MemoryStream> DecompressAsStreamAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static byte[] Decompress(this byte[] data, string mode = "deflate")
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = new MemoryStream(data))
-			{
-				return await stream.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false);
-			}
+			return data.ToMemoryStream().Decompress(mode);
 		}
 
 		/// <summary>
-		/// Decompresses the array of bytes
+		/// Decompresses the array segment of bytes
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<byte[]> DecompressAsync(this byte[] data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
-			{
-				return stream?.ToArray();
-			}
-		}
-
-		/// <summary>
-		/// Decompresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<ArraySegment<byte>> DecompressAsync(this ArraySegment<byte> data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			using (var stream = await data.Take().DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
-			{
-				return !stream.TryGetBuffer(out ArraySegment<byte> buffer)
-					? stream.ToArray().ToArraySegment()
-					: new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position);
-			}
-		}
-
-		/// <summary>
-		/// Decompresses the stream
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<byte[]> DecompressAsync(this Stream data, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (data == null || data.Length < 1)
-				return null;
-
-			using (var stream = await data.DecompressAsStreamAsync(mode, cancellationToken).ConfigureAwait(false))
-			{
-				return stream?.ToArray();
-			}
+			return data.Take().Decompress(mode).ToArraySegment();
 		}
 		#endregion
 

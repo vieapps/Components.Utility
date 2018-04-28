@@ -1469,13 +1469,21 @@ namespace net.vieapps.Components.Utility
 			if (stream == null)
 				throw new ArgumentException("Invalid", nameof(stream));
 
-			using (var compressedStream = stream.CompressAsStream("gzip"))
+			using (var compressor = new GZipStream(stream, CompressionMode.Compress))
 			{
+				var buffer = new byte[TextFileReader.BufferSize];
+				var read = stream.Read(buffer, 0, buffer.Length);
+				while (read > 0)
+				{
+					compressor.Write(buffer, 0, read);
+					read = stream.Read(buffer, 0, buffer.Length);
+				}
+
 				gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
 				if (File.Exists(gzFilePath))
 					File.Delete(gzFilePath);
 
-				UtilityService.WriteBinaryFile(gzFilePath, compressedStream);
+				UtilityService.WriteBinaryFile(gzFilePath, compressor);
 			}
 		}
 
@@ -1490,13 +1498,21 @@ namespace net.vieapps.Components.Utility
 			if (stream == null)
 				throw new ArgumentException("Invalid", nameof(stream));
 
-			using (var compressedStream = await stream.CompressAsStreamAsync("gzip", cancellationToken).ConfigureAwait(false))
+			using (var compressor = new GZipStream(stream, CompressionMode.Compress))
 			{
+				var buffer = new byte[TextFileReader.BufferSize];
+				var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+					read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				}
+
 				gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
 				if (File.Exists(gzFilePath))
 					File.Delete(gzFilePath);
 
-				await UtilityService.WriteBinaryFileAsync(gzFilePath, compressedStream, cancellationToken).ConfigureAwait(false);
+				await UtilityService.WriteBinaryFileAsync(gzFilePath, compressor, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -1510,7 +1526,7 @@ namespace net.vieapps.Components.Utility
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
-			using (var stream = new MemoryStream(bytes))
+			using (var stream = bytes.ToMemoryStream())
 			{
 				stream.SaveAsGzipFile(gzFilePath);
 			}
@@ -1527,7 +1543,7 @@ namespace net.vieapps.Components.Utility
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
-			using (var stream = new MemoryStream(bytes))
+			using (var stream = bytes.ToMemoryStream())
 			{
 				await stream.SaveAsGzipFileAsync(gzFilePath, cancellationToken).ConfigureAwait(false);
 			}
@@ -1905,7 +1921,6 @@ namespace net.vieapps.Components.Utility
 				{
 					stream.Write(buffer, 0, read);
 					stream.Flush();
-					buffer = new byte[TextFileReader.BufferSize];
 					read = content.Read(buffer, 0, TextFileReader.BufferSize);
 				}
 			}
@@ -1931,7 +1946,6 @@ namespace net.vieapps.Components.Utility
 				{
 					await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
 					await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
-					buffer = new byte[TextFileReader.BufferSize];
 					read = await content.ReadAsync(buffer, 0, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
 				}
 			}
@@ -2177,11 +2191,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
 		{
-			var value = string.IsNullOrEmpty(name)
-				? null
-				: ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()];
+			var value = !string.IsNullOrWhiteSpace(name)
+				? ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()]
+				: null;
 
-			return string.IsNullOrEmpty(value)
+			return string.IsNullOrWhiteSpace(value)
 				? defaultValue
 				: value;
 		}
@@ -2205,7 +2219,7 @@ namespace net.vieapps.Components.Utility
 					? null
 					: query?[name];
 
-			return string.IsNullOrEmpty(value)
+			return string.IsNullOrWhiteSpace(value)
 				? defaultValue
 				: value;
 		}

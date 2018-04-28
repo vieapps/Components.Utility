@@ -226,19 +226,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Compresses the string using Deflate compression method
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>The compressed-string in Base64 format</returns>
-		public static async Task<string> CompressAsync(this string @string, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? ""
-				: (await @string.ToBytes().CompressAsync("deflate", cancellationToken).ConfigureAwait(false))?.ToBase64();
-		}
-
-		/// <summary>
 		/// Decompresses the Base64 string using Deflate compression method
 		/// </summary>
 		/// <param name="string"></param>
@@ -248,19 +235,6 @@ namespace net.vieapps.Components.Utility
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.Base64ToBytes().Decompress("deflate")?.GetString();
-		}
-
-		/// <summary>
-		/// Decompresses the Base64 string using Deflate compression method
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<string> DecompressAsync(this string @string, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? ""
-				: (await @string.Base64ToBytes().DecompressAsync("deflate", cancellationToken).ConfigureAwait(false))?.GetString();
 		}
 		#endregion
 
