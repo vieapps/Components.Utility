@@ -78,16 +78,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this memory stream to array of bytes
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <returns></returns>
-		public static byte[] ToBytes(this MemoryStream stream)
-		{
-			return stream.ToArraySegment().ToBytes();
-		}
-
-		/// <summary>
 		/// Converts this string to array of bytes
 		/// </summary>
 		/// <param name="string"></param>
@@ -399,47 +389,7 @@ namespace net.vieapps.Components.Utility
 
 		#endregion
 
-		#region To MemoryStream
-		/// <summary>
-		/// Converts this array of bytes to memory stream
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="index"></param>
-		/// <param name="count"></param>
-		/// <param name="writable"></param>
-		/// <returns></returns>
-		public static MemoryStream ToMemoryStream(this byte[] bytes, int index = 0, int count = 0, bool writable = true)
-		{
-			index = index > -1 && index < bytes.Length ? index : 0;
-			count = count > 0 && count < bytes.Length - index ? count : bytes.Length - index;
-			return new MemoryStream(bytes, index, count, writable);
-		}
-
-		/// <summary>
-		/// Converts this array segment of bytes to memory stream
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="writable"></param>
-		/// <returns></returns>
-		public static MemoryStream ToMemoryStream(this ArraySegment<byte> bytes, bool writable = true)
-		{
-			return new MemoryStream(bytes.Array, bytes.Offset, bytes.Count, writable);
-		}
-		#endregion
-
 		#region To ArraySegment
-		/// <summary>
-		/// Converts this memory stream to array segment of byte
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <returns></returns>
-		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
-		{
-			return stream.TryGetBuffer(out ArraySegment<byte> buffer)
-				? new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position)
-				: stream.ToArray().ToArraySegment();
-		}
-
 		/// <summary>
 		/// Converts this list to array segment
 		/// </summary>
@@ -629,6 +579,56 @@ namespace net.vieapps.Components.Utility
 		public static ArraySegment<byte> ToArraySegment(this BigInteger bigInt)
 		{
 			return bigInt.ToUnsignedBytes().ToArraySegment();
+		}
+		#endregion
+
+		#region Memory Stream
+		/// <summary>
+		/// Converts this array of bytes to memory stream
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <param name="writable"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this byte[] bytes, int index = 0, int count = 0, bool writable = true)
+		{
+			index = index > -1 && index < bytes.Length ? index : 0;
+			count = count > 0 && count < bytes.Length - index ? count : bytes.Length - index;
+			return new MemoryStream(bytes, index, count, writable);
+		}
+
+		/// <summary>
+		/// Converts this array segment of bytes to memory stream
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="writable"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this ArraySegment<byte> buffer, bool writable = true)
+		{
+			return new MemoryStream(buffer.Array, buffer.Offset, buffer.Count, writable);
+		}
+
+		/// <summary>
+		/// Converts this memory stream to array segment of byte
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
+		{
+			return stream.TryGetBuffer(out ArraySegment<byte> buffer)
+				? new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position)
+				: stream.ToArray().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this memory stream to array of bytes
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this MemoryStream stream)
+		{
+			return stream.ToArraySegment().ToBytes();
 		}
 		#endregion
 

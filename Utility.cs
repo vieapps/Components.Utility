@@ -210,7 +210,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<HttpWebResponse> GetResponseAsync(this HttpWebRequest httpRequest, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => httpRequest.Abort(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => httpRequest.Abort(), false))
 			{
 				try
 				{
@@ -239,7 +239,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> DownloadDataTaskAsync(this WebClient webclient, string address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), false))
 			{
 				try
 				{
@@ -264,7 +264,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> DownloadDataTaskAsync(this WebClient webclient, Uri address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), false))
 			{
 				try
 				{
@@ -289,7 +289,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<string> DownloadStringTaskAsync(this WebClient webclient, string address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), false))
 			{
 				try
 				{
@@ -314,7 +314,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<string> DownloadStringTaskAsync(this WebClient webclient, Uri address, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), false))
 			{
 				try
 				{
@@ -340,7 +340,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task DownloadFileTaskAsync(this WebClient webclient, string address, string fileName, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), false))
 			{
 				try
 				{
@@ -366,7 +366,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task DownloadFileTaskAsync(this WebClient webclient, Uri address, string fileName, CancellationToken cancellationToken)
 		{
-			using (cancellationToken.Register(() => webclient.CancelAsync(), useSynchronizationContext: false))
+			using (cancellationToken.Register(() => webclient.CancelAsync(), false))
 			{
 				try
 				{
@@ -1970,9 +1970,7 @@ namespace net.vieapps.Components.Utility
 
 			try
 			{
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
-
+				var stopwatch = Stopwatch.StartNew();
 				var results = "";
 				using (var http = new HttpClient())
 				{
@@ -2036,8 +2034,7 @@ namespace net.vieapps.Components.Utility
 			var fileInfo = new FileInfo(filePath);
 			using (var stream = new MemoryStream(await UtilityService.ReadBinaryFileAsync(fileInfo, cancellationToken).ConfigureAwait(false)))
 			{
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
+				var stopwatch = Stopwatch.StartNew();
 				await stream.UploadAsync(
 					fileInfo.Name,
 					url,
@@ -2070,8 +2067,7 @@ namespace net.vieapps.Components.Utility
 
 			try
 			{
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
+				var stopwatch = Stopwatch.StartNew();
 
 				byte[] data = null;
 				using (var webclient = new WebClient())
@@ -2106,8 +2102,7 @@ namespace net.vieapps.Components.Utility
 
 			try
 			{
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
+				var stopwatch = Stopwatch.StartNew();
 
 				byte[] data = null;
 				using (var webclient = new WebClient())
@@ -2142,8 +2137,7 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(url) && (url.IsStartsWith("http://") || url.IsStartsWith("https://")))
 				try
 				{
-					var stopwatch = new Stopwatch();
-					stopwatch.Start();
+					var stopwatch = Stopwatch.StartNew();
 
 					using (var webStream = await UtilityService.GetWebResourceAsync(url, referUri, cancellationToken).ConfigureAwait(false))
 					{
@@ -2376,7 +2370,7 @@ namespace net.vieapps.Components.Utility
 	{
 		// by default, one reading block of Windows is 4K (4096), then use 16K(16384)/32K(32768)/64K(65536)/128K(131072)/256K(262144)/512K(524288)
 		// for better performance while working with text file has large line of characters
-		public static readonly int BufferSize = 65536;
+		public static readonly int BufferSize = 16384;
 
 		StreamReader _reader = null;
 

@@ -5,14 +5,14 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.1.18.1805</AssemblyVersion>
-		<FileVersion>10.1.18.1805</FileVersion>
+		<AssemblyVersion>10.1.19.1805</AssemblyVersion>
+		<FileVersion>10.1.19.1805</FileVersion>
 		<InformationalVersion>v10.1.netstandard-2+rev:2018.05.01</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.1.18.1805</Version>
+		<Version>10.1.19.1805</Version>
 		<SignAssembly>false</SignAssembly>
 		<DelaySign>false</DelaySign>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
@@ -21,7 +21,7 @@
 		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2018 VIEApps.net</Copyright>
 		<PackageTags>utility;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Add methods for performing an awaitable task with cancellation token supported</PackageReleaseNotes>
+		<PackageReleaseNotes>Fix bugs of compressions</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 	</PropertyGroup>

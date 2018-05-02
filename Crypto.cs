@@ -351,7 +351,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region HMAC an array of bytes or string
+		#region HMAC Hash an array of bytes or string
 		static byte[] GetBlakeKey(this byte[] key)
 		{
 			if (key.Length < 64)
