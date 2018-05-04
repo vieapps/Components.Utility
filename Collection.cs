@@ -1,5 +1,6 @@
 ﻿#region Related components
 using System;
+using System.Text;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Numerics;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -293,16 +295,6 @@ namespace net.vieapps.Components.Utility
 			}
 			else
 				return array.Skip(offset).Take(count).ToArray();
-		}
-
-		/// <summary>
-		/// Takes the array from this array segment
-		/// </summary>
-		/// <param name="segment"></param>
-		/// <returns></returns>
-		public static T[] Take<T>(this ArraySegment<T> segment)
-		{
-			return segment.Array.Take(segment.Offset, segment.Count);
 		}
 
 		/// <summary>
@@ -1323,6 +1315,209 @@ namespace net.vieapps.Components.Utility
 				if (waitForAllCompleted)
 					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 			}
+		}
+		#endregion
+
+		#region ArraySegment extensions
+		/// <summary>
+		/// Takes the array from this array segment
+		/// </summary>
+		/// <param name="segment"></param>
+		/// <returns></returns>
+		public static T[] Take<T>(this ArraySegment<T> segment)
+		{
+			return segment.Array.Take(segment.Offset, segment.Count);
+		}
+
+		/// <summary>
+		/// Converts this list to array segment
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="list"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static ArraySegment<T> ToArraySegment<T>(this List<T> list, int offset = 0, int count = 0)
+		{
+			offset = offset > -1 && offset < list.Count ? offset : 0;
+			count = count > 0 && count < list.Count - offset ? count : list.Count - offset;
+			return new ArraySegment<T>(list.ToArray(), offset, count);
+		}
+
+		/// <summary>
+		/// Converts this array to array segment
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static ArraySegment<T> ToArraySegment<T>(this T[] array, int offset = 0, int count = 0)
+		{
+			offset = offset > -1 && offset < array.Length ? offset : 0;
+			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
+			return new ArraySegment<T>(array, offset, count);
+		}
+
+		/// <summary>
+		/// Converts this string to array segment of bytes
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this string @string, Encoding encoding = null)
+		{
+			return @string.ToBytes(encoding).ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this boolean to array segment of bytes
+		/// </summary>
+		/// <param name="bool"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this bool @bool)
+		{
+			return @bool.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this char to array segment of bytes
+		/// </summary>
+		/// <param name="char"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this char @char)
+		{
+			return @char.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this byte to array segment of bytes
+		/// </summary>
+		/// <param name="byte"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this byte @byte)
+		{
+			return @byte.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this sbyte to array segment of bytes
+		/// </summary>
+		/// <param name="sbyte"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this sbyte @sbyte)
+		{
+			return @sbyte.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this short to array segment of bytes
+		/// </summary>
+		/// <param name="short"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this short @short)
+		{
+			return @short.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this ushort to array segment of bytes
+		/// </summary>
+		/// <param name="ushort"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this ushort @ushort)
+		{
+			return @ushort.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this int to array segment of bytes
+		/// </summary>
+		/// <param name="int"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this int @int)
+		{
+			return @int.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this uint to array segment of bytes
+		/// </summary>
+		/// <param name="uint"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this uint @uint)
+		{
+			return @uint.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this long to array segment of bytes
+		/// </summary>
+		/// <param name="long"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this long @long)
+		{
+			return @long.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this ulong to array segment of bytes
+		/// </summary>
+		/// <param name="ulong"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this ulong @ulong)
+		{
+			return @ulong.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this float to array segment of bytes
+		/// </summary>
+		/// <param name="float"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this float @float)
+		{
+			return @float.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this double to array segment of bytes
+		/// </summary>
+		/// <param name="double"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this double @double)
+		{
+			return @double.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this decimal to array segment of bytes
+		/// </summary>
+		/// <param name="decimal"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this decimal @decimal)
+		{
+			return @decimal.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this date-time to array segment of bytes
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this DateTime datetime)
+		{
+			return datetime.ToBytes().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this big-integer to array segment of bytes
+		/// </summary>
+		/// <param name="bigInt"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this BigInteger bigInt)
+		{
+			return bigInt.ToUnsignedBytes().ToArraySegment();
 		}
 		#endregion
 

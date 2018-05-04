@@ -1550,6 +1550,78 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Working with stream
+		/// <summary>
+		/// Converts this array of bytes to memory stream
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <param name="writable"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this byte[] bytes, int index = 0, int count = 0, bool writable = true)
+		{
+			index = index > -1 && index < bytes.Length ? index : 0;
+			count = count > 0 && count < bytes.Length - index ? count : bytes.Length - index;
+			return new MemoryStream(bytes, index, count, writable);
+		}
+
+		/// <summary>
+		/// Converts this array segment of bytes to memory stream
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="writable"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this ArraySegment<byte> buffer, bool writable = true)
+		{
+			return new MemoryStream(buffer.Array, buffer.Offset, buffer.Count, writable);
+		}
+
+		/// <summary>
+		/// Converts this memory stream to array segment of byte
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
+		{
+			return stream.TryGetBuffer(out ArraySegment<byte> buffer)
+				? new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position)
+				: stream.ToArray().ToArraySegment();
+		}
+
+		/// <summary>
+		/// Converts this memory stream to array of bytes
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this MemoryStream stream)
+		{
+			return stream.ToArraySegment().ToBytes();
+		}
+
+		/// <summary>
+		/// Writes the array segment of bytes to this stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		public static void Write(this Stream stream, ArraySegment<byte> buffer)
+		{
+			stream.Write(buffer.Array, buffer.Offset, buffer.Count);
+		}
+
+		/// <summary>
+		/// Writes the array segment of bytes to this stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			return stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
+		}
+		#endregion
+
 		#region Read/Write text files
 		/// <summary>
 		/// Reads a text file
@@ -2172,6 +2244,346 @@ namespace net.vieapps.Components.Utility
 		public static Task DownloadFileAsync(string url, string filePath, string referUri = null, Action<string, string> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			return UtilityService.DownloadFileAsync(url, filePath, referUri, (uri, path, times) => onCompleted?.Invoke(uri, path), onError, cancellationToken);
+		}
+		#endregion
+
+		#region Compressions
+		/// <summary>
+		/// Compresses the stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Compress(this Stream stream, string mode = "deflate")
+		{
+			using (var output = new MemoryStream())
+			{
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				{
+					var buffer = new byte[TextFileReader.BufferSize];
+					var read = stream.Read(buffer, 0, buffer.Length);
+					while (read > 0)
+					{
+						compressor.Write(buffer, 0, read);
+						compressor.Flush();
+						read = stream.Read(buffer, 0, buffer.Length);
+					}
+					return output.ToBytes();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Compresses the stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<byte[]> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			using (var output = new MemoryStream())
+			{
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				{
+					var buffer = new byte[TextFileReader.BufferSize];
+					var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					while (read > 0)
+					{
+						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+						await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
+						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					}
+					return output.ToBytes();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Compress(this byte[] data, string mode = "deflate")
+		{
+			using (var output = new MemoryStream())
+			{
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				{
+					compressor.Write(data, 0, data.Length);
+					compressor.Flush();
+					return output.ToBytes();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Compresses the array segment of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
+		{
+			return data.Take().Compress(mode).ToArraySegment();
+		}
+
+		/// <summary>
+		/// Decompresses the stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Decompress(this Stream stream, string mode = "deflate")
+		{
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			{
+				var output = new byte[0];
+				var buffer = new byte[TextFileReader.BufferSize];
+				var read = decompressor.Read(buffer, 0, buffer.Length);
+				while (read > 0)
+				{
+					output = output.Concat(buffer.Take(0, read).ToArray());
+					read = decompressor.Read(buffer, 0, buffer.Length);
+				}
+				return output;
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		{
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			{
+				var output = new byte[0];
+				var buffer = new byte[TextFileReader.BufferSize];
+				var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					output = output.Concat(buffer.Take(0, read).ToArray());
+					read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				}
+				return output;
+			}
+		}
+
+		/// <summary>
+		/// Decompresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Decompress(this byte[] data, string mode = "deflate")
+		{
+			return data.ToMemoryStream().Decompress(mode);
+		}
+
+		/// <summary>
+		/// Decompresses the array segment of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
+		{
+			return data.Take().Decompress(mode).ToArraySegment();
+		}
+		#endregion
+
+		#region BigInteger extensions
+		/// <summary>
+		/// Converts this array of bytes to big-integer
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this byte[] bytes)
+		{
+			if (BitConverter.IsLittleEndian)
+			{
+				byte[] clone = new byte[bytes.Length];
+				Buffer.BlockCopy(bytes, 0, clone, 0, bytes.Length);
+				Array.Reverse(clone);
+				return new BigInteger(clone);
+			}
+			else
+				return new BigInteger(bytes);
+		}
+
+		public static BigInteger ToUnsignedBigInteger(this byte[] bytes)
+		{
+			byte[] clone;
+			if (BitConverter.IsLittleEndian)
+			{
+				if (bytes[0] != 0x00)
+				{
+					clone = new byte[bytes.Length + 1];
+					Buffer.BlockCopy(bytes, 0, clone, 1, bytes.Length);
+					Array.Reverse(clone);
+					return new BigInteger(clone);
+				}
+				clone = new byte[bytes.Length];
+				Buffer.BlockCopy(bytes, 0, clone, 0, bytes.Length);
+				Array.Reverse(clone);
+				return new BigInteger(clone);
+			}
+
+			if (bytes[bytes.Length - 1] == 0x00)
+				return new BigInteger(bytes);
+
+			clone = new byte[bytes.Length + 1];
+			Buffer.BlockCopy(bytes, 0, clone, 0, bytes.Length);
+			return new BigInteger(clone);
+		}
+
+		/// <summary>
+		/// Converts this hexa-string to big-integer
+		/// </summary>
+		/// <param name="hex"></param>
+		/// <returns></returns>
+		public static BigInteger ToBigInteger(this string hex)
+		{
+			var bytes = hex.HexToBytes();
+			if (BitConverter.IsLittleEndian)
+				Array.Reverse(bytes);
+			Array.Resize(ref bytes, bytes.Length + 1);
+			bytes[bytes.Length - 1] = 0x00;
+			return new BigInteger(bytes);
+		}
+
+		public static BigInteger ModInverse(this BigInteger n, BigInteger p)
+		{
+			BigInteger x = 1;
+			BigInteger y = 0;
+			BigInteger a = p;
+			BigInteger b = n;
+
+			while (b != 0)
+			{
+				BigInteger t = b;
+				BigInteger q = BigInteger.Divide(a, t);
+				b = a - q * t;
+				a = t;
+				t = x;
+				x = y - q * t;
+				y = t;
+			}
+
+			if (y < 0)
+				return y + p;
+			//else
+			return y;
+		}
+
+		public static bool TestBit(this BigInteger i, int n)
+		{
+			return !(i >> n).IsEven;
+		}
+
+		public static int BitLength(this BigInteger i)
+		{
+			int bitLength = 0;
+			do
+			{
+				bitLength++;
+			}
+			while ((i >>= 1) != 0);
+			return bitLength;
+		}
+
+		public static BigInteger Order(this BigInteger b, BigInteger p)
+		{
+			BigInteger m = 1;
+			BigInteger e = 0;
+
+			while (BigInteger.ModPow(b, m, p) != 1)
+			{
+				m *= 2;
+				e++;
+			}
+
+			return e;
+		}
+
+		private static BigInteger FindS(BigInteger p)
+		{
+			BigInteger s = p - 1;
+			BigInteger e = 0;
+
+			while (s % 2 == 0)
+			{
+				s /= 2;
+				e += 1;
+			}
+
+			return s;
+		}
+
+		private static BigInteger FindE(BigInteger p)
+		{
+			BigInteger s = p - 1;
+			BigInteger e = 0;
+
+			while (s % 2 == 0)
+			{
+				s /= 2;
+				e += 1;
+			}
+
+			return e;
+		}
+
+		private static BigInteger TwoExp(BigInteger e)
+		{
+			BigInteger a = 1;
+
+			while (e > 0)
+			{
+				a *= 2;
+				e--;
+			}
+
+			return a;
+		}
+
+		public static BigInteger ShanksSqrt(this BigInteger a, BigInteger p)
+		{
+			if (BigInteger.ModPow(a, (p - 1) / 2, p) == (p - 1))
+				return -1;
+
+			if (p % 4 == 3)
+				return BigInteger.ModPow(a, (p + 1) / 4, p);
+
+			//Initialize 
+			BigInteger s = FindS(p);
+			BigInteger e = FindE(p);
+			BigInteger n = 2;
+
+			while (BigInteger.ModPow(n, (p - 1) / 2, p) == 1)
+				n++;
+
+			BigInteger x = BigInteger.ModPow(a, (s + 1) / 2, p);
+			BigInteger b = BigInteger.ModPow(a, s, p);
+			BigInteger g = BigInteger.ModPow(n, s, p);
+			BigInteger r = e;
+			BigInteger m = b.Order(p);
+
+			while (m > 0)
+			{
+				x = (x * BigInteger.ModPow(g, TwoExp(r - m - 1), p)) % p;
+				b = (b * BigInteger.ModPow(g, TwoExp(r - m), p)) % p;
+				g = BigInteger.ModPow(g, TwoExp(r - m), p);
+				r = m;
+				m = b.Order(p);
+			}
+
+			return x;
 		}
 		#endregion
 
