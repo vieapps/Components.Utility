@@ -5,19 +5,13 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Globalization;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Dynamic;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 #endregion
 
@@ -240,20 +234,20 @@ namespace net.vieapps.Components.Utility
 
 		#region Manipulations
 		/// <summary>
-		/// Concats other arrays with this array
+		/// Concats other arrays with this array object
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="array"></param>
+		/// <param name="object"></param>
 		/// <param name="arrays"></param>
 		/// <returns></returns>
-		public static T[] Concat<T>(this T[] array, params T[][] arrays)
+		public static T[] Concat<T>(this T[] @object, params T[][] arrays)
 		{
 			if (typeof(T).IsPrimitive)
 			{
-				var result = new T[array.Length + arrays.Sum(a => a.Length)];
-				if (array.Length > 0)
-					Buffer.BlockCopy(array, 0, result, 0, array.Length);
-				var offset = array.Length;
+				var result = new T[@object.Length + arrays.Sum(a => a.Length)];
+				if (@object.Length > 0)
+					Buffer.BlockCopy(@object, 0, result, 0, @object.Length);
+				var offset = @object.Length;
 				arrays.ForEach(a =>
 				{
 					Buffer.BlockCopy(a, 0, result, offset, a.Length);
@@ -263,38 +257,99 @@ namespace net.vieapps.Components.Utility
 			}
 			else
 			{
-				var result = array.Select(e => e);
+				var result = @object.Select(e => e);
 				arrays.ForEach(a => result = result.Concat(a));
 				return result.ToArray();
 			}
 		}
 
 		/// <summary>
-		/// Takes a sub-array from this array
+		/// Concats all elements of this queue object
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="array"></param>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static IEnumerable<T> Concat<T>(this Queue<T[]> @object)
+		{
+			var result = (new T[0] as IEnumerable<T>).Concat(new T[0]);
+			while (@object.Count > 0)
+				result = result.Concat(@object.Dequeue());
+			return result;
+		}
+
+		/// <summary>
+		/// Concats all elements of this concurrent queue object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static IEnumerable<T> Concat<T>(this ConcurrentQueue<T[]> @object)
+		{
+			var result = (new T[0] as IEnumerable<T>).Concat(new T[0]);
+			while (@object.Count > 0)
+				if (@object.TryDequeue(out T[] array))
+					result = result.Concat(array);
+			return result;
+		}
+
+		/// <summary>
+		/// Takes a sub-array from this array object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
 		/// <param name="offset"></param>
 		/// <param name="count"></param>
 		/// <returns></returns>
-		public static T[] Take<T>(this T[] array, int offset, int count = 0)
+		public static T[] Take<T>(this T[] @object, int offset, int count = 0)
 		{
-			if (array.Length < 1 || (offset == 0 && count == array.Length))
-				return array;
+			if (@object.Length < 1 || (offset == 0 && count == @object.Length))
+				return @object;
 
-			offset = offset > -1 && offset < array.Length ? offset : 0;
-			count = count > 0 && count < array.Length - offset ? count : array.Length - offset;
-			if (offset == 0 && count == array.Length)
-				return array;
+			offset = offset > -1 && offset < @object.Length ? offset : 0;
+			count = count > 0 && count < @object.Length - offset ? count : @object.Length - offset;
+			if (offset == 0 && count == @object.Length)
+				return @object;
 
 			if (typeof(T).IsPrimitive)
 			{
 				var result = new T[count];
-				Buffer.BlockCopy(array, offset, result, 0, count);
+				Buffer.BlockCopy(@object, offset, result, 0, count);
 				return result;
 			}
 			else
-				return array.Skip(offset).Take(count).ToArray();
+				return @object.Skip(offset).Take(count).ToArray();
+		}
+
+		/// <summary>
+		/// Splits this array object to sub-arrays
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="size">The size (length) of one sub-array</param>
+		/// <returns></returns>
+		public static List<T[]> Split<T>(this T[] @object, int size)
+		{
+			if (@object.Length < 1 || size >= @object.Length)
+				return new List<T[]> { @object };
+
+			else if (size < 2)
+				return @object.Select(e => new[] { e }).ToList();
+
+			var arrays = new List<T[]>();
+			var offset = 0;
+			do
+			{
+				arrays.Add(@object.Take(offset, size));
+				offset += size;
+				if (offset + size > @object.Length - 1)
+				{
+					arrays.Add(@object.Take(offset, @object.Length - offset));
+					offset += @object.Length - offset;
+				}
+			}
+			while (offset < @object.Length - 1);
+
+			return arrays;
 		}
 
 		/// <summary>
