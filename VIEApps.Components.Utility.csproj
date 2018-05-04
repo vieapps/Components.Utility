@@ -47,6 +47,7 @@
 	<ItemGroup>
 		<PackageReference Include="DocumentFormat.OpenXml" Version="2.8.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.1" />

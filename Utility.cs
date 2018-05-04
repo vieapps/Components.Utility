@@ -19,6 +19,8 @@ using System.Reflection;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
+using Microsoft.Extensions.Configuration;
+
 using Newtonsoft.Json.Linq;
 #endregion
 
@@ -2589,13 +2591,47 @@ namespace net.vieapps.Components.Utility
 
 		#region Get setting/parameter of the app
 		/// <summary>
-		/// Gets a setting of the app (from the 'appSettings' section of configuration file) with special prefix
+		/// Gets a setting of the app (from the JSON configuration file [appsettings.json])
+		/// </summary>
+		/// <param name="path">The path from root section (ex: Logging/LogLevel/Default)</param>
+		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <returns></returns>
+		public static string GetAppJsonSetting(this IConfiguration configuration, string path, string defaultValue = null)
+		{
+			if (string.IsNullOrWhiteSpace(path))
+				return defaultValue;
+
+			path = path.Trim();
+			while (path.StartsWith("/") || path.StartsWith(@"\"))
+				path = path.Right(path.Length - 1);
+			while (path.EndsWith("/") || path.EndsWith(@"\"))
+				path = path.Left(path.Length - 1);
+
+			var paths = path.IndexOf("/") > 0 ? path.ToArray("/", true) : path.ToArray(@"\", true);
+			if (string.IsNullOrWhiteSpace(paths[0]))
+				return defaultValue;
+
+			var section = configuration.GetSection(paths[0]);
+			var index = 1;
+			while (section != null && index < paths.Length)
+			{
+				section = section.GetSection(paths[index]);
+				index++;
+			}
+
+			return section != null
+				? section.Value
+				: defaultValue;
+		}
+
+		/// <summary>
+		/// Gets a setting of the app (from the XML configuration file [app.config/web.config] - section 'appSettings') with special prefix
 		/// </summary>
 		/// <param name="name">The name of the setting</param>
 		/// <param name="defaultValue">The default value if the setting is not found</param>
 		/// <param name="prefix">The special name prefix of the parameter</param>
 		/// <returns></returns>
-		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
+		public static string GetAppXmlSetting(string name, string defaultValue = null, string prefix = "vieapps")
 		{
 			var value = !string.IsNullOrWhiteSpace(name)
 				? ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()]
@@ -2604,6 +2640,18 @@ namespace net.vieapps.Components.Utility
 			return string.IsNullOrWhiteSpace(value)
 				? defaultValue
 				: value;
+		}
+
+		/// <summary>
+		/// Gets a setting of the app (from the 'appSettings' section of XML configuration file) with special prefix
+		/// </summary>
+		/// <param name="name">The name of the setting</param>
+		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <param name="prefix">The special name prefix of the parameter</param>
+		/// <returns></returns>
+		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
+		{
+			return UtilityService.GetAppXmlSetting(name, defaultValue, prefix);
 		}
 
 		/// <summary>
