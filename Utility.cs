@@ -8,6 +8,7 @@ using System.Text;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Net.Security;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -18,10 +19,7 @@ using System.Configuration;
 using System.Reflection;
 using System.Numerics;
 using System.Runtime.InteropServices;
-
 using Microsoft.Extensions.Configuration;
-
-using Newtonsoft.Json.Linq;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -98,45 +96,20 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
-		/// <summary>
-		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
-		/// </summary>
-		[Obsolete("Please change to use NewUUID")]
-		public static string NewUID
-		{
-			get
-			{
-				return UtilityService.NewUUID;
-			}
-		}
-
-		/// <summary>
-		/// Gets the blank UUID
-		/// </summary>
-		/// <returns></returns>
-		[Obsolete("Please change to use BlankUUID")]
-		public static string BlankUID
-		{
-			get
-			{
-				return UtilityService.BlankUUID;
-			}
-		}
-
-		static Regex _ValidHexa = new Regex("[^0-9a-fA-F]+");
+		static Regex HexRegex = new Regex("[^0-9a-fA-F]+");
 
 		/// <summary>
 		/// Validates the UUID string
 		/// </summary>
 		/// <param name="uuid"></param>
-		/// <param name="onlyHexa">true to only allow hexa characters</param>
+		/// <param name="onlyHex">true to only allow hexa characters</param>
 		/// <returns>true if it is valid; otherwise false.</returns>
-		public static bool IsValidUUID(this string uuid, bool onlyHexa = true)
+		public static bool IsValidUUID(this string uuid, bool onlyHex = true)
 		{
 			return string.IsNullOrWhiteSpace(uuid) || !uuid.Length.Equals(32)
 				? false
-				: onlyHexa
-					? UtilityService._ValidHexa.Replace(uuid, "").Equals(uuid)
+				: onlyHex
+					? UtilityService.HexRegex.Replace(uuid, "").Equals(uuid)
 					: !uuid.Contains(" ") && !uuid.Contains(";");
 		}
 		#endregion
@@ -659,7 +632,7 @@ namespace net.vieapps.Components.Utility
 				if (!string.IsNullOrWhiteSpace(contentType))
 					webRequest.ContentType = contentType;
 
-				using (var writer = new StreamWriter(await webRequest.GetRequestStreamAsync().ConfigureAwait(false)))
+				using (var writer = new StreamWriter(await webRequest.GetRequestStreamAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false)))
 				{
 					await writer.WriteAsync(body).WithCancellationToken(cancellationToken).ConfigureAwait(false);
 				}
@@ -668,10 +641,7 @@ namespace net.vieapps.Components.Utility
 			// switch off certificate validation - not available on OSX
 			// source: http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-				webRequest.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
-				{
-					return true;
-				};
+				webRequest.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
 			// make request and return response stream
 			try
@@ -1990,12 +1960,12 @@ namespace net.vieapps.Components.Utility
 			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
-				var read = content.Read(buffer, 0, TextFileReader.BufferSize);
+				var read = content.Read(buffer, 0, buffer.Length);
 				while (read > 0)
 				{
 					stream.Write(buffer, 0, read);
 					stream.Flush();
-					read = content.Read(buffer, 0, TextFileReader.BufferSize);
+					read = content.Read(buffer, 0, buffer.Length);
 				}
 			}
 		}
@@ -2015,12 +1985,12 @@ namespace net.vieapps.Components.Utility
 			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
-				var read = await content.ReadAsync(buffer, 0, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
+				var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				while (read > 0)
 				{
 					await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
 					await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
-					read = await content.ReadAsync(buffer, 0, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
+					read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}
@@ -2346,7 +2316,7 @@ namespace net.vieapps.Components.Utility
 				var read = decompressor.Read(buffer, 0, buffer.Length);
 				while (read > 0)
 				{
-					output = output.Concat(buffer.Take(0, read).ToArray());
+					output = output.Concat(buffer.Take(0, read));
 					read = decompressor.Read(buffer, 0, buffer.Length);
 				}
 				return output;
@@ -2369,7 +2339,7 @@ namespace net.vieapps.Components.Utility
 				var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				while (read > 0)
 				{
-					output = output.Concat(buffer.Take(0, read).ToArray());
+					output = output.Concat(buffer.Take(0, read));
 					read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				}
 				return output;

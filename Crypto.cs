@@ -7,7 +7,7 @@ using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-
+using System.Xml;
 using Konscious.Security.Cryptography;
 #endregion
 
@@ -18,6 +18,10 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static partial class CryptoService
 	{
+		/// <summary>
+		/// The default passphrase for generating a key
+		/// </summary>
+		public const string DEFAULT_PASS_PHRASE = "C804BE43-VIEApps-0B43-Core-442B-Components-B635-Service-FD0616D11B01";
 
 		#region Hash an array of bytes or a string
 		static Dictionary<string, Func<HashAlgorithm>> HashFactories = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
@@ -435,7 +439,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), mode);
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), mode);
 		}
 
 		/// <summary>
@@ -462,7 +466,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACMD5Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "MD5");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "MD5");
 		}
 
 		/// <summary>
@@ -530,7 +534,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA1Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA1");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA1");
 		}
 
 		/// <summary>
@@ -564,7 +568,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA256Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA256");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA256");
 		}
 
 		/// <summary>
@@ -598,7 +602,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA384Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA384");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA384");
 		}
 
 		/// <summary>
@@ -632,7 +636,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACSHA512Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "SHA512");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA512");
 		}
 
 		/// <summary>
@@ -700,7 +704,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE128Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE128");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE128");
 		}
 
 		/// <summary>
@@ -734,7 +738,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE256Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE256");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE256");
 		}
 
 		/// <summary>
@@ -768,7 +772,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE384Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE384");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE384");
 		}
 
 		/// <summary>
@@ -802,7 +806,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACBLAKE512Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "BLAKE512");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE512");
 		}
 
 		/// <summary>
@@ -836,7 +840,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACRIPEMD160Hash(this string @string, string key)
 		{
-			return @string.GetHMACHash((key ?? CryptoService.DefaultEncryptionKey).ToBytes(), "RIPEMD160");
+			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "RIPEMD160");
 		}
 
 		/// <summary>
@@ -956,116 +960,45 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Encryption key & Initialize vector
+		#region Generate keys
 		/// <summary>
-		/// Generates a random key using RNGCryptoServiceProvider
+		/// Generates a key using RNGCryptoServiceProvider with random bytes
 		/// </summary>
 		/// <param name="length">The bit-length of the key</param>
-		/// <returns></returns>
+		/// <returns>An array of bytes that presents the key</returns>
 		public static byte[] GenerateRandomKey(int length = 256)
 		{
 			var key = new byte[length > 0 ? length : 256];
-			using (var crypto = new RNGCryptoServiceProvider())
+			using (var rng = new RNGCryptoServiceProvider())
 			{
-				crypto.GetBytes(key);
+				rng.GetBytes(key);
 			}
 			return key;
 		}
 
 		/// <summary>
-		/// Gets the default key for encrypting/decrypting data
+		/// Generates a key using hash from this array of bytes
 		/// </summary>
-		public static string DefaultEncryptionKey
+		/// <param name="bytes">The passphrase</param>
+		/// <param name="length">The bit-length of the key</param>
+		/// <returns>An array of bytes that presents the key</returns>
+		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256)
 		{
-			get
+			using (var hasher = new HMACBlake2B(length > 0 ? length : 256))
 			{
-				return "C804BE43-VIEApps-0B43-Core-442B-Components-B635-Service-FD0616D11B01";
+				return hasher.ComputeHash(hasher.ComputeHash(bytes));
 			}
 		}
 
 		/// <summary>
-		/// Generates a key from this string
+		/// Generates a key using hash from this passphrase
 		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="reverse"></param>
-		/// <param name="hash"></param>
-		/// <param name="keySize"></param>
-		/// <returns></returns>
-		public static byte[] GenerateEncryptionKey(this string @string, bool reverse, bool hash, int keySize)
+		/// <param name="passphrase">The passphrase</param>
+		/// <param name="length">The bit-length of the key</param>
+		/// <returns>An array of bytes that presents the key</returns>
+		public static byte[] GenerateHashKey(this string passphrase, int length = 256)
 		{
-			var passPhrase = reverse
-				? @string.Reverse()
-				: @string;
-
-			var fullKey = hash
-				? passPhrase.GetMD5Hash()
-				: passPhrase.ToBytes();
-
-			var maxIndex = 0;
-			if (keySize > 7)
-				maxIndex = keySize / 8;
-
-			else
-			{
-				var sizeOfBytes = fullKey.Length;
-				var bytes = 1;
-				var bits = bytes * 8;
-				while (bytes <= sizeOfBytes)
-				{
-					bits = bytes * 8;
-					if (bytes < 2)
-						bytes++;
-					else
-						bytes = bytes * 2;
-				}
-				maxIndex = bits / 8;
-			}
-
-			var keys = new byte[maxIndex];
-			for (var index = 0; index < maxIndex; index++)
-				keys[index] = fullKey[index];
-
-			return keys;
-		}
-
-		/// <summary>
-		/// Generates a key from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateEncryptionKey(this string @string)
-		{
-			return @string.GenerateEncryptionKey(true, false, 256);
-		}
-
-		/// <summary>
-		/// Generates a key from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateKey(this string @string)
-		{
-			return @string.GenerateEncryptionKey();
-		}
-
-		/// <summary>
-		/// Generates an initialization vector from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateEncryptionIV(this string @string)
-		{
-			return @string.GenerateEncryptionKey(false, true, 128);
-		}
-
-		/// <summary>
-		/// Generates an initialization vector from this string (for using with AES)
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GenerateInitializeVector(this string @string)
-		{
-			return @string.GenerateEncryptionIV();
+			return passphrase.ToBytes().GenerateHashKey(length);
 		}
 		#endregion
 
@@ -1077,14 +1010,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
 		/// <returns></returns>
-		public static byte[] Encrypt(byte[] data, byte[] key = null, byte[] iv = null)
+		public static byte[] Encrypt(this byte[] data, byte[] key = null, byte[] iv = null)
 		{
 			if (data == null || data.Length < 1)
 				return null;
 
 			using (var crypto = new AesCryptoServiceProvider())
 			{
-				using (var encryptor = crypto.CreateEncryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateInitializeVector()))
+				using (var encryptor = crypto.CreateEncryptor(key ?? DEFAULT_PASS_PHRASE.GenerateHashKey(256), iv ?? DEFAULT_PASS_PHRASE.GenerateHashKey(128)))
 				{
 					return encryptor.TransformFinalBlock(data, 0, data.Length);
 				}
@@ -1104,8 +1037,8 @@ namespace net.vieapps.Components.Utility
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
 				: toHex
-					? CryptoService.Encrypt(@string.ToBytes(), key, iv).ToHex()
-					: CryptoService.Encrypt(@string.ToBytes(), key, iv).ToBase64();
+					? @string.ToBytes().Encrypt(key, iv).ToHex()
+					: @string.ToBytes().Encrypt(key, iv).ToBase64();
 		}
 
 		/// <summary>
@@ -1117,7 +1050,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
 		{
-			return @string.Encrypt(passPhrase?.GenerateEncryptionKey(), passPhrase?.GenerateEncryptionIV(), toHex);
+			return @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
 		}
 
 		/// <summary>
@@ -1127,14 +1060,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
 		/// <returns></returns>
-		public static byte[] Decrypt(byte[] data, byte[] key = null, byte[] iv = null)
+		public static byte[] Decrypt(this byte[] data, byte[] key = null, byte[] iv = null)
 		{
 			if (data == null || data.Length < 1)
 				return null;
 
 			using (var crypto = new AesCryptoServiceProvider())
 			{
-				using (var decryptor = crypto.CreateDecryptor(key ?? CryptoService.DefaultEncryptionKey.GenerateKey(), iv ?? CryptoService.DefaultEncryptionKey.GenerateInitializeVector()))
+				using (var decryptor = crypto.CreateDecryptor(key ?? DEFAULT_PASS_PHRASE.GenerateHashKey(256), iv ?? DEFAULT_PASS_PHRASE.GenerateHashKey(128)))
 				{
 					return decryptor.TransformFinalBlock(data, 0, data.Length);
 				}
@@ -1147,13 +1080,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
-		/// <param name="toHex"></param>
+		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool toHex = false)
+		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false)
 		{
 			return string.IsNullOrWhiteSpace(@string)
 				? ""
-				: CryptoService.Decrypt(toHex ? @string.HexToBytes() : @string.Base64ToBytes(), key, iv).GetString();
+				: isHex
+					? @string.HexToBytes().Decrypt(key, iv).GetString()
+					: @string.Base64ToBytes().Decrypt(key, iv).GetString();
 		}
 
 		/// <summary>
@@ -1161,11 +1096,11 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="passPhrase"></param>
-		/// <param name="toHex"></param>
+		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this string @string, string passPhrase = null, bool toHex = false)
+		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
 		{
-			return @string.Decrypt(passPhrase?.GenerateKey(), passPhrase?.GenerateInitializeVector(), toHex);
+			return @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
 		}
 		#endregion
 
@@ -1329,10 +1264,10 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Create new instance of RSA from a specific key
-		const string PEM_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
-		const string PEM_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
-		const string PEM_PUBLIC_KEY_BEGIN = "-----BEGIN PUBLIC KEY-----";
-		const string PEM_PUBLIC_KEY_END = "-----END PUBLIC KEY-----";
+		public const string PEM_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
+		public const string PEM_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
+		public const string PEM_PUBLIC_KEY_BEGIN = "-----BEGIN PUBLIC KEY-----";
+		public const string PEM_PUBLIC_KEY_END = "-----END PUBLIC KEY-----";
 
 		/// <summary>
 		/// Creates an instance of RSA Algorithm
@@ -1587,7 +1522,7 @@ namespace net.vieapps.Components.Utility
 							return null;
 
 						seq = reader.ReadBytes(15);      //read the Sequence OID
-						if (!CryptoService.CompareByteArrays(seq, SeqOID))  //make sure Sequence for OID is correct
+						if (!seq.SequenceEqual(SeqOID))  //make sure Sequence for OID is correct
 							return null;
 
 						twoBytes = reader.ReadUInt16();
@@ -1665,21 +1600,6 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 		}
-
-		static bool CompareByteArrays(byte[] a, byte[] b)
-		{
-			if (a.Length != b.Length)
-				return false;
-
-			int i = 0;
-			foreach (byte c in a)
-			{
-				if (c != b[i])
-					return false;
-				i++;
-			}
-			return true;
-		}
 		#endregion
 
 		#region Generate key pair of RSA
@@ -1688,12 +1608,12 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <returns>
 		/// Collection of strings that presents key-pairs, indexes is:
-		/// - 0: key in XML format,
-		/// - 1: key in XML format (encrypted by default AES encryption), 
+		/// - 0: private key in XML format,
+		/// - 1: private key in XML format (encrypted by default AES encryption), 
 		/// - 2: public key in XML format, 
 		/// - 3: public key in XML format (encrypted by default AES encryption), 
-		/// - 4: key in PEM format,
-		/// - 5: key in PEM format (encrypted by default AES encryption),
+		/// - 4: private key in PEM format,
+		/// - 5: private key in PEM format (encrypted by default AES encryption),
 		/// - 6: public key in PEM format,
 		/// - 7: public key in PEM format (encrypted by default AES encryption),
 		/// - 8: exponent of public key in HEX format
@@ -1733,7 +1653,7 @@ namespace net.vieapps.Components.Utility
 				keyPairs.Append(new List<string>() { key, key.Encrypt() });
 
 				// add modulus and exponent of public key in HEX format
-				var xmlDoc = new System.Xml.XmlDocument();
+				var xmlDoc = new XmlDocument();
 				xmlDoc.LoadXml(publicKey);
 				keyPairs.Append(new List<string>()
 				{
@@ -1746,14 +1666,27 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
+		/// <summary>
+		/// Exports the public key of RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <returns>A tuple with first element is exponent of public key, second element is  modulus of public key</returns>
+		public static Tuple<string, string> ExportPublicKey(this RSACryptoServiceProvider rsa)
+		{
+			var publicKey = rsa.ToXmlString(false);
+			var xmlDoc = new XmlDocument();
+			xmlDoc.LoadXml(publicKey);
+			return new Tuple<string, string>(xmlDoc.DocumentElement.ChildNodes[0].InnerText.ToHex(true), xmlDoc.DocumentElement.ChildNodes[1].InnerText.ToHex(true));
+		}
+
 		// -------------------------------------------------------
 		// Methods to export key to PEM format - http://stackoverflow.com/questions/28406888/c-sharp-rsa-public-key-output-not-correct/28407693#28407693
 		/// <summary>
-		/// Exports the key of RSA to PEM format
+		/// Exports the private key of RSA to PEM format
 		/// </summary>
 		/// <param name="rsa">Object to export</param>
 		/// <returns></returns>
-		public static string ExportPrivateKeyToPEMFormat(RSACryptoServiceProvider rsa)
+		public static string ExportPrivateKeyToPEMFormat(this RSACryptoServiceProvider rsa)
 		{
 			// check
 			if (rsa.PublicOnly)
@@ -1807,7 +1740,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="rsa">Object to export</param>
 		/// <returns></returns>
-		public static String ExportPublicKeyToPEMFormat(RSACryptoServiceProvider rsa)
+		public static string ExportPublicKeyToPEMFormat(this RSACryptoServiceProvider rsa)
 		{
 			using (var results = new StringWriter())
 			{
@@ -1933,10 +1866,10 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Encrypts the data by ECC
 		/// </summary>
-		/// <param name="publicKey"></param>
 		/// <param name="data"></param>
+		/// <param name="publicKey"></param>
 		/// <returns></returns>
-		public static byte[] ECCEncrypt(byte[] publicKey, byte[] data)
+		public static byte[] ECCEncrypt(this byte[] data, byte[] publicKey)
 		{
 			return ECCsecp256k1.Encrypt(publicKey, data);
 		}
@@ -1944,32 +1877,36 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Encrypts the data by ECC
 		/// </summary>
-		/// <param name="publicKey"></param>
 		/// <param name="data"></param>
+		/// <param name="publicKey"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string ECCEncrypt(byte[] publicKey, string data)
+		public static string ECCEncrypt(this string data, byte[] publicKey, bool toHex = false)
 		{
-			return CryptoService.ECCEncrypt(publicKey, data.ToBytes()).ToBase64();
+			return toHex
+				? data.ToBytes().ECCEncrypt(publicKey).ToHex()
+				: data.ToBytes().ECCEncrypt(publicKey).ToBase64();
 		}
 
 		/// <summary>
 		/// Encrypts the data by ECC
 		/// </summary>
-		/// <param name="publicKey"></param>
 		/// <param name="data"></param>
+		/// <param name="publicKey"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string ECCEncrypt(string publicKey, string data)
+		public static string ECCEncrypt(this string data, string publicKey, bool toHex = false)
 		{
-			return CryptoService.ECCEncrypt(publicKey.HexToBytes(), data.ToBytes()).ToBase64();
+			return data.ECCEncrypt(publicKey.HexToBytes(), toHex);
 		}
 
 		/// <summary>
 		/// Decrypts the data by ECC
 		/// </summary>
-		/// <param name="privateKey"></param>
 		/// <param name="data"></param>
+		/// <param name="privateKey"></param>
 		/// <returns></returns>
-		public static byte[] ECCDecrypt(byte[] privateKey, byte[] data)
+		public static byte[] ECCDecrypt(this byte[] data, byte[] privateKey)
 		{
 			return ECCsecp256k1.Decrypt(privateKey, data);
 		}
@@ -1977,46 +1914,72 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Decrypts the data by ECC
 		/// </summary>
-		/// <param name="privateKey"></param>
 		/// <param name="data"></param>
+		/// <param name="privateKey"></param>
+		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string ECCDecrypt(byte[] privateKey, string data)
+		public static string ECCDecrypt(this string data, byte[] privateKey, bool isHex = false)
 		{
-			return CryptoService.ECCDecrypt(privateKey, data.Base64ToBytes()).GetString();
+			return isHex
+				? data.HexToBytes().ECCDecrypt(privateKey).GetString()
+				: data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
 		}
 
 		/// <summary>
 		/// Decrypts the data by ECC
 		/// </summary>
-		/// <param name="privateKey"></param>
 		/// <param name="data"></param>
+		/// <param name="privateKey"></param>
 		/// <returns></returns>
-		public static string ECCDecrypt(string privateKey, string data)
+		public static string ECCDecrypt(this string data, string privateKey, bool isHex = false)
 		{
-			return CryptoService.ECCDecrypt(privateKey.HexToBytes(), data);
+			return data.ECCDecrypt(privateKey.HexToBytes(), isHex);
 		}
 		#endregion
 
 		#region Sign/Verify (using ECC)
 		/// <summary>
-		/// Signs data using elliptic curve (follow Secp256k1 specs)
+		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
+		/// <param name="privateKey">The private key to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] ECCSign(BigInteger privateKey, byte[] hash)
+		public static BigInteger[] ECCSign(this byte[] hash, BigInteger privateKey)
 		{
 			return ECCsecp256k1.Sign(privateKey, hash);
 		}
 
 		/// <summary>
-		/// Verifys the signature using elliptic curve (follow Secp256k1 specs)
+		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <param name="privateKey">The private key to sign</param>
+		/// <returns></returns>
+		public static BigInteger[] ECCSign(this byte[] hash, byte[] privateKey)
+		{
+			return ECCsecp256k1.Sign(privateKey, hash);
+		}
+
+		/// <summary>
+		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="signature">The signature to verify</param>
 		/// <param name="publicKey">The public key to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] hash, BigInteger[] signature)
+		public static bool Verify(this BigInteger[] signature, byte[] publicKey, byte[] hash)
+		{
+			return ECCsecp256k1.Verify(publicKey, hash, signature);
+		}
+
+		/// <summary>
+		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="signature">The signature to verify</param>
+		/// <param name="publicKey">The public key to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <returns></returns>
+		public static bool Verify(this string signature, byte[] publicKey, byte[] hash)
 		{
 			return ECCsecp256k1.Verify(publicKey, hash, signature);
 		}
@@ -2033,6 +1996,36 @@ namespace net.vieapps.Components.Utility
 			var privateKey = ECCsecp256k1.GeneratePrivateKey(length);
 			var publicKey = ECCsecp256k1.GeneratePublicKey(privateKey);
 			return new Tuple<BigInteger, ECCsecp256k1.Point>(privateKey, publicKey);
+		}
+
+		/// <summary>
+		/// Generates a random private key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
+		/// </summary>
+		/// <param name="length"></param>
+		/// <returns></returns>
+		public static BigInteger GenerateECCPrivateKey(int length = 256)
+		{
+			return ECCsecp256k1.GeneratePrivateKey(length);
+		}
+
+		/// <summary>
+		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
+		/// </summary>
+		/// <param name="privateKey"></param>
+		/// <returns></returns>
+		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger privateKey)
+		{
+			return ECCsecp256k1.GeneratePublicKey(privateKey);
+		}
+
+		/// <summary>
+		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
+		/// </summary>
+		/// <param name="privateKey"></param>
+		/// <returns></returns>
+		public static byte[] GenerateECCPublicKey(this byte[] privateKey)
+		{
+			return ECCsecp256k1.GeneratePublicKey(privateKey);
 		}
 		#endregion
 
@@ -3286,23 +3279,14 @@ namespace net.vieapps.Components.Utility
 		#region Elgamal
 		public class Elgamal
 		{
-			RNGCryptoServiceProvider RNGCsp = new RNGCryptoServiceProvider();
-
-			public Point GenerateKey(Point publicKey, out byte[] key)
-			{
-				return this.GenerateKey(publicKey, out key, null);
-			}
-
-			public Point GenerateKey(Point publicKey, out byte[] key, BigInteger? k)
+			public Point GenerateKey(Point publicKey, out byte[] key, BigInteger? k = null)
 			{
 				for (int i = 0; i < 100; i++)
 				{
 					if (k == null)
 					{
-						var kBytes = new byte[33];
-						this.RNGCsp.GetBytes(kBytes);
+						var kBytes = CryptoService.GenerateRandomKey(33);
 						kBytes[32] = 0;
-
 						k = new BigInteger(kBytes);
 					}
 
@@ -3333,16 +3317,20 @@ namespace net.vieapps.Components.Utility
 		#region Encryption
 		public class Encryption
 		{
-			Elgamal Elgamal = new Elgamal();
-			RijndaelManaged Rijndael = new RijndaelManaged();
-			RNGCryptoServiceProvider RNGCsp = new RNGCryptoServiceProvider();
+			Elgamal Elgamal { get; set; }  = new Elgamal();
+			RijndaelManaged Rijndael { get; set; } = new RijndaelManaged();
 
 			public Encryption()
 			{
-				Rijndael.KeySize = 256;
-				Rijndael.BlockSize = 128;
-				Rijndael.Mode = CipherMode.CBC;
-				Rijndael.Padding = PaddingMode.PKCS7;
+				this.Rijndael.KeySize = 256;
+				this.Rijndael.BlockSize = 128;
+				this.Rijndael.Mode = CipherMode.CBC;
+				this.Rijndael.Padding = PaddingMode.PKCS7;
+			}
+
+			~Encryption()
+			{
+				this.Rijndael.Dispose();
 			}
 
 			public byte[] Encrypt(Point publicKey, string message)
@@ -3355,19 +3343,19 @@ namespace net.vieapps.Components.Utility
 				var tag = this.Elgamal.GenerateKey(publicKey, out byte[] key);
 				var tagBytes = tag.Encode(false);
 
-				var iv = new byte[16];
-				this.RNGCsp.GetBytes(iv);
-				this.Rijndael.IV = iv;
+				this.Rijndael.IV = CryptoService.GenerateRandomKey(16);
 				this.Rijndael.Key = key;
 
-				var crypto = Rijndael.CreateEncryptor();
-				var cipherData = crypto.TransformFinalBlock(data, 0, data.Length);
+				using (var crypto = this.Rijndael.CreateEncryptor())
+				{
+					var cipherData = crypto.TransformFinalBlock(data, 0, data.Length);
 
-				var cipher = new byte[cipherData.Length + 65 + 16];
-				Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
-				Buffer.BlockCopy(Rijndael.IV, 0, cipher, 65, 16);
-				Buffer.BlockCopy(cipherData, 0, cipher, 65 + 16, cipherData.Length);
-				return cipher;
+					var cipher = new byte[cipherData.Length + 65 + 16];
+					Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
+					Buffer.BlockCopy(Rijndael.IV, 0, cipher, 65, 16);
+					Buffer.BlockCopy(cipherData, 0, cipher, 65 + 16, cipherData.Length);
+					return cipher;
+				}
 			}
 
 			public byte[] Decrypt(BigInteger privateKey, byte[] cipherData)
@@ -3387,8 +3375,10 @@ namespace net.vieapps.Components.Utility
 				this.Rijndael.IV = iv;
 				this.Rijndael.Key = key;
 
-				var decryptor = this.Rijndael.CreateDecryptor();
-				return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+				using (var decryptor = this.Rijndael.CreateDecryptor())
+				{
+					return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+				}
 			}
 		}
 		#endregion
@@ -3396,23 +3386,14 @@ namespace net.vieapps.Components.Utility
 		#region DSA
 		public class DSA
 		{
-			RNGCryptoServiceProvider RNGCsp = new RNGCryptoServiceProvider();
-
-			public BigInteger[] Sign(BigInteger privateKey, byte[] hash)
-			{
-				return this.Sign(privateKey, hash, null);
-			}
-
-			public BigInteger[] Sign(BigInteger privateKey, byte[] hash, BigInteger? k)
+			public BigInteger[] Sign(BigInteger privateKey, byte[] hash, BigInteger? k = null)
 			{
 				for (int i = 0; i < 100; i++)
 				{
 					if (k == null)
 					{
-						var kBytes = new byte[33];
-						this.RNGCsp.GetBytes(kBytes);
+						var kBytes = CryptoService.GenerateRandomKey(33);
 						kBytes[32] = 0;
-
 						k = new BigInteger(kBytes);
 					}
 					var z = hash.ToUnsignedBigInteger();
@@ -3455,16 +3436,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Generate keys
-		/// <summary>
-		/// Generates a random key using RNGCryptoServiceProvider
-		/// </summary>
-		/// <param name="length">The bit-length of the key</param>
-		/// <returns></returns>
-		public static byte[] GenerateKey(int length = 256)
-		{
-			return CryptoService.GenerateRandomKey(length);
-		}
-
 		/// <summary>
 		/// Generates a random private key using RNGCryptoServiceProvider
 		/// </summary>

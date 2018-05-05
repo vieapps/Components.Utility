@@ -18,6 +18,13 @@ namespace net.vieapps.Components.Utility
 	{
 
 		#region Constructor
+		static EncodingService()
+		{
+			for (byte @byte = 0; @byte < 255; @byte++)
+				EncodingService.HexToByte[EncodingService.ByteToHex[@byte]] = @byte;
+			EncodingService.HexToByte["ff"] = 255;
+		}
+
 		static string[] ByteToHex = new[]
 		{
 			"00", "01", "02", "03", "04", "05", "06", "07",
@@ -55,13 +62,6 @@ namespace net.vieapps.Components.Utility
 		};
 
 		static Dictionary<string, byte> HexToByte = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
-
-		static EncodingService()
-		{
-			for (byte @byte = 0; @byte < 255; @byte++)
-				EncodingService.HexToByte[EncodingService.ByteToHex[@byte]] = @byte;
-			EncodingService.HexToByte["ff"] = 255;
-		}
 		#endregion
 
 		#region To Bytes
@@ -308,16 +308,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this array of bytes to hexa string
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <returns></returns>
-		public static string ToHexa(this byte[] bytes)
-		{
-			return bytes.ToHex();
-		}
-
-		/// <summary>
 		/// Converts this string to hexa string
 		/// </summary>
 		/// <param name="string"></param>
@@ -326,17 +316,6 @@ namespace net.vieapps.Components.Utility
 		public static string ToHex(this string @string, bool isBase64 = false)
 		{
 			return (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHex();
-		}
-
-		/// <summary>
-		/// Converts this string to hexa string
-		/// </summary>
-		/// <param name="string"></param>
-		/// <param name="isBase64"></param>
-		/// <returns></returns>
-		public static string ToHexa(this string @string, bool isBase64 = false)
-		{
-			return @string.ToHex(isBase64);
 		}
 
 		/// <summary>
@@ -350,18 +329,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this big-integer to hexa string
-		/// </summary>
-		/// <param name="bigInt"></param>
-		/// <returns></returns>
-		public static string ToHexa(this BigInteger bigInt)
-		{
-			return bigInt.ToHex();
-		}
-		#endregion
-
-		#region Hex to Bytes
-		/// <summary>
 		/// Converts this hexa-string to array of bytes
 		/// </summary>
 		/// <param name="hex"></param>
@@ -374,17 +341,6 @@ namespace net.vieapps.Components.Utility
 				bytes[index] = EncodingService.HexToByte[hex.Substring(index * 2, 2)];
 			return bytes;
 		}
-
-		/// <summary>
-		/// Converts this hexa-string to array of bytes
-		/// </summary>
-		/// <param name="hex"></param>
-		/// <returns></returns>
-		public static byte[] HexaToBytes(this string hex)
-		{
-			return hex.HexToBytes();
-		}
-
 		#endregion
 
 		#region Encode/Decode Base32
