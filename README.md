@@ -1,4 +1,4 @@
-# Components.Utility
+# VIEApps.Components.Utility
 The general purpose utility library for development apps with .NET Standard 2.0
 - String extension methods
 - Date-Time extension methods
@@ -7,5 +7,5 @@ The general purpose utility library for development apps with .NET Standard 2.0
 - ... and others
 
 ## NuGet
-- Package ID: VIEApps.Components.Utility
+- Package ID: **VIEApps.Components.Utility**
 - Details: https://www.nuget.org/packages/VIEApps.Components.Utility/
