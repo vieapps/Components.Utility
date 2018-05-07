@@ -356,7 +356,7 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentException("Invalid", nameof(bytes));
 
 			var data = addChecksum
-				? bytes.Concat(bytes.GetCheckSum("SHA1", 4))
+				? bytes.Concat(bytes.GetCheckSum("SHA1", 2))
 				: bytes;
 
 			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -439,9 +439,9 @@ namespace net.vieapps.Components.Utility
 			// verify & remove check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = output.Take(output.Length - 4);
-				output = output.Take(0, output.Length - 4);
-				var correctChecksum = output.GetCheckSum("SHA1", 4);
+				var givenChecksum = output.Take(output.Length - 2);
+				output = output.Take(0, output.Length - 2);
+				var correctChecksum = output.GetCheckSum("SHA1", 2);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
 					: null;

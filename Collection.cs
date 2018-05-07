@@ -131,6 +131,17 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="separator"></param>
 		/// <returns></returns>
+		public static string Join(this IEnumerable<string> @object, string separator)
+		{
+			return @object.ToString(separator ?? "");
+		}
+
+		/// <summary>
+		/// Converts this collection to string
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="separator"></param>
+		/// <returns></returns>
 		public static string ToString<T>(this IEnumerable<T> @object, string separator)
 		{
 			return @object.Select(obj => obj != null ? obj.ToString() : "null").ToString(separator);

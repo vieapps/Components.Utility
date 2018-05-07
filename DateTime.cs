@@ -305,20 +305,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this date-time to HTTP string with GMT
-		/// </summary>
-		/// <param name="datetime"></param>
-		/// <param name="useUTC"></param>
-		/// <returns></returns>
-		public static string ToHttpString(this DateTime datetime, bool useUTC = true)
-		{
-			var time = useUTC
-				? datetime.ToUniversalTime()
-				: datetime;
-			return $"{time.GetWeekDayName()}, {time.Day.ToString().PadLeft(2, '0')} {time.GetMonthName()} {time.Year} {time.Hour.ToString().PadLeft(2, '0')}:{time.Minute.ToString().PadLeft(2, '0')}:{time.Second.ToString().PadLeft(2, '0')} GMT";
-		}
-
-		/// <summary>
 		/// Gets the first-day-of-week of this date-time
 		/// </summary>
 		/// <param name="datetime"></param>
@@ -439,6 +425,20 @@ namespace net.vieapps.Components.Utility
 		public static string ToIsoString(this DateTime datetime, bool useUTC = false)
 		{
 			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
+		}
+
+		/// <summary>
+		/// Converts this date-time to HTTP string with GMT
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <param name="useUTC"></param>
+		/// <returns></returns>
+		public static string ToHttpString(this DateTime datetime, bool useUTC = true)
+		{
+			var time = useUTC
+				? datetime.ToUniversalTime()
+				: datetime;
+			return $"{time.GetWeekDayName()}, {time.Day.ToString().PadLeft(2, '0')} {time.GetMonthName()} {time.Year} {time.Hour.ToString().PadLeft(2, '0')}:{time.Minute.ToString().PadLeft(2, '0')}:{time.Second.ToString().PadLeft(2, '0')} GMT";
 		}
 	}
 }
