@@ -69,10 +69,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passphrase">The passphrase</param>
 		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
 		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateHashKey(this string passphrase, int length = 256)
-		{
-			return passphrase.ToBytes().GenerateHashKey(length);
-		}
+		public static byte[] GenerateHashKey(this string passphrase, int length = 256) => passphrase.ToBytes().GenerateHashKey(length);
 		#endregion
 
 		#region Hash an array of bytes or a string
@@ -127,284 +124,187 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHash(this string @string, string mode = "SHA256")
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
-				: @string.ToBytes().GetHash(mode);
-		}
+		public static byte[] GetHash(this string @string, string mode = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHash(mode);
 
 		/// <summary>
 		/// Gets MD5 hash of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetMD5Hash(this string @string)
-		{
-			return @string.GetHash("MD5");
-		}
+		public static byte[] GetMD5Hash(this string @string) => @string.GetHash("MD5");
 
 		/// <summary>
 		/// Gets MD5 hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetMD5(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetMD5Hash().ToBase64()
-				: @string.GetMD5Hash().ToHex();
-		}
+		public static string GetMD5(this string @string, bool toHex = true) => toHex ? @string.GetMD5Hash().ToHex() : @string.GetMD5Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHAHash(this string @string)
-		{
-			return @string.GetSHA256Hash();
-		}
+		public static byte[] GetSHAHash(this string @string) => @string.GetSHA256Hash();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA(this string @string, bool toBase64 = false)
-		{
-			return @string.GetSHA256(toBase64);
-		}
+		public static string GetSHA(this string @string, bool toHex = true) => @string.GetSHA256(toHex);
 
 		/// <summary>
 		/// Gets SHA hash of this string (160 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA1Hash(this string @string)
-		{
-			return @string.GetHash("SHA1");
-		}
+		public static byte[] GetSHA1Hash(this string @string) => @string.GetHash("SHA1");
 
 		/// <summary>
 		/// Gets SHA hash of this string (160 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA1(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetSHA1Hash().ToBase64()
-				: @string.GetSHA1Hash().ToHex();
-		}
+		public static string GetSHA1(this string @string, bool toHex = true) => toHex ? @string.GetSHA1Hash().ToHex() : @string.GetSHA1Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA256Hash(this string @string)
-		{
-			return @string.GetHash("SHA256");
-		}
+		public static byte[] GetSHA256Hash(this string @string) => @string.GetHash("SHA256");
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA256(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetSHA256Hash().ToBase64()
-				: @string.GetSHA256Hash().ToHex();
-		}
+		public static string GetSHA256(this string @string, bool toHex = true) => toHex ? @string.GetSHA256Hash().ToHex() : @string.GetSHA256Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA384Hash(this string @string)
-		{
-			return @string.GetHash("SHA384");
-		}
+		public static byte[] GetSHA384Hash(this string @string) => @string.GetHash("SHA384");
 
 		/// <summary>
 		/// Gets SHA hash of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA384(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetSHA384Hash().ToBase64()
-				: @string.GetSHA384Hash().ToHex();
-		}
+		public static string GetSHA384(this string @string, bool toHex = true) => toHex ? @string.GetSHA384Hash().ToHex() : @string.GetSHA384Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA512Hash(this string @string)
-		{
-			return @string.GetHash("SHA512");
-		}
+		public static byte[] GetSHA512Hash(this string @string) => @string.GetHash("SHA512");
 
 		/// <summary>
 		/// Gets SHA hash of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA512(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetSHA512Hash().ToBase64()
-				: @string.GetSHA512Hash().ToHex();
-		}
+		public static string GetSHA512(this string @string, bool toHex = true) => toHex ? @string.GetSHA512Hash().ToHex() : @string.GetSHA512Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKEHash(this string @string)
-		{
-			return @string.GetBLAKE256Hash();
-		}
+		public static byte[] GetBLAKEHash(this string @string) => @string.GetBLAKE256Hash();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE(this string @string, bool toBase64 = false)
-		{
-			return @string.GetBLAKE256(toBase64);
-		}
+		public static string GetBLAKE(this string @string, bool toHex = true) => @string.GetBLAKE256(toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (128 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE128Hash(this string @string)
-		{
-			return @string.GetHash("BLAKE128");
-		}
+		public static byte[] GetBLAKE128Hash(this string @string) => @string.GetHash("BLAKE128");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (128 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE128(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetBLAKE128Hash().ToBase64()
-				: @string.GetBLAKE128Hash().ToHex();
-		}
+		public static string GetBLAKE128(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE128Hash().ToHex() : @string.GetBLAKE128Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE256Hash(this string @string)
-		{
-			return @string.GetHash("BLAKE256");
-		}
+		public static byte[] GetBLAKE256Hash(this string @string) => @string.GetHash("BLAKE256");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE256(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetBLAKE256Hash().ToBase64()
-				: @string.GetBLAKE256Hash().ToHex();
-		}
+		public static string GetBLAKE256(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE256Hash().ToHex() : @string.GetBLAKE256Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE384Hash(this string @string)
-		{
-			return @string.GetHash("BLAKE384");
-		}
+		public static byte[] GetBLAKE384Hash(this string @string) => @string.GetHash("BLAKE384");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE384(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetBLAKE384Hash().ToBase64()
-				: @string.GetBLAKE384Hash().ToHex();
-		}
+		public static string GetBLAKE384(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE384Hash().ToHex() : @string.GetBLAKE384Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE512Hash(this string @string)
-		{
-			return @string.GetHash("BLAKE512");
-		}
+		public static byte[] GetBLAKE512Hash(this string @string) => @string.GetHash("BLAKE512");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE512(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetBLAKE512Hash().ToBase64()
-				: @string.GetBLAKE512Hash().ToHex();
-		}
+		public static string GetBLAKE512(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE512Hash().ToHex() : @string.GetBLAKE512Hash().ToBase64();
 
 		/// <summary>
 		/// Gets RIPEMD160 hash of this string (160 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetRIPEMD160Hash(this string @string)
-		{
-			return @string.GetHash("RIPEMD160");
-		}
+		public static byte[] GetRIPEMD160Hash(this string @string) => @string.GetHash("RIPEMD160");
 
 		/// <summary>
 		/// Gets RIPEMD160 hash of this string (160 bits)
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="toBase64"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetRIPEMD160(this string @string, bool toBase64 = false)
-		{
-			return toBase64
-				? @string.GetRIPEMD160Hash().ToBase64()
-				: @string.GetRIPEMD160Hash().ToHex();
-		}
+		public static string GetRIPEMD160(this string @string, bool toHex = true) => toHex ? @string.GetRIPEMD160Hash().ToHex() : @string.GetRIPEMD160Hash().ToBase64();
 		#endregion
 
 		#region Double Hash an array of bytes or a string
@@ -440,36 +340,21 @@ namespace net.vieapps.Components.Utility
 		/// <param name="firstMode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="secondMode">Mode of the second hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetDoubleHash(this string @string, string firstMode = "SHA256", string secondMode = null)
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
-				: @string.ToBytes().GetDoubleHash(firstMode, secondMode);
-		}
+		public static byte[] GetDoubleHash(this string @string, string firstMode = "SHA256", string secondMode = null) => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetDoubleHash(firstMode, secondMode);
 
 		/// <summary>
 		/// Gets the double-hash of this array of bytes with first hash is SHA256, second hash is RIPEMD160
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <returns></returns>
-		public static byte[] GetHash160(this byte[] bytes)
-		{
-			return bytes == null || bytes.Length < 1
-				? throw new ArgumentException("Invalid", nameof(bytes))
-				: bytes.GetDoubleHash("SHA256", "RIPEMD160");
-		}
+		public static byte[] GetHash160(this byte[] bytes) => bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash("SHA256", "RIPEMD160");
 
 		/// <summary>
 		/// Gets the double-hash of this string with first hash is SHA256, second hash is RIPEMD160
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetHash160(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
-				: @string.ToBytes().GetHash160();
-		}
+		public static byte[] GetHash160(this string @string) => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHash160();
 		#endregion
 
 		#region HMAC Hash an array of bytes or string
@@ -540,12 +425,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">Keys for hashing (means salt)</param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256")
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
-				: @string.ToBytes().GetHMACHash(key, mode);
-		}
+		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHMACHash(key, mode);
 
 		/// <summary>
 		/// Gets HMAC of this string
@@ -554,10 +434,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">Keys for hashing (means salt)</param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256")
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), mode);
-		}
+		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256") => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), mode);
 
 		/// <summary>
 		/// Gets HMAC of this string
@@ -565,15 +442,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="toHexa">true to get hexa-string, otherwise get base64-string</param>
+		/// <param name="toHex">true to get hexa-string, otherwise get base64-string</param>
 		/// <returns></returns>
-		public static string GetHMAC(this string @string, string key, string mode = null, bool toHexa = true)
-		{
-			var hash = @string.GetHMACHash(key, mode);
-			return toHexa
-				? hash.ToHex()
-				: hash.ToBase64();
-		}
+		public static string GetHMAC(this string @string, string key, string mode = null, bool toHex = true) => toHex ? @string.GetHMACHash(key, mode).ToHex() : @string.GetHMACHash(key, mode).ToBase64();
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -581,10 +452,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACMD5Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "MD5");
-		}
+		public static byte[] GetHMACMD5Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "MD5");
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -593,10 +461,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACMD5(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "MD5", toHex);
-		}
+		public static string GetHMACMD5(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "MD5", toHex);
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -604,10 +469,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACMD5(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACMD5(null, toHex);
-		}
+		public static string GetHMACMD5(this string @string, bool toHex = true) => @string.GetHMACMD5(null, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -615,10 +477,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHAHash(this string @string, string key)
-		{
-			return @string.GetHMACSHA256Hash(key);
-		}
+		public static byte[] GetHMACSHAHash(this string @string, string key) => @string.GetHMACSHA256Hash(key);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -627,10 +486,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMACSHA256(key, toHex);
-		}
+		public static string GetHMACSHA(this string @string, string key, bool toHex = true) => @string.GetHMACSHA256(key, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -638,10 +494,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA(this string @string, bool toHexa = true)
-		{
-			return @string.GetHMACSHA256(toHexa);
-		}
+		public static string GetHMACSHA(this string @string, bool toHexa = true) => @string.GetHMACSHA256(toHexa);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (160 bits)
@@ -649,10 +502,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA1Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA1");
-		}
+		public static byte[] GetHMACSHA1Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA1");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (160 bits)
@@ -661,10 +511,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA1(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "SHA1", toHex);
-		}
+		public static string GetHMACSHA1(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA1", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (160 bits)
@@ -672,10 +519,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA1(this string @string, bool toHexa = true)
-		{
-			return @string.GetHMACSHA1(null, toHexa);
-		}
+		public static string GetHMACSHA1(this string @string, bool toHexa = true) => @string.GetHMACSHA1(null, toHexa);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -683,10 +527,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA256Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA256");
-		}
+		public static byte[] GetHMACSHA256Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA256");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -695,10 +536,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA256(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "SHA256", toHex);
-		}
+		public static string GetHMACSHA256(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA256", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -706,10 +544,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA256(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACSHA256(null, toHex);
-		}
+		public static string GetHMACSHA256(this string @string, bool toHex = true) => @string.GetHMACSHA256(null, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (384 bits)
@@ -717,10 +552,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA384Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA384");
-		}
+		public static byte[] GetHMACSHA384Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA384");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (384 bits)
@@ -729,10 +561,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA384(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "SHA384", toHex);
-		}
+		public static string GetHMACSHA384(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA384", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (384 bits)
@@ -740,10 +569,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA384(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACSHA384(null, toHex);
-		}
+		public static string GetHMACSHA384(this string @string, bool toHex = true) => @string.GetHMACSHA384(null, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (512 bits)
@@ -751,10 +577,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA512Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA512");
-		}
+		public static byte[] GetHMACSHA512Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA512");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (512 bits)
@@ -763,10 +586,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA512(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "SHA512", toHex);
-		}
+		public static string GetHMACSHA512(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA512", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (512 bits)
@@ -774,10 +594,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA512(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACSHA512(null, toHex);
-		}
+		public static string GetHMACSHA512(this string @string, bool toHex = true) => @string.GetHMACSHA512(null, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -785,10 +602,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKEHash(this string @string, string key)
-		{
-			return @string.GetHMACBLAKE256Hash(key);
-		}
+		public static byte[] GetHMACBLAKEHash(this string @string, string key) => @string.GetHMACBLAKE256Hash(key);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -797,10 +611,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMACBLAKE256(key, toHex);
-		}
+		public static string GetHMACBLAKE(this string @string, string key, bool toHex = true) => @string.GetHMACBLAKE256(key, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -808,10 +619,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACBLAKE256(toHex);
-		}
+		public static string GetHMACBLAKE(this string @string, bool toHex = true) => @string.GetHMACBLAKE256(toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (128 bits)
@@ -819,10 +627,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE128Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE128");
-		}
+		public static byte[] GetHMACBLAKE128Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE128");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (128 bits)
@@ -831,10 +636,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE128(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "BLAKE128", toHex);
-		}
+		public static string GetHMACBLAKE128(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE128", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (128 bits)
@@ -842,10 +644,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE128(this string @string, bool toHexa = true)
-		{
-			return @string.GetHMACBLAKE128(null, toHexa);
-		}
+		public static string GetHMACBLAKE128(this string @string, bool toHexa = true) => @string.GetHMACBLAKE128(null, toHexa);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -853,10 +652,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE256Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE256");
-		}
+		public static byte[] GetHMACBLAKE256Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE256");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -865,10 +661,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE256(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "BLAKE256", toHex);
-		}
+		public static string GetHMACBLAKE256(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE256", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -876,10 +669,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE256(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACBLAKE256(null, toHex);
-		}
+		public static string GetHMACBLAKE256(this string @string, bool toHex = true) => @string.GetHMACBLAKE256(null, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (384 bits)
@@ -887,10 +677,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE384Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE384");
-		}
+		public static byte[] GetHMACBLAKE384Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE384");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (384 bits)
@@ -899,10 +686,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE384(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "BLAKE384", toHex);
-		}
+		public static string GetHMACBLAKE384(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE384", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (384 bits)
@@ -910,10 +694,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE384(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACBLAKE384(null, toHex);
-		}
+		public static string GetHMACBLAKE384(this string @string, bool toHex = true) => @string.GetHMACBLAKE384(null, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (512 bits)
@@ -921,10 +702,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE512Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE512");
-		}
+		public static byte[] GetHMACBLAKE512Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE512");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (512 bits)
@@ -933,10 +711,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE512(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "BLAKE512", toHex);
-		}
+		public static string GetHMACBLAKE512(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE512", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (512 bits)
@@ -944,10 +719,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE512(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACBLAKE512(null, toHex);
-		}
+		public static string GetHMACBLAKE512(this string @string, bool toHex = true) => @string.GetHMACBLAKE512(null, toHex);
 
 		/// <summary>
 		/// Gets RIPEMD HMAC of this string (160 bits)
@@ -955,10 +727,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACRIPEMD160Hash(this string @string, string key)
-		{
-			return @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "RIPEMD160");
-		}
+		public static byte[] GetHMACRIPEMD160Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "RIPEMD160");
 
 		/// <summary>
 		/// Gets RIPEMD HMAC of this string (160 bits)
@@ -967,10 +736,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACRIPEMD160(this string @string, string key, bool toHex = true)
-		{
-			return @string.GetHMAC(key, "RIPEMD160", toHex);
-		}
+		public static string GetHMACRIPEMD160(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "RIPEMD160", toHex);
 
 		/// <summary>
 		/// Gets RIPEMD HMAC of this string (160 bits)
@@ -978,10 +744,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACRIPEMD160(this string @string, bool toHex = true)
-		{
-			return @string.GetHMACRIPEMD160(null, toHex);
-		}
+		public static string GetHMACRIPEMD160(this string @string, bool toHex = true) => @string.GetHMACRIPEMD160(null, toHex);
 		#endregion
 
 		#region Check-Sum of an array of bytes or a string
@@ -992,12 +755,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
-		public static byte[] GetCheckSum(this byte[] bytes, string mode = "SHA256", int length = 4)
-		{
-			return bytes == null || bytes.Length < 1
-				? throw new ArgumentException("Invalid", nameof(bytes))
-				: bytes.GetDoubleHash(mode).Take(0, length);
-		}
+		public static byte[] GetCheckSum(this byte[] bytes, string mode = "SHA256", int length = 4) => bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash(mode).Take(0, length);
 
 		/// <summary>
 		/// Gets the check-sum of this string using double-hash
@@ -1006,12 +764,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
-		public static byte[] GetCheckSum(this string @string, string mode = "SHA256", int length = 4)
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
-				: @string.ToBytes().GetCheckSum(mode, length);
-		}
+		public static byte[] GetCheckSum(this string @string, string mode = "SHA256", int length = 4) => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetCheckSum(mode, length);
 		#endregion
 
 		#region Encrypt/Decrypt (using AES)
@@ -1044,14 +797,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="iv"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHex = false)
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? ""
-				: toHex
-					? @string.ToBytes().Encrypt(key, iv).ToHex()
-					: @string.ToBytes().Encrypt(key, iv).ToBase64();
-		}
+		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHex = false) => string.IsNullOrWhiteSpace(@string) ? "" : toHex ? @string.ToBytes().Encrypt(key, iv).ToHex() : @string.ToBytes().Encrypt(key, iv).ToBase64();
 
 		/// <summary>
 		/// Encrypts this string by specific pass-phrase using AES
@@ -1060,10 +806,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
-		{
-			return @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
-		}
+		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false) => @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
 
 		/// <summary>
 		/// Decrypts by specific key and initialization vector using AES
@@ -1094,14 +837,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="iv"></param>
 		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false)
-		{
-			return string.IsNullOrWhiteSpace(@string)
-				? ""
-				: isHex
-					? @string.HexToBytes().Decrypt(key, iv).GetString()
-					: @string.Base64ToBytes().Decrypt(key, iv).GetString();
-		}
+		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false) => string.IsNullOrWhiteSpace(@string) ? "" : isHex ? @string.HexToBytes().Decrypt(key, iv).GetString() : @string.Base64ToBytes().Decrypt(key, iv).GetString();
 
 		/// <summary>
 		/// Decrypts this encrypted string by specific pass-phrase using AES
@@ -1110,10 +846,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
-		{
-			return @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
-		}
+		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false) => @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)
@@ -1123,10 +856,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static byte[] RSAEncrypt(RSACryptoServiceProvider rsa, byte[] data)
-		{
-			return rsa.Encrypt(data, false);
-		}
+		public static byte[] RSAEncrypt(this RSACryptoServiceProvider rsa, byte[] data) => rsa.Encrypt(data, false);
 
 		/// <summary>
 		/// Encrypts the data by RSA
@@ -1134,10 +864,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static string RSAEncrypt(RSACryptoServiceProvider rsa, string data)
-		{
-			return CryptoService.RSAEncrypt(rsa, data.ToBytes()).ToBase64();
-		}
+		public static string RSAEncrypt(this RSACryptoServiceProvider rsa, string data) => CryptoService.RSAEncrypt(rsa, data.ToBytes()).ToBase64();
 
 		/// <summary>
 		/// Encrypts the data by RSA
@@ -1159,10 +886,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static string RSAEncrypt(string key, string data)
-		{
-			return CryptoService.RSAEncrypt(key, data.ToBytes()).ToBase64();
-		}
+		public static string RSAEncrypt(string key, string data) => CryptoService.RSAEncrypt(key, data.ToBytes()).ToBase64();
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -1170,10 +894,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static byte[] RSADecrypt(RSACryptoServiceProvider rsa, byte[] data)
-		{
-			return rsa.Decrypt(data, false);
-		}
+		public static byte[] RSADecrypt(this RSACryptoServiceProvider rsa, byte[] data) => rsa.Decrypt(data, false);
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -1181,10 +902,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static string RSADecrypt(RSACryptoServiceProvider rsa, string data)
-		{
-			return CryptoService.RSADecrypt(rsa, data.Base64ToBytes()).GetString();
-		}
+		public static string RSADecrypt(this RSACryptoServiceProvider rsa, string data) => CryptoService.RSADecrypt(rsa, data.Base64ToBytes()).GetString();
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -1222,12 +940,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static byte[] Encrypt(this RSACryptoServiceProvider rsa, byte[] data)
-		{
-			return data == null || data.Length < 1
-				? new byte[0]
-				: rsa.Encrypt(data, false);
-		}
+		public static byte[] Encrypt(this RSACryptoServiceProvider rsa, byte[] data) => data == null || data.Length < 1 ? new byte[0] : rsa.Encrypt(data, false);
 
 		/// <summary>
 		/// Encrypts the data by RSA
@@ -1236,14 +949,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string Encrypt(this RSACryptoServiceProvider rsa, string data, bool toHex = false)
-		{
-			return string.IsNullOrWhiteSpace(data)
-				? ""
-				: toHex
-					? rsa.Encrypt(data.ToBytes()).ToHex()
-					: rsa.Encrypt(data.ToBytes()).ToBase64();
-		}
+		public static string Encrypt(this RSACryptoServiceProvider rsa, string data, bool toHex = false) => string.IsNullOrWhiteSpace(data) ? "" : toHex ? rsa.Encrypt(data.ToBytes()).ToHex() : rsa.Encrypt(data.ToBytes()).ToBase64();
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -1251,12 +957,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static byte[] Decrypt(this RSACryptoServiceProvider rsa, byte[] data)
-		{
-			return data == null || data.Length < 1
-				? new byte[0]
-				: rsa.Decrypt(data, false);
-		}
+		public static byte[] Decrypt(this RSACryptoServiceProvider rsa, byte[] data) => data == null || data.Length < 1 ? new byte[0] : rsa.Decrypt(data, false);
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -1265,14 +966,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this RSACryptoServiceProvider rsa, string data, bool isHex = false)
-		{
-			return string.IsNullOrWhiteSpace(data)
-				? ""
-				: isHex
-					? rsa.Decrypt(data.HexToBytes()).GetString()
-					: rsa.Decrypt(data.Base64ToBytes()).GetString();
-		}
+		public static string Decrypt(this RSACryptoServiceProvider rsa, string data, bool isHex = false) => string.IsNullOrWhiteSpace(data) ? "" : isHex ? rsa.Decrypt(data.HexToBytes()).GetString() : rsa.Decrypt(data.Base64ToBytes()).GetString();
 		#endregion
 
 		#region Create new instance of RSA from a specific key
@@ -1881,10 +1575,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to encrypt</param>
 		/// <param name="publicKey">The public key used to encrypt data</param>
 		/// <returns></returns>
-		public static byte[] ECCEncrypt(this byte[] data, ECCsecp256k1.Point publicKey)
-		{
-			return ECCsecp256k1.Encrypt(publicKey, data);
-		}
+		public static byte[] ECCEncrypt(this byte[] data, ECCsecp256k1.Point publicKey) => ECCsecp256k1.Encrypt(publicKey, data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1892,10 +1583,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to encrypt</param>
 		/// <param name="publicKey">The public key used to encrypt data</param>
 		/// <returns></returns>
-		public static byte[] ECCEncrypt(this byte[] data, byte[] publicKey)
-		{
-			return ECCsecp256k1.Encrypt(publicKey, data);
-		}
+		public static byte[] ECCEncrypt(this byte[] data, byte[] publicKey) => ECCsecp256k1.Encrypt(publicKey, data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1903,10 +1591,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to encrypt</param>
 		/// <param name="publicKey">The public key used to encrypt data</param>
 		/// <returns></returns>
-		public static byte[] ECCEncrypt(this byte[] data, string publicKey)
-		{
-			return ECCsecp256k1.Encrypt(publicKey, data);
-		}
+		public static byte[] ECCEncrypt(this byte[] data, string publicKey) => ECCsecp256k1.Encrypt(publicKey, data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1915,12 +1600,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to encrypt data</param>
 		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
 		/// <returns></returns>
-		public static string ECCEncrypt(this string data, ECCsecp256k1.Point publicKey, bool toHex = false)
-		{
-			return toHex
-				? data.ToBytes().ECCEncrypt(publicKey).ToHex()
-				: data.ToBytes().ECCEncrypt(publicKey).ToBase64();
-		}
+		public static string ECCEncrypt(this string data, ECCsecp256k1.Point publicKey, bool toHex = false) => toHex ? data.ToBytes().ECCEncrypt(publicKey).ToHex() : data.ToBytes().ECCEncrypt(publicKey).ToBase64();
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1929,12 +1609,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to encrypt data</param>
 		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
 		/// <returns></returns>
-		public static string ECCEncrypt(this string data, byte[] publicKey, bool toHex = false)
-		{
-			return toHex
-				? data.ToBytes().ECCEncrypt(publicKey).ToHex()
-				: data.ToBytes().ECCEncrypt(publicKey).ToBase64();
-		}
+		public static string ECCEncrypt(this string data, byte[] publicKey, bool toHex = false) => toHex ? data.ToBytes().ECCEncrypt(publicKey).ToHex() : data.ToBytes().ECCEncrypt(publicKey).ToBase64();
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1943,12 +1618,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to encrypt data</param>
 		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
 		/// <returns></returns>
-		public static string ECCEncrypt(this string data, string publicKey, bool toHex = false)
-		{
-			return toHex
-				? data.ToBytes().ECCEncrypt(publicKey).ToHex()
-				: data.ToBytes().ECCEncrypt(publicKey).ToBase64();
-		}
+		public static string ECCEncrypt(this string data, string publicKey, bool toHex = false) => toHex ? data.ToBytes().ECCEncrypt(publicKey).ToHex() : data.ToBytes().ECCEncrypt(publicKey).ToBase64();
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1956,10 +1626,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data the decrypt</param>
 		/// <param name="privateKey">The private key used to decrypt</param>
 		/// <returns></returns>
-		public static byte[] ECCDecrypt(this byte[] data, BigInteger privateKey)
-		{
-			return ECCsecp256k1.Decrypt(privateKey, data);
-		}
+		public static byte[] ECCDecrypt(this byte[] data, BigInteger privateKey) => ECCsecp256k1.Decrypt(privateKey, data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1967,10 +1634,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data the decrypt</param>
 		/// <param name="privateKey">The private key used to decrypt</param>
 		/// <returns></returns>
-		public static byte[] ECCDecrypt(this byte[] data, byte[] privateKey)
-		{
-			return ECCsecp256k1.Decrypt(privateKey, data);
-		}
+		public static byte[] ECCDecrypt(this byte[] data, byte[] privateKey) => ECCsecp256k1.Decrypt(privateKey, data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1978,10 +1642,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data the decrypt</param>
 		/// <param name="privateKey">The private key used to decrypt</param>
 		/// <returns></returns>
-		public static byte[] ECCDecrypt(this byte[] data, string privateKey)
-		{
-			return ECCsecp256k1.Decrypt(privateKey, data);
-		}
+		public static byte[] ECCDecrypt(this byte[] data, string privateKey) => ECCsecp256k1.Decrypt(privateKey, data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1990,12 +1651,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to decrypt</param>
 		/// <param name="isHex">true to specified that the data is hexa string, false is base64 string</param>
 		/// <returns></returns>
-		public static string ECCDecrypt(this string data, BigInteger privateKey, bool isHex = false)
-		{
-			return isHex
-				? data.HexToBytes().ECCDecrypt(privateKey).GetString()
-				: data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
-		}
+		public static string ECCDecrypt(this string data, BigInteger privateKey, bool isHex = false) => isHex ? data.HexToBytes().ECCDecrypt(privateKey).GetString() : data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2004,12 +1660,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to decrypt</param>
 		/// <param name="isHex">true to specified that the data is hexa string, false is base64 string</param>
 		/// <returns></returns>
-		public static string ECCDecrypt(this string data, byte[] privateKey, bool isHex = false)
-		{
-			return isHex
-				? data.HexToBytes().ECCDecrypt(privateKey).GetString()
-				: data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
-		}
+		public static string ECCDecrypt(this string data, byte[] privateKey, bool isHex = false) => isHex ? data.HexToBytes().ECCDecrypt(privateKey).GetString() : data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2018,12 +1669,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to decrypt</param>
 		/// <param name="isHex">true to specified that the data is hexa string, false is base64 string</param>
 		/// <returns></returns>
-		public static string ECCDecrypt(this string data, string privateKey, bool isHex = false)
-		{
-			return isHex
-				? data.HexToBytes().ECCDecrypt(privateKey).GetString()
-				: data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
-		}
+		public static string ECCDecrypt(this string data, string privateKey, bool isHex = false) => isHex ? data.HexToBytes().ECCDecrypt(privateKey).GetString() : data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
 		#endregion
 
 		#region Sign/Verify (using ECC)
@@ -2033,10 +1679,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] ECCSign(this byte[] hash, BigInteger privateKey)
-		{
-			return ECCsecp256k1.Sign(privateKey, hash);
-		}
+		public static BigInteger[] ECCSign(this byte[] hash, BigInteger privateKey) => ECCsecp256k1.Sign(privateKey, hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2044,10 +1687,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] ECCSign(this byte[] hash, byte[] privateKey)
-		{
-			return ECCsecp256k1.Sign(privateKey, hash);
-		}
+		public static BigInteger[] ECCSign(this byte[] hash, byte[] privateKey) => ECCsecp256k1.Sign(privateKey, hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2055,10 +1695,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] ECCSign(this byte[] hash, string privateKey)
-		{
-			return ECCsecp256k1.Sign(privateKey, hash);
-		}
+		public static BigInteger[] ECCSign(this byte[] hash, string privateKey) => ECCsecp256k1.Sign(privateKey, hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2066,10 +1703,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <returns></returns>
-		public static string ECCSignAsHex(this byte[] hash, BigInteger privateKey)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey, hash);
-		}
+		public static string ECCSignAsHex(this byte[] hash, BigInteger privateKey) => ECCsecp256k1.SignAsHex(privateKey, hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2077,10 +1711,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <returns></returns>
-		public static string ECCSignAsHex(this byte[] hash, byte[] privateKey)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey, hash);
-		}
+		public static string ECCSignAsHex(this byte[] hash, byte[] privateKey) => ECCsecp256k1.SignAsHex(privateKey, hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2088,10 +1719,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <returns></returns>
-		public static string ECCSignAsHex(this byte[] hash, string privateKey)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey.HexToBytes(), hash);
-		}
+		public static string ECCSignAsHex(this byte[] hash, string privateKey) => ECCsecp256k1.SignAsHex(privateKey.HexToBytes(), hash);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2100,10 +1728,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <returns></returns>
-		public static bool ECCVerify(this BigInteger[] signature, ECCsecp256k1.Point publicKey, byte[] hash)
-		{
-			return ECCsecp256k1.Verify(publicKey, hash, signature);
-		}
+		public static bool ECCVerify(this BigInteger[] signature, ECCsecp256k1.Point publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2112,10 +1737,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <returns></returns>
-		public static bool ECCVerify(this BigInteger[] signature, byte[] publicKey, byte[] hash)
-		{
-			return ECCsecp256k1.Verify(publicKey, hash, signature);
-		}
+		public static bool ECCVerify(this BigInteger[] signature, byte[] publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2124,10 +1746,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <returns></returns>
-		public static bool ECCVerify(this string signature, byte[] publicKey, byte[] hash)
-		{
-			return ECCsecp256k1.Verify(publicKey, hash, signature);
-		}
+		public static bool ECCVerify(this string signature, byte[] publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2136,10 +1755,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <returns></returns>
-		public static bool ECCVerify(this string signature, string publicKey, byte[] hash)
-		{
-			return ECCsecp256k1.Verify(publicKey, hash, signature);
-		}
+		public static bool ECCVerify(this string signature, string publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -2148,10 +1764,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <returns></returns>
-		public static bool ECCVerify(this string signature, string publicKey, string hash)
-		{
-			return ECCsecp256k1.Verify(publicKey, hash.HexToBytes(), signature);
-		}
+		public static bool ECCVerify(this string signature, string publicKey, string hash) => ECCsecp256k1.Verify(publicKey, hash.HexToBytes(), signature);
 		#endregion
 
 		#region Generate keys of ECC
@@ -2172,40 +1785,28 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
 		/// <returns></returns>
-		public static BigInteger GenerateECCPrivateKey(int length = 256)
-		{
-			return ECCsecp256k1.GeneratePrivateKey(length);
-		}
+		public static BigInteger GenerateECCPrivateKey(int length = 256) => ECCsecp256k1.GeneratePrivateKey(length);
 
 		/// <summary>
 		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
 		/// <param name="privateKey"></param>
 		/// <returns></returns>
-		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger privateKey)
-		{
-			return ECCsecp256k1.GeneratePublicKey(privateKey);
-		}
+		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey);
 
 		/// <summary>
 		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
 		/// <param name="privateKey"></param>
 		/// <returns></returns>
-		public static byte[] GenerateECCPublicKey(this byte[] privateKey)
-		{
-			return ECCsecp256k1.GeneratePublicKey(privateKey);
-		}
+		public static byte[] GenerateECCPublicKey(this byte[] privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey);
 
 		/// <summary>
 		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
 		/// <param name="privateKey"></param>
 		/// <returns></returns>
-		public static string GenerateECCPublicKey(this string privateKey)
-		{
-			return ECCsecp256k1.GeneratePublicKey(privateKey).ToHex();
-		}
+		public static string GenerateECCPublicKey(this string privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey).ToHex();
 		#endregion
 
 	}
@@ -3458,28 +3059,20 @@ namespace net.vieapps.Components.Utility
 		#region Elgamal
 		public class Elgamal
 		{
-			public Point GenerateKey(Point publicKey, out byte[] key, BigInteger? k = null)
+			public Point GenerateKey(Point publicKey, out byte[] key, BigInteger? tempKey = null)
 			{
-				for (int i = 0; i < 100; i++)
+				while (tempKey == null || tempKey.Value.IsZero || tempKey.Value >= ECCsecp256k1.N)
+					tempKey = new BigInteger(CryptoService.GenerateRandomKey(32).Concat(new byte[1] { 0 }));
+
+				for (int counter = 0; counter < 100; counter++)
 				{
-					if (k == null)
-					{
-						var kBytes = CryptoService.GenerateRandomKey(33);
-						kBytes[32] = 0;
-						k = new BigInteger(kBytes);
-					}
-
-					if (k.Value.IsZero || k.Value >= ECCsecp256k1.N)
-						continue;
-
-					var tag = ECCsecp256k1.G.Multiply(k.Value);
-					var keyPoint = publicKey.Multiply(k.Value);
+					var tag = ECCsecp256k1.G.Multiply(tempKey.Value);
+					var keyPoint = publicKey.Multiply(tempKey.Value);
 
 					if (keyPoint.IsInfinity || tag.IsInfinity)
 						continue;
 
 					key = keyPoint.Encode(false).GetDoubleHash("SHA256");
-
 					return tag;
 				}
 
@@ -3522,12 +3115,12 @@ namespace net.vieapps.Components.Utility
 				var tag = this.Elgamal.GenerateKey(publicKey, out byte[] key);
 				var tagBytes = tag.Encode(false);
 
-				this.Rijndael.IV = CryptoService.GenerateRandomKey(16);
 				this.Rijndael.Key = key;
+				this.Rijndael.IV = CryptoService.GenerateRandomKey(16);
 
-				using (var crypto = this.Rijndael.CreateEncryptor())
+				using (var cryptor = this.Rijndael.CreateEncryptor())
 				{
-					var cipherData = crypto.TransformFinalBlock(data, 0, data.Length);
+					var cipherData = cryptor.TransformFinalBlock(data, 0, data.Length);
 
 					var cipher = new byte[cipherData.Length + 65 + 16];
 					Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
@@ -3565,29 +3158,20 @@ namespace net.vieapps.Components.Utility
 		#region DSA
 		public class DSA
 		{
-			public BigInteger[] Sign(BigInteger privateKey, byte[] hash, BigInteger? k = null)
+			public BigInteger[] Sign(BigInteger privateKey, byte[] hash, BigInteger? tempKey = null)
 			{
-				for (int i = 0; i < 100; i++)
+				var hashBigIn = hash.ToUnsignedBigInteger();
+				while (tempKey == null || tempKey.Value.IsZero || tempKey >= ECCsecp256k1.N)
+					tempKey = new BigInteger(CryptoService.GenerateRandomKey(32).Concat(new byte[1] { 0 }));
+
+				for (int counter = 0; counter < 100; counter++)
 				{
-					if (k == null)
-					{
-						var kBytes = CryptoService.GenerateRandomKey(33);
-						kBytes[32] = 0;
-						k = new BigInteger(kBytes);
-					}
-					var z = hash.ToUnsignedBigInteger();
-
-					if (k.Value.IsZero || k >= ECCsecp256k1.N)
-						continue;
-
-					var r = ECCsecp256k1.G.Multiply(k.Value).X % ECCsecp256k1.N;
-
+					var r = ECCsecp256k1.G.Multiply(tempKey.Value).X % ECCsecp256k1.N;
 					if (r.IsZero)
 						continue;
 
-					var ss = (z + r * privateKey);
-					var s = (ss * (k.Value.ModInverse(ECCsecp256k1.N))) % ECCsecp256k1.N;
-
+					var ss = (hashBigIn + r * privateKey);
+					var s = (ss * (tempKey.Value.ModInverse(ECCsecp256k1.N))) % ECCsecp256k1.N;
 					if (s.IsZero)
 						continue;
 
@@ -3620,103 +3204,76 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
 		/// <returns></returns>
-		public static BigInteger GeneratePrivateKey(int length = 256)
-		{
-			return CryptoService.GenerateRandomKey(length).ToUnsignedBigInteger();
-		}
+		public static BigInteger GeneratePrivateKey(int length = 256) => CryptoService.GenerateRandomKey(length).ToUnsignedBigInteger();
 
 		/// <summary>
 		/// Generates the public key from the private key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="privateKey">The private key</param>
 		/// <returns></returns>
-		public static Point GeneratePublicKey(BigInteger privateKey)
-		{
-			return ECCsecp256k1.G.Multiply(privateKey);
-		}
+		public static Point GeneratePublicKey(BigInteger privateKey) => ECCsecp256k1.G.Multiply(privateKey);
 
 		/// <summary>
 		/// Generates the public key from the private key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="privateKey">The private key</param>
 		/// <returns></returns>
-		public static byte[] GeneratePublicKey(byte[] privateKey)
-		{
-			return ECCsecp256k1.GeneratePublicKey(privateKey.ToUnsignedBigInteger()).Encode(true);
-		}
+		public static byte[] GeneratePublicKey(byte[] privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey.ToUnsignedBigInteger()).Encode(true);
 
 		/// <summary>
 		/// Generates the public key from the private key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="privateKey">The private key</param>
 		/// <returns></returns>
-		public static byte[] GeneratePublicKey(string privateKey)
-		{
-			return ECCsecp256k1.GeneratePublicKey(privateKey.HexToBytes().ToUnsignedBigInteger()).Encode(true);
-		}
+		public static byte[] GeneratePublicKey(string privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey.HexToBytes().ToUnsignedBigInteger()).Encode(true);
 
 		/// <summary>
 		/// Generates (Decodes) the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="publicKey">The public key</param>
 		/// <returns></returns>
-		public static Point GetPublicKey(byte[] publicKey)
-		{
-			return ECCsecp256k1.Point.Decode(publicKey);
-		}
+		public static Point GetPublicKey(byte[] publicKey) => ECCsecp256k1.Point.Decode(publicKey);
 
 		/// <summary>
 		/// Generates (Decodes) the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="publicKey">The public key</param>
 		/// <returns></returns>
-		public static Point GetPublicKey(string publicKey)
-		{
-			return ECCsecp256k1.Point.Decode(publicKey.HexToBytes());
-		}
+		public static Point GetPublicKey(string publicKey) => ECCsecp256k1.Point.Decode(publicKey.HexToBytes());
 
 		/// <summary>
 		/// Generates (Encodes) the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="publicKey">The public key</param>
 		/// <returns></returns>
-		public static byte[] GetPublicKey(Point publicKey, bool compress = true)
-		{
-			return publicKey.Encode(compress);
-		}
+		public static byte[] GetPublicKey(Point publicKey, bool compress = true) => publicKey.Encode(compress);
+
+		/// <summary>
+		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="publicKey">The public key to generate public address</param>
+		/// <param name="compressed">Do compress the public address</param>
+		/// <param name="prefix">The byte that presents prefix of the public address</param>
+		/// <returns></returns>
+		public static string GeneratePublicAddress(Point publicKey, bool compressed = true, byte prefix = 0) => new[] { prefix }.Concat(publicKey.Encode(compressed).GetHash160()).Base58Encode();
 
 		/// <summary>
 		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="publicKey">The public key to generate public address</param>
 		/// <param name="compressed">Do compress the address</param>
+		/// <param name="prefix">The byte that presents prefix of the public address</param>
 		/// <returns></returns>
-		public static string GeneratePublicAddress(Point publicKey, bool compressed = true)
-		{
-			return new byte[1].Concat(publicKey.Encode(compressed).GetHash160()).Base58Encode();
-		}
+		public static string GeneratePublicAddress(byte[] publicKey, bool compressed = true, byte prefix = 0) => ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
 
 		/// <summary>
 		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="publicKey">The public key to generate public address</param>
 		/// <param name="compressed">Do compress the address</param>
+		/// <param name="prefix">The byte that presents prefix of the public address</param>
 		/// <returns></returns>
-		public static string GeneratePublicAddress(byte[] publicKey, bool compressed = true)
-		{
-			return ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed);
-		}
-
-		/// <summary>
-		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key to generate public address</param>
-		/// <param name="compressed">Do compress the address</param>
-		/// <returns></returns>
-		public static string GeneratePublicAddress(string publicKey, bool compressed = true)
-		{
-			return ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed);
-		}
+		public static string GeneratePublicAddress(string publicKey, bool compressed = true, byte prefix = 0) => ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
 		#endregion
 
 		#region Encrypt
@@ -3726,10 +3283,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key to encrypt data</param>
 		/// <param name="data">The array of bytes that contains data to encrypt</param>
 		/// <returns></returns>
-		public static byte[] Encrypt(Point publicKey, byte[] data)
-		{
-			return ECCsecp256k1.ECCEncryption.Encrypt(publicKey, data);
-		}
+		public static byte[] Encrypt(Point publicKey, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(publicKey, data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3737,10 +3291,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key to encrypt data</param>
 		/// <param name="data">The array of bytes that contains data to encrypt</param>
 		/// <returns></returns>
-		public static byte[] Encrypt(byte[] publicKey, byte[] data)
-		{
-			return ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
-		}
+		public static byte[] Encrypt(byte[] publicKey, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3748,10 +3299,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="publicKey">The public key to encrypt data</param>
 		/// <param name="data">The array of bytes that contains data to encrypt</param>
 		/// <returns></returns>
-		public static byte[] Encrypt(string publicKey, byte[] data)
-		{
-			return ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
-		}
+		public static byte[] Encrypt(string publicKey, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
 		#endregion
 
 		#region Decrypt
@@ -3761,10 +3309,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key to decrypt data</param>
 		/// <param name="data">The array of bytes that contains data to decrypt</param>
 		/// <returns></returns>
-		public static byte[] Decrypt(BigInteger privateKey, byte[] data)
-		{
-			return ECCsecp256k1.ECCEncryption.Decrypt(privateKey, data);
-		}
+		public static byte[] Decrypt(BigInteger privateKey, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(privateKey, data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3772,10 +3317,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key to decrypt data</param>
 		/// <param name="data">The array of bytes that contains data to decrypt</param>
 		/// <returns></returns>
-		public static byte[] Decrypt(byte[] privateKey, byte[] data)
-		{
-			return ECCsecp256k1.ECCEncryption.Decrypt(privateKey.ToUnsignedBigInteger(), data);
-		}
+		public static byte[] Decrypt(byte[] privateKey, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(privateKey.ToUnsignedBigInteger(), data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3783,10 +3325,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key to decrypt data</param>
 		/// <param name="data">The array of bytes that contains data to decrypt</param>
 		/// <returns></returns>
-		public static byte[] Decrypt(string privateKey, byte[] data)
-		{
-			return ECCsecp256k1.ECCEncryption.Decrypt(privateKey.HexToBytes().ToUnsignedBigInteger(), data);
-		}
+		public static byte[] Decrypt(string privateKey, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(privateKey.HexToBytes().ToUnsignedBigInteger(), data);
 		#endregion
 
 		#region Sign
@@ -3796,10 +3335,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(BigInteger privateKey, byte[] hash)
-		{
-			return ECCsecp256k1.ECCDSA.Sign(privateKey, hash);
-		}
+		public static BigInteger[] Sign(BigInteger privateKey, byte[] hash) => ECCsecp256k1.ECCDSA.Sign(privateKey, hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3807,10 +3343,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(byte[] privateKey, byte[] hash)
-		{
-			return ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), hash);
-		}
+		public static BigInteger[] Sign(byte[] privateKey, byte[] hash) => ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3818,10 +3351,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(string privateKey, byte[] hash)
-		{
-			return ECCsecp256k1.Sign(privateKey.HexToBytes().ToUnsignedBigInteger(), hash);
-		}
+		public static BigInteger[] Sign(string privateKey, byte[] hash) => ECCsecp256k1.Sign(privateKey.HexToBytes().ToUnsignedBigInteger(), hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3830,10 +3360,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to compute hash</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(BigInteger privateKey, byte[] data, string hashMode)
-		{
-			return ECCsecp256k1.Sign(privateKey, data.GetHash(hashMode));
-		}
+		public static BigInteger[] Sign(BigInteger privateKey, byte[] data, string hashMode) => ECCsecp256k1.Sign(privateKey, data.GetHash(hashMode));
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3842,10 +3369,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to compute hash</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(byte[] privateKey, byte[] data, string hashMode)
-		{
-			return ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), data, hashMode);
-		}
+		public static BigInteger[] Sign(byte[] privateKey, byte[] data, string hashMode) => ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), data, hashMode);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3854,10 +3378,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to compute hash</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(string privateKey, byte[] data, string hashMode)
-		{
-			return ECCsecp256k1.Sign(privateKey.HexToBytes().ToUnsignedBigInteger(), data, hashMode);
-		}
+		public static BigInteger[] Sign(string privateKey, byte[] data, string hashMode) => ECCsecp256k1.Sign(privateKey.HexToBytes().ToUnsignedBigInteger(), data, hashMode);
 		#endregion
 
 		#region Sign (hex)
@@ -3879,10 +3400,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static string SignAsHex(byte[] privateKey, byte[] hash)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), hash);
-		}
+		public static string SignAsHex(byte[] privateKey, byte[] hash) => ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3890,10 +3408,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="privateKey">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static string SignAsHex(string privateKey, byte[] hash)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey.HexToBytes().ToUnsignedBigInteger(), hash);
-		}
+		public static string SignAsHex(string privateKey, byte[] hash) => ECCsecp256k1.SignAsHex(privateKey.HexToBytes().ToUnsignedBigInteger(), hash);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3902,10 +3417,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to compute hash</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <returns></returns>
-		public static string SignAsHex(BigInteger privateKey, byte[] data, string hashMode)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey, data.GetHash(hashMode));
-		}
+		public static string SignAsHex(BigInteger privateKey, byte[] data, string hashMode) => ECCsecp256k1.SignAsHex(privateKey, data.GetHash(hashMode));
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3914,10 +3426,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to compute hash</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <returns></returns>
-		public static string SignAsHex(byte[] privateKey, byte[] data, string hashMode)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), data, hashMode);
-		}
+		public static string SignAsHex(byte[] privateKey, byte[] data, string hashMode) => ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), data, hashMode);
 
 		/// <summary>
 		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3926,10 +3435,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The data to compute hash</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <returns></returns>
-		public static string SignAsHex(string privateKey, byte[] data, string hashMode)
-		{
-			return ECCsecp256k1.SignAsHex(privateKey.HexToBytes().ToUnsignedBigInteger(), data, hashMode);
-		}
+		public static string SignAsHex(string privateKey, byte[] data, string hashMode) => ECCsecp256k1.SignAsHex(privateKey.HexToBytes().ToUnsignedBigInteger(), data, hashMode);
 		#endregion
 
 		#region Verify
@@ -3940,12 +3446,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] hash, BigInteger[] signature)
-		{
-			return publicKey == null || signature == null || signature.Length < 2
-				? false
-				: ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature[0], signature[1]);
-		}
+		public static bool Verify(Point publicKey, byte[] hash, BigInteger[] signature) => publicKey == null || signature == null || signature.Length < 2 ? false : ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature[0], signature[1]);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3954,10 +3455,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] hash, BigInteger[] signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-		}
+		public static bool Verify(byte[] publicKey, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3966,10 +3464,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] hash, BigInteger[] signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-		}
+		public static bool Verify(string publicKey, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3979,10 +3474,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] data, string hashMode, BigInteger[] signature)
-		{
-			return ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
-		}
+		public static bool Verify(Point publicKey, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3992,10 +3484,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, BigInteger[] signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
-		}
+		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -4005,10 +3494,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] data, string hashMode, BigInteger[] signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
-		}
+		public static bool Verify(string publicKey, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
 		#endregion
 
 		#region Verify (hex)
@@ -4019,12 +3505,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] hash, string signature)
-		{
-			return publicKey == null || string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128)
-				? false
-				: ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature.Left(64).ToBigInteger(), signature.Right(64).ToBigInteger());
-		}
+		public static bool Verify(Point publicKey, byte[] hash, string signature) => publicKey == null || string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128) ? false : ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature.Left(64).ToBigInteger(), signature.Right(64).ToBigInteger());
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -4033,10 +3514,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] hash, string signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-		}
+		public static bool Verify(byte[] publicKey, byte[] hash, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -4045,10 +3523,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] hash, string signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-		}
+		public static bool Verify(string publicKey, byte[] hash, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -4058,10 +3533,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] data, string hashMode, string signature)
-		{
-			return ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
-		}
+		public static bool Verify(Point publicKey, byte[] data, string hashMode, string signature) => ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -4071,10 +3543,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, string signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
-		}
+		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
 
 		/// <summary>
 		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -4084,10 +3553,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] data, string hashMode, string signature)
-		{
-			return ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
-		}
+		public static bool Verify(string publicKey, byte[] data, string hashMode, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
 		#endregion
 
 	}

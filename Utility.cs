@@ -2619,10 +2619,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="defaultValue">The default value if the setting is not found</param>
 		/// <param name="prefix">The special name prefix of the parameter</param>
 		/// <returns></returns>
-		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
-		{
-			return UtilityService.GetAppXmlSetting(name, defaultValue, prefix);
-		}
+		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps") => UtilityService.GetAppXmlSetting(name, defaultValue, prefix);
 
 		/// <summary>
 		/// Gets a parameter of the app (first from header, then second from query)
@@ -2777,16 +2774,14 @@ namespace net.vieapps.Components.Utility
 	{
 		public object Create(object parent, object configContext, XmlNode section)
 		{
-			this._section = section;
+			this.Section = section;
 			return this;
 		}
-
-		XmlNode _section = null;
 
 		/// <summary>
 		/// Gets the configuration section
 		/// </summary>
-		public XmlNode Section { get { return this._section; } }
+		public XmlNode Section { get; private set; } = null;
 	}
 	#endregion
 
