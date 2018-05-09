@@ -22,30 +22,69 @@ namespace net.vieapps.Components.Utility
 		/// Gets a logger factory
 		/// </summary>
 		/// <returns></returns>
-		public static ILoggerFactory GetLoggerFactory()
-		{
-			return Logger.LoggerFactory ?? new NullLoggerFactory();
-		}
+		public static ILoggerFactory GetLoggerFactory() => Logger.LoggerFactory ?? new NullLoggerFactory();
 
 		/// <summary>
 		/// Creates a logger
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public static ILogger CreateLogger(Type type)
-		{
-			return Logger.GetLoggerFactory().CreateLogger(type);
-		}
+		public static ILogger CreateLogger(Type type) => Logger.GetLoggerFactory().CreateLogger(type);
 
 		/// <summary>
 		/// Creates a logger
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public static ILogger CreateLogger<T>()
-		{
-			return Logger.CreateLogger(typeof(T));
-		}
+		public static ILogger CreateLogger<T>() => Logger.CreateLogger(typeof(T));
+
+		/// <summary>
+		/// Writes a trace log message
+		/// </summary>
+		/// <param name="logger"></param>
+		/// <param name="message">The log message</param>
+		/// <param name="exception">The exception</param>
+		public static void LogTrace(this ILogger logger, string message, Exception exception = null) => logger.LogTrace(exception, message);
+
+		/// <summary>
+		/// Writes a warning log message
+		/// </summary>
+		/// <param name="logger"></param>
+		/// <param name="message">The log message</param>
+		/// <param name="exception">The exception</param>
+		public static void LogWarning(this ILogger logger, string message, Exception exception = null) => logger.LogWarning(exception, message);
+
+		/// <summary>
+		/// Writes a information log message
+		/// </summary>
+		/// <param name="logger"></param>
+		/// <param name="message">The log message</param>
+		/// <param name="exception">The exception</param>
+		public static void LogInformation(this ILogger logger, string message, Exception exception = null) => logger.LogInformation(exception, message);
+
+		/// <summary>
+		/// Writes a debug log message
+		/// </summary>
+		/// <param name="logger"></param>
+		/// <param name="message">The log message</param>
+		/// <param name="exception">The exception</param>
+		public static void LogDebug(this ILogger logger, string message, Exception exception = null) => logger.LogDebug(exception, message);
+
+		/// <summary>
+		/// Writes a error log message
+		/// </summary>
+		/// <param name="logger"></param>
+		/// <param name="message">The log message</param>
+		/// <param name="exception">The exception</param>
+		public static void LogError(this ILogger logger, string message, Exception exception = null) => logger.LogError(exception, message);
+
+		/// <summary>
+		/// Writes a critical log message
+		/// </summary>
+		/// <param name="logger"></param>
+		/// <param name="message">The log message</param>
+		/// <param name="exception">The exception</param>
+		public static void LogCritical(this ILogger logger, string message, Exception exception = null) => logger.LogCritical(exception, message);
 
 		/// <summary>
 		/// Writes a log message
@@ -59,45 +98,27 @@ namespace net.vieapps.Components.Utility
 			switch (mode)
 			{
 				case LogLevel.Trace:
-					if (exception != null)
-						logger.LogTrace(exception, message);
-					else
-						logger.LogTrace(message);
+					logger.LogTrace(message, exception);
 					break;
 
 				case LogLevel.Information:
-					if (exception != null)
-						logger.LogInformation(exception, message);
-					else
-						logger.LogInformation(message);
+					logger.LogInformation(message, exception);
 					break;
 
 				case LogLevel.Warning:
-					if (exception != null)
-						logger.LogError(exception, message);
-					else
-						logger.LogError(message);
+					logger.LogWarning(message, exception);
 					break;
 
 				case LogLevel.Error:
-					if (exception != null)
-						logger.LogError(exception, message);
-					else
-						logger.LogError(message);
+					logger.LogError(message, exception);
 					break;
 
 				case LogLevel.Critical:
-					if (exception != null)
-						logger.LogCritical(exception, message);
-					else
-						logger.LogCritical(message);
+					logger.LogCritical(message, exception);
 					break;
 
 				default:
-					if (exception != null)
-						logger.LogDebug(exception, message);
-					else
-						logger.LogDebug(message);
+					logger.LogDebug(message, exception);
 					break;
 			}
 		}
@@ -124,9 +145,6 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Write mode</param>
 		/// <param name="message">The log message</param>
 		/// <param name="exception">The exception</param>
-		public static void Log<T>(LogLevel minLevel, LogLevel mode, string message, Exception exception = null)
-		{
-			Logger.CreateLogger<T>().Log(minLevel, mode, message, exception);
-		}
+		public static void Log<T>(LogLevel minLevel, LogLevel mode, string message, Exception exception = null) => Logger.CreateLogger<T>().Log(minLevel, mode, message, exception);
 	}
 }
