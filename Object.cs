@@ -1776,6 +1776,26 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Get version information
+		/// <summary>
+		/// Gets the string that presents the version number of this assembly
+		/// </summary>
+		/// <param name="assembly"></param>
+		/// <returns></returns>
+		public static string GetVersion(this Assembly assembly)
+		{
+			var asmversion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
+			var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+			var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+			var version = $"{asmversion?.Version ?? fileVersion?.Version}";
+			if (string.IsNullOrWhiteSpace(version))
+				version = "1.0";
+			else if (!string.IsNullOrWhiteSpace(infoVersion?.InformationalVersion))
+				version += $" ({infoVersion?.InformationalVersion})";
+			return version;
+		}
+		#endregion
+
 	}
 
 	#region Attributes of object serialization
