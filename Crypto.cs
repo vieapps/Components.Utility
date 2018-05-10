@@ -7,7 +7,8 @@ using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Xml;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Konscious.Security.Cryptography;
 #endregion
 
@@ -856,15 +857,24 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static byte[] RSAEncrypt(this RSACryptoServiceProvider rsa, byte[] data) => rsa.Encrypt(data, false);
+		public static byte[] Encrypt(this RSA rsa, byte[] data)
+			=> data == null || data.Length < 1
+				? new byte[0]
+				: rsa.Encrypt(data, RSAEncryptionPadding.Pkcs1);
 
 		/// <summary>
 		/// Encrypts the data by RSA
 		/// </summary>
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string RSAEncrypt(this RSACryptoServiceProvider rsa, string data) => CryptoService.RSAEncrypt(rsa, data.ToBytes()).ToBase64();
+		public static string Encrypt(this RSA rsa, string data, bool toHex = false)
+			=> string.IsNullOrWhiteSpace(data)
+				? ""
+				: toHex
+					? rsa.Encrypt(data.ToBytes()).ToHex()
+					: rsa.Encrypt(data.ToBytes()).ToBase64();
 
 		/// <summary>
 		/// Encrypts the data by RSA
@@ -876,7 +886,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var rsa = CryptoService.CreateRSAInstance(key))
 			{
-				return CryptoService.RSAEncrypt(rsa, data);
+				return rsa.Encrypt(data);
 			}
 		}
 
@@ -885,8 +895,15 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="data"></param>
+		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string RSAEncrypt(string key, string data) => CryptoService.RSAEncrypt(key, data.ToBytes()).ToBase64();
+		public static string RSAEncrypt(string key, string data, bool toHex = false)
+		{
+			using (var rsa = CryptoService.CreateRSAInstance(key))
+			{
+				return rsa.Encrypt(data, toHex);
+			}
+		}
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -894,15 +911,24 @@ namespace net.vieapps.Components.Utility
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public static byte[] RSADecrypt(this RSACryptoServiceProvider rsa, byte[] data) => rsa.Decrypt(data, false);
+		public static byte[] Decrypt(this RSA rsa, byte[] data)
+			=> data == null || data.Length < 1
+				? new byte[0]
+				: rsa.Decrypt(data, RSAEncryptionPadding.Pkcs1);
 
 		/// <summary>
 		/// Decrypts the data by RSA
 		/// </summary>
 		/// <param name="rsa"></param>
 		/// <param name="data"></param>
+		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string RSADecrypt(this RSACryptoServiceProvider rsa, string data) => CryptoService.RSADecrypt(rsa, data.Base64ToBytes()).GetString();
+		public static string Decrypt(this RSA rsa, string data, bool isHex = false)
+			=> string.IsNullOrWhiteSpace(data)
+				? ""
+				: isHex
+					? rsa.Decrypt(data.HexToBytes()).GetString()
+					: rsa.Decrypt(data.Base64ToBytes()).GetString();
 
 		/// <summary>
 		/// Decrypts the data by RSA
@@ -914,7 +940,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var rsa = CryptoService.CreateRSAInstance(key))
 			{
-				return CryptoService.RSADecrypt(rsa, data);
+				return rsa.Decrypt(data);
 			}
 		}
 
@@ -923,466 +949,184 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="data"></param>
+		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string RSADecrypt(string key, string data)
+		public static string RSADecrypt(string key, string data, bool isHex = false)
 		{
 			using (var rsa = CryptoService.CreateRSAInstance(key))
 			{
-				return CryptoService.RSADecrypt(rsa, data);
+				return rsa.Decrypt(data, isHex);
 			}
 		}
 		#endregion
 
-		#region Encrypt/Decrypt (extensions - using RSA)
+		#region Create instance & Generate key-pair of RSA
 		/// <summary>
-		/// Encrypts the data by RSA
+		/// Creates an instance of RSA Algorithm
 		/// </summary>
-		/// <param name="rsa"></param>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static byte[] Encrypt(this RSACryptoServiceProvider rsa, byte[] data) => data == null || data.Length < 1 ? new byte[0] : rsa.Encrypt(data, false);
+		/// <param name="key">Key for the RSA instance, must be formated in JSON or PEM</param>
+		/// <returns>An instance of RSA</returns>
+		public static RSA CreateRSAInstance(string key)
+		{
+			// check key
+			if (string.IsNullOrWhiteSpace(key))
+				return null;
+
+			// create new instance
+			var rsa = RSA.Create();
+
+			// import PEM
+			if (key.StartsWith(PEM_PRIVATE_KEY_BEGIN) || key.StartsWith(PEM_PUBLIC_KEY_BEGIN))
+				rsa.ImportPemParameters(key);
+
+			// import JSON
+			else
+				rsa.ImportJsonParameters(key);
+
+			// return the RSA instance
+			return rsa;
+		}
 
 		/// <summary>
-		/// Encrypts the data by RSA
+		/// Generates the key-pairs form this RSA instance
 		/// </summary>
-		/// <param name="rsa"></param>
-		/// <param name="data"></param>
-		/// <param name="toHex"></param>
-		/// <returns></returns>
-		public static string Encrypt(this RSACryptoServiceProvider rsa, string data, bool toHex = false) => string.IsNullOrWhiteSpace(data) ? "" : toHex ? rsa.Encrypt(data.ToBytes()).ToHex() : rsa.Encrypt(data.ToBytes()).ToBase64();
+		/// <returns>
+		/// Collection of strings that presents key-pairs, indexes is:
+		/// - 0: parameters (private included) in JSON format,
+		/// - 1: parameters (private included) in encrypted JSON format,
+		/// - 2: parameters (only public) in JSON format,
+		/// - 3: parameters (only public) in encrypted JSON format,
+		/// - 4: parameters (private included) in PEM format,
+		/// - 5: parameters (only public) in PEM format,
+		/// - 6: Exponent parameter in HEX format
+		/// - 7: Modulus parameter in HEX format
+		/// </returns>
+		public static List<string> GenerateKeyPairs(this RSA rsa)
+		{
+			// create collection of keys
+			var keyPairs = new List<string>();
+
+			// JSON
+			var json = rsa.ExportJsonParameters(true);
+			keyPairs.Add(json);
+			keyPairs.Add(json.Encrypt());
+
+			json = rsa.ExportJsonParameters(false);
+			keyPairs.Add(json);
+			keyPairs.Add(json.Encrypt());
+
+			// PEM
+			keyPairs.Add(rsa.ExportPemParameters(true));
+			keyPairs.Add(rsa.ExportPemParameters(false));
+
+			// exponent & modulus
+			var parameters = rsa.ExportParameters(false);
+			keyPairs.Add(parameters.Modulus.ToHex());
+			keyPairs.Add(parameters.Exponent.ToHex());
+
+			// return the collection of keys
+			return keyPairs;
+		}
 
 		/// <summary>
-		/// Decrypts the data by RSA
+		/// Generates the key-pairs form this RSA instance
 		/// </summary>
-		/// <param name="rsa"></param>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static byte[] Decrypt(this RSACryptoServiceProvider rsa, byte[] data) => data == null || data.Length < 1 ? new byte[0] : rsa.Decrypt(data, false);
-
-		/// <summary>
-		/// Decrypts the data by RSA
-		/// </summary>
-		/// <param name="rsa"></param>
-		/// <param name="data"></param>
-		/// <param name="isHex"></param>
-		/// <returns></returns>
-		public static string Decrypt(this RSACryptoServiceProvider rsa, string data, bool isHex = false) => string.IsNullOrWhiteSpace(data) ? "" : isHex ? rsa.Decrypt(data.HexToBytes()).GetString() : rsa.Decrypt(data.Base64ToBytes()).GetString();
+		/// <returns>
+		/// Collection of strings that presents key-pairs, indexes is:
+		/// - 0: parameters (private included) in JSON format,
+		/// - 1: parameters (private included) in encrypted JSON format,
+		/// - 2: parameters (only public) in JSON format,
+		/// - 3: parameters (only public) in encrypted JSON format,
+		/// - 4: parameters (private included) in PEM format,
+		/// - 5: parameters (only public) in PEM format,
+		/// - 6: Exponent parameter in HEX format
+		/// - 7: Modulus parameter in HEX format
+		/// </returns>
+		public static List<string> GenerateRSAKeyPairs()
+		{
+			using (var rsa = RSA.Create())
+			{
+				return rsa.GenerateKeyPairs();
+			}
+		}
 		#endregion
 
-		#region Create new instance of RSA from a specific key
+		#region Export/Import parameters of RSA with JSON format
+		/// <summary>
+		/// Exports the parameters of this RSA instance to string with JSON format
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="includePrivateParameters">true to export private parameters (private key)</param>
+		/// <returns>The JSON string that presents exported parameters</returns>
+		public static string ExportJsonParameters(this RSA rsa, bool includePrivateParameters)
+		{
+			var rsaParameters = rsa.ExportParameters(includePrivateParameters);
+			var jsonParameters = includePrivateParameters
+				? new JObject
+				{
+					{ "Modulus", rsaParameters.Modulus?.ToBase64() },
+					{ "Exponent", rsaParameters.Exponent?.ToBase64() },
+					{ "P", rsaParameters.P?.ToBase64() },
+					{ "Q", rsaParameters.Q?.ToBase64() },
+					{ "DP", rsaParameters.DP?.ToBase64() },
+					{ "DQ", rsaParameters.DQ?.ToBase64() },
+					{ "InverseQ", rsaParameters.InverseQ?.ToBase64() },
+					{ "D", rsaParameters.D?.ToBase64() }
+				}
+				: new JObject
+				{
+					{ "Modulus", rsaParameters.Modulus?.ToBase64() },
+					{ "Exponent", rsaParameters.Exponent?.ToBase64() },
+				};
+			return jsonParameters.ToString(Formatting.None);
+		}
+
+		/// <summary>
+		/// Imports the  parameters of RSA from JSON s
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="jsonParameters">The JSON string that presents exported parameters</param>
+		public static void ImportJsonParameters(this RSA rsa, string jsonParameters)
+		{
+			try
+			{
+				var parameters = JObject.Parse(jsonParameters).ToExpandoObject();
+				rsa.ImportParameters(new RSAParameters
+				{
+					Modulus = parameters.Get<string>("Modulus")?.Base64ToBytes(),
+					Exponent = parameters.Get<string>("Exponent")?.Base64ToBytes(),
+					P = parameters.Get<string>("P")?.Base64ToBytes(),
+					Q = parameters.Get<string>("Q")?.Base64ToBytes(),
+					DP = parameters.Get<string>("DP")?.Base64ToBytes(),
+					DQ = parameters.Get<string>("DQ")?.Base64ToBytes(),
+					InverseQ = parameters.Get<string>("InverseQ")?.Base64ToBytes(),
+					D = parameters.Get<string>("D")?.Base64ToBytes()
+				});
+			}
+			catch
+			{
+				throw new InformationInvalidException("Invalid RSA key");
+			}
+		}
+		#endregion
+
+		#region Export/Import parameters of RSA with PEM format
 		public const string PEM_PRIVATE_KEY_BEGIN = "-----BEGIN RSA PRIVATE KEY-----";
 		public const string PEM_PRIVATE_KEY_END = "-----END RSA PRIVATE KEY-----";
 		public const string PEM_PUBLIC_KEY_BEGIN = "-----BEGIN PUBLIC KEY-----";
 		public const string PEM_PUBLIC_KEY_END = "-----END PUBLIC KEY-----";
 
 		/// <summary>
-		/// Creates an instance of RSA Algorithm
-		/// </summary>
-		/// <param name="key">Key for the RSA instance, might be or public key, and must be formated in XML or PEM</param>
-		/// <param name="size">The size of key, default is 2048 bit length</param>
-		/// <param name="name">Additional for name of key-container. Default name of key-container is 'VIEAppsRSAContainer'.
-		/// Ex: if the additional name is 'Passport', then the name of the key-container will be 'VIEAppsPassportRSAContainer'.</param>
-		/// <returns>An instance of RSA</returns>
-		public static RSACryptoServiceProvider CreateRSAInstance(string key, int size = 2048, string name = null)
-		{
-			// prepare
-			if (string.IsNullOrWhiteSpace(key) || (!key.StartsWith("<RSAKeyValue>") && !key.StartsWith(PEM_PRIVATE_KEY_BEGIN) && !key.StartsWith(PEM_PUBLIC_KEY_BEGIN)))
-				throw new InvalidDataException("Invalid key to create new instance of RSA. Key must be formated in XML or PEM.");
-
-			RSACryptoServiceProvider rsa = null;
-			var containerName = $"VIEApps{name ?? ""}RSAContainer";
-
-			// create RSACryptoServiceProvider instance and initialize with XML key
-			if (key.StartsWith("<RSAKeyValue>"))
-				try
-				{
-					// create new instance of RSA and store in the machine key-store (C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys)
-					rsa = new RSACryptoServiceProvider(size, new CspParameters(1, "Microsoft Strong Cryptographic Provider")
-					{
-						Flags = CspProviderFlags.UseMachineKeyStore,
-						KeyContainerName = containerName
-					});
-					rsa.FromXmlString(key);
-					rsa.PersistKeyInCsp = true;
-				}
-				catch (CryptographicException ex)
-				{
-					/* Object already exists:
-					- Update settings of IIS and impersonate user: https://pwnedcode.wordpress.com/2008/11/10/fixing-cryptographicexception-%E2%80%9Cobject-already-exists%E2%80%9D/
-					- Allow account of processes can modify folder C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys
-					 */
-					if (ex.Message.Contains("Object already exists"))
-						throw new CryptographicException($"Cannot create new instance of RSA. Please config your machine to allow to access to container '{containerName}' of machine key store (FAST & DANGEROUS method: change security of folder " + @"'C:\ProgramData\Microsoft\Crypto\RSA\MachineKeys' to allow account of processes can ascess and modify).", ex);
-					else
-						throw new CryptographicException($"Cannot create new instance of RSA in container '{containerName}' of the machine key store.", ex);
-				}
-				catch (Exception)
-				{
-					throw;
-				}
-
-			// create RSACryptoServiceProvider instance and initialize with PEM key
-			else if (key.StartsWith(PEM_PRIVATE_KEY_BEGIN))
-			{
-				// prepare key
-				var stringBuilder = new StringBuilder(key.Trim());
-				stringBuilder.Replace(PEM_PRIVATE_KEY_BEGIN, "");
-				stringBuilder.Replace(PEM_PRIVATE_KEY_END, "");
-				byte[] binKey = null;
-				try
-				{
-					binKey = Convert.FromBase64String(stringBuilder.ToString().Trim());
-				}
-				catch (Exception ex)
-				{
-					throw new InvalidDataException("Invalid PEM key to create new instance of RSA (not Base64 string).", ex);
-				}
-
-				// create new instance of RSA with key
-				try
-				{
-					rsa = CryptoService.CreateRSAInstanceWithPrivateKey(binKey);
-				}
-				catch (Exception)
-				{
-					throw;
-				}
-			}
-
-			// create RSACryptoServiceProvider instance and initialize with PEM public key
-			else if (key.StartsWith(PEM_PUBLIC_KEY_BEGIN))
-			{
-				// prepare key
-				var stringBuilder = new StringBuilder(key.Trim());
-				stringBuilder.Replace(PEM_PUBLIC_KEY_BEGIN, "");
-				stringBuilder.Replace(PEM_PUBLIC_KEY_END, "");
-				byte[] binKey = null;
-				try
-				{
-					binKey = Convert.FromBase64String(stringBuilder.ToString().Trim());
-				}
-				catch (Exception ex)
-				{
-					throw new InvalidDataException("Invalid public PEM key to create new instance of RSA (not Base64 string).", ex);
-				}
-
-				// create new instance of RSA with key
-				try
-				{
-					rsa = CryptoService.CreateRSAInstanceWithPublicKey(binKey);
-				}
-				catch (Exception)
-				{
-					throw;
-				}
-			}
-
-			// return the RSA instance
-			return rsa;
-		}
-
-		// from http://www.jensign.com/opensslkey/
-		static RSACryptoServiceProvider CreateRSAInstanceWithPrivateKey(byte[] key)
-		{
-			// set up stream to decode the asn.1 encoded RSA key
-			using (var stream = new MemoryStream(key))
-			{
-				// wrap Memory Stream with BinaryReader for easy reading
-				using (var reader = new BinaryReader(stream))
-				{
-					byte[] MODULUS, E, D, P, Q, DP, DQ, IQ;
-
-					byte @byte = 0;
-					ushort twoBytes = 0;
-					int elems = 0;
-					try
-					{
-						twoBytes = reader.ReadUInt16();
-						if (twoBytes == 0x8130)                      // data read as little endian order (actual data order for Sequence is 30 81)
-							reader.ReadByte();                           // advance 1 byte
-						else if (twoBytes == 0x8230)
-							reader.ReadInt16();                          // advance 2 bytes
-						else
-							return null;
-
-						twoBytes = reader.ReadUInt16();
-						if (twoBytes != 0x0102)                           // version number
-							return null;
-						@byte = reader.ReadByte();
-						if (@byte != 0x00)
-							return null;
-
-						// all key components are Integer sequences
-						elems = CryptoService.GetIntegerSize(reader);
-						MODULUS = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						E = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						D = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						P = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						Q = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						DP = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						DQ = reader.ReadBytes(elems);
-
-						elems = CryptoService.GetIntegerSize(reader);
-						IQ = reader.ReadBytes(elems);
-
-						// ------- create RSACryptoServiceProvider instance and initialize with public key -----
-						var rsa = new RSACryptoServiceProvider()
-						{
-							PersistKeyInCsp = false
-						};
-
-						rsa.ImportParameters(new RSAParameters()
-						{
-							Modulus = MODULUS,
-							Exponent = E,
-							D = D,
-							P = P,
-							Q = Q,
-							DP = DP,
-							DQ = DQ,
-							InverseQ = IQ
-						});
-
-						return rsa;
-					}
-					catch (Exception)
-					{
-						return null;
-					}
-				}
-			}
-		}
-
-		static int GetIntegerSize(BinaryReader reader)
-		{
-			byte @byte = 0;
-			byte lowByte = 0x00;
-			byte highByte = 0x00;
-			int count = 0;
-			@byte = reader.ReadByte();
-			if (@byte != 0x02)     //expect integer
-				return 0;
-			@byte = reader.ReadByte();
-
-			if (@byte == 0x81)
-				count = reader.ReadByte();    // data size in next byte
-
-			else if (@byte == 0x82)
-			{
-				highByte = reader.ReadByte(); // data size in next 2 bytes
-				lowByte = reader.ReadByte();
-				byte[] modint = { lowByte, highByte, 0x00, 0x00 };
-				count = BitConverter.ToInt32(modint, 0);
-			}
-
-			// we already have the data size
-			else
-				count = @byte;
-
-			//remove high order zeros in data
-			while (reader.ReadByte() == 0x00)
-				count -= 1;
-
-			//last ReadByte wasn't a removed zero, so back up a byte
-			reader.BaseStream.Seek(-1, SeekOrigin.Current);
-
-			return count;
-		}
-
-		// from http://www.jensign.com/opensslkey/
-		static RSACryptoServiceProvider CreateRSAInstanceWithPublicKey(byte[] key)
-		{
-			// set up stream to read the asn.1 encoded SubjectPublicKeyInfo blob
-			using (var stream = new MemoryStream(key))
-			{
-				// wrap Memory Stream with BinaryReader for easy reading
-				using (var reader = new BinaryReader(stream))
-				{
-					// encoded OID sequence for  PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1"
-					byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
-					byte[] seq = new byte[15];
-
-					byte @byte = 0;
-					ushort twoBytes = 0;
-
-					try
-					{
-						twoBytes = reader.ReadUInt16();
-						if (twoBytes == 0x8130) //data read as little endian order (actual data order for Sequence is 30 81)
-							reader.ReadByte();   //advance 1 byte
-						else if (twoBytes == 0x8230)
-							reader.ReadInt16();  //advance 2 bytes
-						else
-							return null;
-
-						seq = reader.ReadBytes(15);      //read the Sequence OID
-						if (!seq.SequenceEqual(SeqOID))  //make sure Sequence for OID is correct
-							return null;
-
-						twoBytes = reader.ReadUInt16();
-						if (twoBytes == 0x8103) //data read as little endian order (actual data order for Bit String is 03 81)
-							reader.ReadByte();   //advance 1 byte
-						else if (twoBytes == 0x8203)
-							reader.ReadInt16();  //advance 2 bytes
-						else
-							return null;
-
-						@byte = reader.ReadByte();
-						if (@byte != 0x00)     //expect null byte next
-							return null;
-
-						twoBytes = reader.ReadUInt16();
-						if (twoBytes == 0x8130) //data read as little endian order (actual data order for Sequence is 30 81)
-							reader.ReadByte();   //advance 1 byte
-						else if (twoBytes == 0x8230)
-							reader.ReadInt16();  //advance 2 bytes
-						else
-							return null;
-
-						twoBytes = reader.ReadUInt16();
-						byte lowbyte = 0x00;
-						byte highbyte = 0x00;
-
-						if (twoBytes == 0x8102) //data read as little endian order (actual data order for Integer is 02 81)
-							lowbyte = reader.ReadByte(); // read next bytes which is bytes in modulus
-						else if (twoBytes == 0x8202)
-						{
-							highbyte = reader.ReadByte();    //advance 2 bytes
-							lowbyte = reader.ReadByte();
-						}
-						else
-							return null;
-
-						byte[] modInt = { lowbyte, highbyte, 0x00, 0x00 };   //reverse byte order since asn.1 key uses big endian order
-						var modSize = BitConverter.ToInt32(modInt, 0);
-
-						var firstByte = reader.ReadByte();
-						reader.BaseStream.Seek(-1, SeekOrigin.Current);
-
-						//if first byte (highest order) of modulus is zero, don't include it
-						if (firstByte == 0x00)
-						{
-							reader.ReadByte();   //skip this null byte
-							modSize -= 1;   //reduce modulus buffer size by 1
-						}
-
-						var modulus = reader.ReadBytes(modSize);  //read the modulus bytes
-						if (reader.ReadByte() != 0x02)           //expect an Integer for the exponent data
-							return null;
-
-						var expbytes = (int)reader.ReadByte();       // should only need one byte for actual exponent data (for all useful values)
-						var exponent = reader.ReadBytes(expbytes);
-
-						// ------- create RSACryptoServiceProvider instance and initialize with public key -----
-						var rsa = new RSACryptoServiceProvider()
-						{
-							PersistKeyInCsp = false
-						};
-
-						rsa.ImportParameters(new RSAParameters()
-						{
-							Modulus = modulus,
-							Exponent = exponent
-						});
-
-						return rsa;
-					}
-					catch (Exception)
-					{
-						return null;
-					}
-				}
-			}
-		}
-		#endregion
-
-		#region Generate & Export keys of RSA
-		/// <summary>
-		/// Generates the RSA key-pairs (with 2048 bits length).
-		/// </summary>
-		/// <returns>
-		/// Collection of strings that presents key-pairs, indexes is:
-		/// - 0: private key in XML format,
-		/// - 1: private key in XML format (encrypted by default AES encryption), 
-		/// - 2: public key in XML format, 
-		/// - 3: public key in XML format (encrypted by default AES encryption), 
-		/// - 4: private key in PEM format,
-		/// - 5: private key in PEM format (encrypted by default AES encryption),
-		/// - 6: public key in PEM format,
-		/// - 7: public key in PEM format (encrypted by default AES encryption),
-		/// - 8: exponent of public key in HEX format
-		/// - 9: modulus of public key in HEX format,
-		/// </returns>
-		public static List<string> GenerateRSAKeyPairs()
-		{
-			using (var rsa = new RSACryptoServiceProvider(
-				2048,
-				new CspParameters(1, "Microsoft Strong Cryptographic Provider")
-				{
-					Flags = CspProviderFlags.UseArchivableKey,
-					KeyContainerName = "VIEAppsRSAContainer-" + UtilityService.NewUUID
-				})
-			{
-				PersistKeyInCsp = false
-			}
-			)
-			{
-				// create collection of keys
-				var keyPairs = new List<string>();
-
-				// add key in XML format
-				var key = rsa.ToXmlString(true);
-				keyPairs.Append(new List<string>() { key, key.Encrypt() });
-
-				// add public key in XML format
-				var publicKey = rsa.ToXmlString(false);
-				keyPairs.Append(new List<string>() { publicKey, publicKey.Encrypt() });
-
-				// add key in PEM format
-				key = CryptoService.ExportPrivateKeyToPEMFormat(rsa);
-				keyPairs.Append(new List<string>() { key, key.Encrypt() });
-
-				// add public key in PEM format
-				key = CryptoService.ExportPublicKeyToPEMFormat(rsa);
-				keyPairs.Append(new List<string>() { key, key.Encrypt() });
-
-				// add modulus and exponent of public key in HEX format
-				var xmlDoc = new XmlDocument();
-				xmlDoc.LoadXml(publicKey);
-				keyPairs.Append(new List<string>()
-				{
-					xmlDoc.DocumentElement.ChildNodes[0].InnerText.ToHex(true),
-					xmlDoc.DocumentElement.ChildNodes[1].InnerText.ToHex(true)
-				});
-
-				// return the collection of keys
-				return keyPairs;
-			}
-		}
-
-		/// <summary>
-		/// Exports the public key of RSA
+		/// Exports the parameters of this RSA instance to string with PEM format
 		/// </summary>
 		/// <param name="rsa"></param>
-		/// <returns>A tuple with first element is exponent of public key, second element is  modulus of public key</returns>
-		public static Tuple<string, string> ExportPublicKey(this RSACryptoServiceProvider rsa)
+		/// <param name="includePrivateParameters">true to export private parameters (private key)</param>
+		/// <returns>The JSON string that presents exported parameters</returns>
+		public static string ExportPemParameters(this RSA rsa, bool includePrivateParameters)
 		{
-			var publicKey = rsa.ToXmlString(false);
-			var xmlDoc = new XmlDocument();
-			xmlDoc.LoadXml(publicKey);
-			return new Tuple<string, string>(xmlDoc.DocumentElement.ChildNodes[0].InnerText.ToHex(true), xmlDoc.DocumentElement.ChildNodes[1].InnerText.ToHex(true));
+			return includePrivateParameters
+				? rsa.ExportPemPrivateParameters()
+				: rsa.ExportPemPublicParameters();
 		}
 
 		// -------------------------------------------------------
@@ -1392,12 +1136,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="rsa">Object to export</param>
 		/// <returns></returns>
-		public static string ExportPrivateKeyToPEMFormat(this RSACryptoServiceProvider rsa)
+		static string ExportPemPrivateParameters(this RSA rsa)
 		{
-			// check
-			if (rsa.PublicOnly)
-				throw new ArgumentException("CSP does not contain a key", "csp");
-
 			using (var results = new StringWriter())
 			{
 				using (var stream = new MemoryStream())
@@ -1419,7 +1159,7 @@ namespace net.vieapps.Components.Utility
 						CryptoService.EncodeIntegerBigEndian(innerWriter, parameters.InverseQ);
 						var length = (int)innerStream.Length;
 						CryptoService.EncodeLength(writer, length);
-						writer.Write(innerStream.GetBuffer(), 0, length);
+						writer.Write(innerStream.ToArray(), 0, length);
 					}
 
 					// begin
@@ -1446,7 +1186,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="rsa">Object to export</param>
 		/// <returns></returns>
-		public static string ExportPublicKeyToPEMFormat(this RSACryptoServiceProvider rsa)
+		static string ExportPemPublicParameters(this RSA rsa)
 		{
 			using (var results = new StringWriter())
 			{
@@ -1483,16 +1223,16 @@ namespace net.vieapps.Components.Utility
 								CryptoService.EncodeIntegerBigEndian(paramsWriter, parameters.Exponent); // Exponent
 								var paramsLength = (int)paramsStream.Length;
 								CryptoService.EncodeLength(bitStringWriter, paramsLength);
-								bitStringWriter.Write(paramsStream.GetBuffer(), 0, paramsLength);
+								bitStringWriter.Write(paramsStream.ToArray(), 0, paramsLength);
 							}
 							var bitStringLength = (int)bitStringStream.Length;
 							CryptoService.EncodeLength(innerWriter, bitStringLength);
-							innerWriter.Write(bitStringStream.GetBuffer(), 0, bitStringLength);
+							innerWriter.Write(bitStringStream.ToArray(), 0, bitStringLength);
 						}
 
 						var length = (int)innerStream.Length;
 						CryptoService.EncodeLength(writer, length);
-						writer.Write(innerStream.GetBuffer(), 0, length);
+						writer.Write(innerStream.ToArray(), 0, length);
 					}
 
 					// begin
@@ -1508,6 +1248,223 @@ namespace net.vieapps.Components.Utility
 				}
 
 				return results.ToString();
+			}
+		}
+
+		/// <summary>
+		/// Imports the  parameters of RSA from JSON s
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="pemParameters">The PEM string that presents exported parameters</param>
+		public static void ImportPemParameters(this RSA rsa, string pemParameters)
+		{
+			if (pemParameters.StartsWith(PEM_PRIVATE_KEY_BEGIN))
+				rsa.ImportPemPrivateParameters(pemParameters);
+			else
+				rsa.ImportPemPublicParameters(pemParameters);
+		}
+
+		// from http://www.jensign.com/opensslkey/
+		static void ImportPemPrivateParameters(this RSA rsa, string pemParameters)
+		{
+			// prepare key
+			var stringBuilder = new StringBuilder(pemParameters.Trim());
+			stringBuilder.Replace(PEM_PRIVATE_KEY_BEGIN, "");
+			stringBuilder.Replace(PEM_PRIVATE_KEY_END, "");
+			byte[] key = null;
+			try
+			{
+				key = Convert.FromBase64String(stringBuilder.ToString().Trim());
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidDataException("Invalid PEM key to import (not Base64 string)", ex);
+			}
+
+			// set up stream to decode the asn.1 encoded RSA key
+			using (var stream = new MemoryStream(key))
+			{
+				// wrap Memory Stream with BinaryReader for easy reading
+				using (var reader = new BinaryReader(stream))
+				{
+					byte[] MODULUS, E, D, P, Q, DP, DQ, IQ;
+
+					byte @byte = 0;
+					ushort twoBytes = 0;
+					int elems = 0;
+					try
+					{
+						twoBytes = reader.ReadUInt16();
+						if (twoBytes == 0x8130)                      // data read as little endian order (actual data order for Sequence is 30 81)
+							reader.ReadByte();                           // advance 1 byte
+						else if (twoBytes == 0x8230)
+							reader.ReadInt16();                          // advance 2 bytes
+						else
+							return;
+
+						twoBytes = reader.ReadUInt16();
+						if (twoBytes != 0x0102)                           // version number
+							return;
+						@byte = reader.ReadByte();
+						if (@byte != 0x00)
+							return;
+
+						// all key components are Integer sequences
+						elems = CryptoService.GetIntegerSize(reader);
+						MODULUS = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						E = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						D = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						P = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						Q = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						DP = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						DQ = reader.ReadBytes(elems);
+
+						elems = CryptoService.GetIntegerSize(reader);
+						IQ = reader.ReadBytes(elems);
+
+						// import parameters
+						rsa.ImportParameters(new RSAParameters()
+						{
+							Modulus = MODULUS,
+							Exponent = E,
+							D = D,
+							P = P,
+							Q = Q,
+							DP = DP,
+							DQ = DQ,
+							InverseQ = IQ
+						});
+					}
+					catch (Exception)
+					{
+						throw;
+					}
+				}
+			}
+		}
+
+		// from http://www.jensign.com/opensslkey/
+		static void ImportPemPublicParameters(this RSA rsa, string pemParameters)
+		{
+			// prepare key
+			var stringBuilder = new StringBuilder(pemParameters.Trim());
+			stringBuilder.Replace(PEM_PUBLIC_KEY_BEGIN, "");
+			stringBuilder.Replace(PEM_PUBLIC_KEY_END, "");
+			byte[] key = null;
+			try
+			{
+				key = Convert.FromBase64String(stringBuilder.ToString().Trim());
+			}
+			catch (Exception ex)
+			{
+				throw new InvalidDataException("Invalid PEM key to import (not Base64 string)", ex);
+			}
+
+			// set up stream to read the asn.1 encoded SubjectPublicKeyInfo blob
+			using (var stream = new MemoryStream(key))
+			{
+				// wrap Memory Stream with BinaryReader for easy reading
+				using (var reader = new BinaryReader(stream))
+				{
+					// encoded OID sequence for  PKCS #1 rsaEncryption szOID_RSA_RSA = "1.2.840.113549.1.1.1"
+					byte[] SeqOID = { 0x30, 0x0D, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00 };
+					byte[] seq = new byte[15];
+
+					byte @byte = 0;
+					ushort twoBytes = 0;
+
+					try
+					{
+						twoBytes = reader.ReadUInt16();
+						if (twoBytes == 0x8130) //data read as little endian order (actual data order for Sequence is 30 81)
+							reader.ReadByte();   //advance 1 byte
+						else if (twoBytes == 0x8230)
+							reader.ReadInt16();  //advance 2 bytes
+						else
+							return;
+
+						seq = reader.ReadBytes(15);      //read the Sequence OID
+						if (!seq.SequenceEqual(SeqOID))  //make sure Sequence for OID is correct
+							return;
+
+						twoBytes = reader.ReadUInt16();
+						if (twoBytes == 0x8103) //data read as little endian order (actual data order for Bit String is 03 81)
+							reader.ReadByte();   //advance 1 byte
+						else if (twoBytes == 0x8203)
+							reader.ReadInt16();  //advance 2 bytes
+						else
+							return;
+
+						@byte = reader.ReadByte();
+						if (@byte != 0x00)     //expect null byte next
+							return;
+
+						twoBytes = reader.ReadUInt16();
+						if (twoBytes == 0x8130) //data read as little endian order (actual data order for Sequence is 30 81)
+							reader.ReadByte();   //advance 1 byte
+						else if (twoBytes == 0x8230)
+							reader.ReadInt16();  //advance 2 bytes
+						else
+							return;
+
+						twoBytes = reader.ReadUInt16();
+						byte lowbyte = 0x00;
+						byte highbyte = 0x00;
+
+						if (twoBytes == 0x8102) //data read as little endian order (actual data order for Integer is 02 81)
+							lowbyte = reader.ReadByte(); // read next bytes which is bytes in modulus
+						else if (twoBytes == 0x8202)
+						{
+							highbyte = reader.ReadByte();    //advance 2 bytes
+							lowbyte = reader.ReadByte();
+						}
+						else
+							return;
+
+						byte[] modInt = { lowbyte, highbyte, 0x00, 0x00 };   //reverse byte order since asn.1 key uses big endian order
+						var modSize = BitConverter.ToInt32(modInt, 0);
+
+						var firstByte = reader.ReadByte();
+						reader.BaseStream.Seek(-1, SeekOrigin.Current);
+
+						//if first byte (highest order) of modulus is zero, don't include it
+						if (firstByte == 0x00)
+						{
+							reader.ReadByte();   //skip this null byte
+							modSize -= 1;   //reduce modulus buffer size by 1
+						}
+
+						var modulus = reader.ReadBytes(modSize);  //read the modulus bytes
+						if (reader.ReadByte() != 0x02)           //expect an Integer for the exponent data
+							return;
+
+						var expbytes = (int)reader.ReadByte();       // should only need one byte for actual exponent data (for all useful values)
+						var exponent = reader.ReadBytes(expbytes);
+
+						// import
+						rsa.ImportParameters(new RSAParameters()
+						{
+							Modulus = modulus,
+							Exponent = exponent
+						});
+					}
+					catch (Exception)
+					{
+						throw;
+					}
+				}
 			}
 		}
 
@@ -1565,6 +1522,42 @@ namespace net.vieapps.Components.Utility
 				for (var index = prefixZeros; index < value.Length; index++)
 					writer.Write(value[index]);
 			}
+		}
+
+		static int GetIntegerSize(BinaryReader reader)
+		{
+			byte @byte = 0;
+			byte lowByte = 0x00;
+			byte highByte = 0x00;
+			int count = 0;
+			@byte = reader.ReadByte();
+			if (@byte != 0x02)     //expect integer
+				return 0;
+			@byte = reader.ReadByte();
+
+			if (@byte == 0x81)
+				count = reader.ReadByte();    // data size in next byte
+
+			else if (@byte == 0x82)
+			{
+				highByte = reader.ReadByte(); // data size in next 2 bytes
+				lowByte = reader.ReadByte();
+				byte[] modint = { lowByte, highByte, 0x00, 0x00 };
+				count = BitConverter.ToInt32(modint, 0);
+			}
+
+			// we already have the data size
+			else
+				count = @byte;
+
+			//remove high order zeros in data
+			while (reader.ReadByte() == 0x00)
+				count -= 1;
+
+			//last ReadByte wasn't a removed zero, so back up a byte
+			reader.BaseStream.Seek(-1, SeekOrigin.Current);
+
+			return count;
 		}
 		#endregion
 
