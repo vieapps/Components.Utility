@@ -7,9 +7,8 @@ using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Konscious.Security.Cryptography;
+using Newtonsoft.Json.Linq;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -19,6 +18,8 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static partial class CryptoService
 	{
+
+		#region Default pass-phrase & keys
 		/// <summary>
 		/// The default passphrase for generating a key
 		/// </summary>
@@ -33,6 +34,7 @@ namespace net.vieapps.Components.Utility
 		/// The default initialization vector (128 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
 		/// </summary>
 		public static readonly byte[] DEFAULT_ENCRYPTION_IV = DEFAULT_PASS_PHRASE.GenerateHashKey(128);
+		#endregion
 
 		#region Generate keys
 		/// <summary>
@@ -1220,7 +1222,7 @@ namespace net.vieapps.Components.Utility
 					{ "Modulus", rsaParameters.Modulus?.ToBase64() },
 					{ "Exponent", rsaParameters.Exponent?.ToBase64() },
 				};
-			return jsonParameters.ToString(Formatting.None);
+			return jsonParameters.ToString(Newtonsoft.Json.Formatting.None);
 		}
 
 		/// <summary>
@@ -1247,7 +1249,7 @@ namespace net.vieapps.Components.Utility
 			}
 			catch
 			{
-				throw new InformationInvalidException("Invalid RSA key");
+				throw new InformationInvalidException("Invalid RSA parameters");
 			}
 		}
 		#endregion
@@ -1726,7 +1728,7 @@ namespace net.vieapps.Components.Utility
 		public static Tuple<BigInteger, ECCsecp256k1.Point> GenerateECCKeyPair(int length = 256)
 		{
 			var key = ECCsecp256k1.GeneratePrivateKey(length);
-			return new Tuple<BigInteger, ECCsecp256k1.Point>(key, key.GenerateECCPublicKey());
+			return new Tuple<BigInteger, ECCsecp256k1.Point>(key, ECCsecp256k1.GeneratePublicKey(key));
 		}
 		#endregion
 
@@ -2817,10 +2819,7 @@ namespace net.vieapps.Components.Utility
 		#region Point
 		public class Point : ICloneable
 		{
-			private Point()
-			{
-				this.IsInfinity = true;
-			}
+			private Point() { }
 
 			public Point(BigInteger x, BigInteger y, bool isInfinity = false)
 			{
@@ -2835,7 +2834,7 @@ namespace net.vieapps.Components.Utility
 
 			public static Point Infinity { get { return new Point(); } }
 
-			public bool IsInfinity { get; }
+			public bool IsInfinity { get; } = true;
 
 			public object Clone()
 			{
@@ -3026,11 +3025,6 @@ namespace net.vieapps.Components.Utility
 				this.Rijndael.Dispose();
 			}
 
-			public byte[] Encrypt(Point publicKey, string message)
-			{
-				return this.Encrypt(publicKey, message.ToBytes());
-			}
-
 			public byte[] Encrypt(Point publicKey, byte[] data)
 			{
 				var tag = this.Elgamal.GenerateKey(publicKey, out byte[] key);
@@ -3051,17 +3045,17 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			public byte[] Decrypt(BigInteger privateKey, byte[] cipherData)
+			public byte[] Decrypt(BigInteger privateKey, byte[] data)
 			{
 				var tagBytes = new byte[65];
-				Buffer.BlockCopy(cipherData, 0, tagBytes, 0, tagBytes.Length);
+				Buffer.BlockCopy(data, 0, tagBytes, 0, tagBytes.Length);
 				var keyPoint = Point.Decode(tagBytes);
 
 				var iv = new byte[16];
-				Buffer.BlockCopy(cipherData, 65, iv, 0, iv.Length);
+				Buffer.BlockCopy(data, 65, iv, 0, iv.Length);
 
-				var cipher = new byte[cipherData.Length - 16 - 65];
-				Buffer.BlockCopy(cipherData, 65 + 16, cipher, 0, cipher.Length);
+				var cipher = new byte[data.Length - 16 - 65];
+				Buffer.BlockCopy(data, 65 + 16, cipher, 0, cipher.Length);
 
 				var key = this.Elgamal.DecipherKey(privateKey, keyPoint);
 
@@ -3214,7 +3208,7 @@ namespace net.vieapps.Components.Utility
 		public static string GeneratePublicAddress(string publicKey, bool compressed = true, byte prefix = 0) => ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
 		#endregion
 
-		#region Encrypt
+		#region Encrypt & Decrypt
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
@@ -3230,9 +3224,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data">The array of bytes that contains data to encrypt</param>
 		/// <returns></returns>
 		public static byte[] Encrypt(byte[] key, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(key), data);
-		#endregion
 
-		#region Decrypt
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
@@ -3250,7 +3242,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] Decrypt(byte[] key, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(ECCsecp256k1.GetPrivateKey(key), data);
 		#endregion
 
-		#region Sign
+		#region Sign & Verify
 		/// <summary>
 		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
@@ -3284,9 +3276,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashMode">The hash mode (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static BigInteger[] Sign(byte[] key, byte[] data, string hashMode) => ECCsecp256k1.Sign(ECCsecp256k1.GetPrivateKey(key), data, hashMode);
-		#endregion
 
-		#region Verify
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
