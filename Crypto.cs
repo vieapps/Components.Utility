@@ -960,6 +960,148 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Sign/Verify (using RSA)
+		/// <summary>
+		/// Signs hash data using RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <remarks>The RSA instance must contains private parameters (private key) to sign</remarks>
+		/// <returns></returns>
+		public static byte[] Sign(this RSA rsa, byte[] hash)
+		{
+			try
+			{
+				return rsa.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+			}
+			catch (Exception ex)
+			{
+				if (ex.Message.IsContains("Key does not exist"))
+					throw new CryptographicException($"RSA must contains private key to sign ({ex.Message})", ex);
+				else
+					throw ex;
+			}
+		}
+
+		/// <summary>
+		/// Signs hash data using RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <param name="isHex">true to specify that hash-data is hexa string, else for base64 string</param>
+		/// <returns></returns>
+		public static string Sign(this RSA rsa, string hash, bool isHex = true)
+			=> isHex
+				? rsa.Sign(hash.HexToBytes()).ToHex()
+				: rsa.Sign(hash.Base64ToBytes()).ToBase64();
+
+		/// <summary>
+		/// Verifys the signature of hash using RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="hash">The hashed-data to verify with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(this RSA rsa, byte[] hash, byte[] signature)
+			=> rsa.VerifyHash(hash, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+		/// <summary>
+		/// Verifys the signature of hash using RSA
+		/// </summary>
+		/// <param name="rsa"></param>
+		/// <param name="hash">The hashed-data to verify with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <param name="isHex">true to specify that hash and signature are hexa string, else for base64 string</param>
+		/// <returns></returns>
+		public static bool Verify(this RSA rsa, string hash, string signature, bool isHex = true)
+			=> isHex
+				? rsa.Verify(hash.HexToBytes(), signature.HexToBytes())
+				: rsa.Verify(hash.Base64ToBytes(), signature.Base64ToBytes());
+		#endregion
+
+		#region Encrypt/Decrypt (using ECC)
+		/// <summary>
+		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The public key used to encrypt data</param>
+		/// <param name="data">The data to encrypt</param>
+		/// <returns></returns>
+		public static byte[] Encrypt(this ECCsecp256k1.Point key, byte[] data) => ECCsecp256k1.Encrypt(key, data);
+
+		/// <summary>
+		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The public key used to encrypt data</param>
+		/// <param name="data">The data to encrypt</param>
+		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
+		/// <returns></returns>
+		public static string Encrypt(this ECCsecp256k1.Point key, string data, bool toHex = false)
+			=> string.IsNullOrWhiteSpace(data)
+				? ""
+				: toHex
+					? key.Encrypt(data.ToBytes()).ToHex()
+					: key.Encrypt(data.ToBytes()).ToBase64();
+
+		/// <summary>
+		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The private key used to decrypt</param>
+		/// <param name="data">The data the decrypt</param>
+		/// <returns></returns>
+		public static byte[] Decrypt(this BigInteger key, byte[] data) => ECCsecp256k1.Decrypt(key, data);
+
+		/// <summary>
+		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The private key used to decrypt</param>
+		/// <param name="data">The data the decrypt</param>
+		/// <param name="isHex">true to specify that data is hexa string, else for base64 string</param>
+		/// <returns></returns>
+		public static string Decrypt(this BigInteger key, string data, bool isHex = false)
+			=> string.IsNullOrWhiteSpace(data)
+				? ""
+				: isHex
+					? key.Decrypt(data.HexToBytes()).GetString()
+					: key.Decrypt(data.Base64ToBytes()).GetString();
+		#endregion
+
+		#region Sign/Verify (using ECC)
+		/// <summary>
+		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The private key used to to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <returns></returns>
+		public static BigInteger[] Sign(this BigInteger key, byte[] hash) => ECCsecp256k1.Sign(key, hash);
+
+		/// <summary>
+		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The private key used to to sign</param>
+		/// <param name="hash">The hashed-data to sign</param>
+		/// <param name="isHex">true to specify that hashed-data is hexa string, false is base64 string</param>
+		/// <returns>The hexa string that presents the signature</returns>
+		public static string Sign(this BigInteger key, string hash, bool isHex = false) => ECCsecp256k1.GetSignature(ECCsecp256k1.Sign(key, isHex ? hash.HexToBytes() : hash.Base64ToBytes()));
+
+		/// <summary>
+		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The public key used to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(key, hash, signature);
+
+		/// <summary>
+		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The public key used to verify</param>
+		/// <param name="hash">The hashed-data to veriry with signature</param>
+		/// <param name="signature">The signature to verify</param>
+		/// <returns></returns>
+		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, string signature) => ECCsecp256k1.Verify(key, hash, ECCsecp256k1.GetSignature(signature));
+		#endregion
+
 		#region Create instance & Generate key-pair of RSA
 		/// <summary>
 		/// Creates an instance of RSA Algorithm
@@ -1561,218 +1703,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Encrypt/Decrypt (using ECC)
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data to encrypt</param>
-		/// <param name="publicKey">The public key used to encrypt data</param>
-		/// <returns></returns>
-		public static byte[] ECCEncrypt(this byte[] data, ECCsecp256k1.Point publicKey) => ECCsecp256k1.Encrypt(publicKey, data);
-
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data to encrypt</param>
-		/// <param name="publicKey">The public key used to encrypt data</param>
-		/// <returns></returns>
-		public static byte[] ECCEncrypt(this byte[] data, byte[] publicKey) => ECCsecp256k1.Encrypt(publicKey, data);
-
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data to encrypt</param>
-		/// <param name="publicKey">The public key used to encrypt data</param>
-		/// <returns></returns>
-		public static byte[] ECCEncrypt(this byte[] data, string publicKey) => ECCsecp256k1.Encrypt(publicKey, data);
-
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data to encrypt</param>
-		/// <param name="publicKey">The public key used to encrypt data</param>
-		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
-		/// <returns></returns>
-		public static string ECCEncrypt(this string data, ECCsecp256k1.Point publicKey, bool toHex = false) => toHex ? data.ToBytes().ECCEncrypt(publicKey).ToHex() : data.ToBytes().ECCEncrypt(publicKey).ToBase64();
-
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data to encrypt</param>
-		/// <param name="publicKey">The public key used to encrypt data</param>
-		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
-		/// <returns></returns>
-		public static string ECCEncrypt(this string data, byte[] publicKey, bool toHex = false) => toHex ? data.ToBytes().ECCEncrypt(publicKey).ToHex() : data.ToBytes().ECCEncrypt(publicKey).ToBase64();
-
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data to encrypt</param>
-		/// <param name="publicKey">The public key used to encrypt data</param>
-		/// <param name="toHex">true to get hexa string, false to get base64 string</param>
-		/// <returns></returns>
-		public static string ECCEncrypt(this string data, string publicKey, bool toHex = false) => toHex ? data.ToBytes().ECCEncrypt(publicKey).ToHex() : data.ToBytes().ECCEncrypt(publicKey).ToBase64();
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data the decrypt</param>
-		/// <param name="privateKey">The private key used to decrypt</param>
-		/// <returns></returns>
-		public static byte[] ECCDecrypt(this byte[] data, BigInteger privateKey) => ECCsecp256k1.Decrypt(privateKey, data);
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data the decrypt</param>
-		/// <param name="privateKey">The private key used to decrypt</param>
-		/// <returns></returns>
-		public static byte[] ECCDecrypt(this byte[] data, byte[] privateKey) => ECCsecp256k1.Decrypt(privateKey, data);
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data the decrypt</param>
-		/// <param name="privateKey">The private key used to decrypt</param>
-		/// <returns></returns>
-		public static byte[] ECCDecrypt(this byte[] data, string privateKey) => ECCsecp256k1.Decrypt(privateKey, data);
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data the decrypt</param>
-		/// <param name="privateKey">The private key used to decrypt</param>
-		/// <param name="isHex">true to specified that the data is hexa string, false is base64 string</param>
-		/// <returns></returns>
-		public static string ECCDecrypt(this string data, BigInteger privateKey, bool isHex = false) => isHex ? data.HexToBytes().ECCDecrypt(privateKey).GetString() : data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data the decrypt</param>
-		/// <param name="privateKey">The private key used to decrypt</param>
-		/// <param name="isHex">true to specified that the data is hexa string, false is base64 string</param>
-		/// <returns></returns>
-		public static string ECCDecrypt(this string data, byte[] privateKey, bool isHex = false) => isHex ? data.HexToBytes().ECCDecrypt(privateKey).GetString() : data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="data">The data the decrypt</param>
-		/// <param name="privateKey">The private key used to decrypt</param>
-		/// <param name="isHex">true to specified that the data is hexa string, false is base64 string</param>
-		/// <returns></returns>
-		public static string ECCDecrypt(this string data, string privateKey, bool isHex = false) => isHex ? data.HexToBytes().ECCDecrypt(privateKey).GetString() : data.Base64ToBytes().ECCDecrypt(privateKey).GetString();
-		#endregion
-
-		#region Sign/Verify (using ECC)
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <returns></returns>
-		public static BigInteger[] ECCSign(this byte[] hash, BigInteger privateKey) => ECCsecp256k1.Sign(privateKey, hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <returns></returns>
-		public static BigInteger[] ECCSign(this byte[] hash, byte[] privateKey) => ECCsecp256k1.Sign(privateKey, hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <returns></returns>
-		public static BigInteger[] ECCSign(this byte[] hash, string privateKey) => ECCsecp256k1.Sign(privateKey, hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <returns></returns>
-		public static string ECCSignAsHex(this byte[] hash, BigInteger privateKey) => ECCsecp256k1.SignAsHex(privateKey, hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <returns></returns>
-		public static string ECCSignAsHex(this byte[] hash, byte[] privateKey) => ECCsecp256k1.SignAsHex(privateKey, hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <returns></returns>
-		public static string ECCSignAsHex(this byte[] hash, string privateKey) => ECCsecp256k1.SignAsHex(privateKey.HexToBytes(), hash);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="signature">The signature to verify</param>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <returns></returns>
-		public static bool ECCVerify(this BigInteger[] signature, ECCsecp256k1.Point publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="signature">The signature to verify</param>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <returns></returns>
-		public static bool ECCVerify(this BigInteger[] signature, byte[] publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="signature">The signature to verify</param>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <returns></returns>
-		public static bool ECCVerify(this string signature, byte[] publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="signature">The signature to verify</param>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <returns></returns>
-		public static bool ECCVerify(this string signature, string publicKey, byte[] hash) => ECCsecp256k1.Verify(publicKey, hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="signature">The signature to verify</param>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <returns></returns>
-		public static bool ECCVerify(this string signature, string publicKey, string hash) => ECCsecp256k1.Verify(publicKey, hash.HexToBytes(), signature);
-		#endregion
-
 		#region Generate keys of ECC
-		/// <summary>
-		/// Generates key-pair of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
-		/// </summary>
-		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
-		/// <returns></returns>
-		public static Tuple<BigInteger, ECCsecp256k1.Point> GenerateECCKeyPair(int length = 256)
-		{
-			var privateKey = ECCsecp256k1.GeneratePrivateKey(length);
-			var publicKey = ECCsecp256k1.GeneratePublicKey(privateKey);
-			return new Tuple<BigInteger, ECCsecp256k1.Point>(privateKey, publicKey);
-		}
-
 		/// <summary>
 		/// Generates a random private key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
@@ -1783,23 +1714,20 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
-		/// <param name="privateKey"></param>
+		/// <param name="key">The private key used to generate public key</param>
 		/// <returns></returns>
-		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey);
+		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger key) => ECCsecp256k1.GeneratePublicKey(key);
 
 		/// <summary>
-		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
+		/// Generates key-pair of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
-		/// <param name="privateKey"></param>
+		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
 		/// <returns></returns>
-		public static byte[] GenerateECCPublicKey(this byte[] privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey);
-
-		/// <summary>
-		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
-		/// </summary>
-		/// <param name="privateKey"></param>
-		/// <returns></returns>
-		public static string GenerateECCPublicKey(this string privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey).ToHex();
+		public static Tuple<BigInteger, ECCsecp256k1.Point> GenerateECCKeyPair(int length = 256)
+		{
+			var key = ECCsecp256k1.GeneratePrivateKey(length);
+			return new Tuple<BigInteger, ECCsecp256k1.Point>(key, key.GenerateECCPublicKey());
+		}
 		#endregion
 
 	}
@@ -3191,7 +3119,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Generate keys
+		#region Generate keys & address
 		/// <summary>
 		/// Generates a random private key for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
@@ -3200,39 +3128,56 @@ namespace net.vieapps.Components.Utility
 		public static BigInteger GeneratePrivateKey(int length = 256) => CryptoService.GenerateRandomKey(length).ToUnsignedBigInteger();
 
 		/// <summary>
-		/// Generates the public key from the private key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Gets the private key for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key</param>
+		/// <param name="key">The array of bytes that presents a key</param>
 		/// <returns></returns>
-		public static Point GeneratePublicKey(BigInteger privateKey) => ECCsecp256k1.G.Multiply(privateKey);
+		public static BigInteger GetPrivateKey(byte[] key) => key.ToUnsignedBigInteger();
 
 		/// <summary>
-		/// Generates the public key from the private key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Gets the private key for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key</param>
+		/// <param name="key">The string that presents a key</param>
+		/// <param name="isHex">true to specify the key is hexa string, false is base64 string</param>
 		/// <returns></returns>
-		public static byte[] GeneratePublicKey(byte[] privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey.ToUnsignedBigInteger()).Encode(true);
+		public static BigInteger GetPrivateKey(string key, bool isHex = true) => ECCsecp256k1.GetPrivateKey(isHex ? key.HexToBytes() : key.Base64ToBytes());
 
 		/// <summary>
-		/// Generates the public key from the private key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Generates the public key for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key</param>
+		/// <param name="key">The private key that used to generate public key</param>
 		/// <returns></returns>
-		public static byte[] GeneratePublicKey(string privateKey) => ECCsecp256k1.GeneratePublicKey(privateKey.HexToBytes().ToUnsignedBigInteger()).Encode(true);
+		public static Point GeneratePublicKey(BigInteger key) => ECCsecp256k1.G.Multiply(key);
+
+		/// <summary>
+		/// Generates the public key for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The private key that used to generate public key</param>
+		/// <returns></returns>
+		public static byte[] GeneratePublicKey(byte[] key) => ECCsecp256k1.GeneratePublicKey(ECCsecp256k1.GetPrivateKey(key)).Encode(true);
+
+		/// <summary>
+		/// Generates the public key for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// </summary>
+		/// <param name="key">The private key that used to generate public key</param>
+		/// <param name="isHex">true to specify the key is hexa string, false is base64 string</param>
+		/// <returns></returns>
+		public static byte[] GeneratePublicKey(string key, bool isHex = true) => ECCsecp256k1.GeneratePublicKey(isHex ? key.HexToBytes() : key.Base64ToBytes());
 
 		/// <summary>
 		/// Generates (Decodes) the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key</param>
+		/// <param name="key">The array of bytes that presents a key</param>
 		/// <returns></returns>
-		public static Point GetPublicKey(byte[] publicKey) => ECCsecp256k1.Point.Decode(publicKey);
+		public static Point GetPublicKey(byte[] key) => ECCsecp256k1.Point.Decode(key);
 
 		/// <summary>
 		/// Generates (Decodes) the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key</param>
+		/// <param name="key">The string that presents a key</param>
+		/// <param name="isHex">true to specify the key is hexa string, false is base64 string</param>
 		/// <returns></returns>
-		public static Point GetPublicKey(string publicKey) => ECCsecp256k1.Point.Decode(publicKey.HexToBytes());
+		public static Point GetPublicKey(string key, bool isHex = true) => ECCsecp256k1.GetPublicKey(isHex ? key.HexToBytes() : key.Base64ToBytes());
 
 		/// <summary>
 		/// Generates (Encodes) the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3273,280 +3218,138 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key to encrypt data</param>
+		/// <param name="key">The public key to encrypt data</param>
 		/// <param name="data">The array of bytes that contains data to encrypt</param>
 		/// <returns></returns>
-		public static byte[] Encrypt(Point publicKey, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(publicKey, data);
+		public static byte[] Encrypt(Point key, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(key, data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key to encrypt data</param>
+		/// <param name="key">The public key to encrypt data</param>
 		/// <param name="data">The array of bytes that contains data to encrypt</param>
 		/// <returns></returns>
-		public static byte[] Encrypt(byte[] publicKey, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
-
-		/// <summary>
-		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key to encrypt data</param>
-		/// <param name="data">The array of bytes that contains data to encrypt</param>
-		/// <returns></returns>
-		public static byte[] Encrypt(string publicKey, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(publicKey), data);
+		public static byte[] Encrypt(byte[] key, byte[] data) => ECCsecp256k1.ECCEncryption.Encrypt(ECCsecp256k1.GetPublicKey(key), data);
 		#endregion
 
 		#region Decrypt
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key to decrypt data</param>
+		/// <param name="key">The private key to decrypt data</param>
 		/// <param name="data">The array of bytes that contains data to decrypt</param>
 		/// <returns></returns>
-		public static byte[] Decrypt(BigInteger privateKey, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(privateKey, data);
+		public static byte[] Decrypt(BigInteger key, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(key, data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key to decrypt data</param>
+		/// <param name="key">The private key to decrypt data</param>
 		/// <param name="data">The array of bytes that contains data to decrypt</param>
 		/// <returns></returns>
-		public static byte[] Decrypt(byte[] privateKey, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(privateKey.ToUnsignedBigInteger(), data);
-
-		/// <summary>
-		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key to decrypt data</param>
-		/// <param name="data">The array of bytes that contains data to decrypt</param>
-		/// <returns></returns>
-		public static byte[] Decrypt(string privateKey, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(privateKey.HexToBytes().ToUnsignedBigInteger(), data);
+		public static byte[] Decrypt(byte[] key, byte[] data) => ECCsecp256k1.ECCEncryption.Decrypt(ECCsecp256k1.GetPrivateKey(key), data);
 		#endregion
 
 		#region Sign
 		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
+		/// <param name="key">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(BigInteger privateKey, byte[] hash) => ECCsecp256k1.ECCDSA.Sign(privateKey, hash);
+		public static BigInteger[] Sign(BigInteger key, byte[] hash) => ECCsecp256k1.ECCDSA.Sign(key, hash);
 
 		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
+		/// <param name="key">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(byte[] privateKey, byte[] hash) => ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), hash);
+		public static BigInteger[] Sign(byte[] key, byte[] hash) => ECCsecp256k1.ECCDSA.Sign(ECCsecp256k1.GetPrivateKey(key), hash);
 
 		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <returns></returns>
-		public static BigInteger[] Sign(string privateKey, byte[] hash) => ECCsecp256k1.Sign(privateKey.HexToBytes().ToUnsignedBigInteger(), hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
+		/// <param name="key">The private key used to to sign</param>
 		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode</param>
+		/// <param name="hashMode">The hash mode (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(BigInteger privateKey, byte[] data, string hashMode) => ECCsecp256k1.Sign(privateKey, data.GetHash(hashMode));
+		public static BigInteger[] Sign(BigInteger key, byte[] data, string hashMode) => ECCsecp256k1.Sign(key, data.GetHash(hashMode));
 
 		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
+		/// <param name="key">The private key used to to sign</param>
 		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode</param>
+		/// <param name="hashMode">The hash mode (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(byte[] privateKey, byte[] data, string hashMode) => ECCsecp256k1.Sign(privateKey.ToUnsignedBigInteger(), data, hashMode);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <returns></returns>
-		public static BigInteger[] Sign(string privateKey, byte[] data, string hashMode) => ECCsecp256k1.Sign(privateKey.HexToBytes().ToUnsignedBigInteger(), data, hashMode);
-		#endregion
-
-		#region Sign (hex)
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <returns></returns>
-		public static string SignAsHex(BigInteger privateKey, byte[] hash)
-		{
-			var signature = ECCsecp256k1.Sign(privateKey, hash);
-			return $"{signature[0].ToHex()}{signature[1].ToHex()}";
-		}
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <returns></returns>
-		public static string SignAsHex(byte[] privateKey, byte[] hash) => ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="hash">The hashed-data to sign</param>
-		/// <returns></returns>
-		public static string SignAsHex(string privateKey, byte[] hash) => ECCsecp256k1.SignAsHex(privateKey.HexToBytes().ToUnsignedBigInteger(), hash);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <returns></returns>
-		public static string SignAsHex(BigInteger privateKey, byte[] data, string hashMode) => ECCsecp256k1.SignAsHex(privateKey, data.GetHash(hashMode));
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <returns></returns>
-		public static string SignAsHex(byte[] privateKey, byte[] data, string hashMode) => ECCsecp256k1.SignAsHex(privateKey.ToUnsignedBigInteger(), data, hashMode);
-
-		/// <summary>
-		/// Signs data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="privateKey">The private key used to to sign</param>
-		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <returns></returns>
-		public static string SignAsHex(string privateKey, byte[] data, string hashMode) => ECCsecp256k1.SignAsHex(privateKey.HexToBytes().ToUnsignedBigInteger(), data, hashMode);
+		public static BigInteger[] Sign(byte[] key, byte[] data, string hashMode) => ECCsecp256k1.Sign(ECCsecp256k1.GetPrivateKey(key), data, hashMode);
 		#endregion
 
 		#region Verify
 		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
+		/// <param name="key">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] hash, BigInteger[] signature) => publicKey == null || signature == null || signature.Length < 2 ? false : ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature[0], signature[1]);
+		public static bool Verify(Point key, byte[] hash, BigInteger[] signature) => key == null || signature == null || signature.Length < 2 ? false : ECCsecp256k1.ECCDSA.Verify(key, hash, signature[0], signature[1]);
 
 		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
+		/// <param name="key">The public key used to verify</param>
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
+		public static bool Verify(byte[] key, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(key), hash, signature);
 
 		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <param name="signature">The signature to verify</param>
-		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
+		/// <param name="key">The public key used to verify</param>
 		/// <param name="data">The data to compute hash to verify with signature</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
+		public static bool Verify(Point key, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(key, data.GetHash(hashMode), signature);
 
 		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
+		/// <param name="key">The public key used to verify</param>
 		/// <param name="data">The data to compute hash to verify with signature</param>
 		/// <param name="hashMode">The hash mode</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="data">The data to compute hash to verify with signature</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <param name="signature">The signature to verify</param>
-		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
+		public static bool Verify(byte[] key, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(key), data, hashMode, signature);
 		#endregion
 
-		#region Verify (hex)
+		#region Signature conversions
 		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Gets the string that presents the signature for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <param name="signature">The signature to verify</param>
+		/// <param name="signature">The signature</param>
 		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] hash, string signature) => publicKey == null || string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128) ? false : ECCsecp256k1.ECCDSA.Verify(publicKey, hash, signature.Left(64).ToBigInteger(), signature.Right(64).ToBigInteger());
+		public static string GetSignature(BigInteger[] signature)
+		{
+			return signature == null || signature.Length != 2
+				? throw new InformationInvalidException("Invalid ECCsecp256k1 signature")
+				: $"{signature[0].ToHex()}{signature[1].ToHex()}";
+		}
 
 		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+		/// Gets the signature from a string for using with Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <param name="signature">The signature to verify</param>
+		/// <param name="signature">The signature</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] hash, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="hash">The hashed-data to veriry with signature</param>
-		/// <param name="signature">The signature to verify</param>
-		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] hash, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), hash, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="data">The data to compute hash to verify with signature</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <param name="signature">The signature to verify</param>
-		/// <returns></returns>
-		public static bool Verify(Point publicKey, byte[] data, string hashMode, string signature) => ECCsecp256k1.Verify(publicKey, data.GetHash(hashMode), signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="data">The data to compute hash to verify with signature</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <param name="signature">The signature to verify</param>
-		/// <returns></returns>
-		public static bool Verify(byte[] publicKey, byte[] data, string hashMode, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
-
-		/// <summary>
-		/// Verifys the signature using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
-		/// </summary>
-		/// <param name="publicKey">The public key used to verify</param>
-		/// <param name="data">The data to compute hash to verify with signature</param>
-		/// <param name="hashMode">The hash mode</param>
-		/// <param name="signature">The signature to verify</param>
-		/// <returns></returns>
-		public static bool Verify(string publicKey, byte[] data, string hashMode, string signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(publicKey), data, hashMode, signature);
+		public static BigInteger[] GetSignature(string signature)
+		{
+			return string.IsNullOrWhiteSpace(signature) || !signature.Length.Equals(128)
+				? throw new InformationInvalidException("Invalid ECCsecp256k1 signature")
+				: new[] { signature.Left(64).ToBigInteger(), signature.Right(64).ToBigInteger() };
+		}
 		#endregion
 
 	}
