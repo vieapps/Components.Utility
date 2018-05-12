@@ -24,15 +24,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length"></param>
 		/// <returns></returns>
 		public static string Left(this string @string, int length)
-		{
-			return length < 0
+			=> length < 0
 				? throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero")
 				: @string.Equals("")
 					? string.Empty
 					: length >= @string.Length
 						? @string
 						: @string.Substring(0, length);
-		}
 
 		/// <summary>
 		/// Gets right-side sub-string (just like VB does)
@@ -41,15 +39,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length"></param>
 		/// <returns></returns>
 		public static string Right(this string @string, int length)
-		{
-			return length < 0
+			=> length < 0
 				? throw new ArgumentException($"Argument '{nameof(length)}' must be greater or equal to zero")
 				: @string.Equals("")
 					? string.Empty
 					: length >= @string.Length
 						? @string
 						: @string.Substring(@string.Length - length);
-		}
 
 		/// <summary>
 		/// Returns a new string that right-aligns the characters in this instance by padding them with spaces on the left, for a specified total length
@@ -59,13 +55,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="paddingChar"></param>
 		/// <returns></returns>
 		public static string PadLeft(this string @string, int totalWidth, string paddingChar = null)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: string.IsNullOrWhiteSpace(paddingChar)
 					? @string.PadLeft(totalWidth)
 					: @string.PadLeft(totalWidth, paddingChar[0]);
-		}
 
 		/// <summary>
 		/// Returns a new string that left-aligns the characters in this string by padding them with spaces on the right, for a specified total length
@@ -75,13 +69,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="paddingChar"></param>
 		/// <returns></returns>
 		public static string PadRight(this string @string, int totalWidth, string paddingChar = null)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: string.IsNullOrWhiteSpace(paddingChar)
 					? @string.PadRight(totalWidth)
 					: @string.PadRight(totalWidth, paddingChar[0]);
-		}
 
 		/// <summary>
 		/// Replaces
@@ -125,11 +117,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsEquals(this string @string, string compareTo, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-		{
-			return string.IsNullOrWhiteSpace(compareTo)
+			=> string.IsNullOrWhiteSpace(compareTo)
 				? string.IsNullOrWhiteSpace(@string)
 				: @string.Equals(compareTo, comparisonType);
-		}
 
 		/// <summary>
 		/// Check to see its contains
@@ -139,11 +129,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsContains(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-		{
-			return substring != null
+			=> substring != null
 				? @string.IndexOf(substring, 0, comparisonType) > -1
 				: false;
-		}
 
 		/// <summary>
 		/// Check to see its starts with
@@ -153,11 +141,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsStartsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-		{
-			return string.IsNullOrWhiteSpace(substring)
+			=> string.IsNullOrWhiteSpace(substring)
 				? false
 				: @string.StartsWith(substring, comparisonType);
-		}
 
 		/// <summary>
 		/// Check to see its ends with
@@ -167,11 +153,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsEndsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-		{
-			return string.IsNullOrWhiteSpace(substring)
+			=> string.IsNullOrWhiteSpace(substring)
 				? false
 				: @string.EndsWith(substring, comparisonType);
-		}
 
 		/// <summary>
 		/// Gets position of sub-string (index of sub-string)
@@ -182,11 +166,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static int PositionOf(this string @string, string substring, int startIndex = 0, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-		{
-			return string.IsNullOrWhiteSpace(substring) || startIndex >= @string.Length
+			=> string.IsNullOrWhiteSpace(substring) || startIndex >= @string.Length
 				? -1
 				: @string.IndexOf(substring, startIndex < 0 ? 0 : startIndex, comparisonType);
-		}
 
 		/// <summary>
 		/// Counts the number of appearances of the sub-string
@@ -219,11 +201,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns>The compressed-string in Base64 format</returns>
 		public static string Compress(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.ToBytes().Compress("deflate")?.ToBase64();
-		}
 
 		/// <summary>
 		/// Decompresses the Base64 string using Deflate compression method
@@ -231,11 +211,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string Decompress(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.Base64ToBytes().Decompress("deflate")?.GetString();
-		}
 		#endregion
 
 		#region Conversions
@@ -295,10 +273,19 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static T ToEnum<T>(this string @string)
-		{
-			return (T)@string.ToEnum(typeof(T));
-		}
+		public static T ToEnum<T>(this string @string) => (T)@string.ToEnum(typeof(T));
+
+		/// <summary>
+		/// Trys to converts this enum-string to enum-typed value
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="string"></param>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		public static bool TryToEnum<T>(this string @string, out T value) where T : struct
+			=> typeof(T).IsEnum
+				? Enum.TryParse(@string, out value)
+				: throw new ArgumentException($"The type '{typeof(T).GetType()}' is not enum");
 
 		/// <summary>
 		/// Gets the string from array of bytes by specified encoding (default is UTF8)
@@ -308,11 +295,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static string GetString(this byte[] bytes, int count = 0, Encoding encoding = null)
-		{
-			return bytes == null || bytes.Length < 1
+			=> bytes == null || bytes.Length < 1
 				? ""
 				: (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
-		}
 
 		/// <summary>
 		/// Gets the string from array of bytes by specified encoding (default is UTF8)
@@ -440,7 +425,7 @@ namespace net.vieapps.Components.Utility
 					break;
 
 				case 7:             // TCVN3 to Unicode
-									// first, convert to decimal
+					// first, convert to decimal
 					decodeLength = tcvn3s.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (!tcvn3s[index].Equals("") && index < decimalUnicodes.Length)
@@ -478,80 +463,56 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUTF8ToUnicode(this string @string)
-		{
-			return @string.ConvertVietnamese(0);
-		}
+		public static string ConvertUTF8ToUnicode(this string @string) => @string.ConvertVietnamese(0);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Unicode to UTF8
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToUTF8(this string @string)
-		{
-			return @string.ConvertVietnamese(1);
-		}
+		public static string ConvertUnicodeToUTF8(this string @string) => @string.ConvertVietnamese(1);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Unicode to ANSI
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToANSI(this string @string)
-		{
-			return @string.ConvertVietnamese(2).ConvertVietnamese(5);
-		}
+		public static string ConvertUnicodeToANSI(this string @string) => @string.ConvertVietnamese(2).ConvertVietnamese(5);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Unicode to Decimal
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToDecimal(this string @string)
-		{
-			return @string.ConvertVietnamese(4);
-		}
+		public static string ConvertUnicodeToDecimal(this string @string) => @string.ConvertVietnamese(4);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Decimal to Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertDecimalToUnicode(this string @string)
-		{
-			return @string.ConvertVietnamese(6);
-		}
+		public static string ConvertDecimalToUnicode(this string @string) => @string.ConvertVietnamese(6);
 
 		/// <summary>
 		/// Converts this Vietnamese string from TCVN3 to Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertTCVN3ToUnicode(this string @string)
-		{
-			return @string.ConvertVietnamese(7);
-		}
+		public static string ConvertTCVN3ToUnicode(this string @string) => @string.ConvertVietnamese(7);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Pre-composed Unicode to Composite Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToCompositeUnicode(this string @string)
-		{
-			return @string.ConvertVietnamese(8);
-		}
+		public static string ConvertUnicodeToCompositeUnicode(this string @string) => @string.ConvertVietnamese(8);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Composite Unicode to Pre-composed Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertCompositeUnicodeToUnicode(this string @string)
-		{
-			return @string.ConvertVietnamese(9);
-		}
+		public static string ConvertCompositeUnicodeToUnicode(this string @string) => @string.ConvertVietnamese(9);
 		#endregion
 
 		#region  Conversions (Uri)
@@ -570,7 +531,7 @@ namespace net.vieapps.Components.Utility
 			var result = @string.Trim().ConvertUnicodeToANSI();
 
 			// remove all special characters
-			result = result.Replace(StringComparison.OrdinalIgnoreCase, "C#", "CSharp").Replace(" ", "-");
+			result = result.Replace(StringComparison.OrdinalIgnoreCase, "C#", "CSharp").Replace(StringComparison.OrdinalIgnoreCase, "F#", "FSharp").Replace(" ", "-");
 			result = StringService.Normal.Replace(result, "");
 
 			// remove duplicate characters
@@ -587,11 +548,11 @@ namespace net.vieapps.Components.Utility
 
 			// add timestamp if has no value
 			if (result.Equals(""))
-				result = "v" + DateTime.UtcNow.ToUnixTimestamp();
+				result = "v" + DateTime.Now.ToUnixTimestamp();
 
 			// numeric
 			else if (StringService.Numberic.Replace(result, "").Equals(result))
-				result = "v" + DateTime.UtcNow.ToUnixTimestamp() + result;
+				result = "v" + DateTime.Now.ToUnixTimestamp() + result;
 
 			return toLowerCase
 				? result.ToLower()
@@ -604,11 +565,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="ansiUri">The string that presents an ANSI uri to check</param>
 		/// <returns>true if valid; otherwise false.</returns>
 		public static bool IsValidANSIUri(this string ansiUri)
-		{
-			return string.IsNullOrWhiteSpace(ansiUri)
+			=> string.IsNullOrWhiteSpace(ansiUri)
 				? false
 				: ansiUri.IsEquals(StringService.Normal.Replace(ansiUri, ""));
-		}
 		#endregion
 
 	}

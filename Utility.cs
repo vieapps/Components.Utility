@@ -2561,15 +2561,14 @@ namespace net.vieapps.Components.Utility
 
 		#region Get setting/parameter of the app
 		/// <summary>
-		/// Gets a setting of the app (from the JSON configuration file [appsettings.json])
+		/// Gets a setting section of the app (from the JSON configuration file [appsettings.json])
 		/// </summary>
 		/// <param name="path">The path from root section (ex: Logging/LogLevel/Default)</param>
-		/// <param name="defaultValue">The default value if the setting is not found</param>
 		/// <returns></returns>
-		public static string GetAppJsonSetting(this IConfiguration configuration, string path, string defaultValue = null)
+		public static IConfigurationSection GetAppSetting(this IConfiguration configuration, string path)
 		{
 			if (string.IsNullOrWhiteSpace(path))
-				return defaultValue;
+				return null;
 
 			path = path.Trim();
 			while (path.StartsWith("/") || path.StartsWith(@"\"))
@@ -2579,7 +2578,7 @@ namespace net.vieapps.Components.Utility
 
 			var paths = path.IndexOf("/") > 0 ? path.ToArray("/", true) : path.ToArray(@"\", true);
 			if (string.IsNullOrWhiteSpace(paths[0]))
-				return defaultValue;
+				return null;
 
 			var section = configuration.GetSection(paths[0]);
 			var index = 1;
@@ -2589,8 +2588,20 @@ namespace net.vieapps.Components.Utility
 				index++;
 			}
 
+			return section;
+		}
+
+		/// <summary>
+		/// Gets a setting value of the app (from the JSON configuration file [appsettings.json])
+		/// </summary>
+		/// <param name="path">The path from root section (ex: Logging/LogLevel/Default)</param>
+		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <returns></returns>
+		public static T GetAppSetting<T>(this IConfiguration configuration, string path, T defaultValue = default(T))
+		{
+			var section = configuration.GetAppSetting(path);
 			return section != null
-				? section.Value
+				? section.Value.CastAs<T>()
 				: defaultValue;
 		}
 
@@ -2601,7 +2612,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="defaultValue">The default value if the setting is not found</param>
 		/// <param name="prefix">The special name prefix of the parameter</param>
 		/// <returns></returns>
-		public static string GetAppXmlSetting(string name, string defaultValue = null, string prefix = "vieapps")
+		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
 		{
 			var value = !string.IsNullOrWhiteSpace(name)
 				? ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()]
@@ -2611,15 +2622,6 @@ namespace net.vieapps.Components.Utility
 				? defaultValue
 				: value;
 		}
-
-		/// <summary>
-		/// Gets a setting of the app (from the 'appSettings' section of XML configuration file) with special prefix
-		/// </summary>
-		/// <param name="name">The name of the setting</param>
-		/// <param name="defaultValue">The default value if the setting is not found</param>
-		/// <param name="prefix">The special name prefix of the parameter</param>
-		/// <returns></returns>
-		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps") => UtilityService.GetAppXmlSetting(name, defaultValue, prefix);
 
 		/// <summary>
 		/// Gets a parameter of the app (first from header, then second from query)
@@ -2644,6 +2646,16 @@ namespace net.vieapps.Components.Utility
 				? defaultValue
 				: value;
 		}
+
+		/// <summary>
+		/// Gets a parameter of the app (first from header, then second from query)
+		/// </summary>
+		/// <param name="name">The name of the setting</param>
+		/// <param name="header">The collection of header</param>
+		/// <param name="query">The collection of query</param>
+		/// <param name="defaultValue">The default value if the parameter is not found</param>
+		/// <returns></returns>
+		public static string GetAppParameter(string name, Dictionary<string, string> header, Dictionary<string, string> query, string defaultValue = null) => UtilityService.GetAppParameter(name, header.ToNameValueCollection(), query.ToNameValueCollection(), defaultValue);
 		#endregion
 
 	}
