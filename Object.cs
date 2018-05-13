@@ -17,6 +17,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Converters;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -1515,7 +1516,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject(this string json)
 		{
-			return JsonConvert.DeserializeObject<ExpandoObject>(json);
+			return JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
 		}
 
 		/// <summary>
