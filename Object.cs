@@ -50,52 +50,22 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Specifies this attribute can be read
 			/// </summary>
-			public bool CanRead
-			{
-				get
-				{
-					return this.Info is PropertyInfo
-						? (this.Info as PropertyInfo).CanRead
-						: true;
-				}
-			}
+			public bool CanRead => this.Info is PropertyInfo ? (this.Info as PropertyInfo).CanRead : true;
 
 			/// <summary>
 			/// Specifies this attribute can be written
 			/// </summary>
-			public bool CanWrite
-			{
-				get
-				{
-					return this.Info is PropertyInfo
-						? (this.Info as PropertyInfo).CanWrite
-						: true;
-				}
-			}
+			public bool CanWrite => this.Info is PropertyInfo ? (this.Info as PropertyInfo).CanWrite : true;
 
 			/// <summary>
 			/// Specifies this attribute is public (everyone can access)
 			/// </summary>
-			public bool IsPublic
-			{
-				get
-				{
-					return this.Info is PropertyInfo;
-				}
-			}
+			public bool IsPublic => this.Info is PropertyInfo;
 
 			/// <summary>
 			/// Gets the type of the attribute
 			/// </summary>
-			public Type Type
-			{
-				get
-				{
-					return this.Info is PropertyInfo
-						? (this.Info as PropertyInfo).PropertyType
-						: (this.Info as FieldInfo).FieldType;
-				}
-			}
+			public Type Type => this.Info is PropertyInfo ? (this.Info as PropertyInfo).PropertyType : (this.Info as FieldInfo).FieldType;
 		}
 		#endregion
 
@@ -140,10 +110,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetProperties(typeof(T), predicate);
-		}
+		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null) => ObjectService.GetProperties(typeof(T), predicate);
 
 		/// <summary>
 		/// Gets the collection of public properties of the object's type
@@ -151,10 +118,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetProperties(@object.GetType(), predicate);
-		}
+		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetProperties(@object.GetType(), predicate);
 
 		/// <summary>
 		/// Gets the collection of fields (private attributes) of the type
@@ -187,10 +151,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetFields(typeof(T), predicate);
-		}
+		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null) => ObjectService.GetFields(typeof(T), predicate);
 
 		/// <summary>
 		/// Gets the collection of fields (private attributes) of the object's type
@@ -198,10 +159,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields(this object @object, Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetFields(@object.GetType(), predicate);
-		}
+		public static List<AttributeInfo> GetFields(this object @object, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetFields(@object.GetType(), predicate);
 
 		/// <summary>
 		/// Gets the collection of attributes of the type (means contains all public properties and private fields)
@@ -209,22 +167,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">The type for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetProperties(type, predicate)
-				.Concat(ObjectService.GetFields(type, predicate))
-				.ToList();
-		}
+		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetProperties(type, predicate).Concat(ObjectService.GetFields(type, predicate)).ToList();
 
 		/// <summary>
 		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetAttributes(typeof(T), predicate);
-		}
+		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null) => ObjectService.GetAttributes(typeof(T), predicate);
 
 		/// <summary>
 		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
@@ -232,10 +182,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
-		{
-			return ObjectService.GetAttributes(@object.GetType(), predicate);
-		}
+		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetAttributes(@object.GetType(), predicate);
 
 		/// <summary>
 		/// Get the full type name (type name with assembly name) of this type
@@ -244,43 +191,32 @@ namespace net.vieapps.Components.Utility
 		/// <param name="justName">true to get only name (means last element in full namespace)</param>
 		/// <returns>The string that presents type name</returns>
 		public static string GetTypeName(this Type type, bool justName = false)
-		{
-			return justName
+			=> justName
 				? type.IsGenericType
 					? type.FullName.Substring(0, type.FullName.IndexOf("[")).ToArray('.').Last()
 					: type.FullName.ToArray('.').Last()
 				: type.FullName + "," + type.Assembly.GetName().Name;
-		}
 
 		/// <summary>
 		/// Gets the state to determines the type is primitive or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is primitive</returns>
-		public static bool IsPrimitiveType(this Type type)
-		{
-			return type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
-		}
+		public static bool IsPrimitiveType(this Type type) => type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
 
 		/// <summary>
 		/// Gets the state to determines the type is string or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is string</returns>
-		public static bool IsStringType(this Type type)
-		{
-			return type.Equals(typeof(String));
-		}
+		public static bool IsStringType(this Type type) => type.Equals(typeof(String));
 
 		/// <summary>
 		/// Gets the state to determines the type is date-time or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
-		public static bool IsDateTimeType(this Type type)
-		{
-			return type.Equals(typeof(DateTime));
-		}
+		public static bool IsDateTimeType(this Type type) => type.Equals(typeof(DateTime));
 
 		/// <summary>
 		/// Gets the state to determines the type is integral numeric or not
@@ -288,41 +224,30 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is integral numeric</returns>
 		public static bool IsIntegralType(this Type type)
-		{
-			return type.Equals(typeof(Byte)) || type.Equals(typeof(SByte))
+			=> type.Equals(typeof(Byte)) || type.Equals(typeof(SByte))
 				|| type.Equals(typeof(Int16)) || type.Equals(typeof(Int32)) || type.Equals(typeof(Int64))
 				|| type.Equals(typeof(UInt16)) || type.Equals(typeof(UInt32)) || type.Equals(typeof(UInt64));
-		}
 
 		/// <summary>
 		/// Gets the state to determines the type is floating numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
-		public static bool IsFloatingPointType(this Type type)
-		{
-			return type.Equals(typeof(Decimal)) || type.Equals(typeof(Double)) || type.Equals(typeof(Single));
-		}
+		public static bool IsFloatingPointType(this Type type) => type.Equals(typeof(Decimal)) || type.Equals(typeof(Double)) || type.Equals(typeof(Single));
 
 		/// <summary>
 		/// Gets the state to determines the type is numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
-		public static bool IsNumericType(this Type type)
-		{
-			return type.IsIntegralType() || type.IsFloatingPointType();
-		}
+		public static bool IsNumericType(this Type type) => type.IsIntegralType() || type.IsFloatingPointType();
 
 		/// <summary>
 		/// Gets the state to determines the type is a reference of a class or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
-		public static bool IsClassType(this Type type)
-		{
-			return !type.IsPrimitiveType() && type.IsClass;
-		}
+		public static bool IsClassType(this Type type) => !type.IsPrimitiveType() && type.IsClass;
 		#endregion
 
 		#region Collection meta data
@@ -357,170 +282,119 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a generic list; otherwise false.</returns>
-		public static bool IsGenericList(this Type type)
-		{
-			return type.IsGenericType && type.IsSubclassOfGeneric(typeof(List<>));
-		}
+		public static bool IsGenericList(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(List<>));
 
 		/// <summary>
 		/// Gets the state to determines the object's type is a generic list
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list; otherwise false.</returns>
-		public static bool IsGenericList(this object @object)
-		{
-			return @object.GetType().IsGenericList();
-		}
+		public static bool IsGenericList(this object @object) => @object.GetType().IsGenericList();
 
 		/// <summary>
 		/// Gets the state to determines the type is a generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
-		public static bool IsGenericHashSet(this Type type)
-		{
-			return type.IsGenericType && type.IsSubclassOfGeneric(typeof(HashSet<>));
-		}
+		public static bool IsGenericHashSet(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(HashSet<>));
 
 		/// <summary>
 		/// Gets the state to determines the object's type is a generic hash-set
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
-		public static bool IsGenericHashSet(this object @object)
-		{
-			return @object.GetType().IsGenericHashSet();
-		}
+		public static bool IsGenericHashSet(this object @object) => @object.GetType().IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type is generic list or generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
-		public static bool IsGenericListOrHashSet(this Type type)
-		{
-			return type.IsGenericList() || type.IsGenericHashSet();
-		}
+		public static bool IsGenericListOrHashSet(this Type type) => type.IsGenericList() || type.IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the object's type is generic list or generic hash-set
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
-		public static bool IsGenericListOrHashSet(this object @object)
-		{
-			return @object.GetType().IsGenericListOrHashSet();
-		}
+		public static bool IsGenericListOrHashSet(this object @object) => @object.GetType().IsGenericListOrHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic dictionary
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
-		public static bool IsGenericDictionary(this Type type)
-		{
-			return type.IsGenericType && type.IsSubclassOfGeneric(typeof(Dictionary<,>));
-		}
+		public static bool IsGenericDictionary(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(Dictionary<,>));
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic dictionary
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
-		public static bool IsGenericDictionary(this object @object)
-		{
-			return @object.GetType().IsGenericDictionary();
-		}
+		public static bool IsGenericDictionary(this object @object) => @object.GetType().IsGenericDictionary();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericCollection(this Type type)
-		{
-			return type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
-		}
+		public static bool IsGenericCollection(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericCollection(this object @object)
-		{
-			return @object.GetType().IsGenericCollection();
-		}
+		public static bool IsGenericCollection(this object @object) => @object.GetType().IsGenericCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericDictionaryOrCollection(this Type type)
-		{
-			return type.IsGenericDictionary() || type.IsGenericCollection();
-		}
+		public static bool IsGenericDictionaryOrCollection(this Type type) => type.IsGenericDictionary() || type.IsGenericCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericDictionaryOrCollection(this object @object)
-		{
-			return @object.GetType().IsGenericDictionaryOrCollection();
-		}
+		public static bool IsGenericDictionaryOrCollection(this object @object) => @object.GetType().IsGenericDictionaryOrCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
-		public static bool IsICollection(this Type type)
-		{
-			return typeof(ICollection).IsAssignableFrom(type) || type.IsGenericHashSet();
-		}
+		public static bool IsICollection(this Type type) => typeof(ICollection).IsAssignableFrom(type) || type.IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
-		public static bool IsICollection(this object @object)
-		{
-			return @object.GetType().IsICollection();
-		}
+		public static bool IsICollection(this object @object) => @object.GetType().IsICollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsCollection(this Type type)
-		{
-			return typeof(Collection).IsAssignableFrom(type);
-		}
+		public static bool IsCollection(this Type type) => typeof(Collection).IsAssignableFrom(type);
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsCollection(this object @object)
-		{
-			return @object.GetType().IsCollection();
-		}
+		public static bool IsCollection(this object @object) => @object.GetType().IsCollection();
 
 		/// <summary>
 		/// Gets the state to determines the the object is array or not
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsArray(this object @object)
-		{
-			return @object.GetType().IsArray;
-		}
+		public static bool IsArray(this object @object) => @object.GetType().IsArray;
 		#endregion
 
 		#region Create new instance & Cast
@@ -547,10 +421,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">The type to be created</typeparam>
 		/// <returns>The newly created instance</returns>
-		public static T CreateInstance<T>()
-		{
-			return (T)typeof(T).CreateInstance();
-		}
+		public static T CreateInstance<T>() => (T)typeof(T).CreateInstance();
 
 		/// <summary>
 		/// Casts the value to other type
@@ -559,13 +430,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">The type to cast type of value to</param>
 		/// <returns></returns>
 		public static object CastAs(this object value, Type type)
-		{
-			return value != null
+			=> value != null
 				? value.GetType().Equals(type)
 					? value
 					: Convert.ChangeType(value, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
 				: null;
-		}
 
 		/// <summary>
 		/// Casts the value to other type
@@ -690,13 +559,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="class">The string that present the type of the static class that contains the static object</param>
 		/// <param name="name">The name of the static object</param>
 		/// <returns></returns>
-		public static object GetStaticObject(string @class, string name)
-		{
-			var type = Type.GetType(@class);
-			return type != null
-				? type.GetStaticObject(name)
-				: null;
-		}
+		public static object GetStaticObject(string @class, string name) => Type.GetType(@class)?.GetStaticObject(name);
+
+		/// <summary>
+		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
+		/// </summary>
+		/// <typeparam name="T">The type to convert the token to</typeparam>
+		/// <param name="json"></param>
+		/// <param name="key">The token key</param>
+		/// <returns>The converted token value</returns>
+		public static T Get<T>(this JToken json, object key) => json.Value<T>(key);
 		#endregion
 
 		#region Copy & Clone
@@ -1075,11 +947,9 @@ namespace net.vieapps.Components.Utility
 
 		#region JSON Conversions
 		internal static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
-		{
-			return ObjectService.GetProperties(type)
+			=> ObjectService.GetProperties(type)
 				.Where(attribute => (attribute.Type.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.Type.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
 				.ToList();
-		}
 
 		internal static AsArrayAttribute GetAsArrayAttribute(this AttributeInfo attribute)
 		{
@@ -1514,20 +1384,14 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this string json)
-		{
-			return JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
-		}
+		public static ExpandoObject ToExpandoObject(this string json) => JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
 
 		/// <summary>
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this JToken json)
-		{
-			return new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
-		}
+		public static ExpandoObject ToExpandoObject(this JToken json) => new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
 
 		/// <summary>
 		/// Creates an <see cref="ExpandoObject">ExpandoObject</see> object from this dictionary object
@@ -1547,10 +1411,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class
-		{
-			return (@object is JToken ? @object as JToken : @object.ToJson()).ToExpandoObject();
-		}
+		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class => (@object is JToken ? @object as JToken : @object.ToJson()).ToExpandoObject();
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
@@ -1558,10 +1419,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static T FromExpandoObject<T>(this ExpandoObject @object) where T : class
-		{
-			return JObject.FromObject(@object).FromJson<T>();
-		}
+		public static T FromExpandoObject<T>(this ExpandoObject @object) where T : class => JObject.FromObject(@object).FromJson<T>();
 
 		/// <summary>
 		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
@@ -1663,11 +1521,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static object Get(this ExpandoObject @object, string name)
-		{
-			return @object.TryGet(name, out object value)
+			=> @object.TryGet(name, out object value)
 				? value
 				: null;
-		}
 
 		/// <summary>
 		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
@@ -1677,11 +1533,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static T Get<T>(this ExpandoObject @object, string name, T @default = default(T))
-		{
-			return @object.TryGet(name, out T value)
+			=> @object.TryGet(name, out T value)
 				? value
 				: @default;
-		}
+
+		/// <summary>
+		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="default">Default value when the attribute is not found</param>
+		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
+		public static T Value<T>(this ExpandoObject @object, string name, T @default = default(T)) => @object.Get<T>(name, @default);
 
 		/// <summary>
 		/// Checks to see the <see cref="ExpandoObject">ExpandoObject</see> object is got an attribute by specified name (accept the dot (.) to get check of child object)
@@ -1689,10 +1552,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="name">The string that presents the name of the attribute for checking, accept the dot (.) to get check of child object</param>
 		/// <returns>true if the object got an attribute with the name</returns>
-		public static bool Has(this ExpandoObject @object, string name)
-		{
-			return @object.TryGet(name, out object value);
-		}
+		public static bool Has(this ExpandoObject @object, string name) => @object.TryGet(name, out object value);
 
 		/// <summary>
 		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
