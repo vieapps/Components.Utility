@@ -1116,8 +1116,9 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(key))
 				return null;
 
-			// create new instance
+			// create new instance & set key size
 			var rsa = RSA.Create();
+			rsa.KeySize = 2048;
 
 			// import PEM
 			if (key.StartsWith(PEM_PRIVATE_KEY_BEGIN) || key.StartsWith(PEM_PUBLIC_KEY_BEGIN))
@@ -1173,7 +1174,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Generates the key-pairs form this RSA instance
+		/// Generates the key-pairs of RSA 2048 bits
 		/// </summary>
 		/// <returns>
 		/// Collection of strings that presents key-pairs, indexes is:
@@ -1190,6 +1191,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var rsa = RSA.Create())
 			{
+				rsa.KeySize = 2048;
 				return rsa.GenerateKeyPairs();
 			}
 		}
