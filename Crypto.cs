@@ -19,6 +19,46 @@ namespace net.vieapps.Components.Utility
 	public static partial class CryptoService
 	{
 
+		#region Generate keys
+		static RNGCryptoServiceProvider RNGcsp;
+
+		static CryptoService() => CryptoService.RNGcsp = new RNGCryptoServiceProvider();
+
+		/// <summary>
+		/// Generates a key using RNGCryptoServiceProvider with random bytes
+		/// </summary>
+		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
+		/// <returns>An array of bytes that presents the key</returns>
+		public static byte[] GenerateRandomKey(int length = 256)
+		{
+			var key = new byte[length > 0 ? length : 256];
+			CryptoService.RNGcsp.GetBytes(key);
+			return key;
+		}
+
+		/// <summary>
+		/// Generates a key using hash from this array of bytes
+		/// </summary>
+		/// <param name="bytes">The array of bytes to generate key from</param>
+		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
+		/// <returns>An array of bytes that presents the key</returns>
+		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256)
+		{
+			using (var hasher = new HMACBlake2B(length > 0 ? length : 256))
+			{
+				return hasher.ComputeHash(hasher.ComputeHash(bytes));
+			}
+		}
+
+		/// <summary>
+		/// Generates a key using hash from this passphrase
+		/// </summary>
+		/// <param name="passphrase">The passphrase to generate key from</param>
+		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
+		/// <returns>An array of bytes that presents the key</returns>
+		public static byte[] GenerateHashKey(this string passphrase, int length = 256) => (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length);
+		#endregion
+
 		#region Default pass-phrase & keys
 		/// <summary>
 		/// The default passphrase for generating a key
@@ -34,45 +74,6 @@ namespace net.vieapps.Components.Utility
 		/// The default initialization vector (128 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
 		/// </summary>
 		public static readonly byte[] DEFAULT_ENCRYPTION_IV = DEFAULT_PASS_PHRASE.GenerateHashKey(128);
-		#endregion
-
-		#region Generate keys
-		/// <summary>
-		/// Generates a key using RNGCryptoServiceProvider with random bytes
-		/// </summary>
-		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
-		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateRandomKey(int length = 256)
-		{
-			var key = new byte[length > 0 ? length : 256];
-			using (var rng = new RNGCryptoServiceProvider())
-			{
-				rng.GetBytes(key);
-			}
-			return key;
-		}
-
-		/// <summary>
-		/// Generates a key using hash from this array of bytes
-		/// </summary>
-		/// <param name="bytes">The passphrase</param>
-		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
-		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256)
-		{
-			using (var hasher = new HMACBlake2B(length > 0 ? length : 256))
-			{
-				return hasher.ComputeHash(hasher.ComputeHash(bytes));
-			}
-		}
-
-		/// <summary>
-		/// Generates a key using hash from this passphrase
-		/// </summary>
-		/// <param name="passphrase">The passphrase</param>
-		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
-		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateHashKey(this string passphrase, int length = 256) => passphrase.ToBytes().GenerateHashKey(length);
 		#endregion
 
 		#region Hash an array of bytes or a string
@@ -1104,7 +1105,7 @@ namespace net.vieapps.Components.Utility
 		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, string signature) => ECCsecp256k1.Verify(key, hash, ECCsecp256k1.GetSignature(signature));
 		#endregion
 
-		#region Create instance & Generate key-pair of RSA
+		#region Create instance of RSA
 		/// <summary>
 		/// Creates an instance of RSA Algorithm
 		/// </summary>
@@ -1130,70 +1131,6 @@ namespace net.vieapps.Components.Utility
 
 			// return the RSA instance
 			return rsa;
-		}
-
-		/// <summary>
-		/// Generates the key-pairs form this RSA instance
-		/// </summary>
-		/// <returns>
-		/// Collection of strings that presents key-pairs, indexes is:
-		/// - 0: parameters (private included) in JSON format,
-		/// - 1: parameters (private included) in encrypted JSON format,
-		/// - 2: parameters (only public) in JSON format,
-		/// - 3: parameters (only public) in encrypted JSON format,
-		/// - 4: parameters (private included) in PEM format,
-		/// - 5: parameters (only public) in PEM format,
-		/// - 6: Exponent parameter in HEX format
-		/// - 7: Modulus parameter in HEX format
-		/// </returns>
-		public static List<string> GenerateKeyPairs(this RSA rsa)
-		{
-			// create collection of keys
-			var keyPairs = new List<string>();
-
-			// JSON
-			var json = rsa.ExportJsonParameters(true);
-			keyPairs.Add(json);
-			keyPairs.Add(json.Encrypt());
-
-			json = rsa.ExportJsonParameters(false);
-			keyPairs.Add(json);
-			keyPairs.Add(json.Encrypt());
-
-			// PEM
-			keyPairs.Add(rsa.ExportPemParameters(true));
-			keyPairs.Add(rsa.ExportPemParameters(false));
-
-			// exponent & modulus
-			var parameters = rsa.ExportParameters(false);
-			keyPairs.Add(parameters.Modulus.ToHex());
-			keyPairs.Add(parameters.Exponent.ToHex());
-
-			// return the collection of keys
-			return keyPairs;
-		}
-
-		/// <summary>
-		/// Generates the key-pairs of RSA 2048 bits
-		/// </summary>
-		/// <returns>
-		/// Collection of strings that presents key-pairs, indexes is:
-		/// - 0: parameters (private included) in JSON format,
-		/// - 1: parameters (private included) in encrypted JSON format,
-		/// - 2: parameters (only public) in JSON format,
-		/// - 3: parameters (only public) in encrypted JSON format,
-		/// - 4: parameters (private included) in PEM format,
-		/// - 5: parameters (only public) in PEM format,
-		/// - 6: Exponent parameter in HEX format
-		/// - 7: Modulus parameter in HEX format
-		/// </returns>
-		public static List<string> GenerateRSAKeyPairs()
-		{
-			using (var rsa = RSA.Create())
-			{
-				rsa.KeySize = 2048;
-				return rsa.GenerateKeyPairs();
-			}
 		}
 		#endregion
 
@@ -1232,7 +1169,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="rsa"></param>
 		/// <param name="jsonParameters">The JSON string that presents exported parameters</param>
-		public static void ImportJsonParameters(this RSA rsa, string jsonParameters)
+		/// <returns>The RSA instance with imported parameters</returns>
+		public static RSA ImportJsonParameters(this RSA rsa, string jsonParameters)
 		{
 			try
 			{
@@ -1248,6 +1186,7 @@ namespace net.vieapps.Components.Utility
 					InverseQ = parameters.Get<string>("InverseQ")?.Base64ToBytes(),
 					D = parameters.Get<string>("D")?.Base64ToBytes()
 				});
+				return rsa;
 			}
 			catch
 			{
@@ -1402,12 +1341,14 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="rsa"></param>
 		/// <param name="pemParameters">The PEM string that presents exported parameters</param>
-		public static void ImportPemParameters(this RSA rsa, string pemParameters)
+		/// <returns>The RSA instance with imported parameters</returns>
+		public static RSA ImportPemParameters(this RSA rsa, string pemParameters)
 		{
 			if (pemParameters.StartsWith(PEM_PRIVATE_KEY_BEGIN))
 				rsa.ImportPemPrivateParameters(pemParameters);
 			else
 				rsa.ImportPemPublicParameters(pemParameters);
+			return rsa;
 		}
 
 		// from http://www.jensign.com/opensslkey/
