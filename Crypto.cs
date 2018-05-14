@@ -19,13 +19,28 @@ namespace net.vieapps.Components.Utility
 	public static partial class CryptoService
 	{
 
-		#region Generate keys
-		static RNGCryptoServiceProvider RNGcsp;
-
-		static CryptoService() => CryptoService.RNGcsp = new RNGCryptoServiceProvider();
+		#region Default pass-phrase & keys
+		/// <summary>
+		/// The default passphrase for generating a key
+		/// </summary>
+		public const string DEFAULT_PASS_PHRASE = "C804BE43-VIEApps-0B43-Core-442B-Components-B635-Service-FD0616D11B01";
 
 		/// <summary>
-		/// Generates a key using RNGCryptoServiceProvider with random bytes
+		/// The default key (256 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
+		/// </summary>
+		public static readonly byte[] DEFAULT_ENCRYPTION_KEY = DEFAULT_PASS_PHRASE.GenerateHashKey(256);
+
+		/// <summary>
+		/// The default initialization vector (128 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
+		/// </summary>
+		public static readonly byte[] DEFAULT_ENCRYPTION_IV = DEFAULT_PASS_PHRASE.GenerateHashKey(128);
+		#endregion
+
+		#region Generate keys
+		static RNGCryptoServiceProvider RNGcsp { get; } = new RNGCryptoServiceProvider();
+
+		/// <summary>
+		/// Generates a random key with cryptographically strong sequence of random values
 		/// </summary>
 		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
 		/// <returns>An array of bytes that presents the key</returns>
@@ -59,25 +74,8 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GenerateHashKey(this string passphrase, int length = 256) => (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length);
 		#endregion
 
-		#region Default pass-phrase & keys
-		/// <summary>
-		/// The default passphrase for generating a key
-		/// </summary>
-		public const string DEFAULT_PASS_PHRASE = "C804BE43-VIEApps-0B43-Core-442B-Components-B635-Service-FD0616D11B01";
-
-		/// <summary>
-		/// The default key (256 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
-		/// </summary>
-		public static readonly byte[] DEFAULT_ENCRYPTION_KEY = DEFAULT_PASS_PHRASE.GenerateHashKey(256);
-
-		/// <summary>
-		/// The default initialization vector (128 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
-		/// </summary>
-		public static readonly byte[] DEFAULT_ENCRYPTION_IV = DEFAULT_PASS_PHRASE.GenerateHashKey(128);
-		#endregion
-
 		#region Hash an array of bytes or a string
-		static Dictionary<string, Func<HashAlgorithm>> HashFactories = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
+		static Dictionary<string, Func<HashAlgorithm>> HashAlgorithmFactories { get; } = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", () => MD5.Create() },
 			{ "sha1", () => SHA1.Create() },
@@ -94,29 +92,36 @@ namespace net.vieapps.Components.Utility
 		};
 
 		/// <summary>
-		/// Gets a hashser
+		/// Gets a hash algorithm
 		/// </summary>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static HashAlgorithm GetHasher(string mode = "SHA256")
+		public static HashAlgorithm GetHashAlgorithm(string hashAlgorithm = "SHA256")
 		{
-			if (!CryptoService.HashFactories.TryGetValue(mode, out Func<HashAlgorithm> func))
+			if (!CryptoService.HashAlgorithmFactories.TryGetValue(hashAlgorithm, out Func<HashAlgorithm> func))
 				func = () => SHA256.Create();
 			return func();
 		}
 
 		/// <summary>
+		/// Gets a hash algorithm
+		/// </summary>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <returns></returns>
+		public static HashAlgorithm GetHasher(string hashAlgorithm = "SHA256") => CryptoService.GetHashAlgorithm(hashAlgorithm);
+
+		/// <summary>
 		/// Gets hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHash(this byte[] bytes, string mode = "SHA256")
+		public static byte[] GetHash(this byte[] bytes, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
-			using (var hasher = CryptoService.GetHasher(mode))
+			using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
 			{
 				return hasher.ComputeHash(bytes);
 			}
@@ -126,9 +131,9 @@ namespace net.vieapps.Components.Utility
 		/// Gets hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHash(this string @string, string mode = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHash(mode);
+		public static byte[] GetHash(this string @string, string hashAlgorithm = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHash(hashAlgorithm);
 
 		/// <summary>
 		/// Gets MD5 hash of this string
@@ -316,21 +321,21 @@ namespace net.vieapps.Components.Utility
 		/// Gets the double-hash of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="firstMode">Mode of the first hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="secondMode">Mode of the second hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="firstAlgorithm">Name of the first hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="secondAlgorithm">Name of the second hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetDoubleHash(this byte[] bytes, string firstMode = "SHA256", string secondMode = null)
+		public static byte[] GetDoubleHash(this byte[] bytes, string firstAlgorithm = "SHA256", string secondAlgorithm = null)
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
-			using (var firstHasher = CryptoService.GetHasher(firstMode))
+			using (var firstHasher = CryptoService.GetHashAlgorithm(firstAlgorithm))
 			{
 				var firstHash = firstHasher.ComputeHash(bytes);
-				if (string.IsNullOrWhiteSpace(secondMode) || secondMode.IsEquals(firstMode))
+				if (string.IsNullOrWhiteSpace(secondAlgorithm) || secondAlgorithm.IsEquals(firstAlgorithm))
 					return firstHasher.ComputeHash(firstHash);
 				else
-					using (var secondHasher = CryptoService.GetHasher(secondMode))
+					using (var secondHasher = CryptoService.GetHashAlgorithm(secondAlgorithm))
 					{
 						return secondHasher.ComputeHash(firstHash);
 					}
@@ -341,17 +346,19 @@ namespace net.vieapps.Components.Utility
 		/// Gets the double-hash of this string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="firstMode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="secondMode">Mode of the second hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="firstAlgorithm">Name of the first hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="secondAlgorithm">Name of the second hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetDoubleHash(this string @string, string firstMode = "SHA256", string secondMode = null) => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetDoubleHash(firstMode, secondMode);
+		public static byte[] GetDoubleHash(this string @string, string firstAlgorithm = "SHA256", string secondAlgorithm = null)
+			=> string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetDoubleHash(firstAlgorithm, secondAlgorithm);
 
 		/// <summary>
 		/// Gets the double-hash of this array of bytes with first hash is SHA256, second hash is RIPEMD160
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <returns></returns>
-		public static byte[] GetHash160(this byte[] bytes) => bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash("SHA256", "RIPEMD160");
+		public static byte[] GetHash160(this byte[] bytes)
+			=> bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash("SHA256", "RIPEMD160");
 
 		/// <summary>
 		/// Gets the double-hash of this string with first hash is SHA256, second hash is RIPEMD160
@@ -373,50 +380,58 @@ namespace net.vieapps.Components.Utility
 			}
 		}
 
-		static Dictionary<string, Func<byte[], HMAC>> HmacHashFactories = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
+		static Dictionary<string, Func<byte[], HMAC>> HmacHashAlgorithmFactories { get; } = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
-			{ "md5", (key) => new HMACMD5(key) },
-			{ "sha1", (key) => new HMACSHA1(key) },
-			{ "sha256", (key) => new HMACSHA256(key) },
-			{ "sha384", (key) => new HMACSHA384(key) },
-			{ "sha512", (key) => new HMACSHA512(key) },
-			{ "ripemd", (key) => new HMACRIPEMD160(key) },
-			{ "ripemd160", (key) => new HMACRIPEMD160(key) },
-			{ "blake", (key) => new HMACBlake2B(key.GetBlakeKey(), 256) },
-			{ "blake128", (key) => new HMACBlake2B(key.GetBlakeKey(), 128) },
-			{ "blake256", (key) => new HMACBlake2B(key.GetBlakeKey(), 256) },
-			{ "blake384", (key) => new HMACBlake2B(key.GetBlakeKey(), 384) },
-			{ "blake512", (key) => new HMACBlake2B(key.GetBlakeKey(), 512) },
+			{ "md5", key => new HMACMD5(key) },
+			{ "sha1", key => new HMACSHA1(key) },
+			{ "sha256", key => new HMACSHA256(key) },
+			{ "sha384", key => new HMACSHA384(key) },
+			{ "sha512", key => new HMACSHA512(key) },
+			{ "ripemd", key => new HMACRIPEMD160(key) },
+			{ "ripemd160", key => new HMACRIPEMD160(key) },
+			{ "blake", key => new HMACBlake2B(key.GetBlakeKey(), 256) },
+			{ "blake128", key => new HMACBlake2B(key.GetBlakeKey(), 128) },
+			{ "blake256", key => new HMACBlake2B(key.GetBlakeKey(), 256) },
+			{ "blake384", key => new HMACBlake2B(key.GetBlakeKey(), 384) },
+			{ "blake512", key => new HMACBlake2B(key.GetBlakeKey(), 512) },
 		};
 
 		/// <summary>
 		/// Gets a HMAC hashser
 		/// </summary>
 		/// <param name="key"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static HMAC GetHMACHasher(byte[] key, string mode = "SHA256")
+		public static HMAC GetHMACHashAlgorithm(byte[] key, string hashAlgorithm = "SHA256")
 		{
-			if (!CryptoService.HmacHashFactories.TryGetValue(mode, out Func<byte[], HMAC> func))
+			if (!CryptoService.HmacHashAlgorithmFactories.TryGetValue(hashAlgorithm, out Func<byte[], HMAC> func))
 				func = (k) => new HMACSHA256(k);
 			return func(key);
 		}
+
+		/// <summary>
+		/// Gets a HMAC hashser
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <returns></returns>
+		public static HMAC GetHMACHasher(byte[] key, string hashAlgorithm = "SHA256") => CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm);
 
 		/// <summary>
 		/// Gets HMAC of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string mode = "SHA256")
+		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 			else if (key == null || key.Length < 1)
 				throw new ArgumentException("Invalid", nameof(key));
 
-			using (var hasher = CryptoService.GetHMACHasher(key, mode))
+			using (var hasher = CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm))
 			{
 				return hasher.ComputeHash(bytes);
 			}
@@ -427,28 +442,28 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, byte[] key, string mode = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHMACHash(key, mode);
+		public static byte[] GetHMACHash(this string @string, byte[] key, string hashAlgorithm = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHMACHash(key, hashAlgorithm);
 
 		/// <summary>
 		/// Gets HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, string key, string mode = "SHA256") => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), mode);
+		public static byte[] GetHMACHash(this string @string, string key, string hashAlgorithm = "SHA256") => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), hashAlgorithm);
 
 		/// <summary>
 		/// Gets HMAC of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key">Keys for hashing (means salt)</param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="toHex">true to get hexa-string, otherwise get base64-string</param>
 		/// <returns></returns>
-		public static string GetHMAC(this string @string, string key, string mode = null, bool toHex = true) => toHex ? @string.GetHMACHash(key, mode).ToHex() : @string.GetHMACHash(key, mode).ToBase64();
+		public static string GetHMAC(this string @string, string key, string hashAlgorithm = null, bool toHex = true) => toHex ? @string.GetHMACHash(key, hashAlgorithm).ToHex() : @string.GetHMACHash(key, hashAlgorithm).ToBase64();
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -756,22 +771,26 @@ namespace net.vieapps.Components.Utility
 		/// Gets the check-sum of this array of bytes using double-hash
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
-		public static byte[] GetCheckSum(this byte[] bytes, string mode = "SHA256", int length = 4) => bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash(mode).Take(0, length);
+		public static byte[] GetCheckSum(this byte[] bytes, string hashAlgorithm = "SHA256", int length = 4)
+			=> bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
 
 		/// <summary>
 		/// Gets the check-sum of this string using double-hash
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="mode">Mode of the hasher (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
-		public static byte[] GetCheckSum(this string @string, string mode = "SHA256", int length = 4) => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetCheckSum(mode, length);
+		public static byte[] GetCheckSum(this string @string, string hashAlgorithm = "SHA256", int length = 4)
+			=> string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetCheckSum(hashAlgorithm, length);
 		#endregion
 
 		#region Encrypt/Decrypt (using AES)
+		static AesCryptoServiceProvider AEScsp { get; } = new AesCryptoServiceProvider();
+
 		/// <summary>
 		/// Encrypts by specific key and initialization vector using AES
 		/// </summary>
@@ -784,12 +803,9 @@ namespace net.vieapps.Components.Utility
 			if (data == null || data.Length < 1)
 				return null;
 
-			using (var crypto = new AesCryptoServiceProvider())
+			using (var encryptor = CryptoService.AEScsp.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
 			{
-				using (var encryptor = crypto.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-				{
-					return encryptor.TransformFinalBlock(data, 0, data.Length);
-				}
+				return encryptor.TransformFinalBlock(data, 0, data.Length);
 			}
 		}
 
@@ -824,12 +840,9 @@ namespace net.vieapps.Components.Utility
 			if (data == null || data.Length < 1)
 				return null;
 
-			using (var crypto = new AesCryptoServiceProvider())
+			using (var decryptor = CryptoService.AEScsp.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
 			{
-				using (var decryptor = crypto.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-				{
-					return decryptor.TransformFinalBlock(data, 0, data.Length);
-				}
+				return decryptor.TransformFinalBlock(data, 0, data.Length);
 			}
 		}
 
@@ -880,35 +893,6 @@ namespace net.vieapps.Components.Utility
 					: rsa.Encrypt(data.ToBytes()).ToBase64();
 
 		/// <summary>
-		/// Encrypts the data by RSA
-		/// </summary>
-		/// <param name="key"></param>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static byte[] RSAEncrypt(string key, byte[] data)
-		{
-			using (var rsa = CryptoService.CreateRSAInstance(key))
-			{
-				return rsa.Encrypt(data);
-			}
-		}
-
-		/// <summary>
-		/// Encrypts the data by RSA
-		/// </summary>
-		/// <param name="key"></param>
-		/// <param name="data"></param>
-		/// <param name="toHex"></param>
-		/// <returns></returns>
-		public static string RSAEncrypt(string key, string data, bool toHex = false)
-		{
-			using (var rsa = CryptoService.CreateRSAInstance(key))
-			{
-				return rsa.Encrypt(data, toHex);
-			}
-		}
-
-		/// <summary>
 		/// Decrypts the data by RSA
 		/// </summary>
 		/// <param name="rsa"></param>
@@ -932,35 +916,6 @@ namespace net.vieapps.Components.Utility
 				: isHex
 					? rsa.Decrypt(data.HexToBytes()).GetString()
 					: rsa.Decrypt(data.Base64ToBytes()).GetString();
-
-		/// <summary>
-		/// Decrypts the data by RSA
-		/// </summary>
-		/// <param name="key"></param>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public static byte[] RSADecrypt(string key, byte[] data)
-		{
-			using (var rsa = CryptoService.CreateRSAInstance(key))
-			{
-				return rsa.Decrypt(data);
-			}
-		}
-
-		/// <summary>
-		/// Decrypts the data by RSA
-		/// </summary>
-		/// <param name="key"></param>
-		/// <param name="data"></param>
-		/// <param name="isHex"></param>
-		/// <returns></returns>
-		public static string RSADecrypt(string key, string data, bool isHex = false)
-		{
-			using (var rsa = CryptoService.CreateRSAInstance(key))
-			{
-				return rsa.Decrypt(data, isHex);
-			}
-		}
 		#endregion
 
 		#region Sign/Verify (using RSA)
@@ -1111,27 +1066,34 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key">Key for the RSA instance, must be formated in JSON or PEM</param>
 		/// <returns>An instance of RSA</returns>
-		public static RSA CreateRSAInstance(string key)
+		public static RSA CreateRSA(string key)
 		{
-			// check key
-			if (string.IsNullOrWhiteSpace(key))
-				return null;
-
 			// create new instance & set key size
 			var rsa = RSA.Create();
 			rsa.KeySize = 2048;
 
-			// import PEM
-			if (key.StartsWith(PEM_PRIVATE_KEY_BEGIN) || key.StartsWith(PEM_PUBLIC_KEY_BEGIN))
-				rsa.ImportPemParameters(key);
+			// import key
+			if (!string.IsNullOrWhiteSpace(key))
+			{
+				// import PEM
+				if (key.StartsWith(PEM_PRIVATE_KEY_BEGIN) || key.StartsWith(PEM_PUBLIC_KEY_BEGIN))
+					rsa.ImportPemParameters(key);
 
-			// import JSON
-			else
-				rsa.ImportJsonParameters(key);
+				// import JSON
+				else
+					rsa.ImportJsonParameters(key);
+			}
 
 			// return the RSA instance
 			return rsa;
 		}
+
+		/// <summary>
+		/// Creates an instance of RSA Algorithm
+		/// </summary>
+		/// <param name="key">Key for the RSA instance, must be formated in JSON or PEM</param>
+		/// <returns>An instance of RSA</returns>
+		public static RSA CreateRSAInstance(string key) => CryptoService.CreateRSA(key);
 		#endregion
 
 		#region Export/Import parameters of RSA with JSON format
@@ -1681,7 +1643,7 @@ namespace net.vieapps.Components.Utility
 	// Replacement of System.Security.Cryptography.RIPEMD160 => [SshNet.Security.Cryptography - https://github.com/sshnet/Cryptography]
 
 	#region RIPEMD160 Base
-	internal interface IHashProvider : IDisposable
+	internal interface IRIPEMD160HashProvider : IDisposable
 	{
 		/// <summary>
 		/// Gets the size, in bits, of the computed hash code.
@@ -1717,7 +1679,7 @@ namespace net.vieapps.Components.Utility
 		byte[] Hash { get; }
 
 		/// <summary>
-		/// Resets an implementation of the <see cref="IHashProvider"/> to its initial state.
+		/// Resets an implementation of the <see cref="IRIPEMD160HashProvider"/> to its initial state.
 		/// </summary>
 		void Reset();
 
@@ -1790,7 +1752,7 @@ namespace net.vieapps.Components.Utility
 		byte[] ComputeHash(byte[] buffer);
 	}
 
-	internal abstract class HashProviderBase : IHashProvider
+	internal abstract class RIPEMD160HashProviderBase : IRIPEMD160HashProvider
 	{
 		bool _disposed;
 		byte[] _hashValue;
@@ -1915,7 +1877,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Releases all resources used by the current instance of the <see cref="HashProviderBase"/> class.
+		/// Releases all resources used by the current instance of the <see cref="RIPEMD160HashProviderBase"/> class.
 		/// </summary>
 		public void Dispose()
 		{
@@ -1924,7 +1886,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Releases the unmanaged resources used by the <see cref="HashProviderBase"/> and optionally releases the managed resources.
+		/// Releases the unmanaged resources used by the <see cref="RIPEMD160HashProviderBase"/> and optionally releases the managed resources.
 		/// </summary>
 		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
 		protected virtual void Dispose(bool disposing)
@@ -1959,7 +1921,7 @@ namespace net.vieapps.Components.Utility
 		public abstract int OutputBlockSize { get; }
 
 		/// <summary>
-		/// Resets an implementation of <see cref="HashProviderBase"/> to its initial state.
+		/// Resets an implementation of <see cref="RIPEMD160HashProviderBase"/> to its initial state.
 		/// </summary>
 		public abstract void Reset();
 
@@ -1980,7 +1942,7 @@ namespace net.vieapps.Components.Utility
 		public abstract byte[] HashFinal();
 	}
 
-	internal class RIPEMD160HashProvider : HashProviderBase
+	internal class RIPEMD160HashProvider : RIPEMD160HashProviderBase
 	{
 		const int DigestSize = 20;
 
@@ -2502,7 +2464,7 @@ namespace net.vieapps.Components.Utility
 			return new RIPEMD160();
 		}
 
-		IHashProvider _hashProvider;
+		IRIPEMD160HashProvider _hashProvider;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="RIPEMD160"/> class.
@@ -2573,13 +2535,12 @@ namespace net.vieapps.Components.Utility
 	#endregion
 
 	#region HMAC RIPEMD160
-	// SshNet.Security.Cryptography - https://github.com/sshnet/Cryptography
 	/// <summary>
 	/// Computes a Hash-based Message Authentication Code (HMAC) by using the <see cref="RIPEMD160"/> hash function.
 	/// </summary>
 	public sealed class HMACRIPEMD160 : HMAC
 	{
-		IHashProvider _hashProvider;
+		IRIPEMD160HashProvider _hashProvider;
 		byte[] _innerPadding;
 		byte[] _outerPadding;
 		readonly int _hashSize;
@@ -2978,12 +2939,12 @@ namespace net.vieapps.Components.Utility
 
 				using (var cryptor = this.Rijndael.CreateEncryptor())
 				{
-					var cipherData = cryptor.TransformFinalBlock(data, 0, data.Length);
+					var encrypted = cryptor.TransformFinalBlock(data, 0, data.Length);
 
-					var cipher = new byte[cipherData.Length + 65 + 16];
+					var cipher = new byte[encrypted.Length + 65 + 16];
 					Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
 					Buffer.BlockCopy(Rijndael.IV, 0, cipher, 65, 16);
-					Buffer.BlockCopy(cipherData, 0, cipher, 65 + 16, cipherData.Length);
+					Buffer.BlockCopy(encrypted, 0, cipher, 65 + 16, encrypted.Length);
 					return cipher;
 				}
 			}
@@ -3018,9 +2979,9 @@ namespace net.vieapps.Components.Utility
 		{
 			public BigInteger[] Sign(BigInteger privateKey, byte[] hash, BigInteger? tempKey = null)
 			{
-				var hashBigIn = hash.ToUnsignedBigInteger();
 				while (tempKey == null || tempKey.Value.IsZero || tempKey >= ECCsecp256k1.N)
 					tempKey = new BigInteger(CryptoService.GenerateRandomKey(32).Concat(new byte[1] { 0 }));
+				var hashBigInt = hash.ToUnsignedBigInteger();
 
 				for (int counter = 0; counter < 100; counter++)
 				{
@@ -3028,12 +2989,12 @@ namespace net.vieapps.Components.Utility
 					if (r.IsZero)
 						continue;
 
-					var ss = (hashBigIn + r * privateKey);
+					var ss = (hashBigInt + r * privateKey);
 					var s = (ss * (tempKey.Value.ModInverse(ECCsecp256k1.N))) % ECCsecp256k1.N;
 					if (s.IsZero)
 						continue;
 
-					return new BigInteger[] { r, s };
+					return new[] { r, s };
 				}
 
 				throw new Exception("Unable to sign");
@@ -3130,7 +3091,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="compressed">Do compress the public address</param>
 		/// <param name="prefix">The byte that presents prefix of the public address</param>
 		/// <returns></returns>
-		public static string GeneratePublicAddress(Point publicKey, bool compressed = true, byte prefix = 0) => new[] { prefix }.Concat(publicKey.Encode(compressed).GetHash160()).Base58Encode();
+		public static string GeneratePublicAddress(Point publicKey, bool compressed = true, byte prefix = 0)
+			=> new[] { prefix }.Concat(publicKey.Encode(compressed).GetHash160()).Base58Encode();
 
 		/// <summary>
 		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3139,7 +3101,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="compressed">Do compress the address</param>
 		/// <param name="prefix">The byte that presents prefix of the public address</param>
 		/// <returns></returns>
-		public static string GeneratePublicAddress(byte[] publicKey, bool compressed = true, byte prefix = 0) => ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
+		public static string GeneratePublicAddress(byte[] publicKey, bool compressed = true, byte prefix = 0)
+			=> ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
 
 		/// <summary>
 		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3148,7 +3111,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="compressed">Do compress the address</param>
 		/// <param name="prefix">The byte that presents prefix of the public address</param>
 		/// <returns></returns>
-		public static string GeneratePublicAddress(string publicKey, bool compressed = true, byte prefix = 0) => ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
+		public static string GeneratePublicAddress(string publicKey, bool compressed = true, byte prefix = 0)
+			=> ECCsecp256k1.GeneratePublicAddress(ECCsecp256k1.GetPublicKey(publicKey), compressed, prefix);
 		#endregion
 
 		#region Encrypt & Decrypt
@@ -3207,18 +3171,19 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key">The private key used to to sign</param>
 		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm used to compute hash(md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(BigInteger key, byte[] data, string hashMode) => ECCsecp256k1.Sign(key, data.GetHash(hashMode));
+		public static BigInteger[] Sign(BigInteger key, byte[] data, string hashAlgorithm) => ECCsecp256k1.Sign(key, data.GetHash(hashAlgorithm));
 
 		/// <summary>
 		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="key">The private key used to to sign</param>
 		/// <param name="data">The data to compute hash</param>
-		/// <param name="hashMode">The hash mode (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm used to compute hash(md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(byte[] key, byte[] data, string hashMode) => ECCsecp256k1.Sign(ECCsecp256k1.GetPrivateKey(key), data, hashMode);
+		public static BigInteger[] Sign(byte[] key, byte[] data, string hashAlgorithm)
+			=> ECCsecp256k1.Sign(ECCsecp256k1.GetPrivateKey(key), data, hashAlgorithm);
 
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3227,7 +3192,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point key, byte[] hash, BigInteger[] signature) => key == null || signature == null || signature.Length < 2 ? false : ECCsecp256k1.ECCDSA.Verify(key, hash, signature[0], signature[1]);
+		public static bool Verify(Point key, byte[] hash, BigInteger[] signature)
+			=> key == null || signature == null || signature.Length < 2 ? false : ECCsecp256k1.ECCDSA.Verify(key, hash, signature[0], signature[1]);
 
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -3236,27 +3202,30 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] key, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(key), hash, signature);
+		public static bool Verify(byte[] key, byte[] hash, BigInteger[] signature)
+			=> ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(key), hash, signature);
 
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="key">The public key used to verify</param>
 		/// <param name="data">The data to compute hash to verify with signature</param>
-		/// <param name="hashMode">The hash mode</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm used to compute hash(md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(Point key, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(key, data.GetHash(hashMode), signature);
+		public static bool Verify(Point key, byte[] data, string hashAlgorithm, BigInteger[] signature)
+			=> ECCsecp256k1.Verify(key, data.GetHash(hashAlgorithm), signature);
 
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
 		/// </summary>
 		/// <param name="key">The public key used to verify</param>
 		/// <param name="data">The data to compute hash to verify with signature</param>
-		/// <param name="hashMode">The hash mode</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm used to compute hash(md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(byte[] key, byte[] data, string hashMode, BigInteger[] signature) => ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(key), data, hashMode, signature);
+		public static bool Verify(byte[] key, byte[] data, string hashAlgorithm, BigInteger[] signature)
+			=> ECCsecp256k1.Verify(ECCsecp256k1.GetPublicKey(key), data, hashAlgorithm, signature);
 		#endregion
 
 		#region Signature conversions
