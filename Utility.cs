@@ -1557,7 +1557,7 @@ namespace net.vieapps.Components.Utility
 		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
 		{
 			return stream.TryGetBuffer(out ArraySegment<byte> buffer)
-				? new ArraySegment<byte>(buffer.Array, buffer.Offset, (int)stream.Position)
+				? buffer
 				: stream.ToArray().ToArraySegment();
 		}
 
@@ -2226,22 +2226,23 @@ namespace net.vieapps.Components.Utility
 		/// <param name="stream"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static byte[] Compress(this Stream stream, string mode = "deflate")
+		public static ArraySegment<byte> Compress(this Stream stream, string mode = "deflate")
 		{
 			using (var output = new MemoryStream())
 			{
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
 				{
+					if (stream.CanSeek)
+						stream.Seek(0, SeekOrigin.Begin);
 					var buffer = new byte[TextFileReader.BufferSize];
 					var read = stream.Read(buffer, 0, buffer.Length);
 					while (read > 0)
 					{
 						compressor.Write(buffer, 0, read);
-						compressor.Flush();
 						read = stream.Read(buffer, 0, buffer.Length);
 					}
-					return output.ToBytes();
 				}
+				return output.ToArraySegment();
 			}
 		}
 
@@ -2252,41 +2253,25 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<byte[]> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<ArraySegment<byte>> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
 			using (var output = new MemoryStream())
 			{
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
 				{
+					if (stream.CanSeek)
+						stream.Seek(0, SeekOrigin.Begin);
 					var buffer = new byte[TextFileReader.BufferSize];
-					var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					var read = stream is MemoryStream
+						? stream.Read(buffer, 0, buffer.Length)
+						:  await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 					while (read > 0)
 					{
 						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-						await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
 						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 					}
-					return output.ToBytes();
 				}
-			}
-		}
-
-		/// <summary>
-		/// Compresses the array of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
-		/// <returns></returns>
-		public static byte[] Compress(this byte[] data, string mode = "deflate")
-		{
-			using (var output = new MemoryStream())
-			{
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
-				{
-					compressor.Write(data, 0, data.Length);
-					compressor.Flush();
-					return output.ToBytes();
-				}
+				return output.ToArraySegment();
 			}
 		}
 
@@ -2298,8 +2283,23 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			return data.Take().Compress(mode).ToArraySegment();
+			using (var output = new MemoryStream())
+			{
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				{
+					compressor.Write(data.Array, data.Offset, data.Count);
+				}
+				return output.ToArraySegment();
+			}
 		}
+
+		/// <summary>
+		/// Compresses the array of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <returns></returns>
+		public static byte[] Compress(this byte[] data, string mode = "deflate") => data.ToArraySegment().Compress(mode).ToBytes();
 
 		/// <summary>
 		/// Decompresses the stream
@@ -2336,7 +2336,9 @@ namespace net.vieapps.Components.Utility
 			{
 				var output = new byte[0];
 				var buffer = new byte[TextFileReader.BufferSize];
-				var read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				var read = stream is MemoryStream
+					? decompressor.Read(buffer, 0, buffer.Length)
+					: await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 				while (read > 0)
 				{
 					output = output.Concat(buffer.Take(0, read));
