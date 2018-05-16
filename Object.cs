@@ -982,16 +982,37 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Serializes this string to JSON object (with default settings of Json.NET Serializer)
+		/// </summary>
+		/// <param name="json">The JSON string to serialize to JSON object</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <returns></returns>
+		public static JToken ToJson(this string json, Action<JToken> onPreCompleted = null)
+		{
+			var token = json.Trim().StartsWith("[")
+				? JArray.Parse(json.Trim()) as JToken
+				: json.Trim().StartsWith("{")
+					? JObject.Parse(json.Trim()) as JToken
+					: new JValue(json.Trim()) as JToken;
+			onPreCompleted?.Invoke(token);
+			return token;
+		}
+
+		/// <summary>
 		/// Serializes this object to JSON object (with default settings of Json.NET Serializer)
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object">The object to serialize to JSON</param>
+		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static JToken ToJson<T>(this T @object)
+		public static JToken ToJson<T>(this T @object, Action<JToken> onPreCompleted = null)
 		{
-			// by-pass on JObject or JArray
-			if (@object is JObject || @object is JArray)
+			// by-pass on JSON Token
+			if (@object is JObject || @object is JArray || @object is JValue || @object is JToken)
+			{
+				onPreCompleted?.Invoke(@object as JToken);
 				return @object as JToken;
+			}
 
 			// generate
 			JToken json = null;
@@ -1075,25 +1096,7 @@ namespace net.vieapps.Components.Utility
 				json = new JValue(@object);
 
 			// return the JSON
-			return json;
-		}
-
-		/// <summary>
-		/// Serializes this object to JSON object (with default settings of Json.NET Serializer)
-		/// </summary>
-		/// <typeparam name="T">Type of the object</typeparam>
-		/// <param name="object">The object to serialize to JSON</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
-		/// <returns></returns>
-		public static JToken ToJson<T>(this T @object, Action<JToken> onPreCompleted)
-		{
-			// serialize
-			var json = @object.ToJson();
-
-			// run the handler
 			onPreCompleted?.Invoke(json);
-
-			// return the JSON
 			return json;
 		}
 
@@ -1138,20 +1141,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null)
-		{
-			// deserialize
-			var token = json.Trim().StartsWith("[")
-				? JArray.Parse(json) as JToken
-				: JObject.Parse(json) as JToken;
-			var @object = token.FromJson<T>(copy);
-
-			// run the handler
-			onPreCompleted?.Invoke(@object, token);
-
-			// return object
-			return @object;
-		}
+		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null) => json.ToJson().FromJson<T>(copy);
 		#endregion
 
 		#region XML Conversions
