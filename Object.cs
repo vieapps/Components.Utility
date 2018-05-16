@@ -924,7 +924,7 @@ namespace net.vieapps.Components.Utility
 
 			// the object is serializable
 			if (@object.GetType().IsSerializable)
-				using (var stream = new MemoryStream())
+				using (var stream = UtilityService.CreateMemoryStream())
 				{
 					var formatter = new BinaryFormatter();
 					formatter.Serialize(stream, @object);
@@ -1166,7 +1166,7 @@ namespace net.vieapps.Components.Utility
 		{
 			// serialize
 			XElement xml = null;
-			using (var stream = new MemoryStream())
+			using (var stream = UtilityService.CreateMemoryStream())
 			{
 				using (var writer = new StreamWriter(stream))
 				{
@@ -1359,7 +1359,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string Transfrom(this XmlDocument document, string xmlStylesheet, bool enableScript = true)
 		{
-			using (var stream = new MemoryStream(xmlStylesheet.ToBytes()))
+			using (var stream = UtilityService.CreateMemoryStream(xmlStylesheet.ToBytes()))
 			{
 				using (var reader = new XmlTextReader(stream))
 				{

@@ -30,7 +30,7 @@ namespace net.vieapps.Components.Utility
 				throw new InformationNotFoundException("DataSet must be not null and contains at least one table");
 
 			// write dataset into stream
-			var stream = new MemoryStream();
+			var stream = UtilityService.CreateMemoryStream();
 			using (var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook, true))
 			{
 				ExcelService.WriteExcelDocument(dataset, document);
@@ -46,9 +46,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>A stream that contains the Excel document</returns>
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>
 		public static Task<MemoryStream> SaveAsExcelAsync(this DataSet dataset, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => dataset.SaveAsExcel(), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => dataset.SaveAsExcel(), cancellationToken);
 
 		#region Write a data-set to Excel document
 		static void WriteExcelDocument(DataSet dataset, SpreadsheetDocument spreadsheet)

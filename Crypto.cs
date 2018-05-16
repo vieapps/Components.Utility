@@ -1187,11 +1187,11 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var results = new StringWriter())
 			{
-				using (var stream = new MemoryStream())
+				using (var stream = UtilityService.CreateMemoryStream())
 				{
 					var writer = new BinaryWriter(stream);
 					writer.Write((byte)0x30); // SEQUENCE
-					using (var innerStream = new MemoryStream())
+					using (var innerStream = UtilityService.CreateMemoryStream())
 					{
 						var parameters = rsa.ExportParameters(true);
 						var innerWriter = new BinaryWriter(innerStream);
@@ -1237,11 +1237,11 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var results = new StringWriter())
 			{
-				using (var stream = new MemoryStream())
+				using (var stream = UtilityService.CreateMemoryStream())
 				{
 					var writer = new BinaryWriter(stream);
 					writer.Write((byte)0x30); // SEQUENCE
-					using (var innerStream = new MemoryStream())
+					using (var innerStream = UtilityService.CreateMemoryStream())
 					{
 						var innerWriter = new BinaryWriter(innerStream);
 						innerWriter.Write((byte)0x30); // SEQUENCE
@@ -1257,12 +1257,12 @@ namespace net.vieapps.Components.Utility
 						CryptoService.EncodeLength(innerWriter, 0);
 						innerWriter.Write((byte)0x03); // BIT STRING
 
-						using (var bitStringStream = new MemoryStream())
+						using (var bitStringStream = UtilityService.CreateMemoryStream())
 						{
 							var bitStringWriter = new BinaryWriter(bitStringStream);
 							bitStringWriter.Write((byte)0x00); // # of unused bits
 							bitStringWriter.Write((byte)0x30); // SEQUENCE
-							using (var paramsStream = new MemoryStream())
+							using (var paramsStream = UtilityService.CreateMemoryStream())
 							{
 								var parameters = rsa.ExportParameters(false);
 								var paramsWriter = new BinaryWriter(paramsStream);
@@ -1331,7 +1331,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// set up stream to decode the asn.1 encoded RSA key
-			using (var stream = new MemoryStream(key))
+			using (var stream = UtilityService.CreateMemoryStream(key))
 			{
 				// wrap Memory Stream with BinaryReader for easy reading
 				using (var reader = new BinaryReader(stream))
@@ -1422,7 +1422,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// set up stream to read the asn.1 encoded SubjectPublicKeyInfo blob
-			using (var stream = new MemoryStream(key))
+			using (var stream = UtilityService.CreateMemoryStream(key))
 			{
 				// wrap Memory Stream with BinaryReader for easy reading
 				using (var reader = new BinaryReader(stream))

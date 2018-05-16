@@ -38,22 +38,22 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The string that presents UUID with hyphens (128 bits)</returns>
 		public static string GetUUID(string uuid = null)
 		{
-			var id = string.IsNullOrWhiteSpace(uuid)
-				? Guid.NewGuid().ToString("N").ToLower()
-				: uuid.Trim();
-
-			if (!string.IsNullOrWhiteSpace(uuid) && uuid.IndexOf("-") < 0)
+			if (!string.IsNullOrWhiteSpace(uuid))
 			{
+				uuid = uuid.Trim();
+				if (uuid.IndexOf("-") > -1)
+					return uuid;
+
 				var pos = 8;
-				id = id.Insert(pos, "-");
+				uuid = uuid.Insert(pos, "-");
 				for (var index = 0; index < 3; index++)
 				{
 					pos += 5;
-					id = id.Insert(pos, "-");
+					uuid = uuid.Insert(pos, "-");
 				}
+				return uuid;
 			}
-
-			return id;
+			return Guid.NewGuid().ToString("N").ToLower();
 		}
 
 		/// <summary>
@@ -63,24 +63,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">BLAKE or MD5</param>
 		/// <returns></returns>
 		public static string GenerateUUID(this string @string, string mode = "MD5")
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? Guid.NewGuid().ToString("N").ToLower()
 				: !string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake")
 					? @string.GetBLAKE128()
 					: @string.GetMD5();
-		}
 
 		/// <summary>
 		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
 		/// </summary>
-		public static string NewUUID
-		{
-			get
-			{
-				return UtilityService.GetUUID();
-			}
-		}
+		public static string NewUUID => UtilityService.GetUUID();
 
 		static string _BlankUUID = null;
 
@@ -88,13 +80,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the blank UUID
 		/// </summary>
 		/// <returns></returns>
-		public static string BlankUUID
-		{
-			get
-			{
-				return UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
-			}
-		}
+		public static string BlankUUID => UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
 
 		static Regex HexRegex = new Regex("[^0-9a-fA-F]+");
 
@@ -105,13 +91,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onlyHex">true to only allow hexa characters</param>
 		/// <returns>true if it is valid; otherwise false.</returns>
 		public static bool IsValidUUID(this string uuid, bool onlyHex = true)
-		{
-			return string.IsNullOrWhiteSpace(uuid) || !uuid.Length.Equals(32)
+			=> string.IsNullOrWhiteSpace(uuid) || !uuid.Length.Equals(32)
 				? false
 				: onlyHex
 					? UtilityService.HexRegex.Replace(uuid, "").Equals(uuid)
 					: !uuid.Contains(" ") && !uuid.Contains(";");
-		}
 		#endregion
 
 		#region Random number
@@ -123,10 +107,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="min"></param>
 		/// <param name="max"></param>
 		/// <returns></returns>
-		public static int GetRandomNumber(int min = 0, int max = Int32.MaxValue)
-		{
-			return UtilityService._Random.Next(min, max);
-		}
+		public static int GetRandomNumber(int min = 0, int max = Int32.MaxValue) => UtilityService._Random.Next(min, max);
 
 		static RandomBigInteger _RandomBigInteger = new RandomBigInteger();
 
@@ -135,10 +116,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="length">The number of random bits to generate.</param>
 		/// <returns></returns>
-		public static BigInteger GetRandomNumber(int length)
-		{
-			return UtilityService._RandomBigInteger.Next(length);
-		}
+		public static BigInteger GetRandomNumber(int length) => UtilityService._RandomBigInteger.Next(length);
 		#endregion
 
 		#region Async extensions to support cancellation token
@@ -487,35 +465,17 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets an user-agent as spider-bot
 		/// </summary>
-		public static string SpiderUserAgent
-		{
-			get
-			{
-				return UtilityService.UserAgents[UtilityService.GetRandomNumber(0, UtilityService.UserAgents.Length - 1)];
-			}
-		}
+		public static string SpiderUserAgent => UtilityService.UserAgents[UtilityService.GetRandomNumber(0, UtilityService.UserAgents.Length - 1)];
 
 		/// <summary>
 		/// Gets an user-agent as mobile browser
 		/// </summary>
-		public static string MobileUserAgent
-		{
-			get
-			{
-				return "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A356 Safari/604.1";
-			}
-		}
+		public static string MobileUserAgent => "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A356 Safari/604.1";
 
 		/// <summary>
 		/// Gets an user-agent as desktop browser
 		/// </summary>
-		public static string DesktopUserAgent
-		{
-			get
-			{
-				return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36";
-			}
-		}
+		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36";
 
 		/// <summary>
 		/// Gets the web credential
@@ -697,9 +657,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, UtilityService.GetWebCredential(uri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol), proxy, cancellationToken);
-		}
+			=> UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, referUri, UtilityService.GetWebCredential(uri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol), proxy, cancellationToken);
 
 		/// <summary>
 		/// Gets the web resource stream
@@ -720,9 +678,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return (await UtilityService.GetWebResponseAsync(method, uri, headers, body, contentType, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
-		}
+			=> (await UtilityService.GetWebResponseAsync(method, uri, headers, body, contentType, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
 
 		/// <summary>
 		/// Gets the web resource stream
@@ -732,9 +688,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<Stream> GetWebResourceAsync(string uri, string referUri = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.GetWebResourceAsync("GET", uri, null, null, null, 90, UtilityService.SpiderUserAgent, referUri, null, null, true, SecurityProtocolType.Ssl3, null, cancellationToken);
-		}
+			=> UtilityService.GetWebResourceAsync("GET", uri, null, null, null, 90, UtilityService.SpiderUserAgent, referUri, null, null, true, SecurityProtocolType.Ssl3, null, cancellationToken);
 
 		/// <summary>
 		/// Gets the web page
@@ -785,9 +739,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, Dictionary<string, string> headers, int timeout, string proxyHost = null, int proxyPort = 0, string proxyUsername = null, string proxyUserPassword = null, string[] proxyBypassList = null, string userAgent = null, string referUri = null, string credentialAccount = null, string credentialPassword = null, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Ssl3, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.GetWebPageAsync(url, headers, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, UtilityService.GetWebProxy(proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList), cancellationToken);
-		}
+			=> UtilityService.GetWebPageAsync(url, headers, timeout, userAgent, referUri, credentialAccount, credentialPassword, useSecureProtocol, secureProtocol, UtilityService.GetWebProxy(proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList), cancellationToken);
 
 		/// <summary>
 		/// Gets the web page
@@ -804,9 +756,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, int timeout, string proxyHost = null, int proxyPort = 0, string proxyUsername = null, string proxyUserPassword = null, string[] proxyBypassList = null, string userAgent = null, string referUri = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.GetWebPageAsync(url, null, timeout, proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList, userAgent, referUri, null, null, true, SecurityProtocolType.Ssl3, cancellationToken);
-		}
+			=> UtilityService.GetWebPageAsync(url, null, timeout, proxyHost, proxyPort, proxyUsername, proxyUserPassword, proxyBypassList, userAgent, referUri, null, null, true, SecurityProtocolType.Ssl3, cancellationToken);
 
 		/// <summary>
 		/// Gets the web page
@@ -817,9 +767,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string url, string referUri = null, string userAgent = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.GetWebPageAsync(url, 90, null, 0, null, null, null, userAgent, referUri, cancellationToken);
-		}
+			=> UtilityService.GetWebPageAsync(url, 90, null, 0, null, null, null, userAgent, referUri, cancellationToken);
 		#endregion
 
 		#region Remove/Clear tags
@@ -1145,10 +1093,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="id">The integer that presents the identity of a process</param>
 		/// <param name="action">The action to try to close the process before the process be killed</param>
-		public static void KillProcess(int id, Action<Process> action = null)
-		{
-			UtilityService.KillProcess(Process.GetProcessById(id));
-		}
+		public static void KillProcess(int id, Action<Process> action = null) => UtilityService.KillProcess(Process.GetProcessById(id));
 		#endregion
 
 		#region Working with files & folders
@@ -1201,11 +1146,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <returns></returns>
 		public static string GetFileSize(string filePath)
-		{
-			return string.IsNullOrWhiteSpace(filePath)
+			=> string.IsNullOrWhiteSpace(filePath)
 				? null
 				: UtilityService.GetFileSize(new FileInfo(filePath));
-		}
 
 		/// <summary>
 		/// Gets parts of file path (seperate path and file name)
@@ -1344,9 +1287,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
 		/// Searchs and gets the listing of file paths by searching pattern
@@ -1359,11 +1300,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderMode"></param>
 		/// <returns></returns>
 		public static List<string> GetFilePaths(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
-		{
-			return UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
+			=> UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
 				.Select(file => file.FullName)
 				.ToList();
-		}
 
 		/// <summary>
 		/// Searchs and gets the listing of file paths by searching pattern
@@ -1377,9 +1316,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
 		/// Gets path to a file/folder with 'right' path separator on each OS Platform
@@ -1387,11 +1324,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="paths"></param>
 		/// <returns></returns>
 		public static string GetPath(params string[] paths)
-		{
-			return paths == null || paths.Length < 1
+			=> paths == null || paths.Length < 1
 				? null
 				: Path.Combine(paths);
-		}
 
 		/// <summary>
 		/// Moves file (searched by patterns) of a folder to other folders
@@ -1425,9 +1360,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="searchPatterns"></param>
 		/// <param name="deleteOldFilesBeforeMoving"></param>
 		public static Task MoveFilesAsync(string source, string destination, string searchPatterns, bool deleteOldFilesBeforeMoving = false, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
 		#endregion
 
 		#region Working with .GZ files
@@ -1441,21 +1374,27 @@ namespace net.vieapps.Components.Utility
 			if (stream == null)
 				throw new ArgumentException("Invalid", nameof(stream));
 
-			using (var compressor = new GZipStream(stream, CompressionMode.Compress))
+			using (var output = UtilityService.CreateMemoryStream())
 			{
-				var buffer = new byte[TextFileReader.BufferSize];
-				var read = stream.Read(buffer, 0, buffer.Length);
-				while (read > 0)
+				using (var compressor = new GZipStream(output, CompressionMode.Compress))
 				{
-					compressor.Write(buffer, 0, read);
-					read = stream.Read(buffer, 0, buffer.Length);
+					if (stream.CanSeek)
+						stream.Seek(0, SeekOrigin.Begin);
+					var buffer = new byte[TextFileReader.BufferSize];
+					var read = stream.Read(buffer, 0, buffer.Length);
+					while (read > 0)
+					{
+						compressor.Write(buffer, 0, read);
+						read = stream.Read(buffer, 0, buffer.Length);
+					}
+					compressor.Flush();
+
+					gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
+					if (File.Exists(gzFilePath))
+						File.Delete(gzFilePath);
+
+					UtilityService.WriteBinaryFile(gzFilePath, output);
 				}
-
-				gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
-				if (File.Exists(gzFilePath))
-					File.Delete(gzFilePath);
-
-				UtilityService.WriteBinaryFile(gzFilePath, compressor);
 			}
 		}
 
@@ -1470,21 +1409,26 @@ namespace net.vieapps.Components.Utility
 			if (stream == null)
 				throw new ArgumentException("Invalid", nameof(stream));
 
-			using (var compressor = new GZipStream(stream, CompressionMode.Compress))
+			using (var output = UtilityService.CreateMemoryStream())
 			{
-				var buffer = new byte[TextFileReader.BufferSize];
-				var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-				while (read > 0)
+				using (var compressor = new GZipStream(output, CompressionMode.Compress))
 				{
-					await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-					read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					if (stream.CanSeek)
+						stream.Seek(0, SeekOrigin.Begin);
+					var buffer = new byte[TextFileReader.BufferSize];
+					var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					while (read > 0)
+					{
+						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+					}
+
+					gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
+					if (File.Exists(gzFilePath))
+						File.Delete(gzFilePath);
+
+					await UtilityService.WriteBinaryFileAsync(gzFilePath, output, cancellationToken).ConfigureAwait(false);
 				}
-
-				gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
-				if (File.Exists(gzFilePath))
-					File.Delete(gzFilePath);
-
-				await UtilityService.WriteBinaryFileAsync(gzFilePath, compressor, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -1522,37 +1466,70 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Working with stream
+		#region Working with stream & recyclable memory stream
+		/// <summary>
+		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
+		/// </summary>
+		/// <returns></returns>
+		public static Func<MemoryStream> GetRecyclableMemoryStreamFactory()
+			=> new Microsoft.IO.RecyclableMemoryStreamManager().GetStream;
+
+		/// <summary>
+		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
+		/// </summary>
+		/// <param name="blockSize"></param>
+		/// <param name="largeBufferMultiple"></param>
+		/// <param name="maximumBufferSize"></param>
+		/// <returns></returns>
+		public static Func<MemoryStream> GetRecyclableMemoryStreamFactory(int blockSize, int largeBufferMultiple, int maximumBufferSize)
+			=> new Microsoft.IO.RecyclableMemoryStreamManager(blockSize, largeBufferMultiple, maximumBufferSize).GetStream;
+
+		/// <summary>
+		/// Creates an instance of <see cref="MemoryStream">MemoryStream</see> using RecyclableMemoryStream to limit LOH fragmentation and improve performance
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static MemoryStream CreateMemoryStream(byte[] buffer = null, int index = 0, int count = 0)
+		{
+			var stream = UtilityService.GetRecyclableMemoryStreamFactory()();
+			if (buffer != null)
+			{
+				index = index > -1 && index < buffer.Length ? index : 0;
+				count = count > 0 && count < buffer.Length - index ? count : buffer.Length - index;
+				stream.Write(buffer, index, count);
+				stream.Seek(0, SeekOrigin.Begin);
+			}
+			return stream;
+		}
+
 		/// <summary>
 		/// Converts this array of bytes to memory stream
 		/// </summary>
-		/// <param name="bytes"></param>
+		/// <param name="buffer"></param>
 		/// <param name="index"></param>
 		/// <param name="count"></param>
-		/// <param name="writable"></param>
 		/// <returns></returns>
-		public static MemoryStream ToMemoryStream(this byte[] bytes, int index = 0, int count = 0, bool writable = true)
-		{
-			index = index > -1 && index < bytes.Length ? index : 0;
-			count = count > 0 && count < bytes.Length - index ? count : bytes.Length - index;
-			return new MemoryStream(bytes, index, count, writable);
-		}
+		public static MemoryStream ToMemoryStream(this byte[] buffer, int index = 0, int count = 0)
+			=> UtilityService.CreateMemoryStream(buffer, index, count);
 
 		/// <summary>
 		/// Converts this array segment of bytes to memory stream
 		/// </summary>
 		/// <param name="buffer"></param>
-		/// <param name="writable"></param>
 		/// <returns></returns>
-		public static MemoryStream ToMemoryStream(this ArraySegment<byte> buffer, bool writable = true)
-		{
-			return new MemoryStream(buffer.Array, buffer.Offset, buffer.Count, writable);
-		}
+		public static MemoryStream ToMemoryStream(this ArraySegment<byte> buffer)
+			=> UtilityService.CreateMemoryStream(buffer.Array, buffer.Offset, buffer.Count);
 
 		/// <summary>
 		/// Converts this memory stream to array segment of byte
 		/// </summary>
 		/// <param name="stream"></param>
+		/// <remarks>
+		/// Try to get buffer first to avoid calling ToArray on the MemoryStream because it allocates a new byte array on the heap.
+		/// Avoid this by attempting to access the internal memory stream buffer, this works with supported streams like the recyclable memory stream and writable memory streams
+		/// </remarks>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
 		{
@@ -1655,11 +1632,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static Task<string> ReadTextFileAsync(string filePath, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return !string.IsNullOrWhiteSpace(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.ReadTextFileAsync(new FileInfo(filePath), encoding, cancellationToken)
 				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
-		}
 
 		/// <summary>
 		/// Writes a text file
@@ -1733,11 +1708,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return !string.IsNullOrWhiteSpace(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.WriteTextFileAsync(new FileInfo(filePath), content, append, encoding)
 				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
-		}
 		#endregion
 
 		#region Read/Write text files (multiple lines)
@@ -1796,9 +1769,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines, cancellationToken).ConfigureAwait(false)).Item1;
-		}
+			=> (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines, cancellationToken).ConfigureAwait(false)).Item1;
 
 		/// <summary>
 		/// Writes the multiple lines of a text file
@@ -1872,11 +1843,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <returns></returns>
 		public static byte[] ReadBinaryFile(string filePath)
-		{
-			return !string.IsNullOrWhiteSpace(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.ReadBinaryFile(new FileInfo(filePath))
 				: throw new ArgumentException("File path is invalid", nameof(filePath));
-		}
 
 		/// <summary>
 		/// Reads a binary file
@@ -1903,11 +1872,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task<byte[]> ReadBinaryFileAsync(string filePath, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return !string.IsNullOrWhiteSpace(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken)
 				: Task.FromException<byte[]>(new ArgumentException("File path is invalid", nameof(filePath)));
-		}
 
 		/// <summary>
 		/// Writes a binary file
@@ -2052,7 +2019,7 @@ namespace net.vieapps.Components.Utility
 			if (data == null)
 				throw new ArgumentNullException(nameof(data), "Data is invalid");
 
-			using (var stream = new MemoryStream(data))
+			using (var stream = UtilityService.CreateMemoryStream(data))
 			{
 				await stream.UploadAsync(filename, url, onCompleted, onError, cancellationToken).ConfigureAwait(false);
 			}
@@ -2076,7 +2043,7 @@ namespace net.vieapps.Components.Utility
 				throw new FileNotFoundException();
 
 			var fileInfo = new FileInfo(filePath);
-			using (var stream = new MemoryStream(await UtilityService.ReadBinaryFileAsync(fileInfo, cancellationToken).ConfigureAwait(false)))
+			using (var stream = UtilityService.CreateMemoryStream(await UtilityService.ReadBinaryFileAsync(fileInfo, cancellationToken).ConfigureAwait(false)))
 			{
 				var stopwatch = Stopwatch.StartNew();
 				await stream.UploadAsync(
@@ -2214,9 +2181,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task DownloadFileAsync(string url, string filePath, string referUri = null, Action<string, string> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.DownloadFileAsync(url, filePath, referUri, (uri, path, times) => onCompleted?.Invoke(uri, path), onError, cancellationToken);
-		}
+			=> UtilityService.DownloadFileAsync(url, filePath, referUri, (uri, path, times) => onCompleted?.Invoke(uri, path), onError, cancellationToken);
 		#endregion
 
 		#region Compressions
@@ -2228,7 +2193,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this Stream stream, string mode = "deflate")
 		{
-			using (var output = new MemoryStream())
+			using (var output = UtilityService.CreateMemoryStream())
 			{
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
 				{
@@ -2241,8 +2206,9 @@ namespace net.vieapps.Components.Utility
 						compressor.Write(buffer, 0, read);
 						read = stream.Read(buffer, 0, buffer.Length);
 					}
+					compressor.Flush();
+					return output.ToArraySegment();
 				}
-				return output.ToArraySegment();
 			}
 		}
 
@@ -2255,7 +2221,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<ArraySegment<byte>> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
 		{
-			using (var output = new MemoryStream())
+			using (var output = UtilityService.CreateMemoryStream())
 			{
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
 				{
@@ -2270,8 +2236,9 @@ namespace net.vieapps.Components.Utility
 						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
 						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 					}
+					await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
+					return output.ToArraySegment();
 				}
-				return output.ToArraySegment();
 			}
 		}
 
@@ -2283,13 +2250,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
 		{
-			using (var output = new MemoryStream())
+			using (var output = UtilityService.CreateMemoryStream())
 			{
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
 				{
 					compressor.Write(data.Array, data.Offset, data.Count);
+					compressor.Flush();
+					return output.ToArraySegment();
 				}
-				return output.ToArraySegment();
 			}
 		}
 
@@ -2354,10 +2322,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static byte[] Decompress(this byte[] data, string mode = "deflate")
-		{
-			return data.ToMemoryStream().Decompress(mode);
-		}
+		public static byte[] Decompress(this byte[] data, string mode = "deflate") => data.ToMemoryStream().Decompress(mode);
 
 		/// <summary>
 		/// Decompresses the array segment of bytes
@@ -2365,10 +2330,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
-		{
-			return data.Take().Decompress(mode).ToArraySegment();
-		}
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate") => data.Take().Decompress(mode).ToArraySegment();
 		#endregion
 
 		#region BigInteger extensions
@@ -2657,7 +2619,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="query">The collection of query</param>
 		/// <param name="defaultValue">The default value if the parameter is not found</param>
 		/// <returns></returns>
-		public static string GetAppParameter(string name, Dictionary<string, string> header, Dictionary<string, string> query, string defaultValue = null) => UtilityService.GetAppParameter(name, header.ToNameValueCollection(), query.ToNameValueCollection(), defaultValue);
+		public static string GetAppParameter(string name, Dictionary<string, string> header, Dictionary<string, string> query, string defaultValue = null)
+			=> UtilityService.GetAppParameter(name, header.ToNameValueCollection(), query.ToNameValueCollection(), defaultValue);
 		#endregion
 
 	}
@@ -2810,8 +2773,7 @@ namespace net.vieapps.Components.Utility
 		// by default, one reading block of Windows is 4K (4096), then use 16K(16384)/32K(32768)/64K(65536)/128K(131072)/256K(262144)/512K(524288)
 		// for better performance while working with text file has large line of characters
 		public static readonly int BufferSize = 16384;
-
-		StreamReader _reader = null;
+		readonly StreamReader _reader = null;
 
 		/// <summary>
 		/// Initializes a new instance of the <see cref="TextFileReader"/> class.
@@ -2848,12 +2810,12 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the current encoding of text file.
 		/// </summary>
-		public Encoding Encoding { get { return this._reader.CurrentEncoding; } }
+		public Encoding Encoding => this._reader.CurrentEncoding;
 
 		/// <summary>
 		/// Gets the length of text file (in bytes).
 		/// </summary>
-		public long Length { get { return this._reader.BaseStream.Length; } }
+		public long Length => this._reader.BaseStream.Length;
 
 		/// <summary>
 		/// Gets the current position
@@ -2902,20 +2864,14 @@ namespace net.vieapps.Components.Utility
 		/// Reads a line of characters (from the current position)
 		/// </summary>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
-		public string ReadLine()
-		{
-			return this._reader.ReadLine();
-		}
+		public string ReadLine() => this._reader.ReadLine();
 
 		/// <summary>
 		/// Reads a line of characters (from the current position)
 		/// </summary>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
-		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return this._reader.ReadLineAsync().WithCancellationToken(cancellationToken);
-		}
+		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken)) => this._reader.ReadLineAsync().WithCancellationToken(cancellationToken);
 
 		/// <summary>
 		/// Reads some lines of characters (from the current position)
