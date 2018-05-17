@@ -1363,109 +1363,6 @@ namespace net.vieapps.Components.Utility
 			=> UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
 		#endregion
 
-		#region Working with .GZ files
-		/// <summary>
-		/// Compress and saves this stream as .GZ file
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <param name="gzFilePath"></param>
-		public static void SaveAsGzipFile(this Stream stream, string gzFilePath)
-		{
-			if (stream == null)
-				throw new ArgumentException("Invalid", nameof(stream));
-
-			using (var output = UtilityService.CreateMemoryStream())
-			{
-				using (var compressor = new GZipStream(output, CompressionMode.Compress))
-				{
-					if (stream.CanSeek)
-						stream.Seek(0, SeekOrigin.Begin);
-					var buffer = new byte[TextFileReader.BufferSize];
-					var read = stream.Read(buffer, 0, buffer.Length);
-					while (read > 0)
-					{
-						compressor.Write(buffer, 0, read);
-						read = stream.Read(buffer, 0, buffer.Length);
-					}
-					compressor.Flush();
-
-					gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
-					if (File.Exists(gzFilePath))
-						File.Delete(gzFilePath);
-
-					UtilityService.WriteBinaryFile(gzFilePath, output);
-				}
-			}
-		}
-
-		/// <summary>
-		/// Compress and saves this stream as .GZ file
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <param name="gzFilePath"></param>
-		/// <param name="cancellationToken"></param>
-		public static async Task SaveAsGzipFileAsync(this Stream stream, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (stream == null)
-				throw new ArgumentException("Invalid", nameof(stream));
-
-			using (var output = UtilityService.CreateMemoryStream())
-			{
-				using (var compressor = new GZipStream(output, CompressionMode.Compress))
-				{
-					if (stream.CanSeek)
-						stream.Seek(0, SeekOrigin.Begin);
-					var buffer = new byte[TextFileReader.BufferSize];
-					var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-					while (read > 0)
-					{
-						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-					}
-
-					gzFilePath += gzFilePath.IsEndsWith(".gz") ? "" : ".gz";
-					if (File.Exists(gzFilePath))
-						File.Delete(gzFilePath);
-
-					await UtilityService.WriteBinaryFileAsync(gzFilePath, output, cancellationToken).ConfigureAwait(false);
-				}
-			}
-		}
-
-		/// <summary>
-		/// Compress and saves this array of bytes as .GZ file
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="gzFilePath"></param>
-		public static void SaveAsGzipFile(this byte[] bytes, string gzFilePath)
-		{
-			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid", nameof(bytes));
-
-			using (var stream = bytes.ToMemoryStream())
-			{
-				stream.SaveAsGzipFile(gzFilePath);
-			}
-		}
-
-		/// <summary>
-		/// Compress and saves this array of bytes as .GZ file
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="gzFilePath"></param>
-		/// <param name="cancellationToken"></param>
-		public static async Task SaveAsGzipFileAsync(this byte[] bytes, string gzFilePath, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid", nameof(bytes));
-
-			using (var stream = bytes.ToMemoryStream())
-			{
-				await stream.SaveAsGzipFileAsync(gzFilePath, cancellationToken).ConfigureAwait(false);
-			}
-		}
-		#endregion
-
 		#region Working with stream & recyclable memory stream
 		/// <summary>
 		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
@@ -2330,7 +2227,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate") => data.Take().Decompress(mode).ToArraySegment();
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate") => data.ToMemoryStream().Decompress(mode).ToArraySegment();
 		#endregion
 
 		#region BigInteger extensions
