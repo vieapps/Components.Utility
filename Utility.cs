@@ -2092,7 +2092,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 				{
 					if (stream.CanSeek)
 						stream.Seek(0, SeekOrigin.Begin);
@@ -2104,8 +2104,8 @@ namespace net.vieapps.Components.Utility
 						read = stream.Read(buffer, 0, buffer.Length);
 					}
 					compressor.Flush();
-					return output.ToArraySegment();
 				}
+				return output.ToArraySegment();
 			}
 		}
 
@@ -2120,7 +2120,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 				{
 					if (stream.CanSeek)
 						stream.Seek(0, SeekOrigin.Begin);
@@ -2134,8 +2134,8 @@ namespace net.vieapps.Components.Utility
 						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 					}
 					await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
-					return output.ToArraySegment();
 				}
+				return output.ToArraySegment();
 			}
 		}
 
@@ -2149,12 +2149,12 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionMode.Compress) as Stream : new DeflateStream(output, CompressionMode.Compress) as Stream)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 				{
 					compressor.Write(data.Array, data.Offset, data.Count);
 					compressor.Flush();
-					return output.ToArraySegment();
 				}
+				return output.ToArraySegment();
 			}
 		}
 
