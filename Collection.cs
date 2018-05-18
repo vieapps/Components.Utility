@@ -11,6 +11,7 @@ using System.Dynamic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
+using System.Xml;
 
 using Newtonsoft.Json.Linq;
 #endregion
@@ -729,6 +730,32 @@ namespace net.vieapps.Components.Utility
 			var nvCollection = new NameValueCollection();
 			dictionary.ForEach(entry => nvCollection.Add(entry.Key, entry.Value));
 			return nvCollection;
+		}
+
+		/// <summary>
+		/// Converts the collection of XML nodes to list of XML nodes
+		/// </summary>
+		/// <param name="xmlNodes"></param>
+		/// <returns></returns>
+		public static List<XmlNode> ToList(this XmlNodeList xmlNodes)
+		{
+			var nodes = new List<XmlNode>();
+			foreach (XmlNode xmlNode in xmlNodes)
+				nodes.Add(xmlNode);
+			return nodes;
+		}
+
+		/// <summary>
+		/// Converts the collection of XML attributes to list of XML attributes
+		/// </summary>
+		/// <param name="xmlAttributes"></param>
+		/// <returns></returns>
+		public static List<XmlAttribute> ToList(this XmlAttributeCollection xmlAttributes)
+		{
+			var attributes = new List<XmlAttribute>();
+			foreach (XmlAttribute xmlAttribute in xmlAttributes)
+				attributes.Add(xmlAttribute);
+			return attributes;
 		}
 		#endregion
 
