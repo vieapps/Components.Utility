@@ -7,7 +7,7 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<AssemblyVersion>10.2.2.1806</AssemblyVersion>
 		<FileVersion>10.2.2.1806</FileVersion>
-		<InformationalVersion>v10.2.netstandard-2+rev:2018.05.17</InformationalVersion>
+		<InformationalVersion>v10.2.netstandard-2+rev:2018.05.23</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
@@ -21,7 +21,7 @@
 		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2018 VIEApps.net</Copyright>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Changes to use RecyclableMemoryStream to improve performance</PackageReleaseNotes>
+		<PackageReleaseNotes>Add helper to run external process on all platforms</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 	</PropertyGroup>

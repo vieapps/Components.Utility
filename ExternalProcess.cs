@@ -1,0 +1,278 @@
+﻿#region Related components
+using System;
+using System.IO;
+using System.Linq;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+#endregion
+
+namespace net.vieapps.Components.Utility
+{
+	/// <summary>
+	/// Utility servicing methods for working with external processes
+	/// </summary>
+	public sealed class ExternalProcess
+	{
+		/// <summary>
+		/// Presents information of an external process
+		/// </summary>
+		public class Info
+		{
+			/// <summary>
+			/// Creates new information of an external process
+			/// </summary>
+			public Info() : this("", "") { }
+
+			/// <summary>
+			/// Creates new information of an external process
+			/// </summary>
+			/// <param name="filePath"></param>
+			/// <param name="arguments"></param>
+			public Info(string filePath, string arguments = "")
+			{
+				this.FilePath = filePath;
+				this.Arguments = arguments;
+				this.StandardOutput = "";
+				this.StandardError = "";
+				this.Process = null;
+				this.ID = null;
+				this.ExitCode = null;
+				this.ExitTime = null;
+			}
+
+			/// <summary>
+			/// Gest the absolute path of file
+			/// </summary>
+			public string FilePath { get; internal set; }
+
+			/// <summary>
+			/// Gets the arguments
+			/// </summary>
+			public string Arguments { get; internal set; }
+
+			/// <summary>
+			/// Ges the standard output (stdout)
+			/// </summary>
+			public string StandardOutput { get; internal set; }
+
+			/// <summary>
+			/// Gets the standard error (stderr)
+			/// </summary>
+			public string StandardError { get; internal set; }
+
+			/// <summary>
+			/// Gets the related process
+			/// </summary>
+			public Process Process { get; internal set; }
+
+			/// <summary>
+			/// Gets the identity
+			/// </summary>
+			public int? ID { get; internal set; }
+
+			/// <summary>
+			/// Gets the exit code
+			/// </summary>
+			public int? ExitCode { get; internal set; }
+
+			/// <summary>
+			/// Gets the exit code
+			/// </summary>
+			public DateTime? ExitTime { get; internal set; }
+		}
+
+		/// <summary>
+		/// Starts to run an external process directly
+		/// </summary>
+		/// <param name="filePath">The absolute path to the file of external process</param>
+		/// <param name="arguments">The arguments</param>
+		/// <param name="workingDirectory">The working directory</param>
+		/// <param name="onExited">The action to run when the process is exited (Exited event)</param>
+		/// <param name="onOutputDataReceived">The action to run when an output message is received (OutputDataReceived event)</param>
+		/// <param name="onErrorDataReceived">The action to run when an error message is received (ErrorDataReceived event)</param>
+		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
+		/// <returns></returns>
+		public static Info Start(string filePath, string arguments, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false)
+		{
+			// prepare information
+			var info = new Info(filePath, arguments ?? "");
+
+			// prepare the process
+			var psi = new ProcessStartInfo
+			{
+				FileName = info.FilePath,
+				Arguments = info.Arguments,
+				WindowStyle = ProcessWindowStyle.Hidden,
+				CreateNoWindow = true,
+				UseShellExecute = false,
+				ErrorDialog = false,
+				RedirectStandardInput = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true
+			};
+
+			// set working directory
+			if (string.IsNullOrWhiteSpace(workingDirectory))
+			{
+				workingDirectory = "";
+				if (!filePath.IsStartsWith("cmd.exe") && !filePath.IsStartsWith("/bin/bash") && !filePath.IsStartsWith($".{Path.DirectorySeparatorChar}"))
+				{
+					var path = filePath;
+					var pos = path.IndexOf(Path.DirectorySeparatorChar);
+					while (pos > -1)
+					{
+						workingDirectory += path.Left(pos + 1);
+						path = path.Remove(0, pos + 1);
+						pos = path.IndexOf(Path.DirectorySeparatorChar);
+					}
+					if (workingDirectory.IsEndsWith($"{Path.DirectorySeparatorChar}"))
+						workingDirectory = workingDirectory.Left(workingDirectory.Length - 1);
+				}
+			}
+
+			if (!string.IsNullOrWhiteSpace(workingDirectory))
+				psi.WorkingDirectory = workingDirectory;
+
+			// initialize the proces
+			var process = new Process
+			{
+				StartInfo = psi,
+				EnableRaisingEvents = true
+			};
+
+			process.OutputDataReceived += (sender, args) =>
+			{
+				if (captureOutput)
+					info.StandardOutput += $"\r\n{args.Data}";
+				onOutputDataReceived?.Invoke(sender, args);
+			};
+
+			process.ErrorDataReceived += (sender, args) =>
+			{
+				if (captureOutput)
+					info.StandardError += $"\r\n{args.Data}";
+				onErrorDataReceived?.Invoke(sender, args);
+			};
+
+			process.Exited += (sender, args) =>
+			{
+				info.ExitCode = process.ExitCode;
+				info.ExitTime = process.ExitTime;
+				onExited?.Invoke(sender, args);
+			};
+
+			// start the process
+			process.Start();
+			process.BeginOutputReadLine();
+			process.BeginErrorReadLine();
+
+			// return information
+			info.Process = process;
+			info.ID = process.Id;
+			return info;
+		}
+
+		/// <summary>
+		/// Starts to run a command as external process with 'cmd.exe' (Windows) or '/bin/bash' (Linux/macOS)
+		/// </summary>
+		/// <param name="command">The command to run</param>
+		/// <param name="workingDirectory">The working directory</param>
+		/// <param name="onExited">The action to run when the process is exited (Exited event)</param>
+		/// <param name="onOutputDataReceived">The action to run when an output message is received (OutputDataReceived event)</param>
+		/// <param name="onErrorDataReceived">The action to run when an error message is received (ErrorDataReceived event)</param>
+		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
+		/// <returns></returns>
+		public static Info Start(string command, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false)
+		{
+			var arguments = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+				? $"/c \"{command.Replace("\"", "\"\"\"")}\""
+				: $"-c \"{command.Replace("\"", "\\\"")}\"";
+			return ExternalProcess.Start(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "/bin/bash", arguments, workingDirectory, onExited, onOutputDataReceived, onErrorDataReceived, captureOutput);
+		}
+
+		/// <summary>
+		/// Stops an external process
+		/// </summary>
+		/// <param name="info">The information</param>
+		/// <param name="onCompleted">The action to run when completed</param>
+		public static void Stop(Info info, Action<Info> onCompleted = null)
+		{
+			if (info == null || info.Process == null || info.Process.HasExited)
+			{
+				info?.Process?.Dispose();
+				onCompleted?.Invoke(info);
+			}
+			else
+				ExternalProcess.Kill(
+					info.Process,
+					process =>
+					{
+						info.Process.StandardInput.WriteLine("exit");
+						info.Process.StandardInput.Close();
+						info.Process.WaitForExit(456);
+						info.Process.Refresh();
+					},
+					process =>
+					{
+						info.ExitCode = info.Process.ExitCode;
+						info.ExitTime = info.Process.ExitTime;
+						info.Process.Dispose();
+						onCompleted?.Invoke(info);
+					}
+				);
+		}
+
+		/// <summary>
+		/// Kills an external process
+		/// </summary>
+		/// <param name="process"></param>
+		/// <param name="onTryClose">The action to try to close the process before the process be killed</param>
+		/// <param name="onKilled">The action to run when process was killed</param>
+		public static void Kill(Process process, Action<Process> onTryClose = null, Action<Process> onKilled = null)
+		{
+			// check
+			if (process == null || process.HasExited)
+			{
+				onKilled?.Invoke(process);
+				return;
+			}
+
+			// try to close
+			try
+			{
+				onTryClose?.Invoke(process);
+			}
+			catch { }
+
+			// kill
+			if (process.StartInfo.RedirectStandardInput)
+			{
+				process.StandardInput.Close();
+				process.WaitForExit(456);
+				process.Refresh();
+				if (!process.HasExited)
+					process.Kill();
+			}
+			else if (!process.HasExited)
+				process.Kill();
+
+			// callback
+			onKilled?.Invoke(process);
+		}
+
+		/// <summary>
+		/// Kills an external process that specified by identity
+		/// </summary>
+		/// <param name="processID">The integer that presents the identity of a process that to be killed</param>
+		/// <param name="onTryClose">The action to try to close the process before the process be killed</param>
+		/// <param name="onKilled">The action to run when process was killed</param>
+		public static void Kill(int processID, Action<Process> onTryClose = null, Action<Process> onKilled = null)
+		{
+			try
+			{
+				ExternalProcess.Kill(Process.GetProcessById(processID), onTryClose, onKilled);
+			}
+			catch { }
+		}
+	}
+}

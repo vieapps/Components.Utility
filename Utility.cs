@@ -998,104 +998,6 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Working with process
-		/// <summary>
-		/// Runs a process
-		/// </summary>
-		/// <param name="filePath">The string that presents the path to a file to run</param>
-		/// <param name="arguments">The string that presents the arguments to run</param>
-		/// <param name="onExited">The method to handle the Exit event</param>
-		/// <param name="onDataReceived">The method to handle the data receive events (include OutputDataReceived and ErrorDataReceived events)</param>
-		/// <returns></returns>
-		public static Process RunProcess(string filePath, string arguments = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onDataReceived = null)
-		{
-			// initialize info
-			var psi = new ProcessStartInfo()
-			{
-				FileName = filePath,
-				Arguments = arguments ?? "",
-				WindowStyle = ProcessWindowStyle.Hidden,
-				CreateNoWindow = true,
-				ErrorDialog = false,
-				UseShellExecute = false,
-				RedirectStandardInput = true
-			};
-
-			if (onDataReceived != null)
-			{
-				psi.RedirectStandardOutput = true;
-				psi.RedirectStandardError = true;
-			}
-			else
-			{
-				psi.RedirectStandardOutput = false;
-				psi.RedirectStandardError = false;
-			}
-
-			// initialize proces
-			var process = new Process() { StartInfo = psi };
-			if (onExited != null || onDataReceived != null)
-				process.EnableRaisingEvents = true;
-
-			// assign event handlers
-			if (onExited != null)
-				process.Exited += new EventHandler(onExited);
-
-			if (onDataReceived != null)
-			{
-				process.OutputDataReceived += new DataReceivedEventHandler(onDataReceived);
-				process.ErrorDataReceived += new DataReceivedEventHandler(onDataReceived);
-			}
-
-			// start and return process
-			process.Start();
-			if (onDataReceived != null)
-			{
-				process.BeginOutputReadLine();
-				process.BeginErrorReadLine();
-			}
-
-			return process;
-		}
-
-		/// <summary>
-		/// Kills a process
-		/// </summary>
-		/// <param name="process"></param>
-		/// <param name="action">The action to try to close the process before the process be killed</param>
-		public static void KillProcess(Process process, Action<Process> action = null)
-		{
-			if (process != null)
-			{
-				try
-				{
-					action?.Invoke(process);
-				}
-				catch { }
-
-				if (process.StartInfo.RedirectStandardInput)
-				{
-					process.StandardInput.Close();
-					process.Refresh();
-					if (!process.HasExited)
-					{
-						if (!process.WaitForExit(567))
-							process.Kill();
-					}
-				}
-				else if (!process.HasExited)
-					process.Kill();
-			}
-		}
-
-		/// <summary>
-		/// Kills a process by ID
-		/// </summary>
-		/// <param name="id">The integer that presents the identity of a process</param>
-		/// <param name="action">The action to try to close the process before the process be killed</param>
-		public static void KillProcess(int id, Action<Process> action = null) => UtilityService.KillProcess(Process.GetProcessById(id));
-		#endregion
-
 		#region Working with files & folders
 		static List<string> _FileRemovements = new List<string>() { "\\", "/", "*", "?", "<", ">", "|", ":", "\r", "\n", "\t" };
 		static List<string[]> _FileReplacements = new List<string[]>() { new string[] { "\"", "'" }, new string[] { "%20", " " }, new string[] { " ft. ", " & " } };
@@ -2127,7 +2029,7 @@ namespace net.vieapps.Components.Utility
 					var buffer = new byte[TextFileReader.BufferSize];
 					var read = stream is MemoryStream
 						? stream.Read(buffer, 0, buffer.Length)
-						:  await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+						: await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 					while (read > 0)
 					{
 						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
@@ -2518,6 +2420,33 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetAppParameter(string name, Dictionary<string, string> header, Dictionary<string, string> query, string defaultValue = null)
 			=> UtilityService.GetAppParameter(name, header.ToNameValueCollection(), query.ToNameValueCollection(), defaultValue);
+		#endregion
+
+		#region Working with external process
+		/// <summary>
+		/// Runs a process
+		/// </summary>
+		/// <param name="filePath">The string that presents the path to a file to run</param>
+		/// <param name="arguments">The string that presents the arguments to run</param>
+		/// <param name="onExited">The method to handle the Exit event</param>
+		/// <param name="onDataReceived">The method to handle the data receive events (include OutputDataReceived and ErrorDataReceived events)</param>
+		/// <returns></returns>
+		public static Process RunProcess(string filePath, string arguments = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onDataReceived = null)
+			=> ExternalProcess.Start(filePath, arguments, null, onExited, onDataReceived, onDataReceived).Process;
+
+		/// <summary>
+		/// Kills a process
+		/// </summary>
+		/// <param name="process"></param>
+		/// <param name="action">The action to try to close the process before the process be killed</param>
+		public static void KillProcess(Process process, Action<Process> action = null) => ExternalProcess.Kill(process, action);
+
+		/// <summary>
+		/// Kills a process by ID
+		/// </summary>
+		/// <param name="id">The integer that presents the identity of a process</param>
+		/// <param name="action">The action to try to close the process before the process be killed</param>
+		public static void KillProcess(int id, Action<Process> action = null) => ExternalProcess.Kill(id, action);
 		#endregion
 
 	}
