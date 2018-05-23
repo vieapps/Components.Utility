@@ -1372,7 +1372,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 
-			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, false))
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, false))
 			{
 				using (var reader = new StreamReader(stream, encoding ?? Encoding.UTF8))
 				{
@@ -1405,7 +1405,7 @@ namespace net.vieapps.Components.Utility
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 
-			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				using (var reader = encoding != null ? new StreamReader(stream, encoding) : new StreamReader(stream, true))
 				{
@@ -1440,7 +1440,7 @@ namespace net.vieapps.Components.Utility
 			else if (content == null)
 				return;
 
-			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, false))
+			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, false))
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
@@ -1479,7 +1479,7 @@ namespace net.vieapps.Components.Utility
 			else if (content == null)
 				return;
 
-			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(fileInfo.FullName, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
@@ -1573,7 +1573,7 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentException("File path is invalid", nameof(filePath));
 
 			if (lines != null && lines.Count > 0)
-				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize))
+				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 				{
 					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
@@ -1597,7 +1597,7 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentException("File path is invalid", nameof(filePath));
 
 			if (lines != null && lines.Count > 0)
-				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.Read, TextFileReader.BufferSize, true))
+				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 				{
 					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
@@ -1617,7 +1617,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] ReadBinaryFile(FileInfo fileInfo)
 		{
 			if (fileInfo != null && fileInfo.Exists)
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 				{
 					var data = new byte[fileInfo.Length];
 					stream.Read(data, 0, fileInfo.Length.CastAs<int>());
@@ -1645,7 +1645,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task<byte[]> ReadBinaryFileAsync(FileInfo fileInfo, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			if (fileInfo != null && fileInfo.Exists)
-				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read, TextFileReader.BufferSize, true))
+				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 				{
 					var data = new byte[fileInfo.Length];
 					await stream.ReadAsync(data, 0, fileInfo.Length.CastAs<int>(), cancellationToken).ConfigureAwait(false);
@@ -1676,7 +1676,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize))
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 			{
 				stream.Write(content ?? new byte[0], 0, content?.Length ?? 0);
 				stream.Flush();
@@ -1695,7 +1695,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				await stream.WriteAsync(content ?? new byte[0], 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
 				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -1713,7 +1713,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize))
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
 				var read = content.Read(buffer, 0, buffer.Length);
@@ -1738,7 +1738,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
 				var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
@@ -1941,7 +1941,7 @@ namespace net.vieapps.Components.Utility
 
 					using (var webStream = await UtilityService.GetWebResourceAsync(url, referUri, cancellationToken).ConfigureAwait(false))
 					{
-						using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, TextFileReader.BufferSize, true))
+						using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 						{
 							await webStream.CopyToAsync(fileStream, TextFileReader.BufferSize, cancellationToken).ConfigureAwait(false);
 						}
@@ -2589,6 +2589,7 @@ namespace net.vieapps.Components.Utility
 		// by default, one reading block of Windows is 4K (4096), then use 16K(16384)/32K(32768)/64K(65536)/128K(131072)/256K(262144)/512K(524288)
 		// for better performance while working with text file has large line of characters
 		public static readonly int BufferSize = 16384;
+		readonly FileStream _stream = null;
 		readonly StreamReader _reader = null;
 
 		/// <summary>
@@ -2605,7 +2606,8 @@ namespace net.vieapps.Components.Utility
 				throw new FileNotFoundException($"File is not found ({filePath})");
 
 			// initialize
-			this._reader = new StreamReader(filePath, true);
+			this._stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true);
+			this._reader = new StreamReader(this._stream, true);
 		}
 
 		~TextFileReader()
@@ -2620,6 +2622,8 @@ namespace net.vieapps.Components.Utility
 		{
 			this._reader.Close();
 			this._reader.Dispose();
+			this._stream.Close();
+			this._stream.Dispose();
 			GC.SuppressFinalize(this);
 		}
 
