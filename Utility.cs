@@ -505,23 +505,21 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the web proxy
 		/// </summary>
-		/// <param name="proxyHost"></param>
-		/// <param name="proxyPort"></param>
-		/// <param name="proxyUsername"></param>
-		/// <param name="proxyUserPassword"></param>
-		/// <param name="proxyBypassList"></param>
+		/// <param name="host"></param>
+		/// <param name="port"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
 		/// <returns></returns>
-		public static WebProxy GetWebProxy(string proxyHost, int proxyPort, string proxyUsername, string proxyUserPassword, string[] proxyBypassList = null)
+		public static WebProxy GetWebProxy(string host, int port, string username, string password, string[] bypass = null)
 		{
-			if (string.IsNullOrWhiteSpace(proxyHost))
+			if (string.IsNullOrWhiteSpace(host))
 				return null;
 
-			var proxy = proxyBypassList == null || proxyBypassList.Length < 1
-				? new WebProxy(proxyHost, proxyPort)
-				: new WebProxy(new Uri("http://" + proxyHost + ":" + proxyPort.ToString()), true, proxyBypassList);
-
-			if (!string.IsNullOrWhiteSpace(proxyUsername) && !string.IsNullOrWhiteSpace(proxyUserPassword))
-				proxy.Credentials = new NetworkCredential(proxyUsername, proxyUserPassword);
+			var uri = new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "https://" : "")}{host}:{port}");
+			var proxy = new WebProxy(uri, true, bypass ?? new string[] { });
+			if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
+				proxy.Credentials = new NetworkCredential(username, password);
 
 			return proxy;
 		}
@@ -544,21 +542,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, Cookie[] cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
-			// get the request object to handle on the remote resource
+			// prepare the request object
 			var webRequest = WebRequest.Create(uri) as HttpWebRequest;
-
-			// set properties
-			webRequest.Method = string.IsNullOrWhiteSpace(method)
-				? "GET"
-				: method.ToUpper();
+			webRequest.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
 			webRequest.Timeout = timeout * 1000;
 			webRequest.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-			webRequest.UserAgent = string.IsNullOrWhiteSpace(userAgent)
-				? UtilityService.DesktopUserAgent
-				: userAgent;
-			webRequest.Referer = string.IsNullOrWhiteSpace(referUri)
-				? ""
-				: referUri;
+			webRequest.UserAgent = string.IsNullOrWhiteSpace(userAgent) ? UtilityService.DesktopUserAgent : userAgent;
+			webRequest.Referer = string.IsNullOrWhiteSpace(referUri) ? "" : referUri;
 
 			// headers
 			headers?.Where(kvp => !kvp.Key.IsEquals("accept-encoding")).ForEach(kvp => webRequest.Headers.Add(kvp.Key, kvp.Value));
@@ -578,8 +568,8 @@ namespace net.vieapps.Components.Utility
 				webRequest.PreAuthenticate = true;
 			}
 
-			// service point - only available on Windows
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			// service point - only available on Windows wit .NET Framework
+			if (RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
 				webRequest.ServicePoint.Expect100Continue = false;
 
 			// proxy
@@ -2432,7 +2422,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onDataReceived">The method to handle the data receive events (include OutputDataReceived and ErrorDataReceived events)</param>
 		/// <returns></returns>
 		public static Process RunProcess(string filePath, string arguments = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onDataReceived = null)
-			=> ExternalProcess.Start(filePath, arguments, null, onExited, onDataReceived, onDataReceived).Process;
+			=> ExternalProcess.Start(filePath, arguments, onExited, onDataReceived).Process;
 
 		/// <summary>
 		/// Kills a process
