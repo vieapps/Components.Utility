@@ -110,6 +110,7 @@ namespace net.vieapps.Components.Utility
 			// return information
 			info.Process = process;
 			info.ID = process.Id;
+			info.StartTime = process.StartTime;
 			return info;
 		}
 
@@ -253,10 +254,10 @@ namespace net.vieapps.Components.Utility
 					{
 						process.StandardInput.Close();
 						process.CloseMainWindow();
+						process.WaitForExit(456);
+						process.Refresh();
 					}
 					catch { }
-					process.WaitForExit(456);
-					process.Refresh();
 					if (!process.HasExited)
 						process.Kill();
 				}
@@ -341,14 +342,19 @@ namespace net.vieapps.Components.Utility
 			public int? ID { get; internal set; }
 
 			/// <summary>
-			/// Gets the exit code
+			/// Gets the start time
 			/// </summary>
-			public int? ExitCode { get; internal set; }
+			public DateTime? StartTime { get; internal set; }
+
+			/// <summary>
+			/// Gets the exit time
+			/// </summary>
+			public DateTime? ExitTime { get; internal set; }
 
 			/// <summary>
 			/// Gets the exit code
 			/// </summary>
-			public DateTime? ExitTime { get; internal set; }
+			public int? ExitCode { get; internal set; }
 
 			/// <summary>
 			/// Gets the extra information
