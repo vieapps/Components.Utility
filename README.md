@@ -7,5 +7,4 @@ The general purpose utility library for development apps with .NET Standard 2.0
 - ... and others
 
 ## NuGet
-- Package ID: **VIEApps.Components.Utility**
-- Details: https://www.nuget.org/packages/VIEApps.Components.Utility
+[![NuGet](https://img.shields.io/nuget/v/VIEApps.Components.Utility.svg)](https://www.nuget.org/packages/VIEApps.Components.Utility/)
