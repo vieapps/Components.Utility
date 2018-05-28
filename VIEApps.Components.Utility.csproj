@@ -23,6 +23,7 @@
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
 		<PackageReleaseNotes>Add helper to run external process on all platforms</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
+		<PackageIconUrl>https://github.com/vieapps/Components.Utility/raw/master/logo.png</PackageIconUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 	</PropertyGroup>
 
@@ -41,6 +42,7 @@
 		<None Remove=".gitattributes" />
 		<None Remove=".gitignore" />
 		<None Remove="LICENSE.md" />
+		<None Remove="logo.png" />
 		<None Remove="README.md" />
 	</ItemGroup>
 

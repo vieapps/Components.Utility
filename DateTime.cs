@@ -19,13 +19,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the default date-time for checking (1/1/1900)
 		/// </summary>
-		public static DateTime CheckingDateTime
-		{
-			get
-			{
-				return new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-			}
-		}
+		public static DateTime CheckingDateTime => new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
 		/// <summary>
 		/// Gets the string that presents elapsed times (means times for processing)
@@ -39,13 +33,15 @@ namespace net.vieapps.Components.Utility
 			if (elapsedTimes < 1)
 				return "1" + (addString ? " nanosecond" : "");
 
-			int hours = 0, minutes = 0, seconds = 0;
+			int days = 0, hours = 0, minutes = 0, seconds = 0;
+
 			var miliseconds = elapsedTimes;
 			while (miliseconds > 999)
 			{
 				seconds++;
 				miliseconds -= 1000;
 			}
+
 			if (computeMinutes && seconds > 59)
 			{
 				while (seconds > 59)
@@ -57,6 +53,11 @@ namespace net.vieapps.Components.Utility
 				{
 					hours++;
 					minutes -= 60;
+				}
+				while (hours > 24)
+				{
+					days++;
+					hours -= 24;
 				}
 			}
 
@@ -74,6 +75,9 @@ namespace net.vieapps.Components.Utility
 			if (hours > 0)
 				times = hours.ToString() + (addString ? " hour(s)" + (!times.Equals("") ? ", " : "") : "") + times;
 
+			if (days  > 0)
+				times = days.ToString() + (addString ? " day(s)" + (!times.Equals("") ? ", " : "") : "") + times;
+
 			return times;
 		}
 
@@ -83,9 +87,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="stopwatch">The <see cref="Stopwatch">Stopwatch</see> object that presents elapsed times</param>
 		/// <returns>The string that presents elapsed times</returns>
 		public static string GetElapsedTimes(this Stopwatch stopwatch)
-		{
-			return stopwatch.ElapsedMilliseconds.GetElapsedTimes();
-		}
+			=> stopwatch.ElapsedMilliseconds.GetElapsedTimes();
 
 		/// <summary>
 		/// Gets the string that presents elapsed times (means times for processing)
@@ -93,9 +95,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="startTime">The <see cref="DateTime">DateTime</see> object that presents the starting time</param>
 		/// <returns>The string that presents elapsed times</returns>
 		public static string GetElapsedTimes(this DateTime startTime)
-		{
-			return Convert.ToInt64(DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).GetElapsedTimes();
-		}
+			=> Convert.ToInt64(DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).GetElapsedTimes();
 
 		/// <summary>
 		/// Gets the name of weekday from this date-time
@@ -333,10 +333,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static DateTime GetFirstDayOfMonth(this DateTime datetime)
-		{
-			return new DateTime(datetime.Year, datetime.Month, 1, 0, 0, 0);
-		}
+		public static DateTime GetFirstDayOfMonth(this DateTime datetime) => new DateTime(datetime.Year, datetime.Month, 1, 0, 0, 0);
 
 		/// <summary>
 		/// Gets the end-day-of-month of this date-time
@@ -355,20 +352,14 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static bool IsInCurrentWeek(this DateTime datetime)
-		{
-			return datetime >= DateTime.Now.GetFirstDayOfWeek() && datetime <= DateTime.Now.GetEndDayOfWeek();
-		}
+		public static bool IsInCurrentWeek(this DateTime datetime) => datetime >= DateTime.Now.GetFirstDayOfWeek() && datetime <= DateTime.Now.GetEndDayOfWeek();
 
 		/// <summary>
 		/// Checks to see this date-time is in current month
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static bool IsInCurrentMonth(this DateTime datetime)
-		{
-			return datetime >= DateTime.Now.GetFirstDayOfMonth() && datetime <= DateTime.Now.GetEndDayOfMonth();
-		}
+		public static bool IsInCurrentMonth(this DateTime datetime) => datetime >= DateTime.Now.GetFirstDayOfMonth() && datetime <= DateTime.Now.GetEndDayOfMonth();
 
 		/// <summary>
 		/// Converts this date-time to UNIX timestamp
@@ -376,10 +367,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true)
-		{
-			return ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.CastAs<long>();
-		}
+		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true) => ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.CastAs<long>();
 
 		/// <summary>
 		/// Converts this UNIX timestamp to date-time
@@ -388,11 +376,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
 		public static DateTime FromUnixTimestamp(this long unixTimestamp, bool useUTC = true)
-		{
-			return useUTC
+			=> useUTC
 				? DateTimeService.UnixEpoch.AddSeconds(unixTimestamp)
 				: DateTimeService.UnixEpoch.AddSeconds(unixTimestamp).ToLocalTime();
-		}
 
 		/// <summary>
 		/// Converts this date-time to string in format 'yyyy/MM/dd HH:mm:ss'
@@ -400,10 +386,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static string ToDTString(this DateTime datetime, bool useUTC = false)
-		{
-			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy/MM/dd HH:mm:ss");
-		}
+		public static string ToDTString(this DateTime datetime, bool useUTC = false) => (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy/MM/dd HH:mm:ss");
 
 		/// <summary>
 		/// Converts this date-time to string in format 'yyyy-MM-ddTHH:mm:ssZzzzz'
@@ -411,10 +394,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static string ToUtcString(this DateTime datetime, bool useUTC = false)
-		{
-			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ssZzzzz");
-		}
+		public static string ToUtcString(this DateTime datetime, bool useUTC = false) => (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ssZzzzz");
 
 		/// <summary>
 		/// Converts this date-time to string in format 'yyyy-MM-ddTHH:mm:ssZzzzz'
@@ -422,10 +402,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static string ToIsoString(this DateTime datetime, bool useUTC = false)
-		{
-			return (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
-		}
+		public static string ToIsoString(this DateTime datetime, bool useUTC = false) => (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
 
 		/// <summary>
 		/// Converts this date-time to HTTP string with GMT
