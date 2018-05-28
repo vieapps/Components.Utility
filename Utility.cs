@@ -1282,14 +1282,15 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static MemoryStream CreateMemoryStream(byte[] buffer = null, int index = 0, int count = 0)
 		{
-			var stream = UtilityService.GetRecyclableMemoryStreamFactory()();
-			if (buffer != null)
-			{
-				index = index > -1 && index < buffer.Length ? index : 0;
-				count = count > 0 && count < buffer.Length - index ? count : buffer.Length - index;
-				stream.Write(buffer, index, count);
-				stream.Seek(0, SeekOrigin.Begin);
-			}
+			var factory = UtilityService.GetRecyclableMemoryStreamFactory();
+			if (buffer == null || buffer.Length < 1)
+				return factory();
+
+			index = index > -1 && index < buffer.Length ? index : 0;
+			count = count > 0 && count < buffer.Length - index ? count : buffer.Length - index;
+			var stream = factory();
+			stream.Write(buffer, index, count);
+			stream.Seek(0, SeekOrigin.Begin);
 			return stream;
 		}
 
@@ -1321,11 +1322,9 @@ namespace net.vieapps.Components.Utility
 		/// </remarks>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
-		{
-			return stream.TryGetBuffer(out ArraySegment<byte> buffer)
+			=> stream.TryGetBuffer(out ArraySegment<byte> buffer)
 				? buffer
 				: stream.ToArray().ToArraySegment();
-		}
 
 		/// <summary>
 		/// Converts this memory stream to array of bytes
@@ -1333,9 +1332,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="stream"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this MemoryStream stream)
-		{
-			return stream.ToArraySegment().ToBytes();
-		}
+			=> stream.ToArraySegment().ToBytes();
 
 		/// <summary>
 		/// Writes the array segment of bytes to this stream
@@ -1343,9 +1340,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="stream"></param>
 		/// <param name="buffer"></param>
 		public static void Write(this Stream stream, ArraySegment<byte> buffer)
-		{
-			stream.Write(buffer.Array, buffer.Offset, buffer.Count);
-		}
+			=> stream.Write(buffer.Array, buffer.Offset, buffer.Count);
 
 		/// <summary>
 		/// Writes the array segment of bytes to this stream
@@ -1355,9 +1350,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
-		}
+			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 		#endregion
 
 		#region Read/Write text files
@@ -1388,11 +1381,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static string ReadTextFile(string filePath, Encoding encoding = null)
-		{
-			return !string.IsNullOrWhiteSpace(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.ReadTextFile(new FileInfo(filePath), encoding)
 				: throw new ArgumentException("File path is invalid", nameof(filePath));
-		}
 
 		/// <summary>
 		/// Reads a text file
@@ -2056,7 +2047,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static byte[] Compress(this byte[] data, string mode = "deflate") => data.ToArraySegment().Compress(mode).ToBytes();
+		public static byte[] Compress(this byte[] data, string mode = "deflate")
+			=> data.ToArraySegment().Compress(mode).ToBytes();
 
 		/// <summary>
 		/// Decompresses the stream
@@ -2111,7 +2103,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static byte[] Decompress(this byte[] data, string mode = "deflate") => data.ToMemoryStream().Decompress(mode);
+		public static byte[] Decompress(this byte[] data, string mode = "deflate")
+			=> data.ToMemoryStream().Decompress(mode);
 
 		/// <summary>
 		/// Decompresses the array segment of bytes
@@ -2119,7 +2112,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="data"></param>
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <returns></returns>
-		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate") => data.ToMemoryStream().Decompress(mode).ToArraySegment();
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
+			=> data.ToMemoryStream().Decompress(mode).ToArraySegment();
 		#endregion
 
 		#region BigInteger extensions
@@ -2691,7 +2685,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
-		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken)) => this._reader.ReadLineAsync().WithCancellationToken(cancellationToken);
+		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
+			=> this._reader.ReadLineAsync().WithCancellationToken(cancellationToken);
 
 		/// <summary>
 		/// Reads some lines of characters (from the current position)

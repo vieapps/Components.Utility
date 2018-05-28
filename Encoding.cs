@@ -70,10 +70,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this ArraySegment<byte> bytes)
-		{
-			return bytes.Take();
-		}
+		public static byte[] ToBytes(this ArraySegment<byte> bytes) => bytes.Take();
 
 		/// <summary>
 		/// Converts this string to array of bytes
@@ -81,130 +78,91 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this string @string, Encoding encoding = null)
-		{
-			return (encoding ?? Encoding.UTF8).GetBytes(@string);
-		}
+		public static byte[] ToBytes(this string @string, Encoding encoding = null) => (encoding ?? Encoding.UTF8).GetBytes(@string);
 
 		/// <summary>
 		/// Converts this boolean to array of bytes
 		/// </summary>
 		/// <param name="bool"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this bool @bool)
-		{
-			return BitConverter.GetBytes(@bool);
-		}
+		public static byte[] ToBytes(this bool @bool) => BitConverter.GetBytes(@bool);
 
 		/// <summary>
 		/// Converts this char to array of bytes
 		/// </summary>
 		/// <param name="char"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this char @char)
-		{
-			return BitConverter.GetBytes(@char);
-		}
+		public static byte[] ToBytes(this char @char) => BitConverter.GetBytes(@char);
 
 		/// <summary>
 		/// Converts this byte to array of bytes
 		/// </summary>
 		/// <param name="byte"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this byte @byte)
-		{
-			return BitConverter.GetBytes(@byte);
-		}
+		public static byte[] ToBytes(this byte @byte) => BitConverter.GetBytes(@byte);
 
 		/// <summary>
 		/// Converts this sbyte to array of bytes
 		/// </summary>
 		/// <param name="sbyte"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this sbyte @sbyte)
-		{
-			return BitConverter.GetBytes(@sbyte);
-		}
+		public static byte[] ToBytes(this sbyte @sbyte) => BitConverter.GetBytes(@sbyte);
 
 		/// <summary>
 		/// Converts this short to array of bytes
 		/// </summary>
 		/// <param name="short"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this short @short)
-		{
-			return BitConverter.GetBytes(@short);
-		}
+		public static byte[] ToBytes(this short @short) => BitConverter.GetBytes(@short);
 
 		/// <summary>
 		/// Converts this ushort to array of bytes
 		/// </summary>
 		/// <param name="ushort"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this ushort @ushort)
-		{
-			return BitConverter.GetBytes(@ushort);
-		}
+		public static byte[] ToBytes(this ushort @ushort) => BitConverter.GetBytes(@ushort);
 
 		/// <summary>
 		/// Converts this int to array of bytes
 		/// </summary>
 		/// <param name="int"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this int @int)
-		{
-			return BitConverter.GetBytes(@int);
-		}
+		public static byte[] ToBytes(this int @int) => BitConverter.GetBytes(@int);
 
 		/// <summary>
 		/// Converts this uint to array of bytes
 		/// </summary>
 		/// <param name="uint"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this uint @uint)
-		{
-			return BitConverter.GetBytes(@uint);
-		}
+		public static byte[] ToBytes(this uint @uint) => BitConverter.GetBytes(@uint);
 
 		/// <summary>
 		/// Converts this long to array of bytes
 		/// </summary>
 		/// <param name="long"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this long @long)
-		{
-			return BitConverter.GetBytes(@long);
-		}
+		public static byte[] ToBytes(this long @long) => BitConverter.GetBytes(@long);
 
 		/// <summary>
 		/// Converts this ulong to array of bytes
 		/// </summary>
 		/// <param name="ulong"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this ulong @ulong)
-		{
-			return BitConverter.GetBytes(@ulong);
-		}
+		public static byte[] ToBytes(this ulong @ulong) => BitConverter.GetBytes(@ulong);
 
 		/// <summary>
 		/// Converts this float to array of bytes
 		/// </summary>
 		/// <param name="float"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this float @float)
-		{
-			return BitConverter.GetBytes(@float);
-		}
+		public static byte[] ToBytes(this float @float) => BitConverter.GetBytes(@float);
 
 		/// <summary>
 		/// Converts this double to array of bytes
 		/// </summary>
 		/// <param name="double"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this double @double)
-		{
-			return BitConverter.GetBytes(@double);
-		}
+		public static byte[] ToBytes(this double @double) => BitConverter.GetBytes(@double);
 
 		/// <summary>
 		/// Converts this decimal to array of bytes
@@ -223,10 +181,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this DateTime datetime)
-		{
-			return datetime.ToBinary().ToBytes();
-		}
+		public static byte[] ToBytes(this DateTime datetime) => datetime.ToBinary().ToBytes();
 
 		/// <summary>
 		/// Converts this big-integer to array of bytes
@@ -249,10 +204,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bigInt"></param>
 		/// <returns></returns>
-		public static byte[] ToUnsignedBytes(this BigInteger bigInt)
-		{
-			return bigInt.ToBytes(true);
-		}
+		public static byte[] ToUnsignedBytes(this BigInteger bigInt) => bigInt.ToBytes(true);
 
 		/// <summary>
 		/// Converts this Base64 string to array of bytes
@@ -287,10 +239,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] Base64UrlToBytes(this string @string)
-		{
-			return @string.Base64ToBytes(true);
-		}
+		public static byte[] Base64UrlToBytes(this string @string) => @string.Base64ToBytes(true);
 		#endregion
 
 		#region To Hex
@@ -313,20 +262,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="isBase64"></param>
 		/// <returns></returns>
-		public static string ToHex(this string @string, bool isBase64 = false)
-		{
-			return (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHex();
-		}
+		public static string ToHex(this string @string, bool isBase64 = false) => (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHex();
 
 		/// <summary>
 		/// Converts this big-integer to hexa string
 		/// </summary>
 		/// <param name="bigInt"></param>
 		/// <returns></returns>
-		public static string ToHex(this BigInteger bigInt)
-		{
-			return bigInt.ToUnsignedBytes().ToHex();
-		}
+		public static string ToHex(this BigInteger bigInt) => bigInt.ToUnsignedBytes().ToHex();
 
 		/// <summary>
 		/// Converts this hexa-string to array of bytes
@@ -458,11 +401,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="addChecksum"></param>
 		/// <returns></returns>
 		public static string ToBase32(this string @string, bool addChecksum = false)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? throw new ArgumentNullException(nameof(@string), "Invalid")
 				: @string.ToBytes().Base32Encode(addChecksum);
-		}
 
 		/// <summary>
 		/// Converts this Base32 string to plain string
@@ -470,11 +411,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string FromBase32(this string @string, bool verifyChecksum = false)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? throw new ArgumentNullException(nameof(@string), "Invalid")
 				: @string.Base32Decode(verifyChecksum).GetString();
-		}
 		#endregion
 
 		#region Encode/Decode Base58
@@ -555,11 +494,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="addChecksum">true to add SHA256 checksum</param>
 		/// <returns></returns>
 		public static string ToBase58(this string @string, bool addChecksum = true)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? null
 				: @string.ToBytes().Base58Encode(addChecksum);
-		}
 
 		/// <summary>
 		/// Converts this Base58 string to plain string
@@ -568,11 +505,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="verifyChecksum">true to verify with SHA256 checksum</param>
 		/// <returns></returns>
 		public static string FromBase58(this string @string, bool verifyChecksum = true)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? null
 				: @string.Base58Decode(verifyChecksum)?.GetString();
-		}
 		#endregion
 
 		#region Encode/Decode Base64
@@ -626,10 +561,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bytes"></param>
 		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64(this byte[] bytes, bool addChecksum = false)
-		{
-			return bytes.Base64Encode(addChecksum);
-		}
+		public static string ToBase64(this byte[] bytes, bool addChecksum = false) => bytes.Base64Encode(addChecksum);
 
 		/// <summary>
 		/// Converts this string to Base64 string
@@ -673,10 +605,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bytes"></param>
 		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64Url(this byte[] bytes, bool addChecksum = false)
-		{
-			return bytes.ToBase64(addChecksum).Split('=').First().Replace('+', '-').Replace('/', '_');
-		}
+		public static string ToBase64Url(this byte[] bytes, bool addChecksum = false) => bytes.ToBase64(addChecksum).Split('=').First().Replace('+', '-').Replace('/', '_');
 
 		/// <summary>
 		/// Converts this string to Base64Url string
@@ -686,10 +615,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHexa"></param>
 		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHexa = false, bool addChecksum = false)
-		{
-			return (isBase64 ? @string : @string.ToBase64(isHexa, false, addChecksum)).Split('=').First().Replace('+', '-').Replace('/', '_');
-		}
+		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHexa = false, bool addChecksum = false) => (isBase64 ? @string : @string.ToBase64(isHexa, false, addChecksum)).Split('=').First().Replace('+', '-').Replace('/', '_');
 
 		/// <summary>
 		/// Converts this Base64 string to plain string
@@ -698,20 +624,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isBase64Url"></param>
 		/// <param name="verifyChecksum"></param>
 		/// <returns></returns>
-		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false)
-		{
-			return (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum)?.GetString();
-		}
+		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false) => (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum)?.GetString();
 
 		/// <summary>
 		/// Converts this Base64Url string to plain string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string FromBase64Url(this string @string)
-		{
-			return @string.FromBase64(true);
-		}
+		public static string FromBase64Url(this string @string) => @string.FromBase64(true);
 		#endregion
 
 		#region Encode/Decode Url
@@ -721,11 +641,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string UrlEncode(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: WebUtility.UrlEncode(@string).Replace("+", "%20").Replace(" ", "%20");
-		}
 
 		/// <summary>
 		/// Decodes this url-encoded string
@@ -733,11 +651,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string UrlDecode(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: WebUtility.UrlDecode(@string.Trim());
-		}
 
 		/// <summary>
 		/// Encodes this string to Base64Url string
@@ -745,11 +661,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string Url64Encode(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.ToBase64Url();
-		}
 
 		/// <summary>
 		/// Decodes this Base64Url string
@@ -757,11 +671,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string Url64Decode(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.Base64ToBytes(true).GetString();
-		}
 		#endregion
 
 		#region Encode/Decode Html
@@ -771,11 +683,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string HtmlEncode(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: WebUtility.HtmlEncode(@string);
-		}
 
 		/// <summary>
 		/// Decodes this HTML string
@@ -783,11 +693,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string HtmlDecode(this string @string)
-		{
-			return string.IsNullOrWhiteSpace(@string)
+			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: WebUtility.HtmlDecode(@string.Trim());
-		}
 		#endregion
 
 	}

@@ -34,14 +34,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="trim"></param>
 		/// <returns></returns>
 		public static string[] ToArray(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
-		{
-			return @string == null
+			=> @string == null
 				? new string[] { }
 				: (trim ? @string.Trim() : @string).Split(new[] { separator ?? "," }, removeEmptyElements ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None)
 					.Where(e => removeEmptyElements ? !string.IsNullOrWhiteSpace(e) : true)
 					.Select(e => trim ? e.Trim() : e)
 					.ToArray();
-		}
 
 		/// <summary>
 		/// Converts this string to an array
@@ -52,11 +50,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="trim"></param>
 		/// <returns></returns>
 		public static string[] ToArray(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
-		{
-			return @string == null
+			=> @string == null
 				? new string[] { }
 				: @string.ToArray(separator.ToString(), removeEmptyElements, trim);
-		}
 
 		/// <summary>
 		/// Converts this string to an array
@@ -67,14 +63,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="trim"></param>
 		/// <returns></returns>
 		public static List<string> ToList(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
-		{
-			return @string == null
+			=> @string == null
 				? new List<string>()
 				: (trim ? @string.Trim() : @string).Split(new[] { separator ?? "," }, removeEmptyElements ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None)
 					.Where(e => removeEmptyElements ? !string.IsNullOrWhiteSpace(e) : true)
 					.Select(e => trim ? e.Trim() : e)
 					.ToList();
-		}
 
 		/// <summary>
 		/// Converts this string to an array
@@ -85,9 +79,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="trim"></param>
 		/// <returns></returns>
 		public static List<string> ToList(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
-		{
-			return @string.ToList(separator.ToString(), removeEmptyElements, trim);
-		}
+			=> @string.ToList(separator.ToString(), removeEmptyElements, trim);
 
 		/// <summary>
 		/// Converts this string to a hash-set
@@ -98,9 +90,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="trim"></param>
 		/// <returns></returns>
 		public static HashSet<string> ToHashSet(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
-		{
-			return new HashSet<string>(@string.ToArray(separator, removeEmptyElements, trim));
-		}
+			=> new HashSet<string>(@string.ToArray(separator, removeEmptyElements, trim));
 
 		/// <summary>
 		/// Converts this string to a hash-set
@@ -111,9 +101,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="trim"></param>
 		/// <returns></returns>
 		public static HashSet<string> ToHashSet(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
-		{
-			return @string.ToHashSet(separator.ToString(), removeEmptyElements, trim);
-		}
+			=> @string.ToHashSet(separator.ToString(), removeEmptyElements, trim);
 
 		/// <summary>
 		/// Converts this collection to string
@@ -122,9 +110,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="separator"></param>
 		/// <returns></returns>
 		public static string ToString(this IEnumerable<string> @object, string separator)
-		{
-			return string.Join(separator ?? "", @object);
-		}
+			=> string.Join(separator ?? "", @object);
 
 		/// <summary>
 		/// Converts this collection to string
@@ -133,9 +119,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="separator"></param>
 		/// <returns></returns>
 		public static string Join(this IEnumerable<string> @object, string separator)
-		{
-			return @object.ToString(separator ?? "");
-		}
+			=> string.Join(separator ?? "", @object);
 
 		/// <summary>
 		/// Converts this collection to string
@@ -144,9 +128,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="separator"></param>
 		/// <returns></returns>
 		public static string ToString<T>(this IEnumerable<T> @object, string separator)
-		{
-			return @object.Select(obj => obj != null ? obj.ToString() : "null").ToString(separator);
-		}
+			=> @object.Select(obj => obj != null ? obj.ToString() : "null").ToString(separator);
 
 		/// <summary>
 		/// Converts this collection to string
@@ -172,11 +154,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T First<T>(this T[] @object)
-		{
-			return @object.Length > 0
+			=> @object.Length > 0
 				? @object[0]
 				: default(T);
-		}
 
 		/// <summary>
 		/// Gets the first element
@@ -185,11 +165,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T First<T>(this IList<T> @object)
-		{
-			return @object.Count > 0
+			=> @object.Count > 0
 				? @object[0]
 				: default(T);
-		}
 
 		/// <summary>
 		/// Gets the first element
@@ -198,11 +176,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T First<T>(this Collection @object)
-		{
-			return @object.Count > 0
+			=> @object.Count > 0
 				? (T)@object[0]
 				: default(T);
-		}
 
 		/// <summary>
 		/// Gets the last element
@@ -211,11 +187,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T Last<T>(this T[] @object)
-		{
-			return @object.Length > 1
+			=> @object.Length > 1
 				? @object[@object.Length - 1]
 				: default(T);
-		}
 
 		/// <summary>
 		/// Gets the last element
@@ -224,11 +198,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T Last<T>(this IList<T> @object)
-		{
-			return @object.Count > 1
+			=> @object.Count > 1
 				? @object[@object.Count - 1]
 				: default(T);
-		}
 
 		/// <summary>
 		/// Gets the last element
@@ -237,11 +209,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T Last<T>(this Collection @object)
-		{
-			return @object.Count > 1
+			=> @object.Count > 1
 				? (T)@object[@object.Count - 1]
 				: default(T);
-		}
 		#endregion
 
 		#region Manipulations
@@ -389,9 +359,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="items">Items to append</param>
 		public static void Append<T>(this IList<T> @object, IEnumerable<T> items)
-		{
-			@object.Append(true, items);
-		}
+			=> @object.Append(true, items);
 
 		/// <summary>
 		/// Appends items into collection
@@ -401,9 +369,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="allowDuplicated">true to allow items can be duplicated, false if otherwise</param>
 		/// <param name="lists"></param>
 		public static void Append<T>(this IList<T> @object, bool allowDuplicated, params IEnumerable<T>[] lists)
-		{
-			lists?.ForEach(list => @object.Append(allowDuplicated, list));
-		}
+			=> lists?.ForEach(list => @object.Append(allowDuplicated, list));
 
 		/// <summary>
 		/// Appends items into collection
@@ -412,9 +378,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="lists"></param>
 		public static void Append<T>(this IList<T> @object, params IEnumerable<T>[] lists)
-		{
-			@object.Append(true, lists);
-		}
+			=> @object.Append(true, lists);
 
 		/// <summary>
 		/// Appends items into collection
@@ -435,9 +399,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="items"></param>
 		public static void Append<T>(this ISet<T> @object, IEnumerable<T> items)
-		{
-			items?.ForEach(item => @object.Append(item));
-		}
+			=> items?.ForEach(item => @object.Append(item));
 
 		/// <summary>
 		/// Appends items into collection
@@ -446,9 +408,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="lists"></param>
 		public static void Append<T>(this ISet<T> @object, params IEnumerable<T>[] lists)
-		{
-			lists?.ForEach(list => @object.Append(list));
-		}
+			=> lists?.ForEach(list => @object.Append(list));
 
 		/// <summary>
 		/// Swaps the two-elements by the specified indexes
@@ -527,11 +487,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="checkDuplicated"></param>
 		/// <returns></returns>
 		public static HashSet<T> ToHashSet<T>(this Collection @object, bool checkDuplicated = true)
-		{
-			return @object.AsEnumerableDictionaryEntry
-				.Select(entry => (T)entry.Value)
-				.ToHashSet(checkDuplicated);
-		}
+			=> @object.AsEnumerableDictionaryEntry.Select(entry => (T)entry.Value).ToHashSet(checkDuplicated);
 
 		/// <summary>
 		/// Creates a collection from this hash-set
@@ -541,9 +497,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
 		public static Collection ToCollection<T>(this HashSet<T> @object, string keyAttribute)
-		{
-			return (@object as IEnumerable<T>).ToCollection(keyAttribute);
-		}
+			=> (@object as IEnumerable<T>).ToCollection(keyAttribute);
 
 		/// <summary>
 		/// Creates a collection from this hash-set
@@ -555,9 +509,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted"></param>
 		/// <returns></returns>
 		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this HashSet<TValue> @object, string keyAttribute, Action<Collection<TKey, TValue>> onPreCompleted = null)
-		{
-			return (@object as IEnumerable<TValue>).ToCollection(keyAttribute, onPreCompleted);
-		}
+			=> (@object as IEnumerable<TValue>).ToCollection(keyAttribute, onPreCompleted);
 
 		/// <summary>
 		/// Creates a list from this collection
@@ -566,11 +518,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static List<T> ToList<T>(this Collection @object)
-		{
-			return @object.AsEnumerableDictionaryEntry
-				.Select(entry => (T)entry.Value)
-				.ToList();
-		}
+			=> @object.AsEnumerableDictionaryEntry.Select(entry => (T)entry.Value).ToList();
 
 		/// <summary>
 		/// Creates a collection from this list
@@ -580,9 +528,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="keyAttribute">The string that presents name of the attribute to get value that will be used as key</param>
 		/// <returns></returns>
 		public static Collection ToCollection<T>(this List<T> @object, string keyAttribute)
-		{
-			return (@object as IEnumerable<T>).ToCollection(keyAttribute);
-		}
+			=> (@object as IEnumerable<T>).ToCollection(keyAttribute);
 
 		/// <summary>
 		/// Creates a collection from this hash-set
@@ -594,9 +540,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted"></param>
 		/// <returns></returns>
 		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this List<TValue> @object, string keyAttribute, Action<Collection<TKey, TValue>> onPreCompleted = null)
-		{
-			return (@object as IEnumerable<TValue>).ToCollection(keyAttribute, onPreCompleted);
-		}
+			=> (@object as IEnumerable<TValue>).ToCollection(keyAttribute, onPreCompleted);
 
 		/// <summary>
 		/// Creates a collection from this list
@@ -700,9 +644,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="enums"></param>
 		/// <returns></returns>
 		public static IEnumerable<T> ToEnums<T>(this IEnumerable<string> enums)
-		{
-			return enums?.Select(@enum => @enum.ToEnum<T>());
-		}
+			=> enums?.Select(@enum => @enum.ToEnum<T>());
 
 		/// <summary>
 		/// Converts this name and value collection to dictionary with all keys in lower case
@@ -813,11 +755,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T ToList<T>(this List<object> @object)
-		{
-			return typeof(T).IsGenericList()
+			=> typeof(T).IsGenericList()
 				? (T)@object.ToList(typeof(T).GenericTypeArguments[0])
 				: default(T);
-		}
 
 		/// <summary>
 		/// Converts the collection of objects to the generic hash-set of strong-typed objects
@@ -838,11 +778,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T ToHashSet<T>(this List<object> @object)
-		{
-			return typeof(T).IsGenericHashSet()
+			=> typeof(T).IsGenericHashSet()
 				? (T)@object.ToHashSet(typeof(T).GenericTypeArguments[0])
 				: default(T);
-		}
 
 		/// <summary>
 		/// Converts the collection of objects to the generic dictionary of strong-typed objects
@@ -903,11 +841,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T ToDictionary<T>(this ExpandoObject @object)
-		{
-			return typeof(T).IsGenericDictionary()
+			=> typeof(T).IsGenericDictionary()
 				? (T)@object.ToDictionary(typeof(T).GenericTypeArguments[0], typeof(T).GenericTypeArguments[1])
 				: default(T);
-		}
 
 		/// <summary>
 		/// Converts the collection of objects to the generic collection of strong-typed objects
@@ -929,11 +865,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T ToCollection<T>(this ExpandoObject @object)
-		{
-			return typeof(T).IsGenericCollection()
+			=> typeof(T).IsGenericCollection()
 				? (T)@object.ToCollection(typeof(T).GenericTypeArguments[0], typeof(T).GenericTypeArguments[1])
 				: default(T);
-		}
 		#endregion
 
 		#region JSON (JArray) Conversions
@@ -1022,9 +956,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this JArray json, string keyAttribute, Func<JToken, TValue> converter = null)
-		{
-			return new Collection<TKey, TValue>(json.ToDictionary<TKey, TValue>(keyAttribute, converter));
-		}
+			=> new Collection<TKey, TValue>(json.ToDictionary<TKey, TValue>(keyAttribute, converter));
 
 		/// <summary>
 		/// Creates a JArray object from this collection
@@ -1155,9 +1087,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static Collection<TKey, TValue> ToCollection<TKey, TValue>(this JObject json, string keyAttribute, Func<JToken, TValue> converter = null)
-		{
-			return new Collection<TKey, TValue>(json.ToDictionary<TKey, TValue>(keyAttribute, converter));
-		}
+			=> new Collection<TKey, TValue>(json.ToDictionary<TKey, TValue>(keyAttribute, converter));
 
 		/// <summary>
 		/// Creates a JObject object from this collection
@@ -1418,9 +1348,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="segment"></param>
 		/// <returns></returns>
 		public static T[] Take<T>(this ArraySegment<T> segment)
-		{
-			return segment.Array.Take(segment.Offset, segment.Count);
-		}
+			=> segment.Array.Take(segment.Offset, segment.Count);
 
 		/// <summary>
 		/// Converts this list to array segment
@@ -1459,9 +1387,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this string @string, Encoding encoding = null)
-		{
-			return @string.ToBytes(encoding).ToArraySegment();
-		}
+			=> @string.ToBytes(encoding).ToArraySegment();
 
 		/// <summary>
 		/// Converts this boolean to array segment of bytes
@@ -1469,9 +1395,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bool"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this bool @bool)
-		{
-			return @bool.ToBytes().ToArraySegment();
-		}
+			=> @bool.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this char to array segment of bytes
@@ -1479,9 +1403,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="char"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this char @char)
-		{
-			return @char.ToBytes().ToArraySegment();
-		}
+			=> @char.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this byte to array segment of bytes
@@ -1489,9 +1411,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="byte"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this byte @byte)
-		{
-			return @byte.ToBytes().ToArraySegment();
-		}
+			=> @byte.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this sbyte to array segment of bytes
@@ -1499,9 +1419,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="sbyte"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this sbyte @sbyte)
-		{
-			return @sbyte.ToBytes().ToArraySegment();
-		}
+			=> @sbyte.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this short to array segment of bytes
@@ -1509,9 +1427,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="short"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this short @short)
-		{
-			return @short.ToBytes().ToArraySegment();
-		}
+			=> @short.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this ushort to array segment of bytes
@@ -1519,9 +1435,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="ushort"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this ushort @ushort)
-		{
-			return @ushort.ToBytes().ToArraySegment();
-		}
+			=> @ushort.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this int to array segment of bytes
@@ -1529,9 +1443,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="int"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this int @int)
-		{
-			return @int.ToBytes().ToArraySegment();
-		}
+			=> @int.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this uint to array segment of bytes
@@ -1539,9 +1451,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="uint"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this uint @uint)
-		{
-			return @uint.ToBytes().ToArraySegment();
-		}
+			=> @uint.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this long to array segment of bytes
@@ -1549,9 +1459,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="long"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this long @long)
-		{
-			return @long.ToBytes().ToArraySegment();
-		}
+			=> @long.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this ulong to array segment of bytes
@@ -1559,9 +1467,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="ulong"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this ulong @ulong)
-		{
-			return @ulong.ToBytes().ToArraySegment();
-		}
+			=> @ulong.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this float to array segment of bytes
@@ -1569,9 +1475,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="float"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this float @float)
-		{
-			return @float.ToBytes().ToArraySegment();
-		}
+			=> @float.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this double to array segment of bytes
@@ -1579,9 +1483,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="double"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this double @double)
-		{
-			return @double.ToBytes().ToArraySegment();
-		}
+			=> @double.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this decimal to array segment of bytes
@@ -1589,9 +1491,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="decimal"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this decimal @decimal)
-		{
-			return @decimal.ToBytes().ToArraySegment();
-		}
+			=> @decimal.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this date-time to array segment of bytes
@@ -1599,9 +1499,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this DateTime datetime)
-		{
-			return datetime.ToBytes().ToArraySegment();
-		}
+			=> datetime.ToBytes().ToArraySegment();
 
 		/// <summary>
 		/// Converts this big-integer to array segment of bytes
@@ -1609,9 +1507,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bigInt"></param>
 		/// <returns></returns>
 		public static ArraySegment<byte> ToArraySegment(this BigInteger bigInt)
-		{
-			return bigInt.ToUnsignedBytes().ToArraySegment();
-		}
+			=> bigInt.ToUnsignedBytes().ToArraySegment();
 		#endregion
 
 	}
@@ -1635,79 +1531,37 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the number of key/values pairs contained in the collection
 		/// </summary>
-		public int Count
-		{
-			get
-			{
-				return this._collection.Count;
-			}
-		}
+		public int Count => this._collection.Count;
 
 		/// <summary>
 		/// Gets a value indicating whether the collection is read-only
 		/// </summary>
-		public bool IsReadOnly
-		{
-			get
-			{
-				return this._collection.IsReadOnly;
-			}
-		}
+		public bool IsReadOnly => this._collection.IsReadOnly;
 
 		/// <summary>
 		/// Gets a value indicating whether access to the collection is synchronized
 		/// </summary>
-		public bool IsSynchronized
-		{
-			get
-			{
-				return (this._collection as ICollection).IsSynchronized;
-			}
-		}
+		public bool IsSynchronized => (this._collection as ICollection).IsSynchronized;
 
 		/// <summary>
 		/// Gets an object that can be used to synchronize access to the collection
 		/// </summary>
-		public object SyncRoot
-		{
-			get
-			{
-				return (this._collection as ICollection).SyncRoot;
-			}
-		}
+		public object SyncRoot => (this._collection as ICollection).SyncRoot;
 
 		/// <summary>
 		/// Gets a value indicating whether the collection has a fixed size
 		/// </summary>
-		public bool IsFixedSize
-		{
-			get
-			{
-				return (this._collection as IDictionary).IsFixedSize;
-			}
-		}
+		public bool IsFixedSize => (this._collection as IDictionary).IsFixedSize;
 
 		/// <summary>
 		/// Gets an object containing the keys in the collection
 		/// </summary>
-		public ICollection Keys
-		{
-			get
-			{
-				return this._collection.Keys;
-			}
-		}
+		public ICollection Keys => this._collection.Keys;
 
 		/// <summary>
 		/// Gets an object containing the values in the collection
 		/// </summary>
-		public ICollection Values
-		{
-			get
-			{
-				return this._collection.Values;
-			}
-		}
+		public ICollection Values => this._collection.Values;
 
 		/// <summary>
 		/// Gets or sets the value with the specified key
@@ -1716,14 +1570,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The value associated with the specified key. If the specified key is not found, attempting to get it returns null, and attempting to set it creates a new element using the specified key</returns>
 		public object this[object key]
 		{
-			get
-			{
-				return this._collection[key];
-			}
-			set
-			{
-				this._collection[key] = value;
-			}
+			get => this._collection[key];
+			set => this._collection[key] = value;
 		}
 
 		/// <summary>
@@ -1733,26 +1581,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The value of the item at the specified index</returns>
 		public object this[int index]
 		{
-			get
-			{
-				return this._collection[index];
-			}
-			set
-			{
-				this._collection[index] = value;
-			}
+			get => this._collection[index];
+			set => this._collection[index] = value;
 		}
 
 		/// <summary>
 		/// Gets the object that cast as enumerable of dictionary entry
 		/// </summary>
-		public IEnumerable<DictionaryEntry> AsEnumerableDictionaryEntry
-		{
-			get
-			{
-				return this._collection.Cast<DictionaryEntry>();
-			}
-		}
+		public IEnumerable<DictionaryEntry> AsEnumerableDictionaryEntry => this._collection.Cast<DictionaryEntry>();
 		#endregion
 
 		#region Methods
@@ -1761,40 +1597,28 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="array">The one-dimensional array that is the destination of the elements copied from the collection. The array must have zero-based indexing.</param>
 		/// <param name="index">The zero-based index in array at which copying begins</param>
-		public void CopyTo(Array array, int index)
-		{
-			(this._collection as ICollection).CopyTo(array, index);
-		}
+		public void CopyTo(Array array, int index) => (this._collection as ICollection).CopyTo(array, index);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool Contains(object key)
-		{
-			return key != null && this._collection.Contains(key);
-		}
+		public bool Contains(object key) => key != null && this._collection.Contains(key);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool ContainsKey(object key)
-		{
-			return this.Contains(key);
-		}
+		public bool ContainsKey(object key) => this.Contains(key);
 
 		/// <summary>
 		/// Adds an element with the specified key and value into the collection with the lowest available index
 		/// </summary>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Add(object key, object value)
-		{
-			this._collection.Add(key, value);
-		}
+		public void Add(object key, object value) => this._collection.Add(key, value);
 
 		/// <summary>
 		/// Inserts a new element into the collection with the specified key and value at the specified index
@@ -1802,15 +1626,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="index">The zero-based index at which the element should be inserted</param>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Insert(int index, object key, object value)
-		{
-			this._collection.Insert(index, key, value);
-		}
+		public void Insert(int index, object key, object value) => this._collection.Insert(index, key, value);
 
-		void IDictionary.Remove(object key)
-		{
-			this.Remove(key);
-		}
+		void IDictionary.Remove(object key) => this.Remove(key);
 
 		/// <summary>
 		/// Removes the element with the specified key from the collection
@@ -1832,18 +1650,12 @@ namespace net.vieapps.Components.Utility
 		/// Removes the element at the specified index from the collection
 		/// </summary>
 		/// <param name="index">The zero-based index of the element to remove</param>
-		public void RemoveAt(int index)
-		{
-			this._collection.RemoveAt(index);
-		}
+		public void RemoveAt(int index) => this._collection.RemoveAt(index);
 
 		/// <summary>
 		/// Removes all elements from the collection
 		/// </summary>
-		public void Clear()
-		{
-			this._collection.Clear();
-		}
+		public void Clear() => this._collection.Clear();
 
 		/// <summary>
 		/// Searches for the specified object and returns the zero-based index of the first occurrence within the entire the collection
@@ -1869,7 +1681,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The zero-based index of the first occurrence of item within the entire the collections if found; otherwise, –1.</returns>
 		public int IndexOfKey(object @object)
 		{
-			if (!object.ReferenceEquals(@object, null))
+			if (@object == null)
 			{
 				var index = -1;
 				foreach (var key in this.Keys)
@@ -1887,52 +1699,31 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="index">The zero-based index of the element to get the key</param>
 		/// <returns>The key object at the specified index</returns>
-		public object GetKeyAt(int index)
-		{
-			return index > -1 && index < this.Count
-				? this.AsEnumerableDictionaryEntry.ElementAt(index).Key
-				: null;
-		}
+		public object GetKeyAt(int index) => index > -1 && index < this.Count ? this.AsEnumerableDictionaryEntry.ElementAt(index).Key : null;
 
 		/// <summary>
 		/// Gets value of the element at the specified index
 		/// </summary>
 		/// <param name="index">The zero-based index of the element</param>
 		/// <returns>The value object at the specified index</returns>
-		public object GetByIndex(int index)
-		{
-			return index > -1 && index < this.Count
-				? this._collection[index]
-				: null;
-		}
+		public object GetByIndex(int index) => index > -1 && index < this.Count ? this._collection[index] : null;
 
 		/// <summary>
 		/// Gets value of the element by specified key
 		/// </summary>
 		/// <param name="key">The object that presents the key of the element</param>
 		/// <returns>The value object that specified by the key</returns>
-		public object GetByKey(object key)
-		{
-			return key != null
-				? this._collection[key]
-				: null;
-		}
+		public object GetByKey(object key) => key != null ? this._collection[key] : null;
 		#endregion
 
 		#region Enumerator
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return this.GetEnumerator();
-		}
+		IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
 		/// <summary>
 		/// Returns an enumerator that iterates through the collection
 		/// </summary>
 		/// <returns></returns>
-		public IDictionaryEnumerator GetEnumerator()
-		{
-			return new Enumerator(this);
-		}
+		public IDictionaryEnumerator GetEnumerator() => new Enumerator(this);
 
 		public class Enumerator : IDictionaryEnumerator
 		{
@@ -1961,58 +1752,27 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Resets the enumerator to its initial position, which is before the first element in the collection
 			/// </summary>
-			public void Reset()
-			{
-				this._index = -1;
-			}
+			public void Reset() => this._index = -1;
 
 			/// <summary>
 			/// Gets the value of current element in the collection
 			/// </summary>
-			public object Current
-			{
-				get
-				{
-					return this.Value;
-				}
-			}
+			public object Current => this.Value;
 
 			/// <summary>
 			/// Gets the key of the current element
 			/// </summary>
-			public object Key
-			{
-				get
-				{
-					return this._collection != null && this._index > -1 && this._index < this._collection.Count
-						? this._keys[this._index]
-						: null;
-				}
-			}
+			public object Key => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._keys[this._index] : null;
 
 			/// <summary>
 			/// Gets the value of the current element
 			/// </summary>
-			public object Value
-			{
-				get
-				{
-					return this._collection != null && this._index > -1 && this._index < this._collection.Count
-						? this._collection[this._index]
-						: null;
-				}
-			}
+			public object Value => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._collection[this._index] : null;
 
 			/// <summary>
 			/// Gets both the key and the value of the current element
 			/// </summary>
-			public DictionaryEntry Entry
-			{
-				get
-				{
-					return new DictionaryEntry(this.Key, this.Value);
-				}
-			}
+			public DictionaryEntry Entry => new DictionaryEntry(this.Key, this.Value);
 		}
 		#endregion
 
@@ -2030,10 +1790,7 @@ namespace net.vieapps.Components.Utility
 		/// Initializes a new instance of the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="dictionary">The initialized values</param>
-		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()
-		{
-			dictionary?.ForEach(kvp => this.Add(kvp));
-		}
+		public Collection(IDictionary<TKey, TValue> dictionary = null) : base() => dictionary?.ForEach(kvp => this.Add(kvp));
 
 		#region Properties
 		/// <summary>
@@ -2043,14 +1800,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The value associated with the specified key. If the specified key is not found, attempting to get it returns null, and attempting to set it creates a new element using the specified key</returns>
 		public TValue this[TKey key]
 		{
-			get
-			{
-				return (TValue)base[key];
-			}
-			set
-			{
-				base[key] = value;
-			}
+			get => (TValue)base[key];
+			set => base[key] = value;
 		}
 
 		/// <summary>
@@ -2060,14 +1811,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The value of the item at the specified index</returns>
 		public new TValue this[int index]
 		{
-			get
-			{
-				return (TValue)base[index];
-			}
-			set
-			{
-				base[index] = value;
-			}
+			get => (TValue)base[index];
+			set => base[index] = value;
 		}
 
 		/// <summary>
@@ -2105,59 +1850,41 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="array">The one-dimensional array that is the destination of the elements copied from the collection. The array must have zero-based indexing.</param>
 		/// <param name="index">The zero-based index in array at which copying begins</param>
-		public void CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
-		{
-			base.CopyTo(array, index);
-		}
+		public void CopyTo(KeyValuePair<TKey, TValue>[] array, int index) => base.CopyTo(array, index);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool Contains(TKey key)
-		{
-			return base.Contains(key);
-		}
+		public bool Contains(TKey key) => base.Contains(key);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool ContainsKey(TKey key)
-		{
-			return this.Contains(key);
-		}
+		public bool ContainsKey(TKey key) => this.Contains(key);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="element">The element that contains both the key and the value</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool Contains(KeyValuePair<TKey, TValue> element)
-		{
-			return this.Contains(element.Key);
-		}
+		public bool Contains(KeyValuePair<TKey, TValue> element) => this.Contains(element.Key);
 
 		/// <summary>
 		/// Adds an element with the specified key and value into the collection with the lowest available index
 		/// </summary>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Add(TKey key, TValue value)
-		{
-			base.Add(key, value);
-		}
+		public void Add(TKey key, TValue value) => base.Add(key, value);
 
 		/// <summary>
 		/// Adds an element into the collection with the lowest available index
 		/// </summary>
 		/// <param name="element">The element that contains both the key and the value</param>
-		public void Add(KeyValuePair<TKey, TValue> element)
-		{
-			this.Add(element.Key, element.Value);
-		}
+		public void Add(KeyValuePair<TKey, TValue> element) => this.Add(element.Key, element.Value);
 
 		/// <summary>
 		/// Inserts a new element into the collection with the specified key and value at the specified index
@@ -2165,60 +1892,42 @@ namespace net.vieapps.Components.Utility
 		/// <param name="index">The zero-based index at which the element should be inserted</param>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Insert(int index, TKey key, TValue value)
-		{
-			base.Insert(index, key, value);
-		}
+		public void Insert(int index, TKey key, TValue value) => base.Insert(index, key, value);
 
 		/// <summary>
 		/// Removes the element with the specified key from the collection
 		/// </summary>
 		/// <param name="key">The key of the element to remove</param>
 		/// <returns>true if the element is successfully removed; otherwise, false. This method also returns false if key was not found in the collection</returns>
-		public bool Remove(TKey key)
-		{
-			return base.Remove(key);
-		}
+		public bool Remove(TKey key) => base.Remove(key);
 
 		/// <summary>
 		/// Removes the element with the specified key from the collection
 		/// </summary>
 		/// <param name="element">The element that contains both the key and the value</param>
 		/// <returns>true if the element is successfully removed; otherwise, false. This method also returns false if key was not found in the collection.</returns>
-		public bool Remove(KeyValuePair<TKey, TValue> element)
-		{
-			return this.Remove(element.Key);
-		}
+		public bool Remove(KeyValuePair<TKey, TValue> element) => this.Remove(element.Key);
 
 		/// <summary>
 		/// Searches for the specified object and returns the zero-based index of the first occurrence within the entire the collection
 		/// </summary>
 		/// <param name="object">The object to locate in the collections. The value can be null for reference types</param>
 		/// <returns>The zero-based index of the first occurrence of item within the entire the collections if found; otherwise, –1.</returns>
-		public int IndexOf(TValue @object)
-		{
-			return base.IndexOf(@object);
-		}
+		public int IndexOf(TValue @object) => base.IndexOf(@object);
 
 		/// <summary>
 		/// Searches for the specified key and returns the zero-based index of the first occurrence within the entire the collection
 		/// </summary>
 		/// <param name="key">The key to locate in the collections. The value cannot be null</param>
 		/// <returns>The zero-based index of the first occurrence of item within the entire the collections if found; otherwise, –1.</returns>
-		public int IndexOfKey(TKey key)
-		{
-			return base.IndexOfKey(key);
-		}
+		public int IndexOfKey(TKey key) => base.IndexOfKey(key);
 
 		/// <summary>
 		/// Gets a key at the specified index
 		/// </summary>
 		/// <param name="index">Index of the key</param>
 		/// <returns>The key object at the specified index</returns>
-		public new TKey GetKeyAt(int index)
-		{
-			return (TKey)base.GetKeyAt(index);
-		}
+		public new TKey GetKeyAt(int index) => (TKey)base.GetKeyAt(index);
 
 		/// <summary>
 		/// Gets the value associated with the specified key
@@ -2245,40 +1954,26 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="index">The zero-based index of the element</param>
 		/// <returns>The value object at the specified index</returns>
-		public new TValue GetByIndex(int index)
-		{
-			return index > -1 && index < this.Count
-				? (TValue)base.GetByIndex(index)
-				: default(TValue);
-		}
+		public new TValue GetByIndex(int index) => index > -1 && index < this.Count ? (TValue)base.GetByIndex(index) : default(TValue);
 
 		/// <summary>
 		/// Gets value of the element by specified key
 		/// </summary>
 		/// <param name="key">The object that presents the key of the element</param>
 		/// <returns>The value object that specified by the key</returns>
-		public new TValue GetByKey(TKey key)
-		{
-			return (TValue)base.GetByKey(key);
-		}
+		public new TValue GetByKey(TKey key) => (TValue)base.GetByKey(key);
 
 		/// <summary>
 		/// Gets value of the first element
 		/// </summary>
 		/// <returns></returns>
-		public TValue First()
-		{
-			return this.GetByIndex(0);
-		}
+		public TValue First() => this.GetByIndex(0);
 
 		/// <summary>
 		/// Gets value of the last element
 		/// </summary>
 		/// <returns></returns>
-		public TValue Last()
-		{
-			return this.GetByIndex(this.Count - 1);
-		}
+		public TValue Last() => this.GetByIndex(this.Count - 1);
 		#endregion
 
 		#region Enumerator
@@ -2286,10 +1981,7 @@ namespace net.vieapps.Components.Utility
 		/// Returns an enumerator that iterates through the collection
 		/// </summary>
 		/// <returns></returns>
-		public new IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-		{
-			return new Enumerator(this);
-		}
+		public new IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => new Enumerator(this);
 
 		public new class Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
 		{
@@ -2319,60 +2011,26 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Resets the enumerator to its initial position, which is before the first element in the collection
 			/// </summary>
-			public void Reset()
-			{
-				this._index = -1;
-			}
+			public void Reset() => this._index = -1;
 
-			public void Dispose()
-			{
-				this._collection = null;
-			}
+			public void Dispose() => this._collection = null;
 
-			object IEnumerator.Current
-			{
-				get
-				{
-					return this.Current;
-				}
-			}
+			object IEnumerator.Current => this.Current;
 
 			/// <summary>
 			/// Gets the value of current element in the collection
 			/// </summary>
-			public KeyValuePair<TKey, TValue> Current
-			{
-				get
-				{
-					return new KeyValuePair<TKey, TValue>(this.Key, this.Value);
-				}
-			}
+			public KeyValuePair<TKey, TValue> Current => new KeyValuePair<TKey, TValue>(this.Key, this.Value);
 
 			/// <summary>
 			/// Gets the key of the current element
 			/// </summary>
-			public TKey Key
-			{
-				get
-				{
-					return this._collection != null && this._index > -1 && this._index < this._collection.Count
-						? this._keys[this._index]
-						: default(TKey);
-				}
-			}
+			public TKey Key => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._keys[this._index] : default(TKey);
 
 			/// <summary>
 			/// Gets the value of the current element
 			/// </summary>
-			public TValue Value
-			{
-				get
-				{
-					return this._collection != null && this._index > -1 && this._index < this._collection.Count
-						? this._collection[this._index]
-						: default(TValue);
-				}
-			}
+			public TValue Value => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._collection[this._index] : default(TValue);
 		}
 		#endregion
 

@@ -42,9 +42,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(string secret, long counter, int digits = 6)
-		{
-			return OTPService.GeneratePassword(secret.ToBytes(), counter, digits);
-		}
+			=> OTPService.GeneratePassword(secret.ToBytes(), counter, digits);
 
 		/// <summary>
 		/// Generates the time-based password (RFC 6238)
@@ -54,9 +52,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(byte[] secret, int interval = 30, int digits = 6)
-		{
-			return OTPService.GeneratePassword(secret, DateTime.Now.ToUnixTimestamp() / (interval > 0 ? interval : 30), digits);
-		}
+			=> OTPService.GeneratePassword(secret, DateTime.Now.ToUnixTimestamp() / (interval > 0 ? interval : 30), digits);
 
 		/// <summary>
 		/// Generates the time-based password (RFC 6238)
@@ -66,9 +62,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(string secret, int interval = 30, int digits = 6)
-		{
-			return OTPService.GeneratePassword(secret.ToBytes(), interval, digits);
-		}
+			=> OTPService.GeneratePassword(secret.ToBytes(), interval, digits);
 
 		/// <summary>
 		/// Generates the URI for provisioning
@@ -78,9 +72,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="issuer">The string that presents name of issuer</param>
 		/// <returns></returns>
 		public static string GenerateProvisioningUri(string identifier, byte[] secret, string issuer = null)
-		{
-			return $"otpauth://totp/{identifier}?secret={secret.Base32Encode()}&issuer={(string.IsNullOrWhiteSpace(issuer) ? "VIEApps.net" : issuer)}";
-		}
+			=> $"otpauth://totp/{identifier}?secret={secret.Base32Encode()}&issuer={(string.IsNullOrWhiteSpace(issuer) ? "VIEApps.net" : issuer)}";
 
 		/// <summary>
 		/// Generates the URI for provisioning
@@ -90,8 +82,6 @@ namespace net.vieapps.Components.Utility
 		/// <param name="issuer">The string that presents name of issuer</param>
 		/// <returns></returns>
 		public static string GenerateProvisioningUri(string identifier, string secret, string issuer = null)
-		{
-			return OTPService.GenerateProvisioningUri(identifier, secret.ToBytes(), issuer);
-		}
+			=> OTPService.GenerateProvisioningUri(identifier, secret.ToBytes(), issuer);
 	}
 }

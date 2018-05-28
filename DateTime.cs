@@ -333,7 +333,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static DateTime GetFirstDayOfMonth(this DateTime datetime) => new DateTime(datetime.Year, datetime.Month, 1, 0, 0, 0);
+		public static DateTime GetFirstDayOfMonth(this DateTime datetime)
+			=> new DateTime(datetime.Year, datetime.Month, 1, 0, 0, 0);
 
 		/// <summary>
 		/// Gets the end-day-of-month of this date-time
@@ -352,14 +353,16 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static bool IsInCurrentWeek(this DateTime datetime) => datetime >= DateTime.Now.GetFirstDayOfWeek() && datetime <= DateTime.Now.GetEndDayOfWeek();
+		public static bool IsInCurrentWeek(this DateTime datetime)
+			=> datetime >= DateTime.Now.GetFirstDayOfWeek() && datetime <= DateTime.Now.GetEndDayOfWeek();
 
 		/// <summary>
 		/// Checks to see this date-time is in current month
 		/// </summary>
 		/// <param name="datetime"></param>
 		/// <returns></returns>
-		public static bool IsInCurrentMonth(this DateTime datetime) => datetime >= DateTime.Now.GetFirstDayOfMonth() && datetime <= DateTime.Now.GetEndDayOfMonth();
+		public static bool IsInCurrentMonth(this DateTime datetime)
+			=> datetime >= DateTime.Now.GetFirstDayOfMonth() && datetime <= DateTime.Now.GetEndDayOfMonth();
 
 		/// <summary>
 		/// Converts this date-time to UNIX timestamp
@@ -367,7 +370,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true) => ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.CastAs<long>();
+		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true)
+			=> ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.CastAs<long>();
 
 		/// <summary>
 		/// Converts this UNIX timestamp to date-time
@@ -386,7 +390,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static string ToDTString(this DateTime datetime, bool useUTC = false) => (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy/MM/dd HH:mm:ss");
+		public static string ToDTString(this DateTime datetime, bool useUTC = false)
+			=> (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy/MM/dd HH:mm:ss");
 
 		/// <summary>
 		/// Converts this date-time to string in format 'yyyy-MM-ddTHH:mm:ssZzzzz'
@@ -394,7 +399,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static string ToUtcString(this DateTime datetime, bool useUTC = false) => (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ssZzzzz");
+		public static string ToUtcString(this DateTime datetime, bool useUTC = false)
+			=> (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ssZzzzz");
 
 		/// <summary>
 		/// Converts this date-time to string in format 'yyyy-MM-ddTHH:mm:ssZzzzz'
@@ -402,7 +408,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="datetime"></param>
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
-		public static string ToIsoString(this DateTime datetime, bool useUTC = false) => (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
+		public static string ToIsoString(this DateTime datetime, bool useUTC = false)
+			=> (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy-MM-ddTHH:mm:ss.fffzzzz");
 
 		/// <summary>
 		/// Converts this date-time to HTTP string with GMT

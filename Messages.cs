@@ -82,13 +82,7 @@ namespace net.vieapps.Components.Utility
 		#region Helper properties
 		static string _EncryptionKey = null;
 
-		internal static string EncryptionKey
-		{
-			get
-			{
-				return EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys"));
-			}
-		}
+		internal static string EncryptionKey => EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys"));
 
 		/// <summary>
 		/// Gets or sets the identity of the email message.
@@ -114,11 +108,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath">The file path.</param>
 		/// <returns></returns>
 		public static EmailMessage Load(string filePath)
-		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
 				? new EmailMessage(UtilityService.ReadTextFile(filePath))
 				: null;
-		}
 
 		/// <summary>
 		/// Loads message from file and deserialize as object.
@@ -126,11 +118,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath">The file path.</param>
 		/// <returns></returns>
 		public static async Task<EmailMessage> LoadAsync(string filePath)
-		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
 				? new EmailMessage(await UtilityService.ReadTextFileAsync(filePath).ConfigureAwait(false))
 				: null;
-		}
 
 		/// <summary>
 		/// Serializes and saves message into file.
@@ -166,13 +156,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the string that presents the encrypted messages
 		/// </summary>
 		[JsonIgnore]
-		public string Encrypted
-		{
-			get
-			{
-				return this.ToJson().ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey);
-			}
-		}
+		public string Encrypted => this.ToJson().ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey);
 		#endregion
 
 	}
@@ -231,13 +215,7 @@ namespace net.vieapps.Components.Utility
 		#region Helper properties
 		static string _EncryptionKey = null;
 
-		internal static string EncryptionKey
-		{
-			get
-			{
-				return WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys"));
-			}
-		}
+		internal static string EncryptionKey => WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys"));
 
 		/// <summary>
 		/// Gets or sets identity of the message.
@@ -257,11 +235,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath">The file path.</param>
 		/// <returns></returns>
 		public static WebHookMessage Load(string filePath)
-		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
 				? new WebHookMessage(UtilityService.ReadTextFile(filePath))
 				: null;
-		}
 
 		/// <summary>
 		/// Loads message from file and deserialize as object.
@@ -269,11 +245,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath">The file path.</param>
 		/// <returns></returns>
 		public static async Task<WebHookMessage> LoadAsync(string filePath)
-		{
-			return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
+			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
 				? new WebHookMessage(await UtilityService.ReadTextFileAsync(filePath).ConfigureAwait(false))
 				: null;
-		}
 
 		/// <summary>
 		/// Serializes and saves message into file.
@@ -309,13 +283,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the string that presents the encrypted messages
 		/// </summary>
 		[JsonIgnore]
-		public string Encrypted
-		{
-			get
-			{
-				return this.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey);
-			}
-		}
+		public string Encrypted => this.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey);
 		#endregion
 
 	}
@@ -404,9 +372,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
 		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
 		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, string additionalFooter, HashSet<string> preventDomains)
-		{
-			MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, false, additionalFooter, preventDomains);
-		}
+			=> MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, false, additionalFooter, preventDomains);
 
 		/// <summary>
 		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
@@ -577,12 +543,10 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl)
 		{
 			// prepare SMTP server
-			var smtp = new SmtpClient();
-
-			// host name (IP of DNS of SMTP server)
-			smtp.Host = !string.IsNullOrWhiteSpace(smtpServer)
-				? smtpServer
-				: "127.0.0.1";
+			var smtp = new SmtpClient
+			{
+				Host = !string.IsNullOrWhiteSpace(smtpServer) ? smtpServer : "127.0.0.1"
+			};
 
 			// port
 			try
@@ -642,10 +606,10 @@ namespace net.vieapps.Components.Utility
 				throw new InvalidDataException("You must provide SMTP information for sending an email.");
 
 			// create new message object
-			var message = new MailMessage();
-
-			// sender
-			message.From = new MailAddress(fromAddress.Address, fromAddress.DisplayName.ConvertUnicodeToANSI(), Encoding.UTF8);
+			var message = new MailMessage
+			{
+				From = new MailAddress(fromAddress.Address, fromAddress.DisplayName.ConvertUnicodeToANSI(), Encoding.UTF8)
+			};
 
 			// reply to
 			if (replyToAddress != null)
@@ -721,9 +685,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
 		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl = true, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null), cancellationToken);
 
 		/// <summary>
 		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
@@ -747,9 +709,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
 		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl), cancellationToken);
 
 		/// <summary>
 		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
@@ -769,9 +729,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtp">Informaiton of SMTP server for sending email.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
 		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp), cancellationToken);
-		}
+			=> UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp), cancellationToken);
 		#endregion
 
 	}
