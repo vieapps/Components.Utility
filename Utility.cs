@@ -22,6 +22,8 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
 #endregion
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("VIEApps.Components.XUnitTests")]
+
 namespace net.vieapps.Components.Utility
 {
 	/// <summary>
