@@ -516,8 +516,14 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region  Conversions (Uri)
-		static Regex Normal = new Regex("[^a-zA-Z0-9_-]+");
-		static Regex Numberic = new Regex("[^0-9]+");
+		/// <summary>
+		/// Checks to see the string is numeric string or not
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static bool IsNumeric(this string @string) => string.IsNullOrWhiteSpace(@string) ? false : double.TryParse(@string, out double number);
+
+		static Regex Normal { get; } = new Regex("[^a-zA-Z0-9_-]+");
 
 		/// <summary>
 		/// Generates the ANSI uri from this string (means remove all white spaces and special characters)
@@ -551,7 +557,7 @@ namespace net.vieapps.Components.Utility
 				result = "v" + DateTime.Now.ToUnixTimestamp();
 
 			// numeric
-			else if (StringService.Numberic.Replace(result, "").Equals(result))
+			else if (result.IsNumeric())
 				result = "v" + DateTime.Now.ToUnixTimestamp() + result;
 
 			return toLowerCase
