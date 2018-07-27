@@ -201,7 +201,8 @@ namespace net.vieapps.Components.Utility
 							onError?.Invoke(ex);
 						}
 						onCompleted?.Invoke(info);
-					}
+					},
+					onError
 				);
 		}
 

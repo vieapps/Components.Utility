@@ -14,12 +14,12 @@ using Newtonsoft.Json.Linq;
 namespace net.vieapps.Components.Utility
 {
 	/// <summary>
-	/// Static servicing methods for working with cryptos
+	/// Static servicing methods for working with cryptography
 	/// </summary>
 	public static partial class CryptoService
 	{
 
-		#region Default pass-phrase & keys
+		#region Default pass-phrase, key & initialize vector for encrypting/decrypting
 		/// <summary>
 		/// The default passphrase for generating a key
 		/// </summary>
@@ -59,7 +59,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An array of bytes that presents the key</returns>
 		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256)
 		{
-			using (var hasher = new HMACBlake2B(length > 0 ? length : 256))
+			using (var hasher = new HMACBlake2B(null, length > 0 ? length : 256))
 			{
 				return hasher.ComputeHash(hasher.ComputeHash(bytes));
 			}
@@ -84,11 +84,11 @@ namespace net.vieapps.Components.Utility
 			{ "sha512", () => SHA512.Create() },
 			{ "ripemd", () => RIPEMD160.Create() },
 			{ "ripemd160", () => RIPEMD160.Create() },
-			{ "blake", () => new HMACBlake2B(256) },
-			{ "blake128", () => new HMACBlake2B(128) },
-			{ "blake256", () => new HMACBlake2B(256) },
-			{ "blake384", () => new HMACBlake2B(384) },
-			{ "blake512", () => new HMACBlake2B(512) },
+			{ "blake", () => new HMACBlake2B(null, 256) },
+			{ "blake128", () => new HMACBlake2B(null, 128) },
+			{ "blake256", () => new HMACBlake2B(null, 256) },
+			{ "blake384", () => new HMACBlake2B(null, 384) },
+			{ "blake512", () => new HMACBlake2B(null, 512) }
 		};
 
 		/// <summary>
@@ -393,7 +393,7 @@ namespace net.vieapps.Components.Utility
 			{ "blake128", key => new HMACBlake2B(key.GetBlakeKey(), 128) },
 			{ "blake256", key => new HMACBlake2B(key.GetBlakeKey(), 256) },
 			{ "blake384", key => new HMACBlake2B(key.GetBlakeKey(), 384) },
-			{ "blake512", key => new HMACBlake2B(key.GetBlakeKey(), 512) },
+			{ "blake512", key => new HMACBlake2B(key.GetBlakeKey(), 512) }
 		};
 
 		/// <summary>
