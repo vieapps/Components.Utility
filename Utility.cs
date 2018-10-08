@@ -1047,58 +1047,62 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets parts of file path (seperate path and file name)
 		/// </summary>
+		/// <param name="fileUri">The string that presents full URI of a file</param>
+		/// <param name="removeExtension">true to remove file extension</param>
+		/// <returns></returns>
+		public static Tuple<string, string> GetFileParts(Uri fileUri, bool removeExtension = true)
+		{
+			var path = "";
+			var filename = fileUri.AbsoluteUri.Trim().Replace("\"", "");
+			var start = filename.PositionOf("/");
+			while (start > -1)
+			{
+				path += (!path.Equals("") ? "/" : "") + filename.Substring(0, start);
+				filename = filename.Remove(0, start + 1);
+				start = filename.PositionOf("/");
+			}
+
+			start = filename.PositionOf("?");
+			if (start > 0)
+				filename = filename.Left(start);
+
+			if (removeExtension)
+			{
+				var pos = -1;
+				start = filename.PositionOf(".");
+				while (start > -1)
+				{
+					pos = start;
+					start = filename.PositionOf(".", start + 1);
+				}
+				filename = filename.Remove(pos);
+			}
+			return new Tuple<string, string>(path, UtilityService.GetNormalizedFilename(filename));
+		}
+
+		/// <summary>
+		/// Gets parts of file path (seperate path and file name)
+		/// </summary>
 		/// <param name="filePath">The string that presents full path (or full URI) of a file</param>
 		/// <param name="removeExtension">true to remove file extension</param>
 		/// <returns></returns>
 		public static Tuple<string, string> GetFileParts(string filePath, bool removeExtension = true)
 		{
-			string path = "", filename = "";
 			try
 			{
-				var info = new FileInfo(filePath);
-				filename = info.Name;
-				path = info.FullName;
-				path = path.Left(path.Length - filename.Length - 1);
-				if (removeExtension)
-					filename = filename.Left(filename.Length - info.Extension.Length);
+				var fileUri = new Uri(filePath);
+				return UtilityService.GetFileParts(fileUri, removeExtension);
 			}
 			catch
 			{
-				filename = filePath.Trim().Replace("\"", "");
-				var start = filename.PositionOf(@"\");
-				while (start > -1)
-				{
-					path += (!path.Equals("") ? @"\" : "") + filename.Substring(0, start);
-					filename = filename.Remove(0, start + 1);
-					start = filename.PositionOf(@"\");
-				}
-
-				start = filename.PositionOf("/");
-				while (start > -1)
-				{
-					path += (!path.Equals("") ? "/" : "") + filename.Substring(0, start);
-					filename = filename.Remove(0, start + 1);
-					start = filename.PositionOf("/");
-				}
-
-				start = filename.PositionOf("?");
-				if (start > 0)
-					filename = filename.Left(start);
-
+				var fileInfo = new FileInfo(filePath);
+				var filename = fileInfo.Name;
+				var path = fileInfo.FullName;
+				path = path.Left(path.Length - filename.Length - 1);
 				if (removeExtension)
-				{
-					var pos = -1;
-					start = filename.PositionOf(".");
-					while (start > -1)
-					{
-						pos = start;
-						start = filename.PositionOf(".", start + 1);
-					}
-					filename = filename.Remove(pos);
-				}
+					filename = filename.Left(filename.Length - fileInfo.Extension.Length);
+				return new Tuple<string, string>(path, UtilityService.GetNormalizedFilename(filename));
 			}
-
-			return new Tuple<string, string>(path, UtilityService.GetNormalizedFilename(filename));
 		}
 
 		/// <summary>
