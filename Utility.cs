@@ -100,7 +100,7 @@ namespace net.vieapps.Components.Utility
 					: !uuid.Contains(" ") && !uuid.Contains(";");
 		#endregion
 
-		#region Random number
+		#region Random number & code
 		static Random _Random = new Random();
 
 		/// <summary>
@@ -119,6 +119,180 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">The number of random bits to generate.</param>
 		/// <returns></returns>
 		public static BigInteger GetRandomNumber(int length) => UtilityService._RandomBigInteger.Next(length);
+
+		/// <summary>
+		/// Gets a random code
+		/// </summary>
+		/// <param name="useShortCode">true to use short-code</param>
+		/// <param name="useHex">true to use hexa in code</param>
+		/// <returns>The string that presents random code</returns>
+		public static string GetRandomCode(bool useShortCode = true, bool useHex = false)
+		{
+			var code = UtilityService.GetUUID();
+			var length = 9;
+			if (useShortCode)
+				length = 4;
+
+			if (!useHex)
+			{
+				code = UtilityService.GetRandomNumber(1000).ToString() + UtilityService.GetRandomNumber(1000).ToString();
+				while (code.Length < length + 5)
+					code += UtilityService.GetRandomNumber(1000).ToString();
+			}
+
+			var index = UtilityService.GetRandomNumber(0, code.Length);
+			if (index > code.Length - length)
+				index = code.Length - length;
+			code = code.Substring(index, length);
+
+			var random1 = ((char)UtilityService.GetRandomNumber(48, 57)).ToString();
+			var replacement = "O";
+			while (replacement.Equals("O"))
+				replacement = ((char)UtilityService.GetRandomNumber(71, 90)).ToString();
+			code = code.Replace(random1, replacement);
+
+			if (length > 4)
+			{
+				var random2 = random1;
+				while (random2.Equals(random1))
+					random2 = ((char)UtilityService.GetRandomNumber(48, 57)).ToString();
+				replacement = "O";
+				while (replacement.Equals("O"))
+					replacement = ((char)UtilityService.GetRandomNumber(71, 90)).ToString();
+				code = code.Replace(random2, replacement);
+
+				var random3 = random1;
+				while (random3.Equals(random1))
+				{
+					random3 = ((char)UtilityService.GetRandomNumber(48, 57)).ToString();
+					if (random3.Equals(random2))
+						random3 = ((char)UtilityService.GetRandomNumber(48, 57)).ToString();
+				}
+				replacement = "O";
+				while (replacement.Equals("O"))
+					replacement = ((char)UtilityService.GetRandomNumber(71, 90)).ToString();
+				code = code.Replace(random3, replacement);
+			}
+
+			var hasNumber = false;
+			var hasChar = false;
+			for (int charIndex = 0; charIndex < code.Length; charIndex++)
+			{
+				if (code[charIndex] >= '0' && code[charIndex] <= '9')
+					hasNumber = true;
+				if (code[charIndex] >= 'A' && code[charIndex] <= 'Z')
+					hasChar = true;
+				if (hasNumber && hasChar)
+					break;
+			}
+
+			if (!hasNumber)
+				code += ((char)UtilityService.GetRandomNumber(48, 57)).ToString();
+
+			if (!hasChar)
+			{
+				replacement = "O";
+				while (replacement.Equals("O"))
+					replacement = ((char)UtilityService.GetRandomNumber(65, 90)).ToString();
+				code += replacement;
+			}
+
+			return code.Right(length);
+		}
+		#endregion
+
+		#region Working with task in the thread pool
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="onCancel">The action to callback when the operation is canceled</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task ExecuteTask(Action action, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<object>();
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				using (cancellationToken.Register(() =>
+				{
+					try
+					{
+						onCancel?.Invoke();
+					}
+					catch { }
+					tcs.TrySetCanceled(cancellationToken);
+				}, useSynchronizationContext: false))
+				{
+					try
+					{
+						action?.Invoke();
+						tcs.TrySetResult(null);
+					}
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
+				}
+			});
+			return tcs.Task;
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <param name="action">The action to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
+			=> UtilityService.ExecuteTask(action, null, cancellationToken);
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="onCancel">The action to callback when the operation is canceled</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task<T> ExecuteTask<T>(Func<T> func, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
+		{
+			var tcs = new TaskCompletionSource<T>();
+			ThreadPool.QueueUserWorkItem(_ =>
+			{
+				using (cancellationToken.Register(() =>
+				{
+					try
+					{
+						onCancel?.Invoke();
+					}
+					catch { }
+					tcs.TrySetCanceled(cancellationToken);
+				}, useSynchronizationContext: false))
+				{
+					try
+					{
+						var result = func != null ? func.Invoke() : default(T);
+						tcs.TrySetResult(result);
+					}
+					catch (Exception ex)
+					{
+						tcs.TrySetException(ex);
+					}
+				}
+			});
+			return tcs.Task;
+		}
+
+		/// <summary>
+		/// Executes an action in the thread pool with cancellation supported
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="func">The function to run in the thread pool</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns>An awaitable task</returns>
+		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default(CancellationToken))
+			=> UtilityService.ExecuteTask(func, null, cancellationToken);
 		#endregion
 
 		#region Async extensions to support cancellation token
@@ -133,10 +307,10 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<bool>();
 			using (cancellationToken.Register(state => ((TaskCompletionSource<bool>)state).TrySetResult(true), tcs, false))
 			{
-				if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
+				var result = await Task.WhenAny(task, tcs.Task).ConfigureAwait(false);
+				if (result != task)
 					throw new OperationCanceledException(cancellationToken);
 			}
-			await task.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -151,10 +325,11 @@ namespace net.vieapps.Components.Utility
 			var tcs = new TaskCompletionSource<bool>();
 			using (cancellationToken.Register(state => ((TaskCompletionSource<bool>)state).TrySetResult(true), tcs, false))
 			{
-				if (task != await Task.WhenAny(task, tcs.Task).ConfigureAwait(false))
-					throw new OperationCanceledException(cancellationToken);
+				var result = await Task.WhenAny(task, tcs.Task).ConfigureAwait(false);
+				return result != task
+					? throw new OperationCanceledException(cancellationToken)
+					: task.Result;
 			}
-			return await task.ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -186,7 +361,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Downloads the resource as a <see cref="System.Byte"/>  array from the URI specified as an asynchronous operation using a task object.
+		/// Downloads the resource as an array of byte from the URI specified as an asynchronous operation using a task object.
 		/// </summary>
 		/// <param name="webclient"></param>
 		/// <param name="address"></param>
@@ -211,7 +386,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Downloads the resource as a <see cref="System.Byte"/>  array from the URI specified as an asynchronous operation using a task object.
+		/// Downloads the resource as an array of byte from the URI specified as an asynchronous operation using a task object.
 		/// </summary>
 		/// <param name="webclient"></param>
 		/// <param name="address"></param>
@@ -236,7 +411,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Downloads the resource as a <see cref="System.String"/>  from the URI specified as an asynchronous operation using a task object.
+		/// Downloads the resource as a string from the URI specified as an asynchronous operation using a task object.
 		/// </summary>
 		/// <param name="webclient"></param>
 		/// <param name="address"></param>
@@ -261,7 +436,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Downloads the resource as a <see cref="System.String"/>  from the URI specified as an asynchronous operation using a task object.
+		/// Downloads the resource as a string from the URI specified as an asynchronous operation using a task object.
 		/// </summary>
 		/// <param name="webclient"></param>
 		/// <param name="address"></param>
@@ -335,104 +510,6 @@ namespace net.vieapps.Components.Utility
 						throw ex;
 				}
 			}
-		}
-		#endregion
-
-		#region Working with task in the thread pool
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <param name="action">The action to run in the thread pool</param>
-		/// <param name="onCancel">The action to callback when the operation is canceled</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			var tcs = new TaskCompletionSource<object>();
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				using (cancellationToken.Register(() =>
-				{
-					try
-					{
-						onCancel?.Invoke();
-					}
-					catch { }
-					tcs.TrySetCanceled(cancellationToken);
-				}, useSynchronizationContext: false))
-				{
-					try
-					{
-						action?.Invoke();
-						tcs.TrySetResult(null);
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-			});
-			return tcs.Task;
-		}
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <param name="action">The action to run in the thread pool</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(action, null, cancellationToken);
-		}
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="func">The function to run in the thread pool</param>
-		/// <param name="onCancel">The action to callback when the operation is canceled</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task<T> ExecuteTask<T>(Func<T> func, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			var tcs = new TaskCompletionSource<T>();
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				using (cancellationToken.Register(() =>
-				{
-					try
-					{
-						onCancel?.Invoke();
-					}
-					catch { }
-					tcs.TrySetCanceled(cancellationToken);
-				}, useSynchronizationContext: false))
-				{
-					try
-					{
-						var result = func != null ? func.Invoke() : default(T);
-						tcs.TrySetResult(result);
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-			});
-			return tcs.Task;
-		}
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="func">The function to run in the thread pool</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			return UtilityService.ExecuteTask(func, null, cancellationToken);
 		}
 		#endregion
 
@@ -519,7 +596,7 @@ namespace net.vieapps.Components.Utility
 				return null;
 
 			var uri = new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "https://" : "")}{host}:{port}");
-			var proxy = new WebProxy(uri, true, bypass ?? new string[] { });
+			var proxy = new WebProxy(uri, true, bypass ?? Array.Empty<string>());
 			if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
 				proxy.Credentials = new NetworkCredential(username, password);
 
@@ -991,8 +1068,8 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Working with files & folders
-		static List<string> _FileRemovements = new List<string>() { "\\", "/", "*", "?", "<", ">", "|", ":", "\r", "\n", "\t" };
-		static List<string[]> _FileReplacements = new List<string[]>() { new string[] { "\"", "'" }, new string[] { "%20", " " }, new string[] { " ft. ", " & " } };
+		static List<string> _FileRemovements = new List<string> { "\\", "/", "*", "?", "<", ">", "|", ":", "\r", "\n", "\t" };
+		static List<string[]> _FileReplacements = new List<string[]> { new[] { "\"", "'" }, new[] { "%20", " " }, new[] { " ft. ", " & " } };
 
 		/// <summary>
 		/// Normalizes the name of a file
@@ -1002,17 +1079,11 @@ namespace net.vieapps.Components.Utility
 		public static string GetNormalizedFilename(string input)
 		{
 			var output = input.ConvertCompositeUnicodeToUnicode();
-
-			foreach (var str in UtilityService._FileRemovements)
-				output = output.Replace(str, "").Trim();
-
-			foreach (var replacement in UtilityService._FileReplacements)
-				output = output.Replace(replacement[0], replacement[1]).Trim();
-
+			UtilityService._FileRemovements.ForEach(str => output = output.Replace(str, "").Trim());
+			UtilityService._FileReplacements.ForEach(replacement => output = output.Replace(replacement[0], replacement[1]).Trim());
 			if (output.IsStartsWith("con."))
 				while (output.IndexOf(".") > -1)
 					output = output.Replace(".", "");
-
 			return output;
 		}
 
@@ -1039,71 +1110,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <returns></returns>
-		public static string GetFileSize(string filePath)
-			=> string.IsNullOrWhiteSpace(filePath)
-				? null
-				: UtilityService.GetFileSize(new FileInfo(filePath));
-
-		/// <summary>
-		/// Gets parts of file path (seperate path and file name)
-		/// </summary>
-		/// <param name="fileUri">The string that presents full URI of a file</param>
-		/// <param name="removeExtension">true to remove file extension</param>
-		/// <returns></returns>
-		public static Tuple<string, string> GetFileParts(Uri fileUri, bool removeExtension = true)
-		{
-			var path = "";
-			var filename = fileUri.AbsoluteUri.Trim().Replace("\"", "");
-			var start = filename.PositionOf("/");
-			while (start > -1)
-			{
-				path += (!path.Equals("") ? "/" : "") + filename.Substring(0, start);
-				filename = filename.Remove(0, start + 1);
-				start = filename.PositionOf("/");
-			}
-
-			start = filename.PositionOf("?");
-			if (start > 0)
-				filename = filename.Left(start);
-
-			if (removeExtension)
-			{
-				var pos = -1;
-				start = filename.PositionOf(".");
-				while (start > -1)
-				{
-					pos = start;
-					start = filename.PositionOf(".", start + 1);
-				}
-				filename = filename.Remove(pos);
-			}
-			return new Tuple<string, string>(path, UtilityService.GetNormalizedFilename(filename));
-		}
-
-		/// <summary>
-		/// Gets parts of file path (seperate path and file name)
-		/// </summary>
-		/// <param name="filePath">The string that presents full path (or full URI) of a file</param>
-		/// <param name="removeExtension">true to remove file extension</param>
-		/// <returns></returns>
-		public static Tuple<string, string> GetFileParts(string filePath, bool removeExtension = true)
-		{
-			try
-			{
-				var fileUri = new Uri(filePath);
-				return UtilityService.GetFileParts(fileUri, removeExtension);
-			}
-			catch
-			{
-				var fileInfo = new FileInfo(filePath);
-				var filename = fileInfo.Name;
-				var path = fileInfo.FullName;
-				path = path.Left(path.Length - filename.Length - 1);
-				if (removeExtension)
-					filename = filename.Left(filename.Length - fileInfo.Extension.Length);
-				return new Tuple<string, string>(path, UtilityService.GetNormalizedFilename(filename));
-			}
-		}
+		public static string GetFileSize(string filePath) => string.IsNullOrWhiteSpace(filePath) ? null : UtilityService.GetFileSize(new FileInfo(filePath));
 
 		/// <summary>
 		/// Searchs and gets listing of files by searching pattern
@@ -1153,22 +1160,19 @@ namespace net.vieapps.Components.Utility
 							}
 						return !isExcluded;
 					})
-					.ForEach(folderPath =>
+					.ForEach(folderPath => searchingPatterns.ForEach(searchingPattern =>
 					{
-						searchingPatterns.ForEach(searchingPattern =>
-						{
-							var results = Directory.GetFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
-							if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
-								results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
-									? orderBy.IsStartsWith("Name")
-										? results.OrderBy(file => file.Name).ThenByDescending(file => file.LastWriteTime)
-										: results.OrderBy(file => file.LastWriteTime).ThenBy(file => file.Name)
-									: orderBy.IsStartsWith("Name")
-										? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
-										: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
-							files = files.Concat(results).ToList();
-						});
-					});
+						var results = Directory.GetFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
+						if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
+							results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
+								? orderBy.IsStartsWith("Name")
+									? results.OrderBy(file => file.Name).ThenByDescending(file => file.LastWriteTime)
+									: results.OrderBy(file => file.LastWriteTime).ThenBy(file => file.Name)
+								: orderBy.IsStartsWith("Name")
+									? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
+									: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
+						files = files.Concat(results).ToList();
+					}));
 
 			return files;
 		}

@@ -56,12 +56,13 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bytes">The array of bytes to generate key from</param>
 		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
+		/// <param name="doubleHash">Set to true to use double-hash</param>
 		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256)
+		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256, bool doubleHash = true)
 		{
-			using (var hasher = new HMACBlake2B(null, length > 0 ? length : 256))
+			using (var hasher = new HMACBlake2B(null, length > 0 && length <= 512 ? length : 256))
 			{
-				return hasher.ComputeHash(hasher.ComputeHash(bytes));
+				return doubleHash ? hasher.ComputeHash(hasher.ComputeHash(bytes)) : hasher.ComputeHash(bytes);
 			}
 		}
 
@@ -70,8 +71,30 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="passphrase">The passphrase to generate key from</param>
 		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
+		/// <param name="doubleHash">Set to true to use double-hash</param>
 		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateHashKey(this string passphrase, int length = 256) => (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length);
+		public static byte[] GenerateHashKey(this string passphrase, int length = 256, bool doubleHash = true) => (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length, doubleHash);
+
+		/// <summary>
+		/// Generates a hashing password from a plain-text password with salt and peper using strong hashing algorithm (Argon2)
+		/// </summary>
+		/// <param name="password">The string that presents the plain-text password for hashing</param>
+		/// <param name="salt">The string that presents the salt for hashing</param>
+		/// <param name="peper">The string that presents the peper for hashing</param>
+		/// <returns>The string that presents the 125 bytes of hashing password</returns>
+		public static string GenerateHashPassword(this string password, string salt = null, string peper = null)
+		{
+			using (var argon2 = new Argon2i(password.GetHMACBLAKE256Hash((peper ?? DEFAULT_PASS_PHRASE).ToUpper()))
+			{
+				DegreeOfParallelism = 13,
+				Iterations = 13,
+				MemorySize = 1024,
+				Salt = (salt ?? DEFAULT_PASS_PHRASE).ToLower().GetBLAKE512Hash()
+			})
+			{
+				return argon2.GetBytes(125).ToHex();
+			}
+		}
 		#endregion
 
 		#region Hash an array of bytes or a string
@@ -369,17 +392,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region HMAC Hash an array of bytes or string
-		static byte[] GetBlakeKey(this byte[] key)
-		{
-			if (key.Length < 64)
-				return key;
-
-			using (var hasher = new HMACBlake2B(64))
-			{
-				return hasher.ComputeHash(key);
-			}
-		}
-
 		static Dictionary<string, Func<byte[], HMAC>> HmacHashAlgorithmFactories { get; } = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", key => new HMACMD5(key) },
@@ -389,11 +401,11 @@ namespace net.vieapps.Components.Utility
 			{ "sha512", key => new HMACSHA512(key) },
 			{ "ripemd", key => new HMACRIPEMD160(key) },
 			{ "ripemd160", key => new HMACRIPEMD160(key) },
-			{ "blake", key => new HMACBlake2B(key.GetBlakeKey(), 256) },
-			{ "blake128", key => new HMACBlake2B(key.GetBlakeKey(), 128) },
-			{ "blake256", key => new HMACBlake2B(key.GetBlakeKey(), 256) },
-			{ "blake384", key => new HMACBlake2B(key.GetBlakeKey(), 384) },
-			{ "blake512", key => new HMACBlake2B(key.GetBlakeKey(), 512) }
+			{ "blake", key => new HMACBlake2B(key.GenerateHashKey(64, false), 256) },
+			{ "blake128", key => new HMACBlake2B(key.GenerateHashKey(64, false), 128) },
+			{ "blake256", key => new HMACBlake2B(key.GenerateHashKey(64, false), 256) },
+			{ "blake384", key => new HMACBlake2B(key.GenerateHashKey(64, false), 384) },
+			{ "blake512", key => new HMACBlake2B(key.GenerateHashKey(64, false), 512) }
 		};
 
 		/// <summary>

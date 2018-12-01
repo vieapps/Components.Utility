@@ -419,9 +419,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToHttpString(this DateTime datetime, bool useUTC = true)
 		{
-			var time = useUTC
-				? datetime.ToUniversalTime()
-				: datetime;
+			var time = useUTC ? datetime.ToUniversalTime() : datetime;
 			return $"{time.GetWeekDayName()}, {time.Day.ToString().PadLeft(2, '0')} {time.GetMonthName()} {time.Year} {time.Hour.ToString().PadLeft(2, '0')}:{time.Minute.ToString().PadLeft(2, '0')}:{time.Second.ToString().PadLeft(2, '0')} GMT";
 		}
 	}

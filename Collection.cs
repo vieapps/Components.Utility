@@ -187,7 +187,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T Last<T>(this T[] @object)
-			=> @object.Length > 1
+			=> @object.Length > 0
 				? @object[@object.Length - 1]
 				: default(T);
 
@@ -198,7 +198,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T Last<T>(this IList<T> @object)
-			=> @object.Count > 1
+			=> @object.Count > 0
 				? @object[@object.Count - 1]
 				: default(T);
 
@@ -209,7 +209,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns></returns>
 		public static T Last<T>(this Collection @object)
-			=> @object.Count > 1
+			=> @object.Count > 0
 				? (T)@object[@object.Count - 1]
 				: default(T);
 		#endregion
