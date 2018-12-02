@@ -1521,11 +1521,11 @@ namespace net.vieapps.Components.Utility
 	public class Collection : IDictionary
 	{
 		/// <summary>
-		/// Initializes a new instance of the <see cref="net.vieapps.Components.Utility.Collection"/> class
+		/// Initializes a new instance of the <see cref="Collection"/> class
 		/// </summary>
 		public Collection() { }
 
-		OrderedDictionary _collection = new OrderedDictionary();
+		readonly OrderedDictionary _collection = new OrderedDictionary();
 
 		#region Properties
 		/// <summary>

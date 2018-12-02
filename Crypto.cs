@@ -36,7 +36,7 @@ namespace net.vieapps.Components.Utility
 		public static readonly byte[] DEFAULT_ENCRYPTION_IV = DEFAULT_PASS_PHRASE.GenerateHashKey(128);
 		#endregion
 
-		#region Generate keys
+		#region Generate keys & passwords
 		static RNGCryptoServiceProvider RNGcsp { get; } = new RNGCryptoServiceProvider();
 
 		/// <summary>

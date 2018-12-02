@@ -398,7 +398,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Create new instance & Cast
-		static Dictionary<Type, Func<object>> Factories = new Dictionary<Type, Func<object>>();
+		static Dictionary<Type, Func<object>> TypeFactories { get; } = new Dictionary<Type, Func<object>>();
 
 		/// <summary>
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
@@ -407,11 +407,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The newly created instance</returns>
 		public static object CreateInstance(this Type type)
 		{
-			if (!ObjectService.Factories.TryGetValue(type, out Func<object> func))
-				lock (ObjectService.Factories)
+			if (!ObjectService.TypeFactories.TryGetValue(type, out Func<object> func))
+				lock (ObjectService.TypeFactories)
 				{
-					if (!ObjectService.Factories.TryGetValue(type, out func))
-						ObjectService.Factories[type] = func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
+					if (!ObjectService.TypeFactories.TryGetValue(type, out func))
+						ObjectService.TypeFactories[type] = func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
 				}
 			return func();
 		}
@@ -1058,8 +1058,7 @@ namespace net.vieapps.Components.Utility
 					{
 						var jsonObject = new JObject();
 
-						var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
-						if (items != null)
+						if (@object.GetAttributeValue(attribute.Name) is IEnumerable items)
 						{
 							var asObject = attribute.GetAsObjectAttribute();
 							var keyAttribute = !string.IsNullOrWhiteSpace(asObject.KeyAttribute)
@@ -1080,9 +1079,7 @@ namespace net.vieapps.Components.Utility
 					else if (attribute.Type.IsGenericDictionaryOrCollection() && attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetAsArrayAttribute() != null)
 					{
 						var jsonArray = new JArray();
-
-						var items = @object.GetAttributeValue(attribute.Name) as IEnumerable;
-						if (items != null)
+						if (@object.GetAttributeValue(attribute.Name) is IEnumerable items)
 							foreach (var item in items)
 								jsonArray.Add(item?.ToJson());
 
@@ -1160,7 +1157,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var writer = new StreamWriter(stream))
 				{
-					(new XmlSerializer(typeof(T))).Serialize(writer, @object);
+					new XmlSerializer(typeof(T)).Serialize(writer, @object);
 					xml = XElement.Parse(stream.ToArray().GetString());
 				}
 			}
@@ -1182,7 +1179,7 @@ namespace net.vieapps.Components.Utility
 		public static T FromXml<T>(this XContainer xml, Action<T, XContainer> onPreCompleted = null)
 		{
 			// deserialize
-			var @object = (T)(new XmlSerializer(typeof(T))).Deserialize(xml.CreateReader());
+			var @object = (T)new XmlSerializer(typeof(T)).Deserialize(xml.CreateReader());
 
 			// run the handler
 			onPreCompleted?.Invoke(@object, xml);
@@ -1206,7 +1203,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var xmlReader = new XmlTextReader(stringReader))
 				{
-					@object = (T)(new XmlSerializer(typeof(T))).Deserialize(xmlReader);
+					@object = (T)new XmlSerializer(typeof(T)).Deserialize(xmlReader);
 				}
 			}
 
@@ -1241,8 +1238,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var reader = element.CreateReader())
 			{
-				var doc = new XmlDocument();
-				return doc.ReadNode(reader);
+				return new XmlDocument().ReadNode(reader);
 			}
 		}
 

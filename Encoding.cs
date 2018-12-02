@@ -25,7 +25,7 @@ namespace net.vieapps.Components.Utility
 			EncodingService.HexToByte["ff"] = 255;
 		}
 
-		static string[] ByteToHex = new[]
+		static string[] ByteToHex { get; } = new[]
 		{
 			"00", "01", "02", "03", "04", "05", "06", "07",
 			"08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
@@ -61,7 +61,7 @@ namespace net.vieapps.Components.Utility
 			"f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"
 		};
 
-		static Dictionary<string, byte> HexToByte = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+		static Dictionary<string, byte> HexToByte { get; } = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
 		#endregion
 
 		#region To Bytes
@@ -567,13 +567,13 @@ namespace net.vieapps.Components.Utility
 		/// Converts this string to Base64 string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="isHexa"></param>
+		/// <param name="isHex"></param>
 		/// <param name="isBase64Url"></param>
 		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64(this string @string, bool isHexa = false, bool isBase64Url = false, bool addChecksum = false)
+		public static string ToBase64(this string @string, bool isHex = false, bool isBase64Url = false, bool addChecksum = false)
 		{
-			if (isHexa)
+			if (isHex)
 				return @string.HexToBytes().ToBase64(addChecksum);
 
 			else if (!isBase64Url)
@@ -612,10 +612,10 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="isBase64"></param>
-		/// <param name="isHexa"></param>
+		/// <param name="isHex"></param>
 		/// <param name="addChecksum"></param>
 		/// <returns></returns>
-		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHexa = false, bool addChecksum = false) => (isBase64 ? @string : @string.ToBase64(isHexa, false, addChecksum)).Split('=').First().Replace('+', '-').Replace('/', '_');
+		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHex = false, bool addChecksum = false) => (isBase64 ? @string : @string.ToBase64(isHex, false, addChecksum)).Split('=').First().Replace('+', '-').Replace('/', '_');
 
 		/// <summary>
 		/// Converts this Base64 string to plain string

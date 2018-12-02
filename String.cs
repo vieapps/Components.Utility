@@ -537,7 +537,7 @@ namespace net.vieapps.Components.Utility
 			var result = @string.Trim().ConvertUnicodeToANSI();
 
 			// remove all special characters
-			result = result.Replace(StringComparison.OrdinalIgnoreCase, "C#", "CSharp").Replace(StringComparison.OrdinalIgnoreCase, "F#", "FSharp").Replace(" ", "-");
+			result = result.Replace(StringComparison.OrdinalIgnoreCase, "C#", "CSharp").Replace(StringComparison.OrdinalIgnoreCase, "F#", "FSharp").Replace(StringComparison.OrdinalIgnoreCase, "Q#", "QSharp").Replace(" ", "-");
 			result = StringService.Normal.Replace(result, "");
 
 			// remove duplicate characters
