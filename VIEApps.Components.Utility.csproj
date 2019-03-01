@@ -3,37 +3,31 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
+		<WarningLevel>3</WarningLevel>
+		<DocumentationFile>bin\$(Configuration)\netstandard2.0\VIEApps.Components.Utility.xml</DocumentationFile>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<SignAssembly>false</SignAssembly>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
-		<AssemblyVersion>10.2.1812.2</AssemblyVersion>
-		<FileVersion>10.2.1812.2</FileVersion>
-		<InformationalVersion>v10.2.netstandard-2+rev:2018.12.04-lstcmp</InformationalVersion>
+		<AssemblyVersion>10.2.1903.1</AssemblyVersion>
+		<FileVersion>10.2.1903.1</FileVersion>
+		<InformationalVersion>v10.2.netstandard-2+rev:2019.03.01-execute.tasks-searching.queries</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.2.1812.2</Version>
+		<Version>10.2.1903.1</Version>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose library for developing apps on .NET Standard 2.0</Description>
 		<Authors>VIEApps.net</Authors>
-		<Copyright>© 2018 VIEApps.net</Copyright>
+		<Copyright>© 2019 VIEApps.net</Copyright>
+		<PackageLicense>LICENSE.md</PackageLicense>
+		<PackageOutputPath>..\</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Upgrade to latest components</PackageReleaseNotes>
+		<PackageReleaseNotes>Change the ways to execute a task</PackageReleaseNotes>
 		<PackageIconUrl>https://github.com/vieapps/Components.Utility/raw/master/logo.png</PackageIconUrl>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<WarningLevel>3</WarningLevel>
-		<DocumentationFile>bin\Debug\netstandard2.0\VIEApps.Components.Utility.xml</DocumentationFile>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<WarningLevel>3</WarningLevel>
-		<DocumentationFile>bin\Release\netstandard2.0\VIEApps.Components.Utility.xml</DocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -46,9 +40,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DocumentFormat.OpenXml" Version="2.8.1" />
-		<PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.1.3" />
-		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.8" />
+		<PackageReference Include="DocumentFormat.OpenXml" Version="2.9.0" />
+		<PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.2.1" />
+		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
 		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="1.2.2" />

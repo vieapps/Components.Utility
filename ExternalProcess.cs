@@ -26,9 +26,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
 		/// <returns></returns>
 		/// <remarks>
-		/// Remember assign execution permisions to the file
-		/// - Linux: sudo chmod 777 'filename'
-		/// - macOS: sudo chmod +x 'filename'
+		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
 		/// </remarks>
 		public static Info Start(string filePath, string arguments, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false)
 		{
@@ -123,9 +121,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onDataReceived">The method to handle the data receive events (include OutputDataReceived and ErrorDataReceived events)</param>
 		/// <returns></returns>
 		/// <remarks>
-		/// Remember assign execution permisions to the file
-		/// - Linux: sudo chmod 777 'filename'
-		/// - macOS: sudo chmod +x 'filename'
+		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
 		/// </remarks>
 		public static Info Start(string filePath, string arguments, Action<object, EventArgs> onExited, Action<object, DataReceivedEventArgs> onDataReceived = null)
 			=> ExternalProcess.Start(filePath, arguments, null, onExited, onDataReceived, onDataReceived, false);
@@ -141,9 +137,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
 		/// <returns></returns>
 		/// <remarks>
-		/// Remember assign execution permisions to the file
-		/// - Linux: sudo chmod 777 'filename'
-		/// - macOS: sudo chmod +x 'filename'
+		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
 		/// </remarks>
 		public static Info Start(string command, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false)
 		{

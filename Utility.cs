@@ -40,22 +40,21 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The string that presents UUID with hyphens (128 bits)</returns>
 		public static string GetUUID(string uuid = null)
 		{
-			if (!string.IsNullOrWhiteSpace(uuid))
-			{
-				uuid = uuid.Trim();
-				if (uuid.IndexOf("-") > -1)
-					return uuid;
+			if (string.IsNullOrWhiteSpace(uuid))
+				return Guid.NewGuid().ToString("N").ToLower();
 
-				var pos = 8;
-				uuid = uuid.Insert(pos, "-");
-				for (var index = 0; index < 3; index++)
-				{
-					pos += 5;
-					uuid = uuid.Insert(pos, "-");
-				}
+			uuid = uuid.Trim();
+			if (uuid.IndexOf("-") > -1)
 				return uuid;
+
+			var pos = 8;
+			uuid = uuid.Insert(pos, "-");
+			for (var index = 0; index < 3; index++)
+			{
+				pos += 5;
+				uuid = uuid.Insert(pos, "-");
 			}
-			return Guid.NewGuid().ToString("N").ToLower();
+			return uuid;
 		}
 
 		/// <summary>
@@ -201,88 +200,17 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Working with task in the thread pool
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <param name="action">The action to run in the thread pool</param>
-		/// <param name="onCancel">The action to callback when the operation is canceled</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			var tcs = new TaskCompletionSource<object>();
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				using (cancellationToken.Register(() =>
-				{
-					try
-					{
-						onCancel?.Invoke();
-					}
-					catch { }
-					tcs.TrySetCanceled(cancellationToken);
-				}, useSynchronizationContext: false))
-				{
-					try
-					{
-						action?.Invoke();
-						tcs.TrySetResult(null);
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-			});
-			return tcs.Task;
-		}
-
+		#region Execute an action and return a task
 		/// <summary>
 		/// Executes an action in the thread pool with cancellation supported
 		/// </summary>
 		/// <param name="action">The action to run in the thread pool</param>
 		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="creationOptions">The options that controls the behavior of the created task</param>
+		/// <param name="scheduler">The scheduler that is used to schedule the created task</param>
 		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken))
-			=> UtilityService.ExecuteTask(action, null, cancellationToken);
-
-		/// <summary>
-		/// Executes an action in the thread pool with cancellation supported
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="func">The function to run in the thread pool</param>
-		/// <param name="onCancel">The action to callback when the operation is canceled</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns>An awaitable task</returns>
-		public static Task<T> ExecuteTask<T>(Func<T> func, Action onCancel, CancellationToken cancellationToken = default(CancellationToken))
-		{
-			var tcs = new TaskCompletionSource<T>();
-			ThreadPool.QueueUserWorkItem(_ =>
-			{
-				using (cancellationToken.Register(() =>
-				{
-					try
-					{
-						onCancel?.Invoke();
-					}
-					catch { }
-					tcs.TrySetCanceled(cancellationToken);
-				}, useSynchronizationContext: false))
-				{
-					try
-					{
-						var result = func != null ? func.Invoke() : default(T);
-						tcs.TrySetResult(result);
-					}
-					catch (Exception ex)
-					{
-						tcs.TrySetException(ex);
-					}
-				}
-			});
-			return tcs.Task;
-		}
+		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken), TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
+			=> Task.Factory.StartNew(action, cancellationToken, creationOptions, scheduler ?? TaskScheduler.Default);
 
 		/// <summary>
 		/// Executes an action in the thread pool with cancellation supported
@@ -290,9 +218,11 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="func">The function to run in the thread pool</param>
 		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="creationOptions">The options that controls the behavior of the created task</param>
+		/// <param name="scheduler">The scheduler that is used to schedule the created task</param>
 		/// <returns>An awaitable task</returns>
-		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default(CancellationToken))
-			=> UtilityService.ExecuteTask(func, null, cancellationToken);
+		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default(CancellationToken), TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
+			=> Task.Factory.StartNew(func, cancellationToken, creationOptions, scheduler ?? TaskScheduler.Default);
 		#endregion
 
 		#region Async extensions to support cancellation token
@@ -1510,17 +1440,23 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="position"></param>
 		/// <param name="totalOfLines"></param>
-		/// <param name="lines"></param>
-		/// <param name="newPosition"></param>
-		public static void ReadTextFile(string filePath, long position, int totalOfLines, out List<string> lines, out long newPosition)
+		public static Tuple<List<string>, long> ReadTextFile(string filePath, long position, int totalOfLines)
 		{
 			using (var reader = new TextFileReader(filePath))
 			{
 				reader.Seek(position);
-				lines = reader.ReadLines(totalOfLines);
-				newPosition = reader.Position;
+				return new Tuple<List<string>, long>(reader.ReadLines(totalOfLines), reader.Position);
 			}
 		}
+
+		/// <summary>
+		/// Reads the multiple lines of a text file
+		/// </summary>
+		/// <param name="filePath">The path to text file</param>
+		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
+		/// <returns></returns>
+		public static List<string> ReadTextFile(string filePath, int totalOfLines)
+			=> UtilityService.ReadTextFile(filePath, 0, totalOfLines).Item1;
 
 		/// <summary>
 		/// Reads the multiple lines of a text file
@@ -1537,18 +1473,6 @@ namespace net.vieapps.Components.Utility
 				reader.Seek(position);
 				return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
 			}
-		}
-
-		/// <summary>
-		/// Reads the multiple lines of a text file
-		/// </summary>
-		/// <param name="filePath">The path to text file</param>
-		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
-		/// <returns></returns>
-		public static List<string> ReadTextFile(string filePath, int totalOfLines)
-		{
-			UtilityService.ReadTextFile(filePath, 0, totalOfLines, out List<string> lines, out long newPosition);
-			return lines;
 		}
 
 		/// <summary>
@@ -2458,31 +2382,33 @@ namespace net.vieapps.Components.Utility
 		/// Initializes a searching query
 		/// </summary>
 		/// <param name="query"></param>
-		public SearchQuery(string query = null)
+		public SearchQuery(string query = null) => this.Parse(query);
+
+		public List<string> AndWords { get; } = new List<string>();
+
+		public List<string> OrWords { get; } = new List<string>();
+
+		public List<string> NotWords { get; } = new List<string>();
+
+		public List<string> AndPhrases { get; } = new List<string>();
+
+		public List<string> OrPhrases { get; } = new List<string>();
+
+		public List<string> NotPhrases { get; } = new List<string>();
+
+		/// <summary>
+		/// Parses the searching query
+		/// </summary>
+		/// <param name="query"></param>
+		public void Parse(string query)
 		{
-			this.AndWords = new List<string>();
-			this.OrWords = new List<string>();
-			this.NotWords = new List<string>();
-			this.AndPhrases = new List<string>();
-			this.OrPhrases = new List<string>();
-			this.NotPhrases = new List<string>();
-			this.Parse(query);
-		}
+			this.AndWords.Clear();
+			this.AndPhrases.Clear();
+			this.OrWords.Clear();
+			this.OrPhrases.Clear();
+			this.NotWords.Clear();
+			this.NotPhrases.Clear();
 
-		public List<string> AndWords { get; set; }
-
-		public List<string> OrWords { get; set; }
-
-		public List<string> NotWords { get; set; }
-
-		public List<string> AndPhrases { get; set; }
-
-		public List<string> OrPhrases { get; set; }
-
-		public List<string> NotPhrases { get; set; }
-
-		void Parse(string query)
-		{
 			if (string.IsNullOrWhiteSpace(query))
 				return;
 
@@ -2490,10 +2416,10 @@ namespace net.vieapps.Components.Utility
 			var allWords = new List<string>();
 			var allPhrases = new List<string>();
 
-			var start = searchQuery.PositionOf("\"");
-			var end = searchQuery.PositionOf("\"", start + 1);
-			if (start < 0 || end < 1)
-				allWords = allWords.Concat(searchQuery.Replace("\"", "").ToArray(' ').Select(i => i.Trim())).ToList();
+			var start = searchQuery.IndexOf("\"");
+			var end = start > -1 ? searchQuery.IndexOf("\"", start + 1) : -1;
+			if (start < 0 || end < 0)
+				allWords = allWords.Concat(searchQuery.Replace("\"", "").ToArray(' ', true)).ToList();
 
 			else
 			{
@@ -2515,7 +2441,7 @@ namespace net.vieapps.Components.Utility
 				allWords = allWords.Concat(this.NormalizeKeywords(searchQuery).Replace("\"", "").ToArray(' ').Select(i => i.Trim())).ToList();
 			}
 
-			allWords.Distinct().ForEach(word =>
+			allWords.Distinct(StringComparer.OrdinalIgnoreCase).Where(word => !string.IsNullOrWhiteSpace(word)).ForEach(word =>
 			{
 				if (word[0].Equals('+'))
 					this.AndWords.Add(word.Right(word.Length - 1));
@@ -2525,7 +2451,7 @@ namespace net.vieapps.Components.Utility
 					this.OrWords.Add(word);
 			});
 
-			allPhrases.Distinct().ForEach(phrase =>
+			allPhrases.Distinct(StringComparer.OrdinalIgnoreCase).Where(phrase => !string.IsNullOrWhiteSpace(phrase)).ForEach(phrase =>
 			{
 				if (phrase[0].Equals('+'))
 					this.AndPhrases.Add(phrase.Right(phrase.Length - 1).Replace("\"", ""));
@@ -2614,10 +2540,7 @@ namespace net.vieapps.Components.Utility
 			this._reader = new StreamReader(this._stream, true);
 		}
 
-		~TextFileReader()
-		{
-			this.Dispose();
-		}
+		~TextFileReader() => this.Dispose();
 
 		/// <summary>
 		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.

@@ -6,17 +6,13 @@ namespace net.vieapps.Components.Utility
 {
 	public static class Logger
 	{
-		static ILoggerFactory LoggerFactory;
+		static ILoggerFactory LoggerFactory { get; set; }
 
 		/// <summary>
 		/// Assigns a logger factory
 		/// </summary>
 		/// <param name="loggerFactory"></param>
-		public static void AssignLoggerFactory(ILoggerFactory loggerFactory)
-		{
-			if (Logger.LoggerFactory == null && loggerFactory != null)
-				Logger.LoggerFactory = loggerFactory;
-		}
+		public static void AssignLoggerFactory(ILoggerFactory loggerFactory) => Logger.LoggerFactory = Logger.LoggerFactory ?? loggerFactory;
 
 		/// <summary>
 		/// Gets a logger factory

@@ -1628,17 +1628,21 @@ namespace net.vieapps.Components.Utility
 		/// Gets the string that presents the version number of this assembly
 		/// </summary>
 		/// <param name="assembly"></param>
+		/// <param name="getInfoVersion"></param>
 		/// <returns></returns>
-		public static string GetVersion(this Assembly assembly)
+		public static string GetVersion(this Assembly assembly, bool getInfoVersion = true)
 		{
-			var asmversion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
+			var asmVersion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
 			var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-			var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-			var version = $"{asmversion?.Version ?? fileVersion?.Version}";
+			var version = $"{asmVersion?.Version ?? fileVersion?.Version}";
 			if (string.IsNullOrWhiteSpace(version))
 				version = "1.0";
-			else if (!string.IsNullOrWhiteSpace(infoVersion?.InformationalVersion))
-				version += $" ({infoVersion?.InformationalVersion})";
+			else if (getInfoVersion)
+			{
+				var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+				if (!string.IsNullOrWhiteSpace(infoVersion?.InformationalVersion))
+					version += $" ({infoVersion?.InformationalVersion})";
+			}
 			return version;
 		}
 		#endregion
