@@ -932,12 +932,9 @@ namespace net.vieapps.Components.Utility
 					instance = (T)formatter.Deserialize(stream);
 				}
 
-			// cannot serialize, then copy data
+			// cannot serialize, then create new instance and copy data
 			else
-			{
-				instance = ObjectService.CreateInstance<T>();
-				@object.CopyTo(instance);
-			}
+				instance = @object.Copy();
 
 			// return the new instance of object
 			onPreCompleted?.Invoke(instance);
@@ -977,7 +974,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			if (node != null && node.Attributes != null)
 				foreach (XmlAttribute attribute in node.Attributes)
-					json.Add(new JProperty(attribute.Name, attribute.Value));
+					json[attribute.Name] = attribute.Value;
 			return json;
 		}
 
@@ -1008,7 +1005,7 @@ namespace net.vieapps.Components.Utility
 		public static JToken ToJson<T>(this T @object, Action<JToken> onPreCompleted = null)
 		{
 			// by-pass on JSON Token
-			if (@object is JObject || @object is JArray || @object is JValue || @object is JToken)
+			if (@object is JToken)
 			{
 				onPreCompleted?.Invoke(@object as JToken);
 				return @object as JToken;
@@ -1042,7 +1039,7 @@ namespace net.vieapps.Components.Utility
 					json = new JObject();
 					var enumerator = (@object as IDictionary).GetEnumerator();
 					while (enumerator.MoveNext())
-						(json as JObject).Add(new JProperty(enumerator.Key.ToString(), enumerator.Value?.ToJson()));
+						(json as JObject)[enumerator.Key.ToString()] = enumerator.Value?.ToJson();
 				}
 				else
 					json = JObject.FromObject(@object);
@@ -1070,7 +1067,7 @@ namespace net.vieapps.Components.Utility
 								{
 									var key = item.GetAttributeValue(keyAttribute);
 									if (key != null)
-										jsonObject.Add(new JProperty(key.ToString(), item?.ToJson()));
+										jsonObject[key.ToString()] = item?.ToJson();
 								}
 						}
 

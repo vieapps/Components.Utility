@@ -126,9 +126,10 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="separator"></param>
+		/// <param name="converter"></param>
 		/// <returns></returns>
-		public static string ToString<T>(this IEnumerable<T> @object, string separator)
-			=> @object.Select(obj => obj != null ? obj.ToString() : "null").ToString(separator);
+		public static string ToString<T>(this IEnumerable<T> @object, string separator, Func<T, string> converter = null)
+			=> @object.Select(obj => obj != null ? converter != null ? converter(obj) : obj.ToString() : "null").ToString(separator);
 
 		/// <summary>
 		/// Converts this collection to string
@@ -1013,10 +1014,10 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
 
 			var json = new JObject();
-			@object.ForEach(item =>
+			@object.Where(item => item != null).ForEach(item =>
 			{
 				var key = item.GetAttributeValue(keyAttribute) ?? item.GetHashCode();
-				json.Add(new JProperty(key.ToString(), converter != null ? converter(item) : item.ToJson()));
+				json[key.ToString()] = converter != null ? converter(item) : item.ToJson();
 			});
 			return json;
 		}
@@ -1048,7 +1049,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson()));
+				json[enumerator.Current.Key.ToString()] = converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson();
 			return json;
 		}
 
@@ -1099,7 +1100,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JObject();
 			var enumerator = @object.AsEnumerableDictionaryEntry.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(new JProperty(enumerator.Current.Key.ToString(), converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson()));
+				json[enumerator.Current.Key.ToString()] = converter != null ? converter(enumerator.Current.Value) : enumerator.Current.Value?.ToJson();
 			return json;
 		}
 
@@ -1136,7 +1137,7 @@ namespace net.vieapps.Components.Utility
 		{
 			var json = new JObject();
 			foreach (string key in @object.Keys)
-				json.Add(new JProperty(key, @object[key]));
+				json[key] = @object[key];
 			return json;
 		}
 

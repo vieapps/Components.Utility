@@ -9,14 +9,14 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<SignAssembly>false</SignAssembly>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
-		<AssemblyVersion>10.2.1903.1</AssemblyVersion>
-		<FileVersion>10.2.1903.1</FileVersion>
-		<InformationalVersion>v10.2.netstandard-2+rev:2019.03.01-execute.tasks-searching.queries</InformationalVersion>
+		<AssemblyVersion>10.2.1903.3</AssemblyVersion>
+		<FileVersion>10.2.1903.3</FileVersion>
+		<InformationalVersion>v10.2.netstandard-2+rev:2019.03.06-code.refactors</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.2.1903.1</Version>
+		<Version>10.2.1903.3</Version>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose library for developing apps on .NET Standard 2.0</Description>
 		<Authors>VIEApps.net</Authors>
