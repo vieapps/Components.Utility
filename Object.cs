@@ -559,16 +559,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="class">The string that present the type of the static class that contains the static object</param>
 		/// <param name="name">The name of the static object</param>
 		/// <returns></returns>
-		public static object GetStaticObject(string @class, string name) => Type.GetType(@class)?.GetStaticObject(name);
-
-		/// <summary>
-		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
-		/// </summary>
-		/// <typeparam name="T">The type to convert the token to</typeparam>
-		/// <param name="json"></param>
-		/// <param name="key">The token key</param>
-		/// <returns>The converted token value</returns>
-		public static T Get<T>(this JToken json, object key) => json.Value<T>(key);
+		public static object GetStaticObject(string @class, string name)
+			=> Type.GetType(@class)?.GetStaticObject(name);
 		#endregion
 
 		#region Copy & Clone
@@ -942,7 +934,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region JSON Conversions
+		#region JSON conversions
 		internal static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
 			=> ObjectService.GetProperties(type)
 				.Where(attribute => (attribute.Type.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.Type.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
@@ -1135,10 +1127,21 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null) => json.ToJson().FromJson<T>(copy);
+		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null)
+			=> json.ToJson().FromJson<T>(copy);
+
+		/// <summary>
+		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
+		/// </summary>
+		/// <typeparam name="T">The type to convert the token to</typeparam>
+		/// <param name="json"></param>
+		/// <param name="key">The token key</param>
+		/// <returns>The converted token value</returns>
+		public static T Get<T>(this JToken json, object key)
+			=> json.Value<T>(key);
 		#endregion
 
-		#region XML Conversions
+		#region XML conversions
 		/// <summary>
 		/// Serializes this object to XML object
 		/// </summary>
@@ -1361,20 +1364,22 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Conversions & Manipulations of ExpandoObject
+		#region ExpandoObject conversions & manipulations
 		/// <summary>
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON string
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this string json) => JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
+		public static ExpandoObject ToExpandoObject(this string json)
+			=> JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
 
 		/// <summary>
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this JToken json) => new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
+		public static ExpandoObject ToExpandoObject(this JToken json)
+			=> new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
 
 		/// <summary>
 		/// Creates an <see cref="ExpandoObject">ExpandoObject</see> object from this dictionary object
@@ -1394,7 +1399,8 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class => (@object is JToken ? @object as JToken : @object.ToJson()).ToExpandoObject();
+		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class
+			=> (@object is JToken ? @object as JToken : @object.ToJson()).ToExpandoObject();
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
@@ -1402,7 +1408,8 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns></returns>
-		public static T FromExpandoObject<T>(this ExpandoObject @object) where T : class => JObject.FromObject(@object).FromJson<T>();
+		public static T FromExpandoObject<T>(this ExpandoObject @object) where T : class
+			=> JObject.FromObject(@object).FromJson<T>();
 
 		/// <summary>
 		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
@@ -1527,7 +1534,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
 		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Value<T>(this ExpandoObject @object, string name, T @default = default(T)) => @object.Get<T>(name, @default);
+		public static T Value<T>(this ExpandoObject @object, string name, T @default = default(T))
+			=> @object.Get(name, @default);
 
 		/// <summary>
 		/// Checks to see the <see cref="ExpandoObject">ExpandoObject</see> object is got an attribute by specified name (accept the dot (.) to get check of child object)
@@ -1535,7 +1543,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="name">The string that presents the name of the attribute for checking, accept the dot (.) to get check of child object</param>
 		/// <returns>true if the object got an attribute with the name</returns>
-		public static bool Has(this ExpandoObject @object, string name) => @object.TryGet(name, out object value);
+		public static bool Has(this ExpandoObject @object, string name)
+			=> @object.TryGet(name, out object value);
 
 		/// <summary>
 		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
@@ -1617,30 +1626,6 @@ namespace net.vieapps.Components.Utility
 			return dictionary == null || !dictionary.ContainsKey(names[names.Length - 1])
 				? false
 				: dictionary.Remove(names[names.Length - 1]);
-		}
-		#endregion
-
-		#region Get version information
-		/// <summary>
-		/// Gets the string that presents the version number of this assembly
-		/// </summary>
-		/// <param name="assembly"></param>
-		/// <param name="getInfoVersion"></param>
-		/// <returns></returns>
-		public static string GetVersion(this Assembly assembly, bool getInfoVersion = true)
-		{
-			var asmVersion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
-			var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-			var version = $"{asmVersion?.Version ?? fileVersion?.Version}";
-			if (string.IsNullOrWhiteSpace(version))
-				version = "1.0";
-			else if (getInfoVersion)
-			{
-				var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-				if (!string.IsNullOrWhiteSpace(infoVersion?.InformationalVersion))
-					version += $" ({infoVersion?.InformationalVersion})";
-			}
-			return version;
 		}
 		#endregion
 

@@ -2367,6 +2367,30 @@ namespace net.vieapps.Components.Utility
 		public static void KillProcess(int id, Action<Process> action = null) => ExternalProcess.Kill(id, action);
 		#endregion
 
+		#region Get version information
+		/// <summary>
+		/// Gets the string that presents the version number of this assembly
+		/// </summary>
+		/// <param name="assembly"></param>
+		/// <param name="getInfoVersion"></param>
+		/// <returns></returns>
+		public static string GetVersion(this Assembly assembly, bool getInfoVersion = true)
+		{
+			var asmVersion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
+			var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+			var version = $"{asmVersion?.Version ?? fileVersion?.Version}";
+			if (string.IsNullOrWhiteSpace(version))
+				version = "1.0";
+			else if (getInfoVersion)
+			{
+				var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+				if (!string.IsNullOrWhiteSpace(infoVersion?.InformationalVersion))
+					version += $" ({infoVersion?.InformationalVersion})";
+			}
+			return version;
+		}
+		#endregion
+
 	}
 
 	// -----------------------------------------------------------
