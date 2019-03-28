@@ -110,7 +110,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null) => ObjectService.GetProperties(typeof(T), predicate);
+		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetProperties(typeof(T), predicate);
 
 		/// <summary>
 		/// Gets the collection of public properties of the object's type
@@ -118,7 +119,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetProperties(@object.GetType(), predicate);
+		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetProperties(@object.GetType(), predicate);
 
 		/// <summary>
 		/// Gets the collection of fields (private attributes) of the type
@@ -151,7 +153,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null) => ObjectService.GetFields(typeof(T), predicate);
+		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetFields(typeof(T), predicate);
 
 		/// <summary>
 		/// Gets the collection of fields (private attributes) of the object's type
@@ -159,7 +162,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields(this object @object, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetFields(@object.GetType(), predicate);
+		public static List<AttributeInfo> GetFields(this object @object, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetFields(@object.GetType(), predicate);
 
 		/// <summary>
 		/// Gets the collection of attributes of the type (means contains all public properties and private fields)
@@ -167,14 +171,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">The type for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetProperties(type, predicate).Concat(ObjectService.GetFields(type, predicate)).ToList();
+		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetProperties(type, predicate).Concat(ObjectService.GetFields(type, predicate)).ToList();
 
 		/// <summary>
 		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null) => ObjectService.GetAttributes(typeof(T), predicate);
+		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetAttributes(typeof(T), predicate);
 
 		/// <summary>
 		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
@@ -182,7 +188,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null) => ObjectService.GetAttributes(@object.GetType(), predicate);
+		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetAttributes(@object.GetType(), predicate);
 
 		/// <summary>
 		/// Get the full type name (type name with assembly name) of this type
@@ -191,32 +198,53 @@ namespace net.vieapps.Components.Utility
 		/// <param name="justName">true to get only name (means last element in full namespace)</param>
 		/// <returns>The string that presents type name</returns>
 		public static string GetTypeName(this Type type, bool justName = false)
-			=> justName
-				? type.IsGenericType
-					? type.FullName.Substring(0, type.FullName.IndexOf("[")).ToArray('.').Last()
-					: type.FullName.ToArray('.').Last()
-				: type.FullName + "," + type.Assembly.GetName().Name;
+		{
+			if (!justName)
+				return type.FullName + "," + type.Assembly.GetName().Name;
+			else if (!type.IsGenericType)
+				return type.FullName.ToArray('.').Last();
+
+			var typeName = type.FullName;
+			var pos = typeName.IndexOf("[");
+			typeName = typeName.Remove(pos + 1, typeName.LastIndexOf("]") - pos - 1);
+			typeName = typeName.Insert(pos + 1, type.GetGenericArguments().Select(gtype => gtype.GetTypeName(true)).Join(","));
+			typeName = typeName.ToArray('.').Last();
+			pos = typeName.IndexOf("`");
+			return typeName.Remove(pos, typeName.IndexOf("[") - pos).Replace("[", "<").Replace("]", ">");
+		}
+
+		/// <summary>
+		/// Get the full type name (type name with assembly name) of this object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="justName">true to get only name (means last element in full namespace)</param>
+		/// <returns></returns>
+		public static string GetTypeName(this object @object, bool justName = false)
+			=> @object.GetType().GetTypeName(justName);
 
 		/// <summary>
 		/// Gets the state to determines the type is primitive or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is primitive</returns>
-		public static bool IsPrimitiveType(this Type type) => type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
+		public static bool IsPrimitiveType(this Type type)
+			=> type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
 
 		/// <summary>
 		/// Gets the state to determines the type is string or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is string</returns>
-		public static bool IsStringType(this Type type) => type.Equals(typeof(String));
+		public static bool IsStringType(this Type type)
+			=> type.Equals(typeof(String));
 
 		/// <summary>
 		/// Gets the state to determines the type is date-time or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
-		public static bool IsDateTimeType(this Type type) => type.Equals(typeof(DateTime));
+		public static bool IsDateTimeType(this Type type)
+			=> type.Equals(typeof(DateTime)) || type.Equals(typeof(DateTimeOffset));
 
 		/// <summary>
 		/// Gets the state to determines the type is integral numeric or not
@@ -233,21 +261,24 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
-		public static bool IsFloatingPointType(this Type type) => type.Equals(typeof(Decimal)) || type.Equals(typeof(Double)) || type.Equals(typeof(Single));
+		public static bool IsFloatingPointType(this Type type)
+			=> type.Equals(typeof(Decimal)) || type.Equals(typeof(Double)) || type.Equals(typeof(Single));
 
 		/// <summary>
 		/// Gets the state to determines the type is numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
-		public static bool IsNumericType(this Type type) => type.IsIntegralType() || type.IsFloatingPointType();
+		public static bool IsNumericType(this Type type)
+			=> type.IsIntegralType() || type.IsFloatingPointType();
 
 		/// <summary>
 		/// Gets the state to determines the type is a reference of a class or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
-		public static bool IsClassType(this Type type) => !type.IsPrimitiveType() && type.IsClass;
+		public static bool IsClassType(this Type type)
+			=> !type.IsPrimitiveType() && type.IsClass;
 		#endregion
 
 		#region Collection meta data
@@ -421,7 +452,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">The type to be created</typeparam>
 		/// <returns>The newly created instance</returns>
-		public static T CreateInstance<T>() => (T)typeof(T).CreateInstance();
+		public static T CreateInstance<T>()
+			=> (T)typeof(T).CreateInstance();
 
 		/// <summary>
 		/// Casts the value to other type
@@ -563,7 +595,7 @@ namespace net.vieapps.Components.Utility
 			=> Type.GetType(@class)?.GetStaticObject(name);
 		#endregion
 
-		#region Copy & Clone
+		#region Copy objects' properties to/from other object
 		/// <summary>
 		/// Copies data of the object to other object
 		/// </summary>
@@ -571,7 +603,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="destination">The destination object that will be copied to</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
-		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
+		/// <param name="onError">The action to run when got any error</param>
+		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			if (destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
@@ -582,7 +615,10 @@ namespace net.vieapps.Components.Utility
 				{
 					destination.SetAttributeValue(attribute, @object.GetAttributeValue(attribute));
 				}
-				catch { }
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
 			});
 
 			@object.GetFields(attribute => excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)).ForEach(attribute =>
@@ -591,7 +627,10 @@ namespace net.vieapps.Components.Utility
 				{
 					destination.SetAttributeValue(attribute, @object.GetAttributeValue(attribute));
 				}
-				catch { }
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
 			});
 
 			onPreCompleted?.Invoke(destination);
@@ -604,7 +643,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="source">Source object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
-		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
+		/// <param name="onError">The action to run when got any error</param>
+		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			if (source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
@@ -615,7 +655,10 @@ namespace net.vieapps.Components.Utility
 				{
 					@object.SetAttributeValue(attribute, source.GetAttributeValue(attribute));
 				}
-				catch { }
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
 			});
 
 			@object.GetFields(attribute => excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)).ForEach(attribute =>
@@ -624,12 +667,17 @@ namespace net.vieapps.Components.Utility
 				{
 					@object.SetAttributeValue(attribute, source.GetAttributeValue(attribute));
 				}
-				catch { }
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
 			});
 
 			onPreCompleted?.Invoke(@object);
 		}
+		#endregion
 
+		#region Copy objects' properties from JSON
 		/// <summary>
 		/// Copies data of the JSON object
 		/// </summary>
@@ -637,7 +685,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="json">JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
-		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
+		/// <param name="onError">The action to run when got any error</param>
+		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			if (json == null)
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
@@ -699,7 +748,10 @@ namespace net.vieapps.Components.Utility
 
 						@object.SetAttributeValue(attribute, instance);
 					}
-					catch { }
+					catch (Exception ex)
+					{
+						onError?.Invoke(ex);
+					}
 
 				// generic dictionary/collection
 				else if (attribute.Type.IsGenericDictionaryOrCollection())
@@ -748,7 +800,10 @@ namespace net.vieapps.Components.Utility
 
 						@object.SetAttributeValue(attribute, instance);
 					}
-					catch { }
+					catch (Exception ex)
+					{
+						onError?.Invoke(ex);
+					}
 
 				// collection
 				else if (attribute.Type.IsCollection())
@@ -759,7 +814,10 @@ namespace net.vieapps.Components.Utility
 							: typeof(Collection).CreateInstance();
 						@object.SetAttributeValue(attribute, instance);
 					}
-					catch { }
+					catch (Exception ex)
+					{
+						onError?.Invoke(ex);
+					}
 
 				// enum
 				else if (attribute.Type.IsEnum && token is JValue && (token as JValue).Value != null)
@@ -778,7 +836,10 @@ namespace net.vieapps.Components.Utility
 							instance.CopyFrom(token);
 						@object.SetAttributeValue(attribute, instance);
 					}
-					catch { }
+					catch (Exception ex)
+					{
+						onError?.Invoke(ex);
+					}
 
 				// primitive or unknown
 				else
@@ -786,12 +847,17 @@ namespace net.vieapps.Components.Utility
 					{
 						@object.SetAttributeValue(attribute, token is JValue ? (token as JValue).Value : null, true);
 					}
-					catch { }
+					catch (Exception ex)
+					{
+						onError?.Invoke(ex);
+					}
 			}
 
 			onPreCompleted?.Invoke(@object);
 		}
+		#endregion
 
+		#region Copy objects' properties from ExpandoObject
 		/// <summary>
 		/// Copies data of the ExpandoObject object
 		/// </summary>
@@ -799,7 +865,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="expandoObject">The <see cref="ExpandoObject">ExpandoObject</see> object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
-		public static void CopyFrom(this object @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<object> onPreCompleted = null)
+		/// <param name="onError">The action to run when got any error</param>
+		public static void CopyFrom(this object @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			foreach (var attribute in @object.GetProperties())
 			{
@@ -840,7 +907,14 @@ namespace net.vieapps.Components.Utility
 
 					// primitive type
 					else if (attribute.Type.IsPrimitiveType())
-						value = value.CastAs(attribute.Type);
+						try
+						{
+							value = value.CastAs(attribute.Type);
+						}
+						catch (Exception ex)
+						{
+							throw new InvalidCastException($"Cannot cast type of \"{attribute.Name}\" ({value.GetType().GetTypeName(true)} => {attribute.Type.GetTypeName(true)}): {ex.Message}", ex);
+						}
 				}
 
 				// update the value of attribute
@@ -848,12 +922,17 @@ namespace net.vieapps.Components.Utility
 				{
 					@object.SetAttributeValue(attribute, value);
 				}
-				catch { }
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
 			}
 
 			onPreCompleted?.Invoke(@object);
 		}
+		#endregion
 
+		#region Copy & Clone objects
 		/// <summary>
 		/// Creates new an instance of the object and copies data (from this current object)
 		/// </summary>

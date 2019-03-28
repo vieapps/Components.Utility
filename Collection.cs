@@ -974,6 +974,19 @@ namespace net.vieapps.Components.Utility
 				attributes.Add(xmlAttribute);
 			return attributes;
 		}
+
+		/// <summary>
+		/// Converts the array to a enumerable collection of objects
+		/// </summary>
+		/// <param name="array"></param>
+		/// <returns></returns>
+		public static IEnumerable<object> ToEnumerable(this Array array)
+		{
+			var enumerable = new List<object>();
+			foreach (var @object in array)
+				enumerable.Add(@object);
+			return enumerable;
+		}
 		#endregion
 
 		#region Special conversions
