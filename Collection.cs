@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Xml;
-
 using Newtonsoft.Json.Linq;
 #endregion
 

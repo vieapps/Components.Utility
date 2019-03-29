@@ -9,14 +9,14 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<SignAssembly>false</SignAssembly>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
-		<AssemblyVersion>10.2.1903.3</AssemblyVersion>
-		<FileVersion>10.2.1903.3</FileVersion>
-		<InformationalVersion>v10.2.netstandard-2+rev:2019.03.20-linq.concurrenthashset</InformationalVersion>
+		<AssemblyVersion>10.2.1904.1</AssemblyVersion>
+		<FileVersion>10.2.1904.1</FileVersion>
+		<InformationalVersion>v10.2.netstandard-2+rev:2019.03.29-linq.concurrenthashset</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.2.1903.3</Version>
+		<Version>10.2.1904.1</Version>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose library for developing apps on .NET Standard 2.0</Description>
 		<Authors>VIEApps.net</Authors>
@@ -24,7 +24,7 @@
 		<PackageLicense>LICENSE.md</PackageLicense>
 		<PackageOutputPath>..\</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Change the ways to execute a task</PackageReleaseNotes>
+		<PackageReleaseNotes>Add concurrent hash-set and add more extensions for working with LINQ</PackageReleaseNotes>
 		<PackageIconUrl>https://github.com/vieapps/Components.Utility/raw/master/logo.png</PackageIconUrl>
 		<PackageProjectUrl>https://github.com/vieapps/Components.Utility</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
@@ -40,7 +40,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DocumentFormat.OpenXml" Version="2.9.0" />
+		<PackageReference Include="DocumentFormat.OpenXml" Version="2.9.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.2.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />

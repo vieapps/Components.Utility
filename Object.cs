@@ -14,7 +14,6 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Dynamic;
 using System.Runtime.Serialization.Formatters.Binary;
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
@@ -913,7 +912,11 @@ namespace net.vieapps.Components.Utility
 						}
 						catch (Exception ex)
 						{
-							throw new InvalidCastException($"Cannot cast type of \"{attribute.Name}\" ({value.GetType().GetTypeName(true)} => {attribute.Type.GetTypeName(true)}): {ex.Message}", ex);
+							var exception = new InvalidCastException($"Cannot cast type of \"{attribute.Name}\" ({value.GetType().GetTypeName(true)} => {attribute.Type.GetTypeName(true)}): {ex.Message}", ex);
+							if (onError != null)
+								onError(exception);
+							else
+								throw exception;
 						}
 				}
 
@@ -940,11 +943,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
-		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onPreCompleted = null)
+		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
-			instance.CopyFrom(@object, excluded);
+			instance.CopyFrom(@object, excluded, null, onError);
 			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
@@ -956,11 +960,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="json">The JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
-		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null)
+		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
-			instance.CopyFrom(json, excluded);
+			instance.CopyFrom(json, excluded, null, onError);
 			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
@@ -972,11 +977,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="expandoObject">The ExpandoObject object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
-		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null)
+		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
-			instance.CopyFrom(expandoObject, excluded);
+			instance.CopyFrom(expandoObject, excluded, null, onError);
 			onPreCompleted?.Invoke(instance);
 			return instance;
 		}
@@ -987,25 +993,36 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">The type of object being copied</typeparam>
 		/// <param name="object">The object instance to copy</param>
 		/// <param name="onPreCompleted">The action to run before completing the clone process</param>
+		/// <param name="onError">The action to run when got any error</param>
 		/// <returns>The copied object.</returns>
-		public static T Clone<T>(this T @object, Action<T> onPreCompleted = null)
+		public static T Clone<T>(this T @object, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			// initialize the object
-			T instance;
+			var instance = default(T);
 
 			// the object is serializable
 			if (@object.GetType().IsSerializable)
 				using (var stream = UtilityService.CreateMemoryStream())
 				{
-					var formatter = new BinaryFormatter();
-					formatter.Serialize(stream, @object);
-					stream.Seek(0, SeekOrigin.Begin);
-					instance = (T)formatter.Deserialize(stream);
+					try
+					{
+						var formatter = new BinaryFormatter();
+						formatter.Serialize(stream, @object);
+						stream.Seek(0, SeekOrigin.Begin);
+						instance = (T)formatter.Deserialize(stream);
+					}
+					catch (Exception ex)
+					{
+						if (onError != null)
+							onError(ex);
+						else
+							throw ex;
+					}
 				}
 
 			// cannot serialize, then create new instance and copy data
 			else
-				instance = @object.Copy();
+				instance = @object.Copy(null, null, onError);
 
 			// return the new instance of object
 			onPreCompleted?.Invoke(instance);
