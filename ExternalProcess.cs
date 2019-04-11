@@ -355,6 +355,48 @@ namespace net.vieapps.Components.Utility
 			/// Gets the extra information
 			/// </summary>
 			public Dictionary<string, object> Extra { get; } = new Dictionary<string, object>();
+
+			/// <summary>
+			/// Sets the value of a specified key of the extra information
+			/// </summary>
+			/// <typeparam name="T"></typeparam>
+			/// <param name="key"></param>
+			/// <param name="value"></param>
+			public void Set<T>(string key, T value)
+				=> this.Extra[key] = value;
+
+			/// <summary>
+			/// Gets the value of a specified key from the extra information
+			/// </summary>
+			/// <typeparam name="T"></typeparam>
+			/// <param name="key"></param>
+			/// <param name="default"></param>
+			/// <returns></returns>
+			public T Get<T>(string key, T @default = default(T))
+				=> this.Extra.TryGetValue(key, out object value) && value != null && value is T
+					? (T)value
+					: @default;
+
+			/// <summary>
+			/// Removes the value of a specified key from the extra information
+			/// </summary>
+			/// <param name="key"></param>
+			/// <returns></returns>
+			public bool Remove(string key)
+				=> this.Extra.Remove(key);
+
+			/// <summary>
+			/// Removes the value of a specified key from the extra information
+			/// </summary>
+			/// <typeparam name="T"></typeparam>
+			/// <param name="key"></param>
+			/// <param name="value"></param>
+			/// <returns></returns>
+			public bool Remove<T>(string key, out T value)
+			{
+				value = this.Get<T>(key);
+				return this.Remove(key);
+			}
 		}
 	}
 }

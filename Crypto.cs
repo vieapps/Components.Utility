@@ -73,7 +73,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">The bit-length of the key (means number of total bits :: 256 bits = 32 bytes)</param>
 		/// <param name="doubleHash">Set to true to use double-hash</param>
 		/// <returns>An array of bytes that presents the key</returns>
-		public static byte[] GenerateHashKey(this string passphrase, int length = 256, bool doubleHash = true) => (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length, doubleHash);
+		public static byte[] GenerateHashKey(this string passphrase, int length = 256, bool doubleHash = true)
+			=> (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length, doubleHash);
 
 		/// <summary>
 		/// Generates a hashing password from a plain-text password with salt and peper using strong hashing algorithm (Argon2)
@@ -131,7 +132,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static HashAlgorithm GetHasher(string hashAlgorithm = "SHA256") => CryptoService.GetHashAlgorithm(hashAlgorithm);
+		public static HashAlgorithm GetHasher(string hashAlgorithm = "SHA256")
+			=> CryptoService.GetHashAlgorithm(hashAlgorithm);
 
 		/// <summary>
 		/// Gets hash of this array of bytes
@@ -156,14 +158,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHash(this string @string, string hashAlgorithm = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHash(hashAlgorithm);
+		public static byte[] GetHash(this string @string, string hashAlgorithm = "SHA256")
+			=> string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetHash(hashAlgorithm);
 
 		/// <summary>
 		/// Gets MD5 hash of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetMD5Hash(this string @string) => @string.GetHash("MD5");
+		public static byte[] GetMD5Hash(this string @string)
+			=> @string.GetHash("MD5");
 
 		/// <summary>
 		/// Gets MD5 hash of this string
@@ -171,14 +177,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetMD5(this string @string, bool toHex = true) => toHex ? @string.GetMD5Hash().ToHex() : @string.GetMD5Hash().ToBase64();
+		public static string GetMD5(this string @string, bool toHex = true)
+			=> toHex ? @string.GetMD5Hash().ToHex() : @string.GetMD5Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHAHash(this string @string) => @string.GetSHA256Hash();
+		public static byte[] GetSHAHash(this string @string)
+			=> @string.GetSHA256Hash();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
@@ -186,14 +194,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA(this string @string, bool toHex = true) => @string.GetSHA256(toHex);
+		public static string GetSHA(this string @string, bool toHex = true)
+			=> @string.GetSHA256(toHex);
 
 		/// <summary>
 		/// Gets SHA hash of this string (160 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA1Hash(this string @string) => @string.GetHash("SHA1");
+		public static byte[] GetSHA1Hash(this string @string)
+			=> @string.GetHash("SHA1");
 
 		/// <summary>
 		/// Gets SHA hash of this string (160 bits)
@@ -201,14 +211,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA1(this string @string, bool toHex = true) => toHex ? @string.GetSHA1Hash().ToHex() : @string.GetSHA1Hash().ToBase64();
+		public static string GetSHA1(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetSHA1Hash().ToHex()
+				: @string.GetSHA1Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA256Hash(this string @string) => @string.GetHash("SHA256");
+		public static byte[] GetSHA256Hash(this string @string)
+			=> @string.GetHash("SHA256");
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
@@ -216,14 +230,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA256(this string @string, bool toHex = true) => toHex ? @string.GetSHA256Hash().ToHex() : @string.GetSHA256Hash().ToBase64();
+		public static string GetSHA256(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetSHA256Hash().ToHex()
+				: @string.GetSHA256Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA384Hash(this string @string) => @string.GetHash("SHA384");
+		public static byte[] GetSHA384Hash(this string @string)
+			=> @string.GetHash("SHA384");
 
 		/// <summary>
 		/// Gets SHA hash of this string (384 bits)
@@ -231,14 +249,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA384(this string @string, bool toHex = true) => toHex ? @string.GetSHA384Hash().ToHex() : @string.GetSHA384Hash().ToBase64();
+		public static string GetSHA384(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetSHA384Hash().ToHex()
+				: @string.GetSHA384Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetSHA512Hash(this string @string) => @string.GetHash("SHA512");
+		public static byte[] GetSHA512Hash(this string @string)
+			=> @string.GetHash("SHA512");
 
 		/// <summary>
 		/// Gets SHA hash of this string (512 bits)
@@ -246,14 +268,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetSHA512(this string @string, bool toHex = true) => toHex ? @string.GetSHA512Hash().ToHex() : @string.GetSHA512Hash().ToBase64();
+		public static string GetSHA512(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetSHA512Hash().ToHex()
+				: @string.GetSHA512Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKEHash(this string @string) => @string.GetBLAKE256Hash();
+		public static byte[] GetBLAKEHash(this string @string)
+			=> @string.GetBLAKE256Hash();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
@@ -261,14 +287,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE(this string @string, bool toHex = true) => @string.GetBLAKE256(toHex);
+		public static string GetBLAKE(this string @string, bool toHex = true)
+			=> @string.GetBLAKE256(toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (128 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE128Hash(this string @string) => @string.GetHash("BLAKE128");
+		public static byte[] GetBLAKE128Hash(this string @string)
+			=> @string.GetHash("BLAKE128");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (128 bits)
@@ -276,14 +304,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE128(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE128Hash().ToHex() : @string.GetBLAKE128Hash().ToBase64();
+		public static string GetBLAKE128(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetBLAKE128Hash().ToHex()
+				: @string.GetBLAKE128Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE256Hash(this string @string) => @string.GetHash("BLAKE256");
+		public static byte[] GetBLAKE256Hash(this string @string)
+			=> @string.GetHash("BLAKE256");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (256 bits)
@@ -291,14 +323,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE256(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE256Hash().ToHex() : @string.GetBLAKE256Hash().ToBase64();
+		public static string GetBLAKE256(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetBLAKE256Hash().ToHex()
+				: @string.GetBLAKE256Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (384 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE384Hash(this string @string) => @string.GetHash("BLAKE384");
+		public static byte[] GetBLAKE384Hash(this string @string)
+			=> @string.GetHash("BLAKE384");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (384 bits)
@@ -306,14 +342,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE384(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE384Hash().ToHex() : @string.GetBLAKE384Hash().ToBase64();
+		public static string GetBLAKE384(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetBLAKE384Hash().ToHex()
+				: @string.GetBLAKE384Hash().ToBase64();
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (512 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetBLAKE512Hash(this string @string) => @string.GetHash("BLAKE512");
+		public static byte[] GetBLAKE512Hash(this string @string)
+			=> @string.GetHash("BLAKE512");
 
 		/// <summary>
 		/// Gets BLAKE2 hash of this string (512 bits)
@@ -321,14 +361,18 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetBLAKE512(this string @string, bool toHex = true) => toHex ? @string.GetBLAKE512Hash().ToHex() : @string.GetBLAKE512Hash().ToBase64();
+		public static string GetBLAKE512(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetBLAKE512Hash().ToHex()
+				: @string.GetBLAKE512Hash().ToBase64();
 
 		/// <summary>
 		/// Gets RIPEMD160 hash of this string (160 bits)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetRIPEMD160Hash(this string @string) => @string.GetHash("RIPEMD160");
+		public static byte[] GetRIPEMD160Hash(this string @string)
+			=> @string.GetHash("RIPEMD160");
 
 		/// <summary>
 		/// Gets RIPEMD160 hash of this string (160 bits)
@@ -336,7 +380,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetRIPEMD160(this string @string, bool toHex = true) => toHex ? @string.GetRIPEMD160Hash().ToHex() : @string.GetRIPEMD160Hash().ToBase64();
+		public static string GetRIPEMD160(this string @string, bool toHex = true)
+			=> toHex
+				? @string.GetRIPEMD160Hash().ToHex()
+				: @string.GetRIPEMD160Hash().ToBase64();
 		#endregion
 
 		#region Double Hash an array of bytes or a string
@@ -373,7 +420,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="secondAlgorithm">Name of the second hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
 		public static byte[] GetDoubleHash(this string @string, string firstAlgorithm = "SHA256", string secondAlgorithm = null)
-			=> string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetDoubleHash(firstAlgorithm, secondAlgorithm);
+			=> string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetDoubleHash(firstAlgorithm, secondAlgorithm);
 
 		/// <summary>
 		/// Gets the double-hash of this array of bytes with first hash is SHA256, second hash is RIPEMD160
@@ -381,14 +430,19 @@ namespace net.vieapps.Components.Utility
 		/// <param name="bytes"></param>
 		/// <returns></returns>
 		public static byte[] GetHash160(this byte[] bytes)
-			=> bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash("SHA256", "RIPEMD160");
+			=> bytes == null || bytes.Length < 1
+				? throw new ArgumentException("Invalid", nameof(bytes))
+				: bytes.GetDoubleHash("SHA256", "RIPEMD160");
 
 		/// <summary>
 		/// Gets the double-hash of this string with first hash is SHA256, second hash is RIPEMD160
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static byte[] GetHash160(this string @string) => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHash160();
+		public static byte[] GetHash160(this string @string)
+			=> string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetHash160();
 		#endregion
 
 		#region HMAC Hash an array of bytes or string
@@ -417,7 +471,7 @@ namespace net.vieapps.Components.Utility
 		public static HMAC GetHMACHashAlgorithm(byte[] key, string hashAlgorithm = "SHA256")
 		{
 			if (!CryptoService.HmacHashAlgorithmFactories.TryGetValue(hashAlgorithm, out Func<byte[], HMAC> func))
-				func = (k) => new HMACSHA256(k);
+				func = k => new HMACSHA256(k);
 			return func(key);
 		}
 
@@ -427,7 +481,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static HMAC GetHMACHasher(byte[] key, string hashAlgorithm = "SHA256") => CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm);
+		public static HMAC GetHMACHasher(byte[] key, string hashAlgorithm = "SHA256")
+			=> CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm);
 
 		/// <summary>
 		/// Gets HMAC of this array of bytes
@@ -456,7 +511,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">Keys for hashing (means salt)</param>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, byte[] key, string hashAlgorithm = "SHA256") => string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetHMACHash(key, hashAlgorithm);
+		public static byte[] GetHMACHash(this string @string, byte[] key, string hashAlgorithm = "SHA256")
+			=> string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetHMACHash(key, hashAlgorithm);
 
 		/// <summary>
 		/// Gets HMAC of this string
@@ -465,7 +523,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">Keys for hashing (means salt)</param>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetHMACHash(this string @string, string key, string hashAlgorithm = "SHA256") => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), hashAlgorithm);
+		public static byte[] GetHMACHash(this string @string, string key, string hashAlgorithm = "SHA256")
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), hashAlgorithm);
 
 		/// <summary>
 		/// Gets HMAC of this string
@@ -475,7 +534,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="toHex">true to get hexa-string, otherwise get base64-string</param>
 		/// <returns></returns>
-		public static string GetHMAC(this string @string, string key, string hashAlgorithm = null, bool toHex = true) => toHex ? @string.GetHMACHash(key, hashAlgorithm).ToHex() : @string.GetHMACHash(key, hashAlgorithm).ToBase64();
+		public static string GetHMAC(this string @string, string key, string hashAlgorithm = null, bool toHex = true)
+			=> toHex
+				? @string.GetHMACHash(key, hashAlgorithm).ToHex()
+				: @string.GetHMACHash(key, hashAlgorithm).ToBase64();
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -483,7 +545,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACMD5Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "MD5");
+		public static byte[] GetHMACMD5Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "MD5");
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -492,7 +555,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACMD5(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "MD5", toHex);
+		public static string GetHMACMD5(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "MD5", toHex);
 
 		/// <summary>
 		/// Gets MD5 HMAC of this string
@@ -500,7 +564,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACMD5(this string @string, bool toHex = true) => @string.GetHMACMD5(null, toHex);
+		public static string GetHMACMD5(this string @string, bool toHex = true)
+			=> @string.GetHMACMD5(null, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -508,7 +573,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHAHash(this string @string, string key) => @string.GetHMACSHA256Hash(key);
+		public static byte[] GetHMACSHAHash(this string @string, string key)
+			=> @string.GetHMACSHA256Hash(key);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -517,7 +583,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA(this string @string, string key, bool toHex = true) => @string.GetHMACSHA256(key, toHex);
+		public static string GetHMACSHA(this string @string, string key, bool toHex = true)
+			=> @string.GetHMACSHA256(key, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -525,7 +592,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA(this string @string, bool toHexa = true) => @string.GetHMACSHA256(toHexa);
+		public static string GetHMACSHA(this string @string, bool toHexa = true)
+			=> @string.GetHMACSHA256(toHexa);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (160 bits)
@@ -533,7 +601,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA1Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA1");
+		public static byte[] GetHMACSHA1Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA1");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (160 bits)
@@ -542,7 +611,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA1(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA1", toHex);
+		public static string GetHMACSHA1(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "SHA1", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (160 bits)
@@ -550,7 +620,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA1(this string @string, bool toHexa = true) => @string.GetHMACSHA1(null, toHexa);
+		public static string GetHMACSHA1(this string @string, bool toHexa = true)
+			=> @string.GetHMACSHA1(null, toHexa);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -558,7 +629,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA256Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA256");
+		public static byte[] GetHMACSHA256Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA256");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -567,7 +639,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA256(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA256", toHex);
+		public static string GetHMACSHA256(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "SHA256", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (256 bits)
@@ -575,7 +648,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA256(this string @string, bool toHex = true) => @string.GetHMACSHA256(null, toHex);
+		public static string GetHMACSHA256(this string @string, bool toHex = true)
+			=> @string.GetHMACSHA256(null, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (384 bits)
@@ -583,7 +657,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA384Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA384");
+		public static byte[] GetHMACSHA384Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA384");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (384 bits)
@@ -592,7 +667,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA384(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA384", toHex);
+		public static string GetHMACSHA384(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "SHA384", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (384 bits)
@@ -600,7 +676,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA384(this string @string, bool toHex = true) => @string.GetHMACSHA384(null, toHex);
+		public static string GetHMACSHA384(this string @string, bool toHex = true)
+			=> @string.GetHMACSHA384(null, toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (512 bits)
@@ -608,7 +685,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACSHA512Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA512");
+		public static byte[] GetHMACSHA512Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "SHA512");
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (512 bits)
@@ -617,7 +695,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA512(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "SHA512", toHex);
+		public static string GetHMACSHA512(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "SHA512", toHex);
 
 		/// <summary>
 		/// Gets SHA HMAC of this string (512 bits)
@@ -625,7 +704,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACSHA512(this string @string, bool toHex = true) => @string.GetHMACSHA512(null, toHex);
+		public static string GetHMACSHA512(this string @string, bool toHex = true)
+			=> @string.GetHMACSHA512(null, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -633,7 +713,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKEHash(this string @string, string key) => @string.GetHMACBLAKE256Hash(key);
+		public static byte[] GetHMACBLAKEHash(this string @string, string key)
+			=> @string.GetHMACBLAKE256Hash(key);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -642,7 +723,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE(this string @string, string key, bool toHex = true) => @string.GetHMACBLAKE256(key, toHex);
+		public static string GetHMACBLAKE(this string @string, string key, bool toHex = true)
+			=> @string.GetHMACBLAKE256(key, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -650,7 +732,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE(this string @string, bool toHex = true) => @string.GetHMACBLAKE256(toHex);
+		public static string GetHMACBLAKE(this string @string, bool toHex = true)
+			=> @string.GetHMACBLAKE256(toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (128 bits)
@@ -658,7 +741,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE128Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE128");
+		public static byte[] GetHMACBLAKE128Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE128");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (128 bits)
@@ -667,7 +751,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE128(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE128", toHex);
+		public static string GetHMACBLAKE128(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "BLAKE128", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (128 bits)
@@ -675,7 +760,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHexa"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE128(this string @string, bool toHexa = true) => @string.GetHMACBLAKE128(null, toHexa);
+		public static string GetHMACBLAKE128(this string @string, bool toHexa = true)
+			=> @string.GetHMACBLAKE128(null, toHexa);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -683,7 +769,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE256Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE256");
+		public static byte[] GetHMACBLAKE256Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE256");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -692,7 +779,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE256(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE256", toHex);
+		public static string GetHMACBLAKE256(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "BLAKE256", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (256 bits)
@@ -700,7 +788,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE256(this string @string, bool toHex = true) => @string.GetHMACBLAKE256(null, toHex);
+		public static string GetHMACBLAKE256(this string @string, bool toHex = true)
+			=> @string.GetHMACBLAKE256(null, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (384 bits)
@@ -708,7 +797,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE384Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE384");
+		public static byte[] GetHMACBLAKE384Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE384");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (384 bits)
@@ -717,7 +807,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE384(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE384", toHex);
+		public static string GetHMACBLAKE384(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "BLAKE384", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (384 bits)
@@ -725,7 +816,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE384(this string @string, bool toHex = true) => @string.GetHMACBLAKE384(null, toHex);
+		public static string GetHMACBLAKE384(this string @string, bool toHex = true)
+			=> @string.GetHMACBLAKE384(null, toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (512 bits)
@@ -733,7 +825,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACBLAKE512Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE512");
+		public static byte[] GetHMACBLAKE512Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "BLAKE512");
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (512 bits)
@@ -742,7 +835,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE512(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "BLAKE512", toHex);
+		public static string GetHMACBLAKE512(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "BLAKE512", toHex);
 
 		/// <summary>
 		/// Gets BLAKE2 HMAC of this string (512 bits)
@@ -750,7 +844,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACBLAKE512(this string @string, bool toHex = true) => @string.GetHMACBLAKE512(null, toHex);
+		public static string GetHMACBLAKE512(this string @string, bool toHex = true)
+			=> @string.GetHMACBLAKE512(null, toHex);
 
 		/// <summary>
 		/// Gets RIPEMD HMAC of this string (160 bits)
@@ -758,7 +853,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public static byte[] GetHMACRIPEMD160Hash(this string @string, string key) => @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "RIPEMD160");
+		public static byte[] GetHMACRIPEMD160Hash(this string @string, string key)
+			=> @string.GetHMACHash((key ?? DEFAULT_PASS_PHRASE).ToBytes(), "RIPEMD160");
 
 		/// <summary>
 		/// Gets RIPEMD HMAC of this string (160 bits)
@@ -767,7 +863,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACRIPEMD160(this string @string, string key, bool toHex = true) => @string.GetHMAC(key, "RIPEMD160", toHex);
+		public static string GetHMACRIPEMD160(this string @string, string key, bool toHex = true)
+			=> @string.GetHMAC(key, "RIPEMD160", toHex);
 
 		/// <summary>
 		/// Gets RIPEMD HMAC of this string (160 bits)
@@ -775,7 +872,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string GetHMACRIPEMD160(this string @string, bool toHex = true) => @string.GetHMACRIPEMD160(null, toHex);
+		public static string GetHMACRIPEMD160(this string @string, bool toHex = true)
+			=> @string.GetHMACRIPEMD160(null, toHex);
 		#endregion
 
 		#region Check-Sum of an array of bytes or a string
@@ -787,7 +885,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this byte[] bytes, string hashAlgorithm = "SHA256", int length = 4)
-			=> bytes == null || bytes.Length < 1 ? throw new ArgumentException("Invalid", nameof(bytes)) : bytes.GetDoubleHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
+			=> bytes == null || bytes.Length < 1
+				? throw new ArgumentException("Invalid", nameof(bytes))
+				: bytes.GetDoubleHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
 
 		/// <summary>
 		/// Gets the check-sum of this string using double-hash
@@ -797,7 +897,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this string @string, string hashAlgorithm = "SHA256", int length = 4)
-			=> string.IsNullOrWhiteSpace(@string) ? new byte[0] : @string.ToBytes().GetCheckSum(hashAlgorithm, length);
+			=> string.IsNullOrWhiteSpace(@string)
+				? new byte[0]
+				: @string.ToBytes().GetCheckSum(hashAlgorithm, length);
 		#endregion
 
 		#region Encrypt/Decrypt (using AES)
@@ -829,7 +931,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="iv"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHex = false) => string.IsNullOrWhiteSpace(@string) ? "" : toHex ? @string.ToBytes().Encrypt(key, iv).ToHex() : @string.ToBytes().Encrypt(key, iv).ToBase64();
+		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHex = false)
+			=> string.IsNullOrWhiteSpace(@string)
+				? ""
+				: toHex
+					? @string.ToBytes().Encrypt(key, iv).ToHex()
+					: @string.ToBytes().Encrypt(key, iv).ToBase64();
 
 		/// <summary>
 		/// Encrypts this string by specific pass-phrase using AES
@@ -838,7 +945,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
-		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false) => @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
+		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
+			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
 
 		/// <summary>
 		/// Decrypts by specific key and initialization vector using AES
@@ -866,7 +974,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="iv"></param>
 		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false) => string.IsNullOrWhiteSpace(@string) ? "" : isHex ? @string.HexToBytes().Decrypt(key, iv).GetString() : @string.Base64ToBytes().Decrypt(key, iv).GetString();
+		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false)
+			=> string.IsNullOrWhiteSpace(@string)
+				? ""
+				: isHex
+					? @string.HexToBytes().Decrypt(key, iv).GetString()
+					: @string.Base64ToBytes().Decrypt(key, iv).GetString();
 
 		/// <summary>
 		/// Decrypts this encrypted string by specific pass-phrase using AES
@@ -875,7 +988,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <param name="isHex"></param>
 		/// <returns></returns>
-		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false) => @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
+		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
+			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)
@@ -996,7 +1110,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">The public key used to encrypt data</param>
 		/// <param name="data">The data to encrypt</param>
 		/// <returns></returns>
-		public static byte[] Encrypt(this ECCsecp256k1.Point key, byte[] data) => ECCsecp256k1.Encrypt(key, data);
+		public static byte[] Encrypt(this ECCsecp256k1.Point key, byte[] data)
+			=> ECCsecp256k1.Encrypt(key, data);
 
 		/// <summary>
 		/// Encrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1018,7 +1133,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">The private key used to decrypt</param>
 		/// <param name="data">The data the decrypt</param>
 		/// <returns></returns>
-		public static byte[] Decrypt(this BigInteger key, byte[] data) => ECCsecp256k1.Decrypt(key, data);
+		public static byte[] Decrypt(this BigInteger key, byte[] data)
+			=> ECCsecp256k1.Decrypt(key, data);
 
 		/// <summary>
 		/// Decrypts the data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1042,7 +1158,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">The private key used to to sign</param>
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <returns></returns>
-		public static BigInteger[] Sign(this BigInteger key, byte[] hash) => ECCsecp256k1.Sign(key, hash);
+		public static BigInteger[] Sign(this BigInteger key, byte[] hash)
+			=> ECCsecp256k1.Sign(key, hash);
 
 		/// <summary>
 		/// Signs hash data using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1051,7 +1168,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to sign</param>
 		/// <param name="isHex">true to specify that hashed-data is hexa string, false is base64 string</param>
 		/// <returns>The hexa string that presents the signature</returns>
-		public static string Sign(this BigInteger key, string hash, bool isHex = false) => ECCsecp256k1.GetSignature(ECCsecp256k1.Sign(key, isHex ? hash.HexToBytes() : hash.Base64ToBytes()));
+		public static string Sign(this BigInteger key, string hash, bool isHex = false)
+			=> ECCsecp256k1.GetSignature(ECCsecp256k1.Sign(key, isHex ? hash.HexToBytes() : hash.Base64ToBytes()));
 
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1060,7 +1178,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, BigInteger[] signature) => ECCsecp256k1.Verify(key, hash, signature);
+		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, BigInteger[] signature)
+			=> ECCsecp256k1.Verify(key, hash, signature);
 
 		/// <summary>
 		/// Verifys the signature of hash using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
@@ -1069,7 +1188,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hash">The hashed-data to veriry with signature</param>
 		/// <param name="signature">The signature to verify</param>
 		/// <returns></returns>
-		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, string signature) => ECCsecp256k1.Verify(key, hash, ECCsecp256k1.GetSignature(signature));
+		public static bool Verify(this ECCsecp256k1.Point key, byte[] hash, string signature)
+			=> ECCsecp256k1.Verify(key, hash, ECCsecp256k1.GetSignature(signature));
 		#endregion
 
 		#region Create instance of RSA
@@ -1105,7 +1225,8 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key">Key for the RSA instance, must be formated in JSON or PEM</param>
 		/// <returns>An instance of RSA</returns>
-		public static RSA CreateRSAInstance(string key) => CryptoService.CreateRSA(key);
+		public static RSA CreateRSAInstance(string key)
+			=> CryptoService.CreateRSA(key);
 		#endregion
 
 		#region Export/Import parameters of RSA with JSON format
@@ -1628,14 +1749,16 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
 		/// <returns></returns>
-		public static BigInteger GenerateECCPrivateKey(int length = 256) => ECCsecp256k1.GeneratePrivateKey(length);
+		public static BigInteger GenerateECCPrivateKey(int length = 256)
+			=> ECCsecp256k1.GeneratePrivateKey(length);
 
 		/// <summary>
 		/// Generates the public key of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)
 		/// </summary>
 		/// <param name="key">The private key used to generate public key</param>
 		/// <returns></returns>
-		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger key) => ECCsecp256k1.GeneratePublicKey(key);
+		public static ECCsecp256k1.Point GenerateECCPublicKey(this BigInteger key)
+			=> ECCsecp256k1.GeneratePublicKey(key);
 
 		/// <summary>
 		/// Generates key-pair of Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin)

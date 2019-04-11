@@ -2021,41 +2021,47 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="array">The one-dimensional array that is the destination of the elements copied from the collection. The array must have zero-based indexing.</param>
 		/// <param name="index">The zero-based index in array at which copying begins</param>
-		public void CopyTo(KeyValuePair<TKey, TValue>[] array, int index) => base.CopyTo(array, index);
+		public void CopyTo(KeyValuePair<TKey, TValue>[] array, int index)
+			=> base.CopyTo(array, index);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool Contains(TKey key) => base.Contains(key);
+		public bool Contains(TKey key)
+			=> base.Contains(key);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool ContainsKey(TKey key) => this.Contains(key);
+		public bool ContainsKey(TKey key)
+			=> this.Contains(key);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="element">The element that contains both the key and the value</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool Contains(KeyValuePair<TKey, TValue> element) => this.Contains(element.Key);
+		public bool Contains(KeyValuePair<TKey, TValue> element)
+			=> this.Contains(element.Key);
 
 		/// <summary>
 		/// Adds an element with the specified key and value into the collection with the lowest available index
 		/// </summary>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Add(TKey key, TValue value) => base.Add(key, value);
+		public void Add(TKey key, TValue value)
+			=> base.Add(key, value);
 
 		/// <summary>
 		/// Adds an element into the collection with the lowest available index
 		/// </summary>
 		/// <param name="element">The element that contains both the key and the value</param>
-		public void Add(KeyValuePair<TKey, TValue> element) => this.Add(element.Key, element.Value);
+		public void Add(KeyValuePair<TKey, TValue> element)
+			=> this.Add(element.Key, element.Value);
 
 		/// <summary>
 		/// Inserts a new element into the collection with the specified key and value at the specified index
@@ -2063,42 +2069,48 @@ namespace net.vieapps.Components.Utility
 		/// <param name="index">The zero-based index at which the element should be inserted</param>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Insert(int index, TKey key, TValue value) => base.Insert(index, key, value);
+		public void Insert(int index, TKey key, TValue value)
+			=> base.Insert(index, key, value);
 
 		/// <summary>
 		/// Removes the element with the specified key from the collection
 		/// </summary>
 		/// <param name="key">The key of the element to remove</param>
 		/// <returns>true if the element is successfully removed; otherwise, false. This method also returns false if key was not found in the collection</returns>
-		public bool Remove(TKey key) => base.Remove(key);
+		public bool Remove(TKey key)
+			=> base.Remove(key);
 
 		/// <summary>
 		/// Removes the element with the specified key from the collection
 		/// </summary>
 		/// <param name="element">The element that contains both the key and the value</param>
 		/// <returns>true if the element is successfully removed; otherwise, false. This method also returns false if key was not found in the collection.</returns>
-		public bool Remove(KeyValuePair<TKey, TValue> element) => this.Remove(element.Key);
+		public bool Remove(KeyValuePair<TKey, TValue> element)
+			=> this.Remove(element.Key);
 
 		/// <summary>
 		/// Searches for the specified object and returns the zero-based index of the first occurrence within the entire the collection
 		/// </summary>
 		/// <param name="object">The object to locate in the collections. The value can be null for reference types</param>
 		/// <returns>The zero-based index of the first occurrence of item within the entire the collections if found; otherwise, –1.</returns>
-		public int IndexOf(TValue @object) => base.IndexOf(@object);
+		public int IndexOf(TValue @object)
+			=> base.IndexOf(@object);
 
 		/// <summary>
 		/// Searches for the specified key and returns the zero-based index of the first occurrence within the entire the collection
 		/// </summary>
 		/// <param name="key">The key to locate in the collections. The value cannot be null</param>
 		/// <returns>The zero-based index of the first occurrence of item within the entire the collections if found; otherwise, –1.</returns>
-		public int IndexOfKey(TKey key) => base.IndexOfKey(key);
+		public int IndexOfKey(TKey key)
+			=> base.IndexOfKey(key);
 
 		/// <summary>
 		/// Gets a key at the specified index
 		/// </summary>
 		/// <param name="index">Index of the key</param>
 		/// <returns>The key object at the specified index</returns>
-		public new TKey GetKeyAt(int index) => (TKey)base.GetKeyAt(index);
+		public new TKey GetKeyAt(int index)
+			=> (TKey)base.GetKeyAt(index);
 
 		/// <summary>
 		/// Gets the value associated with the specified key
@@ -2125,26 +2137,32 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="index">The zero-based index of the element</param>
 		/// <returns>The value object at the specified index</returns>
-		public new TValue GetByIndex(int index) => index > -1 && index < this.Count ? (TValue)base.GetByIndex(index) : default(TValue);
+		public new TValue GetByIndex(int index)
+			=> index > -1 && index < this.Count
+				? (TValue)base.GetByIndex(index)
+				: default(TValue);
 
 		/// <summary>
 		/// Gets value of the element by specified key
 		/// </summary>
 		/// <param name="key">The object that presents the key of the element</param>
 		/// <returns>The value object that specified by the key</returns>
-		public new TValue GetByKey(TKey key) => (TValue)base.GetByKey(key);
+		public new TValue GetByKey(TKey key)
+			=> (TValue)base.GetByKey(key);
 
 		/// <summary>
 		/// Gets value of the first element
 		/// </summary>
 		/// <returns></returns>
-		public TValue First() => this.GetByIndex(0);
+		public TValue First()
+			=> this.GetByIndex(0);
 
 		/// <summary>
 		/// Gets value of the last element
 		/// </summary>
 		/// <returns></returns>
-		public TValue Last() => this.GetByIndex(this.Count - 1);
+		public TValue Last()
+			=> this.GetByIndex(this.Count - 1);
 		#endregion
 
 		#region Enumerator
@@ -2152,13 +2170,14 @@ namespace net.vieapps.Components.Utility
 		/// Returns an enumerator that iterates through the collection
 		/// </summary>
 		/// <returns></returns>
-		public new IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => new Enumerator(this);
+		public new IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+			=> new Enumerator(this);
 
 		public new class Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>
 		{
 			int _index = -1;
 			Collection<TKey, TValue> _collection = null;
-			List<TKey> _keys = new List<TKey>();
+			readonly List<TKey> _keys = new List<TKey>();
 
 			public Enumerator() : this(null) { }
 
@@ -2182,9 +2201,11 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Resets the enumerator to its initial position, which is before the first element in the collection
 			/// </summary>
-			public void Reset() => this._index = -1;
+			public void Reset()
+				=> this._index = -1;
 
-			public void Dispose() => this._collection = null;
+			public void Dispose()
+				=> this._collection = null;
 
 			object IEnumerator.Current => this.Current;
 

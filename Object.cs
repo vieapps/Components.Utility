@@ -69,8 +69,8 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Object meta data
-		static Dictionary<Type, List<AttributeInfo>> ObjectProperties = new Dictionary<Type, List<AttributeInfo>>();
-		static Dictionary<Type, List<AttributeInfo>> ObjectFields = new Dictionary<Type, List<AttributeInfo>>();
+		static Dictionary<Type, List<AttributeInfo>> ObjectProperties { get; } = new Dictionary<Type, List<AttributeInfo>>();
+		static Dictionary<Type, List<AttributeInfo>> ObjectFields { get; } = new Dictionary<Type, List<AttributeInfo>>();
 
 		/// <summary>
 		/// Gets the collection of public properties of the type
@@ -312,98 +312,112 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a generic list; otherwise false.</returns>
-		public static bool IsGenericList(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(List<>));
+		public static bool IsGenericList(this Type type)
+			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(List<>));
 
 		/// <summary>
 		/// Gets the state to determines the object's type is a generic list
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list; otherwise false.</returns>
-		public static bool IsGenericList(this object @object) => @object.GetType().IsGenericList();
+		public static bool IsGenericList(this object @object)
+			=> @object.GetType().IsGenericList();
 
 		/// <summary>
 		/// Gets the state to determines the type is a generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
-		public static bool IsGenericHashSet(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(HashSet<>));
+		public static bool IsGenericHashSet(this Type type)
+			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(HashSet<>));
 
 		/// <summary>
 		/// Gets the state to determines the object's type is a generic hash-set
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
-		public static bool IsGenericHashSet(this object @object) => @object.GetType().IsGenericHashSet();
+		public static bool IsGenericHashSet(this object @object)
+			=> @object.GetType().IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type is generic list or generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
-		public static bool IsGenericListOrHashSet(this Type type) => type.IsGenericList() || type.IsGenericHashSet();
+		public static bool IsGenericListOrHashSet(this Type type)
+			=> type.IsGenericList() || type.IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the object's type is generic list or generic hash-set
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
-		public static bool IsGenericListOrHashSet(this object @object) => @object.GetType().IsGenericListOrHashSet();
+		public static bool IsGenericListOrHashSet(this object @object)
+			=> @object.GetType().IsGenericListOrHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic dictionary
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
-		public static bool IsGenericDictionary(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(Dictionary<,>));
+		public static bool IsGenericDictionary(this Type type)
+			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(Dictionary<,>));
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic dictionary
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
-		public static bool IsGenericDictionary(this object @object) => @object.GetType().IsGenericDictionary();
+		public static bool IsGenericDictionary(this object @object)
+			=> @object.GetType().IsGenericDictionary();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericCollection(this Type type) => type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
+		public static bool IsGenericCollection(this Type type)
+			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericCollection(this object @object) => @object.GetType().IsGenericCollection();
+		public static bool IsGenericCollection(this object @object)
+			=> @object.GetType().IsGenericCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericDictionaryOrCollection(this Type type) => type.IsGenericDictionary() || type.IsGenericCollection();
+		public static bool IsGenericDictionaryOrCollection(this Type type)
+			=> type.IsGenericDictionary() || type.IsGenericCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsGenericDictionaryOrCollection(this object @object) => @object.GetType().IsGenericDictionaryOrCollection();
+		public static bool IsGenericDictionaryOrCollection(this object @object)
+			=> @object.GetType().IsGenericDictionaryOrCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
-		public static bool IsICollection(this Type type) => typeof(ICollection).IsAssignableFrom(type) || type.IsGenericHashSet();
+		public static bool IsICollection(this Type type)
+			=> typeof(ICollection).IsAssignableFrom(type) || type.IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
-		public static bool IsICollection(this object @object) => @object.GetType().IsICollection();
+		public static bool IsICollection(this object @object)
+			=> @object.GetType().IsICollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
@@ -417,14 +431,16 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsCollection(this object @object) => @object.GetType().IsCollection();
+		public static bool IsCollection(this object @object)
+			=> @object.GetType().IsCollection();
 
 		/// <summary>
 		/// Gets the state to determines the the object is array or not
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsArray(this object @object) => @object.GetType().IsArray;
+		public static bool IsArray(this object @object)
+			=> @object.GetType().IsArray;
 		#endregion
 
 		#region Create new instance & Cast
