@@ -95,7 +95,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="startTime">The <see cref="DateTime">DateTime</see> object that presents the starting time</param>
 		/// <returns>The string that presents elapsed times</returns>
 		public static string GetElapsedTimes(this DateTime startTime)
-			=> Convert.ToInt64(DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).GetElapsedTimes();
+			=> (DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).CastAs<long>().GetElapsedTimes();
 
 		/// <summary>
 		/// Gets the name of weekday from this date-time

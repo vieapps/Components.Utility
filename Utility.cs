@@ -2276,31 +2276,31 @@ namespace net.vieapps.Components.Utility
 		/// Gets a setting value of the app (from the JSON configuration file [appsettings.json])
 		/// </summary>
 		/// <param name="path">The path from root section (ex: Logging/LogLevel/Default)</param>
-		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <param name="default">The default value if the setting is not found</param>
 		/// <returns></returns>
-		public static T GetAppSetting<T>(this IConfiguration configuration, string path, T defaultValue = default(T))
+		public static T GetAppSetting<T>(this IConfiguration configuration, string path, T @default = default(T))
 		{
 			var section = configuration.GetAppSetting(path);
 			return section != null
 				? section.Value.CastAs<T>()
-				: defaultValue;
+				: @default;
 		}
 
 		/// <summary>
 		/// Gets a setting of the app (from the XML configuration file [app.config/web.config] - section 'appSettings') with special prefix
 		/// </summary>
 		/// <param name="name">The name of the setting</param>
-		/// <param name="defaultValue">The default value if the setting is not found</param>
+		/// <param name="default">The default value if the setting is not found</param>
 		/// <param name="prefix">The special name prefix of the parameter</param>
 		/// <returns></returns>
-		public static string GetAppSetting(string name, string defaultValue = null, string prefix = "vieapps")
+		public static string GetAppSetting(string name, string @default = null, string prefix = "vieapps")
 		{
 			var value = !string.IsNullOrWhiteSpace(name)
 				? ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()]
 				: null;
 
 			return string.IsNullOrWhiteSpace(value)
-				? defaultValue
+				? @default
 				: value;
 		}
 
@@ -2310,22 +2310,17 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The name of the setting</param>
 		/// <param name="header">The collection of header</param>
 		/// <param name="query">The collection of query</param>
-		/// <param name="defaultValue">The default value if the parameter is not found</param>
+		/// <param name="default">The default value if the parameter is not found</param>
 		/// <returns></returns>
-		public static string GetAppParameter(string name, NameValueCollection header, NameValueCollection query, string defaultValue = null)
+		public static string GetAppParameter(string name, Dictionary<string, string> header, Dictionary<string, string> query, string @default = null)
 		{
-			var value = string.IsNullOrWhiteSpace(name)
-				? null
-				: header?[name];
-
-			if (value == null)
-				value = string.IsNullOrWhiteSpace(name)
-					? null
-					: query?[name];
-
-			return string.IsNullOrWhiteSpace(value)
-				? defaultValue
-				: value;
+			string value = null;
+			if (!string.IsNullOrWhiteSpace(name))
+			{
+				if (!(header ?? new Dictionary<string, string>()).TryGetValue(name, out value))
+					(query ?? new Dictionary<string, string>()).TryGetValue(name, out value);
+			}
+			return value ?? @default;
 		}
 
 		/// <summary>
@@ -2334,10 +2329,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The name of the setting</param>
 		/// <param name="header">The collection of header</param>
 		/// <param name="query">The collection of query</param>
-		/// <param name="defaultValue">The default value if the parameter is not found</param>
+		/// <param name="default">The default value if the parameter is not found</param>
 		/// <returns></returns>
-		public static string GetAppParameter(string name, Dictionary<string, string> header, Dictionary<string, string> query, string defaultValue = null)
-			=> UtilityService.GetAppParameter(name, header.ToNameValueCollection(), query.ToNameValueCollection(), defaultValue);
+		public static string GetAppParameter(string name, NameValueCollection header, NameValueCollection query, string @default = null)
+			=> UtilityService.GetAppParameter(name, header?.ToDictionary(), query?.ToDictionary(), @default);
 		#endregion
 
 		#region Working with external process
