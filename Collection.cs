@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Numerics;
 using System.Xml;
 using Newtonsoft.Json.Linq;
+using net.vieapps.Components.Utility;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -1682,9 +1683,10 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 	}
+}
 
-	// ---------------------------------------------------------------------------
-
+namespace System.Collections.Specialized
+{
 	/// <summary>
 	/// Represents a collection of key/value pairs that are accessible by key or index
 	/// </summary>
@@ -1948,7 +1950,10 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 	}
+}
 
+namespace System.Collections.Generic
+{
 	/// <summary>
 	/// Represents a generic collection of key/value pairs that are accessible by key or index
 	/// </summary>
@@ -2227,9 +2232,12 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 	}
+}
 
+namespace System.Collections.Concurrent
+{
 	/// <summary>
-	/// Represents a thread-safe hash-based unique collection (original is came from https://github.com/i3arnon/ConcurrentHashSet)
+	/// Represents a thread-safe hash-based unique collection (original: https://github.com/i3arnon/ConcurrentHashSet)
 	/// </summary>
 	/// <typeparam name="T">The type of the items in the collection.</typeparam>
 	/// <remarks>

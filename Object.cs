@@ -372,34 +372,34 @@ namespace net.vieapps.Components.Utility
 			=> @object.GetType().IsGenericDictionary();
 
 		/// <summary>
-		/// Gets the state to determines the type is reference of a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type is reference of a generic collection
 		/// </summary>
 		/// <param name="type">Type for checking</param>
-		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		/// <returns>true if the type is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericCollection(this Type type)
 			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
 
 		/// <summary>
-		/// Gets the state to determines the type of the object is reference of a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type of the object is reference of a generic collection
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
-		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		/// <returns>true if the type of the object is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericCollection(this object @object)
 			=> @object.GetType().IsGenericCollection();
 
 		/// <summary>
-		/// Gets the state to determines the type is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type is reference of a generic dictionary or a generic collection
 		/// </summary>
 		/// <param name="type">Type for checking</param>
-		/// <returns>true if the type is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		/// <returns>true if the type is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericDictionaryOrCollection(this Type type)
 			=> type.IsGenericDictionary() || type.IsGenericCollection();
 
 		/// <summary>
-		/// Gets the state to determines the type of the object is reference of a generic dictionary or a generic collection (the <see cref="Collection">Collection</see> class)
+		/// Gets the state to determines the type of the object is reference of a generic dictionary or a generic collection
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
-		/// <returns>true if the type of the object is sub-class of the generic <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		/// <returns>true if the type of the object is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericDictionaryOrCollection(this object @object)
 			=> @object.GetType().IsGenericDictionaryOrCollection();
 
@@ -420,17 +420,18 @@ namespace net.vieapps.Components.Utility
 			=> @object.GetType().IsICollection();
 
 		/// <summary>
-		/// Gets the state to determines the type is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
+		/// Gets the state to determines the type is reference (or sub-class) of the the <see cref="System.Collections.Specialized.Collection">Collection</see> class
 		/// </summary>
 		/// <param name="type">Type for checking</param>
-		/// <returns>true if the type is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
-		public static bool IsCollection(this Type type) => typeof(Collection).IsAssignableFrom(type);
+		/// <returns>true if the type is is reference (or sub-class) of the the <see cref="System.Collections.Specialized.Collection">Collection</see> class; otherwise false.</returns>
+		public static bool IsCollection(this Type type)
+			=> typeof(System.Collections.Specialized.Collection).IsAssignableFrom(type);
 
 		/// <summary>
-		/// Gets the state to determines the type of the object is reference (or sub-class) of the the <see cref="Collection">Collection</see> class
+		/// Gets the state to determines the type of the object is reference (or sub-class) of the the Collection class
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
-		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		/// <returns>true if the type of the object is is reference (or sub-class) of the the Collection class; otherwise false.</returns>
 		public static bool IsCollection(this object @object)
 			=> @object.GetType().IsCollection();
 
@@ -438,7 +439,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the state to determines the the object is array or not
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
-		/// <returns>true if the type of the object is is reference (or sub-class) of the the <see cref="Collection">Collection</see> class; otherwise false.</returns>
+		/// <returns>true if the type of the object is is reference (or sub-class) of the the Collection class; otherwise false.</returns>
 		public static bool IsArray(this object @object)
 			=> @object.GetType().IsArray;
 		#endregion
@@ -471,33 +472,71 @@ namespace net.vieapps.Components.Utility
 			=> (T)typeof(T).CreateInstance();
 
 		/// <summary>
-		/// Casts the value to other type
+		/// Tries to cast the object to other type
 		/// </summary>
-		/// <param name="value">The value to cast to other type</param>
-		/// <param name="type">The type to cast type of value to</param>
+		/// <param name="object">The object to cast to other type</param>
+		/// <param name="type">The type to cast to</param>
 		/// <returns></returns>
-		public static object CastAs(this object value, Type type)
-			=> value != null
-				? value.GetType().Equals(type)
-					? value
-					: Convert.ChangeType(value, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
-				: null;
+		public static bool TryCastAs(this object @object, Type type, out object value)
+		{
+			try
+			{
+				value = @object != null
+					? @object.GetType().Equals(type)
+						? @object
+						: Convert.ChangeType(@object, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
+					: null;
+				return true;
+			}
+			catch
+			{
+				value = null;
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Casts the object to other type
+		/// </summary>
+		/// <param name="object">The object to cast to other type</param>
+		/// <param name="type">The type to cast to</param>
+		/// <returns></returns>
+		public static object CastAs(this object @object, Type type)
+			=> @object.TryCastAs(type, out var value) ? value : null;
 
 		/// <summary>
 		/// Casts the value to other type
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <param name="value">The value to cast to other type</param>
+		/// <param name="object">The object to cast to other type</param>
 		/// <returns></returns>
-		public static T CastAs<T>(this object value)
+		public static bool TryCastAs<T>(this object @object, out T value)
 		{
-			var type = typeof(T);
-			return value != null
-				? value.GetType().Equals(type)
-					? (T)value
-					: (T)Convert.ChangeType(value, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
-				: default(T);
+			try
+			{
+				var type = typeof(T);
+				value = @object != null
+					? @object.GetType().Equals(type)
+						? (T)@object
+						: (T)Convert.ChangeType(@object, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
+					: default(T);
+				return true;
+			}
+			catch
+			{
+				value = default(T);
+				return false;
+			}
 		}
+
+		/// <summary>
+		/// Casts the value to other type
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object">The object to cast to other type</param>
+		/// <returns></returns>
+		public static T CastAs<T>(this object @object)
+			=> @object.TryCastAs<T>(out var value) ? value : default(T);
 		#endregion
 
 		#region Manipulations
@@ -619,7 +658,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyTo(this object @object, object destination, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyTo<T>(this T @object, T destination, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			if (destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
@@ -659,7 +698,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyFrom(this object @object, object source, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyFrom<T>(this T @object, object source, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			if (source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
@@ -701,7 +740,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyFrom(this object @object, JToken json, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			if (json == null)
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
@@ -825,8 +864,8 @@ namespace net.vieapps.Components.Utility
 					try
 					{
 						var instance = token is JObject && (token as JObject).Count > 0
-							? serializer.Deserialize(new JTokenReader(token), typeof(Collection))
-							: typeof(Collection).CreateInstance();
+							? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection))
+							: typeof(System.Collections.Specialized.Collection).CreateInstance();
 						@object.SetAttributeValue(attribute, instance);
 					}
 					catch (Exception ex)
@@ -881,7 +920,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyFrom(this object @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<object> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			foreach (var attribute in @object.GetProperties())
 			{
