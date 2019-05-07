@@ -1693,12 +1693,12 @@ namespace System.Collections.Specialized
 	[Serializable, DebuggerDisplay("Count = {Count}")]
 	public class Collection : IDictionary
 	{
+		readonly OrderedDictionary _collection = new OrderedDictionary();
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="Collection"/> class
 		/// </summary>
 		public Collection() { }
-
-		readonly OrderedDictionary _collection = new OrderedDictionary();
 
 		#region Properties
 		/// <summary>
@@ -1966,7 +1966,8 @@ namespace System.Collections.Generic
 		/// Initializes a new instance of the <see cref="Collection">Collection</see> class
 		/// </summary>
 		/// <param name="dictionary">The initialized values</param>
-		public Collection(IDictionary<TKey, TValue> dictionary = null) : base() => dictionary?.ForEach(kvp => this.Add(kvp));
+		public Collection(IDictionary<TKey, TValue> dictionary = null) : base()
+			=> dictionary?.ForEach(kvp => this.Add(kvp));
 
 		#region Properties
 		/// <summary>
