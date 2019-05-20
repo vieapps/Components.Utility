@@ -153,9 +153,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="info">The information</param>
 		/// <param name="onCompleted">The action to run when completed</param>
 		/// <param name="onError">The action to run when got error</param>
-		public static void Stop(Info info, Action<Info> onCompleted = null, Action<Exception> onError = null)
+		/// <param name="waitingTimes">The time for waiting when try to close</param>
+		public static void Stop(Info info, Action<Info> onCompleted = null, Action<Exception> onError = null, int waitingTimes = 456)
 		{
-			if (info == null || info.Process == null || info.Process.HasExited)
+			if (info == null || info.Process == null)
 				try
 				{
 					info?.Process?.Dispose();
@@ -166,38 +167,55 @@ namespace net.vieapps.Components.Utility
 					onError?.Invoke(ex);
 				}
 			else
-				ExternalProcess.Kill(
-					info.Process,
-					process =>
+				try
+				{
+					ExternalProcess.Kill(
+						info.Process,
+						process =>
+						{
+							process.StandardInput.WriteLine("exit");
+							process.StandardInput.Close();
+							process.WaitForExit(waitingTimes > 0 ? waitingTimes : 456);
+							process.Refresh();
+						},
+						process =>
+						{
+							try
+							{
+								process.WaitForExit(123);
+								info.ExitCode = process.ExitCode;
+								info.ExitTime = process.ExitTime;
+							}
+							catch (Exception ex)
+							{
+								onError?.Invoke(ex);
+							}
+							try
+							{
+								info.Process.Dispose();
+							}
+							catch (Exception ex)
+							{
+								onError?.Invoke(ex);
+							}
+							onCompleted?.Invoke(info);
+						},
+						onError
+					);
+				}
+				catch (Exception ex)
+				{
+					try
 					{
-						info.Process.StandardInput.WriteLine("exit");
-						info.Process.StandardInput.Close();
-						info.Process.WaitForExit(456);
-						info.Process.Refresh();
-					},
-					process =>
-					{
-						try
-						{
-							info.ExitCode = info.Process.ExitCode;
-							info.ExitTime = info.Process.ExitTime;
-						}
-						catch (Exception ex)
-						{
-							onError?.Invoke(ex);
-						}
-						try
-						{
-							info.Process.Dispose();
-						}
-						catch (Exception ex)
-						{
-							onError?.Invoke(ex);
-						}
+						info.Process?.Kill();
+						info.Process?.Dispose();
 						onCompleted?.Invoke(info);
-					},
-					onError
-				);
+					}
+					catch
+					{
+						onError?.Invoke(ex);
+					}
+				}
 		}
 
 		/// <summary>
@@ -212,7 +230,7 @@ namespace net.vieapps.Components.Utility
 			try
 			{
 				// check
-				if (process == null || process.HasExited)
+				if (process == null)
 				{
 					onKilled?.Invoke(process);
 					return;
@@ -231,6 +249,7 @@ namespace net.vieapps.Components.Utility
 				// re-check after trying to close
 				try
 				{
+					process.WaitForExit(123);
 					if (process.HasExited)
 					{
 						onKilled?.Invoke(process);
@@ -264,7 +283,16 @@ namespace net.vieapps.Components.Utility
 			}
 			catch (Exception ex)
 			{
-				onError?.Invoke(ex);
+				try
+				{
+					process?.Kill();
+					process?.Dispose();
+					onKilled?.Invoke(process);
+				}
+				catch
+				{
+					onError?.Invoke(ex);
+				}
 			}
 		}
 

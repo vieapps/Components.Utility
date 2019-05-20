@@ -472,62 +472,17 @@ namespace net.vieapps.Components.Utility
 			=> (T)typeof(T).CreateInstance();
 
 		/// <summary>
-		/// Tries to cast the object to other type
-		/// </summary>
-		/// <param name="object">The object to cast to other type</param>
-		/// <param name="type">The type to cast to</param>
-		/// <returns></returns>
-		public static bool TryCastAs(this object @object, Type type, out object value)
-		{
-			try
-			{
-				value = @object != null
-					? @object.GetType().Equals(type)
-						? @object
-						: Convert.ChangeType(@object, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
-					: null;
-				return true;
-			}
-			catch
-			{
-				value = null;
-				return false;
-			}
-		}
-
-		/// <summary>
 		/// Casts the object to other type
 		/// </summary>
 		/// <param name="object">The object to cast to other type</param>
 		/// <param name="type">The type to cast to</param>
 		/// <returns></returns>
 		public static object CastAs(this object @object, Type type)
-			=> @object.TryCastAs(type, out var value) ? value : null;
-
-		/// <summary>
-		/// Casts the value to other type
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object">The object to cast to other type</param>
-		/// <returns></returns>
-		public static bool TryCastAs<T>(this object @object, out T value)
-		{
-			try
-			{
-				var type = typeof(T);
-				value = @object != null
-					? @object.GetType().Equals(type)
-						? (T)@object
-						: (T)Convert.ChangeType(@object, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
-					: default(T);
-				return true;
-			}
-			catch
-			{
-				value = default(T);
-				return false;
-			}
-		}
+			=> @object != null
+				? @object.GetType().Equals(type)
+					? @object
+					: Convert.ChangeType(@object, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
+				: null;
 
 		/// <summary>
 		/// Casts the value to other type
@@ -536,7 +491,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object to cast to other type</param>
 		/// <returns></returns>
 		public static T CastAs<T>(this object @object)
-			=> @object.TryCastAs<T>(out var value) ? value : default(T);
+			=> @object != null
+				? @object.GetType().Equals(typeof(T))
+					? (T)@object
+					: (T)Convert.ChangeType(@object, typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(typeof(T)) : typeof(T))
+				: default(T);
 		#endregion
 
 		#region Manipulations
