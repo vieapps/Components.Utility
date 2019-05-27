@@ -549,7 +549,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, Cookie[] cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
 		{
 			// prepare the request object
 			var webRequest = WebRequest.Create(uri) as HttpWebRequest;
@@ -563,8 +563,11 @@ namespace net.vieapps.Components.Utility
 			headers?.Where(kvp => !kvp.Key.IsEquals("accept-encoding")).ForEach(kvp => webRequest.Headers.Add(kvp.Key, kvp.Value));
 
 			// cookies
-			if (webRequest.SupportsCookieContainer)
-				cookies?.ForEach(cookie => webRequest.CookieContainer.Add(cookie));
+			if (webRequest.SupportsCookieContainer && cookies != null && cookies.Count > 0)
+			{
+				webRequest.CookieContainer = new CookieContainer();
+				cookies.ForEach(cookie => webRequest.CookieContainer.Add(cookie));
+			}
 
 			// compression
 			webRequest.Headers.Add("accept-encoding", "deflate,gzip");
