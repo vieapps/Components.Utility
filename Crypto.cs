@@ -77,15 +77,15 @@ namespace net.vieapps.Components.Utility
 			=> (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length, doubleHash);
 
 		/// <summary>
-		/// Generates a hashing password from a plain-text password with salt and peper using strong hashing algorithm (Argon2)
+		/// Generates a hashing password from a plain-text password with salt and pepper using strong hashing algorithm (Argon2)
 		/// </summary>
 		/// <param name="password">The string that presents the plain-text password for hashing</param>
 		/// <param name="salt">The string that presents the salt for hashing</param>
-		/// <param name="peper">The string that presents the peper for hashing</param>
+		/// <param name="pepper">The string that presents the pepper for hashing</param>
 		/// <returns>The string that presents the 125 bytes of hashing password</returns>
-		public static string GenerateHashPassword(this string password, string salt = null, string peper = null)
+		public static string GenerateHashPassword(this string password, string salt = null, string pepper = null)
 		{
-			using (var argon2 = new Argon2i(password.GetHMACBLAKE256Hash((peper ?? DEFAULT_PASS_PHRASE).ToUpper()))
+			using (var argon2 = new Argon2i(password.GetHMACBLAKE256Hash((pepper ?? DEFAULT_PASS_PHRASE).ToUpper()))
 			{
 				DegreeOfParallelism = 13,
 				Iterations = 13,
