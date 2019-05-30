@@ -1234,12 +1234,14 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Working with stream & recyclable memory stream
+		static Microsoft.IO.RecyclableMemoryStreamManager RecyclableMemoryStreamManager { get; } = new Microsoft.IO.RecyclableMemoryStreamManager();
+
 		/// <summary>
 		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
 		/// </summary>
 		/// <returns></returns>
 		public static Func<MemoryStream> GetRecyclableMemoryStreamFactory()
-			=> new Microsoft.IO.RecyclableMemoryStreamManager().GetStream;
+			=> UtilityService.RecyclableMemoryStreamManager.GetStream;
 
 		/// <summary>
 		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
@@ -1302,7 +1304,7 @@ namespace net.vieapps.Components.Utility
 		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
 			=> stream.TryGetBuffer(out ArraySegment<byte> buffer)
 				? buffer
-				: stream.ToArray().ToArraySegment();
+				: new ArraySegment<byte>(stream.ToArray());
 
 		/// <summary>
 		/// Converts this memory stream to array of bytes
@@ -1310,7 +1312,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="stream"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this MemoryStream stream)
-			=> stream.ToArraySegment().ToBytes();
+		{
+			if (stream.TryGetBuffer(out ArraySegment<byte> buffer))
+			{
+				var array = new byte[buffer.Count];
+				Buffer.BlockCopy(buffer.Array, buffer.Offset, array, 0, buffer.Count);
+				return array;
+			}
+			return stream.ToArray();
+		}
 
 		/// <summary>
 		/// Writes the array segment of bytes to this stream
