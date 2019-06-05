@@ -1088,11 +1088,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static JToken ToJson(this string json, Action<JToken> onPreCompleted = null)
 		{
-			var token = json.Trim().StartsWith("[")
-				? JArray.Parse(json.Trim()) as JToken
-				: json.Trim().StartsWith("{")
-					? JObject.Parse(json.Trim()) as JToken
-					: new JValue(json.Trim()) as JToken;
+			var token = JToken.Parse((json ?? "{}").Trim());
 			onPreCompleted?.Invoke(token);
 			return token;
 		}
@@ -1238,7 +1234,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
 		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null)
-			=> json.ToJson().FromJson<T>(copy);
+			=> json.ToJson().FromJson(copy, onPreCompleted);
 
 		/// <summary>
 		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
