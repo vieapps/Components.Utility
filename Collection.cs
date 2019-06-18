@@ -124,7 +124,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			if (!parallelExecutions)
 				foreach (var item in enumerable)
@@ -149,7 +149,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<T>(this IEnumerable<T> dictionary, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> dictionary, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			var index = -1;
 			if (!parallelExecutions)
@@ -185,7 +185,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			if (!parallelExecutions)
 				foreach (var kvp in dictionary)
@@ -211,7 +211,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			var index = -1;
 			if (!parallelExecutions)
@@ -247,7 +247,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			if (!parallelExecutions)
 				foreach (var kvp in dictionary)
@@ -273,7 +273,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <returns></returns>
-		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default(CancellationToken), bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
+		public static async Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
 		{
 			var index = -1;
 			if (!parallelExecutions)

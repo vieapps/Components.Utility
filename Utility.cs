@@ -211,7 +211,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="creationOptions">The options that controls the behavior of the created task</param>
 		/// <param name="scheduler">The scheduler that is used to schedule the created task</param>
 		/// <returns>An awaitable task</returns>
-		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default(CancellationToken), TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
+		public static Task ExecuteTask(Action action, CancellationToken cancellationToken = default, TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
 			=> Task.Factory.StartNew(action, cancellationToken, creationOptions, scheduler ?? TaskScheduler.Default);
 
 		/// <summary>
@@ -223,7 +223,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="creationOptions">The options that controls the behavior of the created task</param>
 		/// <param name="scheduler">The scheduler that is used to schedule the created task</param>
 		/// <returns>An awaitable task</returns>
-		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default(CancellationToken), TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
+		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default, TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
 			=> Task.Factory.StartNew(func, cancellationToken, creationOptions, scheduler ?? TaskScheduler.Default);
 		#endregion
 
@@ -582,7 +582,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 		{
 			// prepare the request object
 			var webRequest = WebRequest.Create(uri) as HttpWebRequest;
@@ -689,7 +689,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 			=> (await UtilityService.GetWebResponseAsync(method, uri, headers, cookies, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
 
 		/// <summary>
@@ -699,7 +699,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="referUri">The string that presents the referring url</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<Stream> GetWebResourceAsync(string uri, string referUri = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<Stream> GetWebResourceAsync(string uri, string referUri = null, CancellationToken cancellationToken = default)
 			=> UtilityService.GetWebResourceAsync("GET", uri, null, null, null, null, 90, UtilityService.SpiderUserAgent, referUri, null, null, cancellationToken);
 
 		/// <summary>
@@ -718,7 +718,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<string> GetWebPageAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<string> GetWebPageAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 		{
 			using (var stream = await UtilityService.GetWebResourceAsync(method ?? "GET", uri, headers, cookies, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken).ConfigureAwait(false))
 			{
@@ -738,7 +738,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="userAgent">The string that presents 'User-Agent' header</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<string> GetWebPageAsync(string uri, string referUri = null, string userAgent = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<string> GetWebPageAsync(string uri, string referUri = null, string userAgent = null, CancellationToken cancellationToken = default)
 			=> UtilityService.GetWebPageAsync("GET", uri, null, null, null, null, 90, userAgent, referUri, null, null, cancellationToken);
 		#endregion
 
@@ -1088,7 +1088,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
@@ -1117,7 +1117,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
@@ -1160,7 +1160,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="destination"></param>
 		/// <param name="searchPatterns"></param>
 		/// <param name="deleteOldFilesBeforeMoving"></param>
-		public static Task MoveFilesAsync(string source, string destination, string searchPatterns, bool deleteOldFilesBeforeMoving = false, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task MoveFilesAsync(string source, string destination, string searchPatterns, bool deleteOldFilesBeforeMoving = false, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => UtilityService.MoveFiles(source, destination, searchPatterns, deleteOldFilesBeforeMoving), cancellationToken);
 		#endregion
 
@@ -1268,7 +1268,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="buffer"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 		#endregion
 
@@ -1310,7 +1310,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="fileInfo"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static async Task<string> ReadTextFileAsync(FileInfo fileInfo, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<string> ReadTextFileAsync(FileInfo fileInfo, Encoding encoding = null, CancellationToken cancellationToken = default)
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"The file is not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
@@ -1330,7 +1330,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static Task<string> ReadTextFileAsync(string filePath, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<string> ReadTextFileAsync(string filePath, Encoding encoding = null, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.ReadTextFileAsync(new FileInfo(filePath), encoding, cancellationToken)
 				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
@@ -1381,7 +1381,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="append"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static async Task WriteTextFileAsync(FileInfo fileInfo, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task WriteTextFileAsync(FileInfo fileInfo, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default)
 		{
 			if (fileInfo == null)
 				throw new ArgumentException("File info is invalid", nameof(fileInfo));
@@ -1406,7 +1406,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="append"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.WriteTextFileAsync(new FileInfo(filePath), content, append, encoding)
 				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
@@ -1445,7 +1445,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="totalOfLines"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<Tuple<List<string>, long>> ReadTextFileAsync(string filePath, long position, int totalOfLines, CancellationToken cancellationToken = default)
 		{
 			using (var reader = new TextFileReader(filePath))
 			{
@@ -1461,7 +1461,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<List<string>> ReadTextFileAsync(string filePath, int totalOfLines, CancellationToken cancellationToken = default)
 			=> (await UtilityService.ReadTextFileAsync(filePath, 0, totalOfLines, cancellationToken).ConfigureAwait(false)).Item1;
 
 		/// <summary>
@@ -1495,7 +1495,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="append"></param>
 		/// <param name="encoding"></param>
 		/// <param name="cancellationToken"></param>
-		public static async Task WriteTextFileAsync(string filePath, List<string> lines, bool append = true, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task WriteTextFileAsync(string filePath, List<string> lines, bool append = true, Encoding encoding = null, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("File path is invalid", nameof(filePath));
@@ -1546,7 +1546,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="fileInfo"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<byte[]> ReadBinaryFileAsync(FileInfo fileInfo, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<byte[]> ReadBinaryFileAsync(FileInfo fileInfo, CancellationToken cancellationToken = default)
 		{
 			if (fileInfo != null && fileInfo.Exists)
 				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
@@ -1564,7 +1564,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<byte[]> ReadBinaryFileAsync(string filePath, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<byte[]> ReadBinaryFileAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath)
 				? UtilityService.ReadBinaryFileAsync(new FileInfo(filePath), cancellationToken)
 				: Task.FromException<byte[]>(new ArgumentException("File path is invalid", nameof(filePath)));
@@ -1594,7 +1594,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="content"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task WriteBinaryFileAsync(string filePath, byte[] content, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task WriteBinaryFileAsync(string filePath, byte[] content, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
@@ -1637,7 +1637,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="content"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task WriteBinaryFileAsync(string filePath, Stream content, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task WriteBinaryFileAsync(string filePath, Stream content, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
@@ -1667,7 +1667,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task UploadAsync(this Stream stream, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task UploadAsync(this Stream stream, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default)
 		{
 			if (stream == null)
 				throw new ArgumentNullException(nameof(stream), "Data stream is invalid");
@@ -1707,7 +1707,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task UploadAsync(byte[] data, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task UploadAsync(byte[] data, string filename, string url, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default)
 		{
 			if (data == null)
 				throw new ArgumentNullException(nameof(data), "Data is invalid");
@@ -1727,7 +1727,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task UploadFileAsync(string filePath, string url, Action<string, string, string, long> onCompleted = null, Action<string, string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task UploadFileAsync(string filePath, string url, Action<string, string, string, long> onCompleted = null, Action<string, string, Exception> onError = null, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is null");
@@ -1799,7 +1799,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<byte[]> DownloadAsync(string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<byte[]> DownloadAsync(string url, Action<string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(url) || (!url.IsStartsWith("http://") && !url.IsStartsWith("https://")))
 				throw new ArgumentNullException(nameof(url), "URL is invalid");
@@ -1836,7 +1836,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task DownloadFileAsync(string url, string filePath, string referUri, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task DownloadFileAsync(string url, string filePath, string referUri, Action<string, string, long> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default)
 		{
 			if (!string.IsNullOrWhiteSpace(url) && (url.IsStartsWith("http://") || url.IsStartsWith("https://")))
 				try
@@ -1873,7 +1873,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task DownloadFileAsync(string url, string filePath, string referUri = null, Action<string, string> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task DownloadFileAsync(string url, string filePath, string referUri = null, Action<string, string> onCompleted = null, Action<string, Exception> onError = null, CancellationToken cancellationToken = default)
 			=> UtilityService.DownloadFileAsync(url, filePath, referUri, (uri, path, times) => onCompleted?.Invoke(uri, path), onError, cancellationToken);
 		#endregion
 
@@ -1912,7 +1912,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Compression mode (deflate or gzip)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<ArraySegment<byte>> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<ArraySegment<byte>> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
@@ -1992,7 +1992,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="mode">Decompression mode (deflate or gzip)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default(CancellationToken))
+		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
 			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 			{
@@ -2617,7 +2617,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
-		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default(CancellationToken))
+		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default)
 			=> this._reader.ReadLineAsync(cancellationToken);
 
 		/// <summary>
@@ -2654,7 +2654,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="totalOfLines">The total number of lines to read (set as 0 to read from current position to end of file)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next lines from the file, or empty collectoin if the end of file is reached</returns>
-		public async Task<List<string>> ReadLinesAsync(int totalOfLines, CancellationToken cancellationToken = default(CancellationToken))
+		public async Task<List<string>> ReadLinesAsync(int totalOfLines, CancellationToken cancellationToken = default)
 		{
 			// use StreamReader to read all lines (better performance)
 			if (totalOfLines < 1 && this.Position < this.Encoding.GetPreamble().Length)
@@ -2706,7 +2706,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public async Task<List<string>> ReadAllLinesAsync(CancellationToken cancellationToken = default(CancellationToken))
+		public async Task<List<string>> ReadAllLinesAsync(CancellationToken cancellationToken = default)
 		{
 			// jump to first
 			this.Seek(0);

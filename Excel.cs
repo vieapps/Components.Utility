@@ -45,7 +45,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <returns>A stream that contains the Excel document</returns>
 		/// <remarks>The stream that contains an Excel document in OpenXML format with MIME type is 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'</remarks>
-		public static Task<MemoryStream> SaveAsExcelAsync(this DataSet dataset, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task<MemoryStream> SaveAsExcelAsync(this DataSet dataset, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => dataset.SaveAsExcel(), cancellationToken);
 
 		#region Write a data-set to Excel document

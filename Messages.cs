@@ -684,7 +684,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
 		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl = true, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl = true, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null), cancellationToken);
 
 		/// <summary>
@@ -708,7 +708,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
 		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl), cancellationToken);
 
 		/// <summary>
@@ -728,7 +728,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
 		/// <param name="smtp">Informaiton of SMTP server for sending email.</param>
 		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp), cancellationToken);
 		#endregion
 

@@ -47,7 +47,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="compressionLevel"></param>
 		/// <param name="encoding"></param>
 		/// <param name="cancellationToken"></param>
-		public static Task ZipAsync(IEnumerable<FileInfo> files, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task ZipAsync(IEnumerable<FileInfo> files, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => ZipService.Zip(files, zipFilePath, compressionLevel, encoding), cancellationToken);
 
 		/// <summary>
@@ -74,7 +74,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="compressionLevel"></param>
 		/// <param name="encoding"></param>
 		/// <param name="cancellationToken"></param>
-		public static Task ZipAsync(IEnumerable<string> files, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task ZipAsync(IEnumerable<string> files, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => ZipService.Zip(files, zipFilePath, compressionLevel, encoding), cancellationToken);
 
 		/// <summary>
@@ -105,7 +105,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="compressionLevel"></param>
 		/// <param name="encoding"></param>
 		/// <param name="cancellationToken"></param>
-		public static Task ZipAsync(string sourcePath, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task ZipAsync(string sourcePath, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => ZipService.Zip(sourcePath, zipFilePath, compressionLevel, encoding), cancellationToken);
 
 		/// <summary>
@@ -128,7 +128,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="zipFilePath"></param>
 		/// <param name="destinationPath"></param>
 		/// <param name="cancellationToken"></param>
-		public static Task UnzipAsync(string zipFilePath, string destinationPath, CancellationToken cancellationToken = default(CancellationToken))
+		public static Task UnzipAsync(string zipFilePath, string destinationPath, CancellationToken cancellationToken = default)
 			=> UtilityService.ExecuteTask(() => ZipService.Unzip(zipFilePath, destinationPath), cancellationToken);
 	}
 }
