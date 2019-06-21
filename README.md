@@ -1,6 +1,6 @@
 # VIEApps.Components.Utility
 
-The general purpose utility library for development apps with .NET Standard 2.0
+The general purpose utility library for development apps with .NET Standard 2.x
 
 - String extension methods
 - Date-Time extension methods

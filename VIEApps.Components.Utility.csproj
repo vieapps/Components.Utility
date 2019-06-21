@@ -9,14 +9,14 @@
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
 		<SignAssembly>false</SignAssembly>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
-		<AssemblyVersion>10.3.1906.4</AssemblyVersion>
-		<FileVersion>10.3.1906.4</FileVersion>
-		<InformationalVersion>v10.3+rev:2019.06.20-multiple.targets</InformationalVersion>
+		<AssemblyVersion>10.3.1906.5</AssemblyVersion>
+		<FileVersion>10.3.1906.5</FileVersion>
+		<InformationalVersion>v10.3.1906+rev:2019.06.21-multiple.targets</InformationalVersion>
 		<Product>VIEApps NGX</Product>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.3.1906.4-preview</Version>
+		<Version>10.3.1906.5-preview</Version>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose library for developing apps with .NET Standard 2.x</Description>
 		<Authors>VIEApps.net</Authors>
@@ -24,7 +24,7 @@
 		<PackageLicense>LICENSE.md</PackageLicense>
 		<PackageOutputPath>..\</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Experimental with preview packages</PackageReleaseNotes>
+		<PackageReleaseNotes>Support .NET Standard 2.1</PackageReleaseNotes>
 		<PackageProjectUrl>https://vieapps.net/</PackageProjectUrl>
 		<PackageIconUrl>https://github.com/vieapps/Components.Utility/raw/master/logo.png</PackageIconUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
@@ -54,7 +54,7 @@
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
 		<PackageReference Include="DocumentFormat.OpenXml" Version="2.10.0-beta0001" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0-preview6.19304.6" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0-preview6.19304.6" />
