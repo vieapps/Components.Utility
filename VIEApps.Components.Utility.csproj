@@ -7,20 +7,21 @@
 		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\VIEApps.Components.Utility.xml</DocumentationFile>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<SignAssembly>false</SignAssembly>
+		<SignAssembly>$(Sign)</SignAssembly>
+		<DefineConstants>$(SignConstant)</DefineConstants>
 		<AssemblyOriginatorKeyFile>../VIEApps.Components.snk</AssemblyOriginatorKeyFile>
-		<AssemblyVersion>10.3.1906.5</AssemblyVersion>
-		<FileVersion>10.3.1906.5</FileVersion>
-		<InformationalVersion>v10.3.1906+rev:2019.06.21-multiple.targets</InformationalVersion>
+		<AssemblyVersion>10.3$(ReleaseVersion)</AssemblyVersion>
+		<FileVersion>10.3$(ReleaseVersion)</FileVersion>
+		<InformationalVersion>10.3-$(TargetFramework)-$(ReleaseRevision)</InformationalVersion>
+		<Version>10.3$(ReleaseVersion)$(ReleaseSurfix)</Version>
 		<Product>VIEApps NGX</Product>
-		<Company>VIEApps.net</Company>
-		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<PackageId>VIEApps.Components.Utility</PackageId>
-		<Version>10.3.1906.5-preview</Version>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose library for developing apps with .NET Standard 2.x</Description>
-		<Authors>VIEApps.net</Authors>
 		<Copyright>© 2019 VIEApps.net</Copyright>
+		<Authors>VIEApps.net</Authors>
+		<Company>VIEApps.net</Company>
+		<GeneratePackageOnBuild>$(GeneratePackage)</GeneratePackageOnBuild>
+		<PackageId>VIEApps.Components.Utility$(PackageSurfix)</PackageId>
 		<PackageLicense>LICENSE.md</PackageLicense>
 		<PackageOutputPath>..\</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
