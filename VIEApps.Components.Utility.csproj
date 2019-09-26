@@ -13,7 +13,7 @@
 		<AssemblyVersion>10.3$(ReleaseVersion)</AssemblyVersion>
 		<FileVersion>10.3$(ReleaseVersion)</FileVersion>
 		<InformationalVersion>10.3-$(TargetFramework)-$(ReleaseRevision)</InformationalVersion>
-		<Version>10.3$(ReleaseVersion)$(ReleaseSurfix)</Version>
+		<Version>10.3$(ReleaseVersion)$(ReleaseSuffix)</Version>
 		<Product>VIEApps NGX</Product>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose library for developing apps with .NET Standard 2.x</Description>
@@ -21,8 +21,9 @@
 		<Authors>VIEApps.net</Authors>
 		<Company>VIEApps.net</Company>
 		<GeneratePackageOnBuild>$(GeneratePackage)</GeneratePackageOnBuild>
-		<PackageId>VIEApps.Components.Utility$(PackageSurfix)</PackageId>
-		<PackageLicense>LICENSE.md</PackageLicense>
+		<PackageId>VIEApps.Components.Utility$(PackageSuffix)</PackageId>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+		<PackageIcon>Icon.png</PackageIcon>
 		<PackageOutputPath>..\</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
 		<PackageReleaseNotes>Support .NET Standard 2.1</PackageReleaseNotes>
@@ -35,31 +36,21 @@
 		<None Remove=".DS_Store" />
 		<None Remove=".gitattributes" />
 		<None Remove=".gitignore" />
-		<None Remove="LICENSE.md" />
-		<None Remove="logo.png" />
 		<None Remove="README.md" />
+		<None Visible="false" Include="LICENSE.md" Pack="true" PackagePath="\" />
+		<None Visible="false" Include="Icon.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="DocumentFormat.OpenXml" Version="2.9.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.2.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0" />
 		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="1.2.2" />
 		<PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
 		<PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.2" />
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-		<PackageReference Include="DocumentFormat.OpenXml" Version="2.9.1" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-		<PackageReference Include="DocumentFormat.OpenXml" Version="2.10.0-beta0001" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0-preview6.19304.6" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.0-preview6.19304.6" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.6.0-preview6.19303.8" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="4.6.0" />
 	</ItemGroup>
 
 </Project>
