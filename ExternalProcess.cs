@@ -50,7 +50,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(workingDirectory))
 			{
 				workingDirectory = "";
-				if (!filePath.IsStartsWith("cmd.exe") && !filePath.IsStartsWith("/bin/bash") && !filePath.IsStartsWith("/bin/sh") && !filePath.IsStartsWith($".{Path.DirectorySeparatorChar}"))
+				if (!filePath.IsStartsWith("cmd.exe") && !filePath.IsStartsWith("/bin/bash") && !filePath.IsStartsWith("/bin/sh") && !filePath.IsStartsWith("/bin/zsh") && !filePath.IsStartsWith($".{Path.DirectorySeparatorChar}"))
 				{
 					var path = filePath;
 					var pos = path.IndexOf(Path.DirectorySeparatorChar);
