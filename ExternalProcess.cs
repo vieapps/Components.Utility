@@ -400,7 +400,7 @@ namespace net.vieapps.Components.Utility
 			/// <param name="key"></param>
 			/// <param name="default"></param>
 			/// <returns></returns>
-			public T Get<T>(string key, T @default = default(T))
+			public T Get<T>(string key, T @default = default)
 				=> this.Extra.TryGetValue(key, out object value) && value != null && value is T
 					? (T)value
 					: @default;

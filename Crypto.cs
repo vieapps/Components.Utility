@@ -1453,7 +1453,7 @@ namespace net.vieapps.Components.Utility
 			var stringBuilder = new StringBuilder(pemParameters.Trim());
 			stringBuilder.Replace(PEM_PRIVATE_KEY_BEGIN, "");
 			stringBuilder.Replace(PEM_PRIVATE_KEY_END, "");
-			byte[] key = null;
+			byte[] key;
 			try
 			{
 				key = Convert.FromBase64String(stringBuilder.ToString().Trim());
@@ -1544,7 +1544,7 @@ namespace net.vieapps.Components.Utility
 			var stringBuilder = new StringBuilder(pemParameters.Trim());
 			stringBuilder.Replace(PEM_PUBLIC_KEY_BEGIN, "");
 			stringBuilder.Replace(PEM_PUBLIC_KEY_END, "");
-			byte[] key = null;
+			byte[] key;
 			try
 			{
 				key = Convert.FromBase64String(stringBuilder.ToString().Trim());
@@ -2585,9 +2585,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <returns></returns>
 		public new static RIPEMD160 Create()
-		{
-			return new RIPEMD160();
-		}
+			=> new RIPEMD160();
 
 		/// <summary>
 		/// Creates a new instance of the <see cref="RIPEMD160"/> class.
@@ -2595,9 +2593,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashName"></param>
 		/// <returns></returns>
 		public new static RIPEMD160 Create(string hashName)
-		{
-			return new RIPEMD160();
-		}
+			=> new RIPEMD160();
 
 		IRIPEMD160HashProvider _hashProvider;
 
@@ -2605,9 +2601,7 @@ namespace net.vieapps.Components.Utility
 		/// Initializes a new instance of the <see cref="RIPEMD160"/> class.
 		/// </summary>
 		public RIPEMD160()
-		{
-			this._hashProvider = new RIPEMD160HashProvider();
-		}
+			=> this._hashProvider = new RIPEMD160HashProvider();
 
 		/// <summary>
 		/// Gets the size, in bits, of the computed hash code.
@@ -2616,12 +2610,7 @@ namespace net.vieapps.Components.Utility
 		/// The size, in bits, of the computed hash code.
 		/// </returns>
 		public override int HashSize
-		{
-			get
-			{
-				return this._hashProvider.HashSize;
-			}
-		}
+			=> this._hashProvider.HashSize;
 
 		/// <summary>
 		/// Routes data written to the object into the hash algorithm for computing the hash.
@@ -2630,9 +2619,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
 		/// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
 		protected override void HashCore(byte[] array, int ibStart, int cbSize)
-		{
-			this._hashProvider.HashCore(array, ibStart, cbSize);
-		}
+			=> this._hashProvider.HashCore(array, ibStart, cbSize);
 
 		/// <summary>
 		/// Finalizes the hash computation after the last data is processed by the cryptographic stream object.
@@ -2641,17 +2628,13 @@ namespace net.vieapps.Components.Utility
 		/// The computed hash code.
 		/// </returns>
 		protected override byte[] HashFinal()
-		{
-			return this._hashProvider.HashFinal();
-		}
+			=> this._hashProvider.HashFinal();
 
 		/// <summary>
 		/// Initializes an implementation of the <see cref="HashAlgorithm"/> class.
 		/// </summary>
 		public override void Initialize()
-		{
-			this._hashProvider.Reset();
-		}
+			=> this._hashProvider.Reset();
 
 		/// <summary>
 		/// Releases the unmanaged resources used by the <see cref="RIPEMD160"/> and optionally releases the managed resources.
@@ -2844,7 +2827,7 @@ namespace net.vieapps.Components.Utility
 	// Elliptic Curve Cryptography that follow secp256k1 specs (Bitcoin) => [TangibleCryptography - https://github.com/TangibleCryptography/Secp256k1]
 
 	/// <summary>
-	/// Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
+	/// Elliptic Curve Cryptography (follow secp256k1 specs - Bitcoin)
 	/// </summary>
 	public sealed class ECCsecp256k1
 	{

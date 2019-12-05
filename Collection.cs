@@ -431,7 +431,7 @@ namespace net.vieapps.Components.Utility
 		public static T First<T>(this T[] @object)
 			=> @object.Length > 0
 				? @object[0]
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Gets the first element
@@ -442,7 +442,7 @@ namespace net.vieapps.Components.Utility
 		public static T First<T>(this IList<T> @object)
 			=> @object.Count > 0
 				? @object[0]
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Gets the first element
@@ -453,7 +453,7 @@ namespace net.vieapps.Components.Utility
 		public static T First<T>(this Collection @object)
 			=> @object.Count > 0
 				? (T)@object[0]
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Gets the last element
@@ -464,7 +464,7 @@ namespace net.vieapps.Components.Utility
 		public static T Last<T>(this T[] @object)
 			=> @object.Length > 0
 				? @object[@object.Length - 1]
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Gets the last element
@@ -475,7 +475,7 @@ namespace net.vieapps.Components.Utility
 		public static T Last<T>(this IList<T> @object)
 			=> @object.Count > 0
 				? @object[@object.Count - 1]
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Gets the last element
@@ -486,7 +486,7 @@ namespace net.vieapps.Components.Utility
 		public static T Last<T>(this Collection @object)
 			=> @object.Count > 0
 				? (T)@object[@object.Count - 1]
-				: default(T);
+				: default;
 		#endregion
 
 		#region Manipulations
@@ -1045,7 +1045,7 @@ namespace net.vieapps.Components.Utility
 		public static T ToList<T>(this List<object> @object)
 			=> typeof(T).IsGenericList()
 				? (T)@object.ToList(typeof(T).GenericTypeArguments[0])
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Converts the collection of objects to the generic hash-set of strong-typed objects
@@ -1068,7 +1068,7 @@ namespace net.vieapps.Components.Utility
 		public static T ToHashSet<T>(this List<object> @object)
 			=> typeof(T).IsGenericHashSet()
 				? (T)@object.ToHashSet(typeof(T).GenericTypeArguments[0])
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Converts the collection of objects to the generic dictionary of strong-typed objects
@@ -1131,7 +1131,7 @@ namespace net.vieapps.Components.Utility
 		public static T ToDictionary<T>(this ExpandoObject @object)
 			=> typeof(T).IsGenericDictionary()
 				? (T)@object.ToDictionary(typeof(T).GenericTypeArguments[0], typeof(T).GenericTypeArguments[1])
-				: default(T);
+				: default;
 
 		/// <summary>
 		/// Converts the collection of objects to the generic collection of strong-typed objects
@@ -1155,7 +1155,7 @@ namespace net.vieapps.Components.Utility
 		public static T ToCollection<T>(this ExpandoObject @object)
 			=> typeof(T).IsGenericCollection()
 				? (T)@object.ToCollection(typeof(T).GenericTypeArguments[0], typeof(T).GenericTypeArguments[1])
-				: default(T);
+				: default;
 		#endregion
 
 		#region JSON (JArray) conversions
@@ -2133,7 +2133,7 @@ namespace System.Collections.Generic
 			}
 			else
 			{
-				value = default(TValue);
+				value = default;
 				return false;
 			}
 		}
@@ -2146,7 +2146,7 @@ namespace System.Collections.Generic
 		public new TValue GetByIndex(int index)
 			=> index > -1 && index < this.Count
 				? (TValue)base.GetByIndex(index)
-				: default(TValue);
+				: default;
 
 		/// <summary>
 		/// Gets value of the element by specified key
@@ -2223,12 +2223,12 @@ namespace System.Collections.Generic
 			/// <summary>
 			/// Gets the key of the current element
 			/// </summary>
-			public TKey Key => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._keys[this._index] : default(TKey);
+			public TKey Key => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._keys[this._index] : default;
 
 			/// <summary>
 			/// Gets the value of the current element
 			/// </summary>
-			public TValue Value => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._collection[this._index] : default(TValue);
+			public TValue Value => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._collection[this._index] : default;
 		}
 		#endregion
 

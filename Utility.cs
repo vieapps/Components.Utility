@@ -2259,7 +2259,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="path">The path from root section (ex: Logging/LogLevel/Default)</param>
 		/// <param name="default">The default value if the setting is not found</param>
 		/// <returns></returns>
-		public static T GetAppSetting<T>(this IConfiguration configuration, string path, T @default = default(T))
+		public static T GetAppSetting<T>(this IConfiguration configuration, string path, T @default = default)
 		{
 			var section = configuration.GetAppSetting(path);
 			return section != null
