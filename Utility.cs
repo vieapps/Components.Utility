@@ -85,7 +85,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string BlankUUID => UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
 
-		static Regex HexRegex = new Regex("[^0-9a-fA-F]+");
+		static readonly Regex HexRegex = new Regex("[^0-9a-fA-F]+");
 
 		/// <summary>
 		/// Validates the UUID string
@@ -605,8 +605,13 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// compression
+#if NETSTANDARD2_0 || NETSTANDARD2_1
 			webRequest.Headers.Add("accept-encoding", "deflate, gzip");
 			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+#else
+			webRequest.Headers.Add("accept-encoding", "deflate, gzip,br");
+			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
+#endif
 
 			// credential
 			if (credential != null)
@@ -927,16 +932,17 @@ namespace net.vieapps.Components.Utility
 		{
 			if (UtilityService._RegexNormals == null)
 			{
-				UtilityService._RegexNormals = new List<object[]>();
+				UtilityService._RegexNormals = new List<object[]>
+				{
+					// remove line-breaks
+					new object[] { new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <" },
+					new object[] { new Regex(@">\n<", RegexOptions.IgnoreCase), "><" },
 
-				// remove line-breaks
-				UtilityService._RegexNormals.Add(new object[] { new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <" });
-				UtilityService._RegexNormals.Add(new object[] { new Regex(@">\n<", RegexOptions.IgnoreCase), "><" });
-
-				// white-spaces between tags
-				UtilityService._RegexNormals.Add(new object[] { new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>" });
-				UtilityService._RegexNormals.Add(new object[] { new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><" });
-				UtilityService._RegexNormals.Add(new object[] { new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <" });
+					// white-spaces between tags
+					new object[] { new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>" },
+					new object[] { new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><" },
+					new object[] { new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <" }
+				};
 
 				// white-spaces before/after special tags
 				var tags = "div,/div,section,/section,nav,/nav,main,/main,header,/header,footer,/footer,p,/p,h1,h2,h3,h4,h5,br,hr,input,textarea,table,tr,/tr,td,ul,/ul,li,select,/select,option,script,/script".Split(',');
@@ -1884,13 +1890,17 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this Stream stream, string mode = "deflate")
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
+#if NETSTANDARD2_0
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+#else
+				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+#endif
 				{
 					if (stream.CanSeek)
 						stream.Seek(0, SeekOrigin.Begin);
@@ -1911,14 +1921,18 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static async Task<ArraySegment<byte>> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
+#if NETSTANDARD2_0
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+#else
+				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+#endif
 				{
 					if (stream.CanSeek)
 						stream.Seek(0, SeekOrigin.Begin);
@@ -1941,13 +1955,17 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the array segment of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
 		/// <returns></returns>
 		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
+#if NETSTANDARD2_0
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+#else
+				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+#endif
 				{
 					compressor.Write(data.Array, data.Offset, data.Count);
 					compressor.Flush();
@@ -1960,7 +1978,7 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (deflate or gzip)</param>
+		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
 		/// <returns></returns>
 		public static byte[] Compress(this byte[] data, string mode = "deflate")
 			=> data.ToArraySegment().Compress(mode).ToBytes();
@@ -1969,11 +1987,15 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
 		/// <returns></returns>
 		public static byte[] Decompress(this Stream stream, string mode = "deflate")
 		{
+#if NETSTANDARD2_0
 			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+#else
+			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) as Stream : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+#endif
 			{
 				var output = new byte[0];
 				var buffer = new byte[TextFileReader.BufferSize];
@@ -1991,12 +2013,16 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
+#if NETSTANDARD2_0
 			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+#else
+			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) as Stream : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+#endif
 			{
 				var output = new byte[0];
 				var buffer = new byte[TextFileReader.BufferSize];
@@ -2016,7 +2042,7 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
 		/// <returns></returns>
 		public static byte[] Decompress(this byte[] data, string mode = "deflate")
 			=> data.ToMemoryStream().Decompress(mode);
@@ -2025,7 +2051,7 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the array segment of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (deflate or gzip)</param>
+		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
 		/// <returns></returns>
 		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
 			=> data.ToMemoryStream().Decompress(mode).ToArraySegment();
@@ -2333,14 +2359,16 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="process"></param>
 		/// <param name="action">The action to try to close the process before the process be killed</param>
-		public static void KillProcess(Process process, Action<Process> action = null) => ExternalProcess.Kill(process, action);
+		public static void KillProcess(Process process, Action<Process> action = null)
+			=> ExternalProcess.Kill(process, action);
 
 		/// <summary>
 		/// Kills a process by ID
 		/// </summary>
 		/// <param name="id">The integer that presents the identity of a process</param>
 		/// <param name="action">The action to try to close the process before the process be killed</param>
-		public static void KillProcess(int id, Action<Process> action = null) => ExternalProcess.Kill(id, action);
+		public static void KillProcess(int id, Action<Process> action = null)
+			=> ExternalProcess.Kill(id, action);
 		#endregion
 
 		#region Get version information
@@ -2382,7 +2410,8 @@ namespace net.vieapps.Components.Utility
 		/// Initializes a searching query
 		/// </summary>
 		/// <param name="query"></param>
-		public SearchQuery(string query = null) => this.Parse(query);
+		public SearchQuery(string query = null)
+			=> this.Parse(query);
 
 		public List<string> AndWords { get; } = new List<string>();
 
@@ -2504,7 +2533,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the configuration section
 		/// </summary>
-		public XmlNode Section { get; private set; } = null;
+		public XmlNode Section { get; private set; }
 	}
 	#endregion
 

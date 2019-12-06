@@ -250,9 +250,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string GetCapitalizedWords(this string @string)
-		{
-			return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(@string);
-		}
+			=> CultureInfo.CurrentCulture.TextInfo.ToTitleCase(@string);
 
 		/// <summary>
 		/// Converts this enum-string to enum type value
@@ -261,11 +259,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">The type of enum</param>
 		/// <returns></returns>
 		public static object ToEnum(this string @string, Type type)
-		{
-			return type != null && type.IsEnum
+			=> type != null && type.IsEnum
 				? Enum.Parse(type, @string)
 				: throw new ArgumentException($"The type '{nameof(type)}' is not enum");
-		}
 
 		/// <summary>
 		/// Converts this enum-string to enum type value
@@ -273,7 +269,8 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static T ToEnum<T>(this string @string) => (T)@string.ToEnum(typeof(T));
+		public static T ToEnum<T>(this string @string)
+			=> (T)@string.ToEnum(typeof(T));
 
 		/// <summary>
 		/// Trys to converts this enum-string to enum-typed value
@@ -521,7 +518,10 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static bool IsNumeric(this string @string) => string.IsNullOrWhiteSpace(@string) ? false : double.TryParse(@string, out double number);
+		public static bool IsNumeric(this string @string)
+			=> string.IsNullOrWhiteSpace(@string)
+				? false
+				: double.TryParse(@string, out var number);
 
 		static Regex Normal { get; } = new Regex("[^a-zA-Z0-9_-]+");
 
