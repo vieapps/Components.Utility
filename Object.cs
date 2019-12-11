@@ -34,7 +34,9 @@ namespace net.vieapps.Components.Utility
 		[Serializable, DebuggerDisplay("Name = {Name}")]
 		public class AttributeInfo
 		{
-			public AttributeInfo() : this(null, null) { }
+			public AttributeInfo() : this(null) { }
+
+			public AttributeInfo(MemberInfo info) : this(info?.Name, info) { }
 
 			public AttributeInfo(string name, MemberInfo info)
 			{
@@ -94,7 +96,7 @@ namespace net.vieapps.Components.Utility
 							: null;
 						ObjectService.ObjectProperties[type] = properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
 							.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-							.Select(info => new AttributeInfo(info.Name, info))
+							.Select(info => new AttributeInfo(info))
 							.ToList();
 					}
 				}
@@ -138,7 +140,7 @@ namespace net.vieapps.Components.Utility
 					if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
 						ObjectService.ObjectFields[type] = attributes = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
 							.Where(info => !info.Name.StartsWith("<"))
-							.Select(info => new AttributeInfo(info.Name, info))
+							.Select(info => new AttributeInfo(info))
 							.ToList();
 				}
 
@@ -454,7 +456,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The newly created instance</returns>
 		public static object CreateInstance(this Type type)
 		{
-			if (!ObjectService.TypeFactories.TryGetValue(type, out Func<object> func))
+			if (!ObjectService.TypeFactories.TryGetValue(type, out var func))
 				lock (ObjectService.TypeFactories)
 				{
 					if (!ObjectService.TypeFactories.TryGetValue(type, out func))
@@ -495,7 +497,7 @@ namespace net.vieapps.Components.Utility
 				? @object.GetType().Equals(typeof(T))
 					? (T)@object
 					: (T)Convert.ChangeType(@object, typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(typeof(T)) : typeof(T))
-				: default(T);
+				: default;
 		#endregion
 
 		#region Manipulations
@@ -752,8 +754,8 @@ namespace net.vieapps.Components.Utility
 
 						// update
 						var type = attribute.Type.IsGenericList()
-							? (typeof(List<>)).MakeGenericType(attribute.Type.GenericTypeArguments[0])
-							: (typeof(HashSet<>)).MakeGenericType(attribute.Type.GenericTypeArguments[0]);
+							? typeof(List<>).MakeGenericType(attribute.Type.GenericTypeArguments[0])
+							: typeof(HashSet<>).MakeGenericType(attribute.Type.GenericTypeArguments[0]);
 
 						var instance = data != null && data.Count > 0
 							? serializer.Deserialize(new JTokenReader(data), type)
@@ -804,8 +806,8 @@ namespace net.vieapps.Components.Utility
 
 						// update
 						var type = attribute.Type.IsGenericDictionary()
-							? (typeof(Dictionary<,>)).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
-							: (typeof(Collection<,>)).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
+							? typeof(Dictionary<,>).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
+							: typeof(Collection<,>).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
 
 						var instance = data != null && data.Count > 0
 							? serializer.Deserialize(new JTokenReader(data), type)
@@ -1012,7 +1014,7 @@ namespace net.vieapps.Components.Utility
 		public static T Clone<T>(this T @object, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			// initialize the object
-			var instance = default(T);
+			var instance = default;
 
 			// the object is serializable
 			if (@object.GetType().IsSerializable)
@@ -1028,7 +1030,7 @@ namespace net.vieapps.Components.Utility
 					catch (Exception ex)
 					{
 						if (onError != null)
-							onError(ex);
+							onError.Invoke(ex);
 						else
 							throw ex;
 					}
@@ -1567,7 +1569,7 @@ namespace net.vieapps.Components.Utility
 		public static bool TryGet<T>(this ExpandoObject @object, string name, out T value)
 		{
 			// assign default
-			value = default(T);
+			value = default;
 
 			// get value & normalize
 			if (@object.TryGet(name, out object tempValue))
@@ -1628,7 +1630,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
 		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Get<T>(this ExpandoObject @object, string name, T @default = default(T))
+		public static T Get<T>(this ExpandoObject @object, string name, T @default = default)
 			=> @object.TryGet(name, out T value)
 				? value
 				: @default;
@@ -1640,7 +1642,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
 		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Value<T>(this ExpandoObject @object, string name, T @default = default(T))
+		public static T Value<T>(this ExpandoObject @object, string name, T @default = default)
 			=> @object.Get(name, @default);
 
 		/// <summary>
@@ -1650,7 +1652,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute for checking, accept the dot (.) to get check of child object</param>
 		/// <returns>true if the object got an attribute with the name</returns>
 		public static bool Has(this ExpandoObject @object, string name)
-			=> @object.TryGet(name, out object value);
+			=> @object.TryGet(name, out var value);
 
 		/// <summary>
 		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
