@@ -1014,7 +1014,7 @@ namespace net.vieapps.Components.Utility
 		public static T Clone<T>(this T @object, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
 			// initialize the object
-			var instance = default;
+			var instance = default(T);
 
 			// the object is serializable
 			if (@object.GetType().IsSerializable)
