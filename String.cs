@@ -199,21 +199,23 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the string using Deflate compression method
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
 		/// <returns>The compressed-string in Base64 format</returns>
-		public static string Compress(this string @string)
+		public static string Compress(this string @string, string mode = "deflate")
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.ToBytes().Compress("deflate")?.ToBase64();
+				: @string.ToBytes().Compress(mode)?.ToBase64();
 
 		/// <summary>
 		/// Decompresses the Base64 string using Deflate compression method
 		/// </summary>
 		/// <param name="string"></param>
-		/// <returns></returns>
-		public static string Decompress(this string @string)
+		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
+		/// <returns>The decompressed-string</returns>
+		public static string Decompress(this string @string, string mode = "deflate")
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.Base64ToBytes().Decompress("deflate")?.GetString();
+				: @string.Base64ToBytes().Decompress(mode)?.GetString();
 		#endregion
 
 		#region Conversions
@@ -365,7 +367,7 @@ namespace net.vieapps.Components.Utility
 				+ "“ ” – ¸ ’ § ¨ &nbsp; ¸";
 			var tcvn3s = tcvn3.Split(' ');
 
-			var decodeLength = -1;
+			int decodeLength;
 			var result = @string.Trim();
 
 			// convert

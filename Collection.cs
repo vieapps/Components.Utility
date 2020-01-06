@@ -2191,7 +2191,7 @@ namespace System.Collections.Generic
 			{
 				this._collection = collection;
 				if (this._collection != null)
-					this._keys = this._collection.Keys as List<TKey>;
+					this._keys = this._collection.Keys.ToList();
 			}
 
 			/// <summary>

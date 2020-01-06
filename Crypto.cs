@@ -122,7 +122,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static HashAlgorithm GetHashAlgorithm(string hashAlgorithm = "SHA256")
 		{
-			if (!CryptoService.HashAlgorithmFactories.TryGetValue(hashAlgorithm, out Func<HashAlgorithm> func))
+			if (!CryptoService.HashAlgorithmFactories.TryGetValue(hashAlgorithm, out var func))
 				func = () => SHA256.Create();
 			return func();
 		}
@@ -470,7 +470,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static HMAC GetHMACHashAlgorithm(byte[] key, string hashAlgorithm = "SHA256")
 		{
-			if (!CryptoService.HmacHashAlgorithmFactories.TryGetValue(hashAlgorithm, out Func<byte[], HMAC> func))
+			if (!CryptoService.HmacHashAlgorithmFactories.TryGetValue(hashAlgorithm, out var func))
 				func = k => new HMACSHA256(k);
 			return func(key);
 		}
@@ -1303,11 +1303,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="includePrivateParameters">true to export private parameters (private key)</param>
 		/// <returns>The JSON string that presents exported parameters</returns>
 		public static string ExportPemParameters(this RSA rsa, bool includePrivateParameters)
-		{
-			return includePrivateParameters
+			=> includePrivateParameters
 				? rsa.ExportPemPrivateParameters()
 				: rsa.ExportPemPublicParameters();
-		}
 
 		// -------------------------------------------------------
 		// Methods to export key to PEM format - http://stackoverflow.com/questions/28406888/c-sharp-rsa-public-key-output-not-correct/28407693#28407693

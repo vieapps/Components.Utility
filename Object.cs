@@ -85,7 +85,7 @@ namespace net.vieapps.Components.Utility
 			if (type == null)
 				return null;
 
-			if (!ObjectService.ObjectProperties.TryGetValue(type, out List<AttributeInfo> properties))
+			if (!ObjectService.ObjectProperties.TryGetValue(type, out var properties))
 				lock (ObjectService.ObjectProperties)
 				{
 					if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
@@ -134,19 +134,19 @@ namespace net.vieapps.Components.Utility
 			if (type == null)
 				return null;
 
-			if (!ObjectService.ObjectFields.TryGetValue(type, out List<AttributeInfo> attributes))
+			if (!ObjectService.ObjectFields.TryGetValue(type, out var fields))
 				lock (ObjectService.ObjectFields)
 				{
-					if (!ObjectService.ObjectFields.TryGetValue(type, out attributes))
-						ObjectService.ObjectFields[type] = attributes = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+					if (!ObjectService.ObjectFields.TryGetValue(type, out fields))
+						ObjectService.ObjectFields[type] = fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
 							.Where(info => !info.Name.StartsWith("<"))
 							.Select(info => new AttributeInfo(info))
 							.ToList();
 				}
 
 			return predicate != null
-				? attributes.Where(info => predicate(info)).ToList()
-				: attributes;
+				? fields.Where(info => predicate(info)).ToList()
+				: fields;
 		}
 
 		/// <summary>
@@ -494,9 +494,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T CastAs<T>(this object @object)
 			=> @object != null
-				? @object.GetType().Equals(typeof(T))
-					? (T)@object
-					: (T)Convert.ChangeType(@object, typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(typeof(T)) : typeof(T))
+				? (T)@object.CastAs(typeof(T))
 				: default;
 		#endregion
 
@@ -1266,7 +1264,7 @@ namespace net.vieapps.Components.Utility
 				using (var writer = new StreamWriter(stream))
 				{
 					new XmlSerializer(typeof(T)).Serialize(writer, @object);
-					xml = XElement.Parse(stream.ToArray().GetString());
+					xml = XElement.Parse(stream.ToBytes().GetString());
 				}
 			}
 
@@ -1460,7 +1458,7 @@ namespace net.vieapps.Components.Utility
 					try
 					{
 						var xslTransform = new XslCompiledTransform();
-						xslTransform.Load(reader, enableScript ? new XsltSettings() { EnableScript = true } : null, null);
+						xslTransform.Load(reader, enableScript ? new XsltSettings { EnableScript = true } : null, null);
 						return document.Transfrom(xslTransform);
 					}
 					catch (Exception)
