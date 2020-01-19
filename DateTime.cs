@@ -27,11 +27,17 @@ namespace net.vieapps.Components.Utility
 		/// <param name="elapsedTimes">The value that presents total elapsed times in mili-seconds</param>
 		/// <param name="computeMinutes">true to compute minutes in elapsed times</param>
 		/// <param name="addString">true to add string (like minute(s), second(s), mili-second(s), ...) into the ending-point</param>
+		/// <param name="strDays">The string that presents the label of day(s)</param>
+		/// <param name="strHours">The string that presents the label of hour(s)</param>
+		/// <param name="strMinutes">The string that presents the label of minute(s)</param>
+		/// <param name="strSeconds">The string that presents the label of second(s)</param>
+		/// <param name="strMiliseconds">The string that presents the label of mili-second(s)</param>
+		/// <param name="strNanoseconds">The string that presents the label of nano-second(s)</param>
 		/// <returns>The string that presents elapsed times</returns>
-		public static string GetElapsedTimes(this long elapsedTimes, bool computeMinutes = true, bool addString = true)
+		public static string GetElapsedTimes(this long elapsedTimes, bool computeMinutes = true, bool addString = true, string strDays = "day(s)", string strHours = "hour(s)", string strMinutes = "minute(s)", string strSeconds = "second(s)", string strMiliseconds = "milisecond(s)", string strNanoseconds = "nanosecond(s)")
 		{
 			if (elapsedTimes < 1)
-				return "1" + (addString ? " nanosecond" : "");
+				return "1" + (addString ? $" {strNanoseconds?.Trim() ?? "nanosecond(s)"}" : "");
 
 			int days = 0, hours = 0, minutes = 0, seconds = 0;
 
@@ -64,19 +70,19 @@ namespace net.vieapps.Components.Utility
 			var times = "";
 
 			if (miliseconds > 0)
-				times = miliseconds.ToString() + (addString ? " milisecond(s)" : "") + times;
+				times = miliseconds.ToString() + (addString ? $" {strMiliseconds?.Trim() ?? "milisecond(s)"}" : "") + times;
 
 			if (seconds > 0)
-				times = seconds.ToString() + (addString ? " second(s)" + (!times.Equals("") ? ", " : "") : "") + times;
+				times = seconds.ToString() + (addString ? $" {strSeconds?.Trim() ?? "second(s)"}" + (!times.Equals("") ? ", " : "") : "") + times;
 
 			if (minutes > 0)
-				times = minutes.ToString() + (addString ? " minute(s)" + (!times.Equals("") ? ", " : "") : "") + times;
+				times = minutes.ToString() + (addString ? $" {strMinutes?.Trim() ?? "minute(s)"}" + (!times.Equals("") ? ", " : "") : "") + times;
 
 			if (hours > 0)
-				times = hours.ToString() + (addString ? " hour(s)" + (!times.Equals("") ? ", " : "") : "") + times;
+				times = hours.ToString() + (addString ? $" {strHours?.Trim() ?? "hour(s)"}" + (!times.Equals("") ? ", " : "") : "") + times;
 
 			if (days  > 0)
-				times = days.ToString() + (addString ? " day(s)" + (!times.Equals("") ? ", " : "") : "") + times;
+				times = days.ToString() + (addString ? $" {strDays?.Trim() ?? "day(s)"}" + (!times.Equals("") ? ", " : "") : "") + times;
 
 			return times;
 		}
@@ -85,17 +91,33 @@ namespace net.vieapps.Components.Utility
 		/// Gets the string that presents elapsed times (means times for processing)
 		/// </summary>
 		/// <param name="stopwatch">The <see cref="Stopwatch">Stopwatch</see> object that presents elapsed times</param>
+		/// <param name="computeMinutes">true to compute minutes in elapsed times</param>
+		/// <param name="addString">true to add string (like minute(s), second(s), mili-second(s), ...) into the ending-point</param>
+		/// <param name="strDays">The string that presents the label of day(s)</param>
+		/// <param name="strHours">The string that presents the label of hour(s)</param>
+		/// <param name="strMinutes">The string that presents the label of minute(s)</param>
+		/// <param name="strSeconds">The string that presents the label of second(s)</param>
+		/// <param name="strMiliseconds">The string that presents the label of mili-second(s)</param>
+		/// <param name="strNanoseconds">The string that presents the label of nano-second(s)</param>
 		/// <returns>The string that presents elapsed times</returns>
-		public static string GetElapsedTimes(this Stopwatch stopwatch)
-			=> stopwatch.ElapsedMilliseconds.GetElapsedTimes();
+		public static string GetElapsedTimes(this Stopwatch stopwatch, bool computeMinutes = true, bool addString = true, string strDays = "day(s)", string strHours = "hour(s)", string strMinutes = "minute(s)", string strSeconds = "second(s)", string strMiliseconds = "milisecond(s)", string strNanoseconds = "nanosecond(s)")
+			=> stopwatch.ElapsedMilliseconds.GetElapsedTimes(computeMinutes, addString, strDays, strHours, strMinutes, strSeconds, strMiliseconds, strNanoseconds);
 
 		/// <summary>
 		/// Gets the string that presents elapsed times (means times for processing)
 		/// </summary>
 		/// <param name="startTime">The <see cref="DateTime">DateTime</see> object that presents the starting time</param>
+		/// <param name="computeMinutes">true to compute minutes in elapsed times</param>
+		/// <param name="addString">true to add string (like minute(s), second(s), mili-second(s), ...) into the ending-point</param>
+		/// <param name="strDays">The string that presents the label of day(s)</param>
+		/// <param name="strHours">The string that presents the label of hour(s)</param>
+		/// <param name="strMinutes">The string that presents the label of minute(s)</param>
+		/// <param name="strSeconds">The string that presents the label of second(s)</param>
+		/// <param name="strMiliseconds">The string that presents the label of mili-second(s)</param>
+		/// <param name="strNanoseconds">The string that presents the label of nano-second(s)</param>
 		/// <returns>The string that presents elapsed times</returns>
-		public static string GetElapsedTimes(this DateTime startTime)
-			=> (DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).CastAs<long>().GetElapsedTimes();
+		public static string GetElapsedTimes(this DateTime startTime, bool computeMinutes = true, bool addString = true, string strDays = "day(s)", string strHours = "hour(s)", string strMinutes = "minute(s)", string strSeconds = "second(s)", string strMiliseconds = "milisecond(s)", string strNanoseconds = "nanosecond(s)")
+			=> (DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).CastAs<long>().GetElapsedTimes(computeMinutes, addString, strDays, strHours, strMinutes, strSeconds, strMiliseconds, strNanoseconds);
 
 		/// <summary>
 		/// Gets the name of weekday from this date-time

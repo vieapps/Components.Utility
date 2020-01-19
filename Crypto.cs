@@ -28,12 +28,12 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// The default key (256 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
 		/// </summary>
-		public static readonly byte[] DEFAULT_ENCRYPTION_KEY = DEFAULT_PASS_PHRASE.GenerateHashKey(256);
+		public static byte[] DEFAULT_ENCRYPTION_KEY => DEFAULT_PASS_PHRASE.GenerateHashKey(256);
 
 		/// <summary>
 		/// The default initialization vector (128 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
 		/// </summary>
-		public static readonly byte[] DEFAULT_ENCRYPTION_IV = DEFAULT_PASS_PHRASE.GenerateHashKey(128);
+		public static byte[] DEFAULT_ENCRYPTION_IV => DEFAULT_PASS_PHRASE.GenerateHashKey(128);
 		#endregion
 
 		#region Generate keys & passwords

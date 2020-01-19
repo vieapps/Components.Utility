@@ -311,14 +311,15 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string Base32Encode(this byte[] bytes, bool addChecksum = false)
+		public static string Base32Encode(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA1")
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
 			var data = addChecksum
-				? bytes.Concat(bytes.GetCheckSum("SHA1", 2))
+				? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 2))
 				: bytes;
 
 			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -356,8 +357,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="verifyChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static byte[] Base32Decode(this string @string, bool verifyChecksum = false)
+		public static byte[] Base32Decode(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA1")
 		{
 			if (string.IsNullOrWhiteSpace(@string))
 				throw new ArgumentNullException(nameof(@string), "Invalid");
@@ -403,7 +405,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var givenChecksum = output.Take(output.Length - 2);
 				output = output.Take(0, output.Length - 2);
-				var correctChecksum = output.GetCheckSum("SHA1", 2);
+				var correctChecksum = output.GetCheckSum(hashAlgorithm, 2);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
 					: null;
@@ -418,21 +420,24 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string ToBase32(this string @string, bool addChecksum = false)
+		public static string ToBase32(this string @string, bool addChecksum = false, string hashAlgorithm = "SHA1")
 			=> string.IsNullOrWhiteSpace(@string)
 				? throw new ArgumentNullException(nameof(@string), "Invalid")
-				: @string.ToBytes().Base32Encode(addChecksum);
+				: @string.ToBytes().Base32Encode(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this Base32 string to plain string
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="verifyChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string FromBase32(this string @string, bool verifyChecksum = false)
+		public static string FromBase32(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA1")
 			=> string.IsNullOrWhiteSpace(@string)
 				? throw new ArgumentNullException(nameof(@string), "Invalid")
-				: @string.Base32Decode(verifyChecksum).GetString();
+				: @string.Base32Decode(verifyChecksum, hashAlgorithm).GetString();
 		#endregion
 
 		#region Encode/Decode Base58
@@ -440,16 +445,17 @@ namespace net.vieapps.Components.Utility
 		/// Encodes this array of bytes to Base58 string
 		/// </summary>
 		/// <param name="bytes">The array of bytes to encode</param>
-		/// <param name="addChecksum">Add SHA256 checksum</param>
+		/// <param name="addChecksum">true to add checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string Base58Encode(this byte[] bytes, bool addChecksum = true)
+		public static string Base58Encode(this byte[] bytes, bool addChecksum = true, string hashAlgorithm = "SHA256")
 		{
 			// add prefix / surfix
 			var data = bytes ?? new byte[0];
 
 			// add check-sum
 			if (addChecksum)
-				data = data.Concat(data.GetCheckSum("SHA256", 4));
+				data = data.Concat(data.GetCheckSum(hashAlgorithm, 4));
 
 			// decode byte[] to BigInteger and encode BigInteger to Base58 string
 			var bigInt = data.Aggregate<byte, BigInteger>(0, (current, t) => current * 256 + t);
@@ -472,9 +478,10 @@ namespace net.vieapps.Components.Utility
 		/// Decodes this Base58 string to array of bytes
 		/// </summary>
 		/// <param name="string">The string to decode</param>
-		/// <param name="verifyChecksum">true to verify SHA256 checksum</param>
+		/// <param name="verifyChecksum">true to verify checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static byte[] Base58Decode(this string @string, bool verifyChecksum = true)
+		public static byte[] Base58Decode(this string @string, bool verifyChecksum = true, string hashAlgorithm = "SHA256")
 		{
 			// decode Base58 string to BigInteger 
 			var base58Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
@@ -496,7 +503,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var givenChecksum = output.Take(output.Length - 4);
 				output = output.Take(0, output.Length - 4);
-				var correctChecksum = output.GetCheckSum("SHA256", 4);
+				var correctChecksum = output.GetCheckSum(hashAlgorithm, 4);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
 					: null;
@@ -510,23 +517,25 @@ namespace net.vieapps.Components.Utility
 		/// Converts this string to Base58 string
 		/// </summary>
 		/// <param name="string">The string to convert</param>
-		/// <param name="addChecksum">true to add SHA256 checksum</param>
+		/// <param name="addChecksum">true to add checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string ToBase58(this string @string, bool addChecksum = true)
+		public static string ToBase58(this string @string, bool addChecksum = true, string hashAlgorithm = "SHA256")
 			=> string.IsNullOrWhiteSpace(@string)
 				? null
-				: @string.ToBytes().Base58Encode(addChecksum);
+				: @string.ToBytes().Base58Encode(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this Base58 string to plain string
 		/// </summary>
 		/// <param name="string">The string to convert</param>
-		/// <param name="verifyChecksum">true to verify with SHA256 checksum</param>
+		/// <param name="verifyChecksum">true to verify checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string FromBase58(this string @string, bool verifyChecksum = true)
+		public static string FromBase58(this string @string, bool verifyChecksum = true, string hashAlgorithm = "SHA256")
 			=> string.IsNullOrWhiteSpace(@string)
 				? null
-				: @string.Base58Decode(verifyChecksum)?.GetString();
+				: @string.Base58Decode(verifyChecksum, hashAlgorithm)?.GetString();
 		#endregion
 
 		#region Encode/Decode Base64
@@ -534,15 +543,16 @@ namespace net.vieapps.Components.Utility
 		/// Encodes this array of bytes to Base64 string
 		/// </summary>
 		/// <param name="bytes">The array of bytes to encode</param>
-		/// <param name="addChecksum">Add SHA256 checksum</param>
+		/// <param name="addChecksum">true to add checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string Base64Encode(this byte[] bytes, bool addChecksum = false)
+		public static string Base64Encode(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
 				throw new ArgumentException("Invalid", nameof(bytes));
 
 			var data = addChecksum
-				? bytes.Concat(bytes.GetCheckSum("SHA256", 4))
+				? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 4))
 				: bytes;
 
 			return Convert.ToBase64String(data);
@@ -552,9 +562,10 @@ namespace net.vieapps.Components.Utility
 		/// Decodes this Base64 string to array of bytes
 		/// </summary>
 		/// <param name="string">The string to decode</param>
-		/// <param name="verifyChecksum">true to verify SHA256 checksum</param>
+		/// <param name="verifyChecksum">true to verify checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static byte[] Base64Decode(this string @string, bool verifyChecksum = false)
+		public static byte[] Base64Decode(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA256")
 		{
 			// convert to array of bytes
 			var output = Convert.FromBase64String(@string);
@@ -564,7 +575,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var givenChecksum = output.Take(output.Length - 4);
 				output = output.Take(0, output.Length - 4);
-				var correctChecksum = output.GetCheckSum("SHA256", 4);
+				var correctChecksum = output.GetCheckSum(hashAlgorithm, 4);
 				return givenChecksum.SequenceEqual(correctChecksum)
 					? output
 					: null;
@@ -578,10 +589,11 @@ namespace net.vieapps.Components.Utility
 		/// Converts this array of bytes to Base64 string
 		/// </summary>
 		/// <param name="bytes"></param>
-		/// <param name="addChecksum"></param>
+		/// <param name="addChecksum">true to add checksum</param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string ToBase64(this byte[] bytes, bool addChecksum = false)
-			=> bytes.Base64Encode(addChecksum);
+		public static string ToBase64(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
+			=> bytes.Base64Encode(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this string to Base64 string
@@ -590,14 +602,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <param name="isBase64Url"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string ToBase64(this string @string, bool isHex = false, bool isBase64Url = false, bool addChecksum = false)
+		public static string ToBase64(this string @string, bool isHex = false, bool isBase64Url = false, bool addChecksum = false, string hashAlgorithm = "SHA256")
 		{
 			if (isHex)
-				return @string.HexToBytes().ToBase64(addChecksum);
+				return @string.HexToBytes().ToBase64(addChecksum, hashAlgorithm);
 
 			else if (!isBase64Url)
-				return @string.ToBytes().ToBase64(addChecksum);
+				return @string.ToBytes().ToBase64(addChecksum, hashAlgorithm);
 
 			else
 			{
@@ -624,9 +637,10 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string ToBase64Url(this byte[] bytes, bool addChecksum = false)
-			=> bytes.ToBase64(addChecksum).Split('=').First().Replace('+', '-').Replace('/', '_');
+		public static string ToBase64Url(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
+			=> bytes.ToBase64(addChecksum, hashAlgorithm).Split('=').First().Replace('+', '-').Replace('/', '_');
 
 		/// <summary>
 		/// Converts this string to Base64Url string
@@ -635,9 +649,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isBase64"></param>
 		/// <param name="isHex"></param>
 		/// <param name="addChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHex = false, bool addChecksum = false)
-			=> (isBase64 ? @string : @string.ToBase64(isHex, false, addChecksum)).Split('=').First().Replace('+', '-').Replace('/', '_');
+		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHex = false, bool addChecksum = false, string hashAlgorithm = "SHA256")
+			=> (isBase64 ? @string : @string.ToBase64(isHex, false, addChecksum, hashAlgorithm)).Split('=').First().Replace('+', '-').Replace('/', '_');
 
 		/// <summary>
 		/// Converts this Base64 string to plain string
@@ -645,8 +660,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <param name="isBase64Url"></param>
 		/// <param name="verifyChecksum"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
-		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false)
+		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false, string hashAlgorithm = "SHA256")
 			=> (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum)?.GetString();
 
 		/// <summary>
