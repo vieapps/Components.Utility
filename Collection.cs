@@ -501,21 +501,21 @@ namespace net.vieapps.Components.Utility
 		{
 			if (typeof(T).IsPrimitive)
 			{
-				var result = new T[@object.Length + arrays.Sum(a => a.Length)];
+				var result = new T[@object.Length + arrays.Where(array => array != null).Sum(array => array.Length)];
 				if (@object.Length > 0)
 					Buffer.BlockCopy(@object, 0, result, 0, @object.Length);
 				var offset = @object.Length;
-				arrays.ForEach(a =>
+				arrays.Where(array => array != null).ForEach(array =>
 				{
-					Buffer.BlockCopy(a, 0, result, offset, a.Length);
-					offset += a.Length;
+					Buffer.BlockCopy(array, 0, result, offset, array.Length);
+					offset += array.Length;
 				});
 				return result;
 			}
 			else
 			{
-				var result = @object.Select(e => e);
-				arrays.ForEach(a => result = result.Concat(a));
+				var result = @object.Select(array => array);
+				arrays.ForEach(array => result = result.Concat(array));
 				return result.ToArray();
 			}
 		}
@@ -544,7 +544,7 @@ namespace net.vieapps.Components.Utility
 		{
 			var result = (new T[0] as IEnumerable<T>).Concat(new T[0]);
 			while (@object.Count > 0)
-				if (@object.TryDequeue(out T[] array))
+				if (@object.TryDequeue(out var array))
 					result = result.Concat(array);
 			return result;
 		}
@@ -625,6 +625,7 @@ namespace net.vieapps.Components.Utility
 				try
 				{
 					@object.Add(key, value);
+					return true;
 				}
 				catch { }
 			return key == null ? throw new ArgumentNullException(nameof(key), "The key is null") : false;
