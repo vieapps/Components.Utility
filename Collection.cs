@@ -685,15 +685,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="allowDuplicated">true to allow duplicated item existed in the collection</param>
 		/// <param name="items">Items to append</param>
 		public static void Append<T>(this IList<T> @object, bool allowDuplicated, IEnumerable<T> items)
-		{
-			items?.ForEach(item =>
+			=> items?.ForEach(item =>
 			{
 				if (allowDuplicated)
 					@object.Add(item);
 				else if (@object.IndexOf(item) < 0)
 					@object.Add(item);
 			});
-		}
 
 		/// <summary>
 		/// Appends items into collection

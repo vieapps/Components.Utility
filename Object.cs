@@ -544,7 +544,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The object that presents data of object's attribute</returns>
 		public static object GetAttributeValue(this object @object, string name)
 		{
-			if (string.IsNullOrWhiteSpace(name))
+			if (@object == null || string.IsNullOrWhiteSpace(name))
 				throw new ArgumentException(nameof(name));
 
 			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
@@ -563,15 +563,44 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets value of an attribute of an object.
 		/// </summary>
+		/// <typeparam name="T">The type of value to cast to</typeparam>
+		/// <param name="object">The object need to get data from.</param>
+		/// <param name="name">The string that presents the name of the attribute need to get.</param>
+		/// <param name="default">The default value</param>
+		/// <returns>The object that presents data of object's attribute</returns>
+		public static T GetAttributeValue<T>(this object @object, string name, T @default = default)
+		{
+			var value = @object?.GetAttributeValue(name);
+			return value != null && value is T
+				? (T)value
+				: @default;
+		}
+
+		/// <summary>
+		/// Gets value of an attribute of an object.
+		/// </summary>
 		/// <param name="object">The object need to get data from</param>
 		/// <param name="attribute">The object that presents information of the attribute need to get</param>
 		/// <returns>The object that presents data of object's attribute</returns>
 		public static object GetAttributeValue(this object @object, AttributeInfo attribute)
-		{
-			if (attribute == null || string.IsNullOrWhiteSpace(attribute.Name))
-				throw new ArgumentException(nameof(attribute));
+			=> @object != null && attribute != null && !string.IsNullOrWhiteSpace(attribute.Name)
+				? @object.GetAttributeValue(attribute.Name)
+				: throw new ArgumentException(nameof(attribute));
 
-			return @object.GetAttributeValue(attribute.Name);
+		/// <summary>
+		/// Gets value of an attribute of an object.
+		/// </summary>
+		/// <typeparam name="T">The type of value to cast to</typeparam>
+		/// <param name="object">The object need to get data from</param>
+		/// <param name="attribute">The object that presents information of the attribute need to get</param>
+		/// <param name="default">The default value</param>
+		/// <returns>The object that presents data of object's attribute</returns>
+		public static T GetAttributeValue<T>(this object @object, AttributeInfo attribute, T @default = default)
+		{
+			var value = @object?.GetAttributeValue(attribute);
+			return value != null && value is T
+				? (T)value
+				: @default;
 		}
 
 		/// <summary>
@@ -1217,7 +1246,7 @@ namespace net.vieapps.Components.Utility
 				@object = typeof(T).IsPrimitiveType() && json is JValue
 					? (json as JValue).Value.CastAs<T>()
 					: new JsonSerializer().Deserialize<T>(new JTokenReader(json));
-			
+
 			// run the handler
 			onPreCompleted?.Invoke(@object, json);
 
@@ -1242,9 +1271,24 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">The type to convert the token to</typeparam>
 		/// <param name="json"></param>
 		/// <param name="key">The token key</param>
+		/// <param name="default">The default value</param>
 		/// <returns>The converted token value</returns>
-		public static T Get<T>(this JToken json, object key)
-			=> json.Value<T>(key);
+		public static T Value<T>(this JToken json, object key, T @default)
+		{
+			var value = json.Value<T>(key);
+			return value != null ? value : @default;
+		}
+
+		/// <summary>
+		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
+		/// </summary>
+		/// <typeparam name="T">The type to convert the token to</typeparam>
+		/// <param name="json"></param>
+		/// <param name="key">The token key</param>
+		/// <param name="default">The default value</param>
+		/// <returns>The converted token value</returns>
+		public static T Get<T>(this JToken json, object key, T @default = default)
+			=> json.Value(key, @default);
 		#endregion
 
 		#region XML conversions
@@ -1539,7 +1583,7 @@ namespace net.vieapps.Components.Utility
 
 			// no multiple
 			if (names.Length < 2)
-				return dictionary.TryGetValue(name, out value) && value != null;
+				return dictionary.TryGetValue(name, out value);
 
 			// got multiple
 			var index = 0;
@@ -1553,7 +1597,7 @@ namespace net.vieapps.Components.Utility
 
 			return dictionary == null
 				? false
-				: dictionary.TryGetValue(names[names.Length - 1], out value) && value != null;
+				: dictionary.TryGetValue(names[names.Length - 1], out value);
 		}
 
 		/// <summary>
