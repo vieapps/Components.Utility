@@ -1835,28 +1835,32 @@ namespace System.Collections.Specialized
 		/// </summary>
 		/// <param name="array">The one-dimensional array that is the destination of the elements copied from the collection. The array must have zero-based indexing.</param>
 		/// <param name="index">The zero-based index in array at which copying begins</param>
-		public void CopyTo(Array array, int index) => (this._collection as ICollection).CopyTo(array, index);
+		public void CopyTo(Array array, int index)
+			=> (this._collection as ICollection).CopyTo(array, index);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool Contains(object key) => key != null && this._collection.Contains(key);
+		public bool Contains(object key)
+			=> key != null && this._collection.Contains(key);
 
 		/// <summary>
 		/// Determines whether the collection contains a specific key
 		/// </summary>
 		/// <param name="key">The key to locate in the collection</param>
 		/// <returns>true if the collection contains an element with the specified key; otherwise, false.</returns>
-		public bool ContainsKey(object key) => this.Contains(key);
+		public bool ContainsKey(object key)
+			=> this.Contains(key);
 
 		/// <summary>
 		/// Adds an element with the specified key and value into the collection with the lowest available index
 		/// </summary>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Add(object key, object value) => this._collection.Add(key, value);
+		public void Add(object key, object value)
+			=> this._collection.Add(key, value);
 
 		/// <summary>
 		/// Inserts a new element into the collection with the specified key and value at the specified index
@@ -1864,9 +1868,11 @@ namespace System.Collections.Specialized
 		/// <param name="index">The zero-based index at which the element should be inserted</param>
 		/// <param name="key">The key of the element to add. Key must be not null.</param>
 		/// <param name="value">The value of element to add. Value can be null.</param>
-		public void Insert(int index, object key, object value) => this._collection.Insert(index, key, value);
+		public void Insert(int index, object key, object value)
+			=> this._collection.Insert(index, key, value);
 
-		void IDictionary.Remove(object key) => this.Remove(key);
+		void IDictionary.Remove(object key)
+			=> this.Remove(key);
 
 		/// <summary>
 		/// Removes the element with the specified key from the collection
@@ -1880,20 +1886,21 @@ namespace System.Collections.Specialized
 				this._collection.Remove(key);
 				return true;
 			}
-			else
-				return false;
+			return false;
 		}
 
 		/// <summary>
 		/// Removes the element at the specified index from the collection
 		/// </summary>
 		/// <param name="index">The zero-based index of the element to remove</param>
-		public void RemoveAt(int index) => this._collection.RemoveAt(index);
+		public void RemoveAt(int index)
+			=> this._collection.RemoveAt(index);
 
 		/// <summary>
 		/// Removes all elements from the collection
 		/// </summary>
-		public void Clear() => this._collection.Clear();
+		public void Clear()
+			=> this._collection.Clear();
 
 		/// <summary>
 		/// Searches for the specified object and returns the zero-based index of the first occurrence within the entire the collection
@@ -1937,21 +1944,30 @@ namespace System.Collections.Specialized
 		/// </summary>
 		/// <param name="index">The zero-based index of the element to get the key</param>
 		/// <returns>The key object at the specified index</returns>
-		public object GetKeyAt(int index) => index > -1 && index < this.Count ? this.AsEnumerableDictionaryEntry.ElementAt(index).Key : null;
+		public object GetKeyAt(int index)
+			=> index > -1 && index < this.Count
+				? this.AsEnumerableDictionaryEntry.ElementAt(index).Key
+				: null;
 
 		/// <summary>
 		/// Gets value of the element at the specified index
 		/// </summary>
 		/// <param name="index">The zero-based index of the element</param>
 		/// <returns>The value object at the specified index</returns>
-		public object GetByIndex(int index) => index > -1 && index < this.Count ? this._collection[index] : null;
+		public object GetByIndex(int index)
+			=> index > -1 && index < this.Count
+				? this._collection[index]
+				: null;
 
 		/// <summary>
 		/// Gets value of the element by specified key
 		/// </summary>
 		/// <param name="key">The object that presents the key of the element</param>
 		/// <returns>The value object that specified by the key</returns>
-		public object GetByKey(object key) => key != null ? this._collection[key] : null;
+		public object GetByKey(object key)
+			=> key != null
+				? this._collection[key]
+				: null;
 		#endregion
 
 		#region Enumerator
@@ -1961,7 +1977,8 @@ namespace System.Collections.Specialized
 		/// Returns an enumerator that iterates through the collection
 		/// </summary>
 		/// <returns></returns>
-		public IDictionaryEnumerator GetEnumerator() => new Enumerator(this);
+		public IDictionaryEnumerator GetEnumerator()
+			=> new Enumerator(this);
 
 		public class Enumerator : IDictionaryEnumerator
 		{
@@ -1990,7 +2007,8 @@ namespace System.Collections.Specialized
 			/// <summary>
 			/// Resets the enumerator to its initial position, which is before the first element in the collection
 			/// </summary>
-			public void Reset() => this._index = -1;
+			public void Reset()
+				=> this._index = -1;
 
 			/// <summary>
 			/// Gets the value of current element in the collection
@@ -2196,11 +2214,8 @@ namespace System.Collections.Generic
 				value = this[key];
 				return true;
 			}
-			else
-			{
-				value = default;
-				return false;
-			}
+			value = default;
+			return false;
 		}
 
 		/// <summary>
@@ -2278,13 +2293,6 @@ namespace System.Collections.Generic
 			public void Dispose()
 				=> this._collection = null;
 
-			object IEnumerator.Current => this.Current;
-
-			/// <summary>
-			/// Gets the value of current element in the collection
-			/// </summary>
-			public KeyValuePair<TKey, TValue> Current => new KeyValuePair<TKey, TValue>(this.Key, this.Value);
-
 			/// <summary>
 			/// Gets the key of the current element
 			/// </summary>
@@ -2294,6 +2302,13 @@ namespace System.Collections.Generic
 			/// Gets the value of the current element
 			/// </summary>
 			public TValue Value => this._collection != null && this._index > -1 && this._index < this._collection.Count ? this._collection[this._index] : default;
+
+			/// <summary>
+			/// Gets the value of current element in the collection
+			/// </summary>
+			public KeyValuePair<TKey, TValue> Current => new KeyValuePair<TKey, TValue>(this.Key, this.Value);
+
+			object IEnumerator.Current => this.Current;
 		}
 		#endregion
 
@@ -2306,9 +2321,7 @@ namespace System.Collections.Concurrent
 	/// Represents a thread-safe hash-based unique collection (original: https://github.com/i3arnon/ConcurrentHashSet)
 	/// </summary>
 	/// <typeparam name="T">The type of the items in the collection.</typeparam>
-	/// <remarks>
-	/// All public members of <see cref="ConcurrentHashSet{T}"/> are thread-safe and may be used concurrently from multiple threads.
-	/// </remarks>
+	/// <remarks>All public members of <see cref="ConcurrentHashSet{T}"/> are thread-safe and may be used concurrently from multiple threads.</remarks>
 	[Serializable, DebuggerDisplay("Count = {Count}")]
 	public class ConcurrentHashSet<T> : IReadOnlyCollection<T>, ICollection<T>
 	{

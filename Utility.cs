@@ -1896,7 +1896,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
-#if NETSTANDARD2_0 || NETCOREAPP2_0
+#if NETSTANDARD2_0
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
 				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
@@ -1928,7 +1928,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
-#if NETSTANDARD2_0 || NETCOREAPP2_0
+#if NETSTANDARD2_0
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
 				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
@@ -1961,7 +1961,7 @@ namespace net.vieapps.Components.Utility
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
-#if NETSTANDARD2_0 || NETCOREAPP2_0
+#if NETSTANDARD2_0
 				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
 				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
@@ -1991,7 +1991,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] Decompress(this Stream stream, string mode = "deflate")
 		{
-#if NETSTANDARD2_0 || NETCOREAPP2_0
+#if NETSTANDARD2_0
 			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
 			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) as Stream : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
@@ -2018,7 +2018,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
-#if NETSTANDARD2_0 || NETCOREAPP2_0
+#if NETSTANDARD2_0
 			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
 			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) as Stream : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)

@@ -90,10 +90,7 @@ namespace net.vieapps.Components.Utility
 				{
 					if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
 					{
-						var defaultMembers = type.GetCustomAttributes(typeof(DefaultMemberAttribute));
-						var defaultMember = defaultMembers != null
-							? defaultMembers.FirstOrDefault() as DefaultMemberAttribute
-							: null;
+						var defaultMember = type.GetCustomAttributes(typeof(DefaultMemberAttribute))?.FirstOrDefault() as DefaultMemberAttribute;
 						ObjectService.ObjectProperties[type] = properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
 							.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
 							.Select(info => new AttributeInfo(info))
@@ -237,7 +234,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is string</returns>
 		public static bool IsStringType(this Type type)
-			=> type.Equals(typeof(String));
+			=> type.Equals(typeof(string));
 
 		/// <summary>
 		/// Gets the state to determines the type is date-time or not
@@ -253,9 +250,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is integral numeric</returns>
 		public static bool IsIntegralType(this Type type)
-			=> type.Equals(typeof(Byte)) || type.Equals(typeof(SByte))
-				|| type.Equals(typeof(Int16)) || type.Equals(typeof(Int32)) || type.Equals(typeof(Int64))
-				|| type.Equals(typeof(UInt16)) || type.Equals(typeof(UInt32)) || type.Equals(typeof(UInt64));
+			=> type.Equals(typeof(byte)) || type.Equals(typeof(sbyte))
+				|| type.Equals(typeof(short)) || type.Equals(typeof(int)) || type.Equals(typeof(long))
+				|| type.Equals(typeof(ushort)) || type.Equals(typeof(uint)) || type.Equals(typeof(ulong));
 
 		/// <summary>
 		/// Gets the state to determines the type is floating numeric or not
@@ -263,7 +260,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
 		public static bool IsFloatingPointType(this Type type)
-			=> type.Equals(typeof(Decimal)) || type.Equals(typeof(Double)) || type.Equals(typeof(Single));
+			=> type.Equals(typeof(decimal)) || type.Equals(typeof(double)) || type.Equals(typeof(float));
 
 		/// <summary>
 		/// Gets the state to determines the type is numeric or not
@@ -749,8 +746,7 @@ namespace net.vieapps.Components.Utility
 				if (attribute.Type.IsArray)
 				{
 					var type = attribute.Type.GetElementType().MakeArrayType();
-					var instance = serializer.Deserialize(new JTokenReader(token), type);
-					@object.SetAttributeValue(attribute, instance);
+					@object.SetAttributeValue(attribute, serializer.Deserialize(new JTokenReader(token), type));
 				}
 
 				// generic list/hash-set
@@ -783,12 +779,7 @@ namespace net.vieapps.Components.Utility
 						var type = attribute.Type.IsGenericList()
 							? typeof(List<>).MakeGenericType(attribute.Type.GenericTypeArguments[0])
 							: typeof(HashSet<>).MakeGenericType(attribute.Type.GenericTypeArguments[0]);
-
-						var instance = data != null && data.Count > 0
-							? serializer.Deserialize(new JTokenReader(data), type)
-							: type.CreateInstance();
-
-						@object.SetAttributeValue(attribute, instance);
+						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? serializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
 					{
@@ -835,12 +826,7 @@ namespace net.vieapps.Components.Utility
 						var type = attribute.Type.IsGenericDictionary()
 							? typeof(Dictionary<,>).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
 							: typeof(Collection<,>).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
-
-						var instance = data != null && data.Count > 0
-							? serializer.Deserialize(new JTokenReader(data), type)
-							: type.CreateInstance();
-
-						@object.SetAttributeValue(attribute, instance);
+						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? serializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
 					{
@@ -851,10 +837,7 @@ namespace net.vieapps.Components.Utility
 				else if (attribute.Type.IsCollection())
 					try
 					{
-						var instance = token is JObject && (token as JObject).Count > 0
-							? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection))
-							: typeof(System.Collections.Specialized.Collection).CreateInstance();
-						@object.SetAttributeValue(attribute, instance);
+						@object.SetAttributeValue(attribute, token is JObject && (token as JObject).Count > 0 ? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection)) : typeof(System.Collections.Specialized.Collection).CreateInstance());
 					}
 					catch (Exception ex)
 					{

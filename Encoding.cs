@@ -609,27 +609,24 @@ namespace net.vieapps.Components.Utility
 			if (isHex)
 				return @string.HexToBytes().ToBase64(addChecksum, hashAlgorithm);
 
-			else if (!isBase64Url)
+			if (!isBase64Url)
 				return @string.ToBytes().ToBase64(addChecksum, hashAlgorithm);
 
-			else
+			var output = @string.Trim().Replace('-', '+').Replace('_', '/');
+			switch (output.Length % 4)
 			{
-				var output = @string.Trim().Replace('-', '+').Replace('_', '/');
-				switch (output.Length % 4)
-				{
-					case 0:
-						break;
-					case 2:
-						output += "==";
-						break;
-					case 3:
-						output += "=";
-						break;
-					default:
-						throw new Exception("Illegal base64url string!");
-				}
-				return output;
+				case 0:
+					break;
+				case 2:
+					output += "==";
+					break;
+				case 3:
+					output += "=";
+					break;
+				default:
+					throw new Exception("Illegal base64url string!");
 			}
+			return output;
 		}
 
 		/// <summary>

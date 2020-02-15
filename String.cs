@@ -87,9 +87,11 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(@string))
 				return string.Empty;
-			else if (string.IsNullOrWhiteSpace(pattern))
+
+			if (string.IsNullOrWhiteSpace(pattern))
 				return @string;
 
+#if NETSTANDARD2_0
 			var result = @string;
 			var pos = result.IndexOf(pattern, comparisonType);
 			while (pos > -1)
@@ -105,6 +107,9 @@ namespace net.vieapps.Components.Utility
 					: -1;
 			}
 			return result;
+#else
+			return @string.Replace(pattern, replacement, comparisonType);
+#endif
 		}
 		#endregion
 

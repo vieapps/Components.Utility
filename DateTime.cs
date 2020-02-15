@@ -60,7 +60,7 @@ namespace net.vieapps.Components.Utility
 					hours++;
 					minutes -= 60;
 				}
-				while (hours > 24)
+				while (hours > 23)
 				{
 					days++;
 					hours -= 24;
