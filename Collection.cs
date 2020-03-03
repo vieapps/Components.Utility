@@ -326,7 +326,7 @@ namespace net.vieapps.Components.Utility
 		public static string[] ToArray(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
 			=> @string == null
 				? new string[] { }
-				: @string.ToArray(separator.ToString(), removeEmptyElements, trim);
+				: @string.ToArray($"{separator}", removeEmptyElements, trim);
 
 		/// <summary>
 		/// Converts this string to an array
@@ -339,10 +339,7 @@ namespace net.vieapps.Components.Utility
 		public static List<string> ToList(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
 			=> @string == null
 				? new List<string>()
-				: (trim ? @string.Trim() : @string).Split(new[] { separator ?? "," }, removeEmptyElements ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None)
-					.Where(e => removeEmptyElements ? !string.IsNullOrWhiteSpace(e) : true)
-					.Select(e => trim ? e.Trim() : e)
-					.ToList();
+				: @string.ToArray(separator, removeEmptyElements, trim).ToList();
 
 		/// <summary>
 		/// Converts this string to an array
@@ -653,6 +650,17 @@ namespace net.vieapps.Components.Utility
 #endif
 
 		/// <summary>
+		/// Attempts to add the value that has the specified key into this dictionary
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="key">The key of the element to remove</param>
+		/// <returns>true if the object was removed successfully; otherwise, false.</returns>
+		public static bool Add<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> @object, TKey key, TValue value)
+			=> @object != null && @object.TryAdd(key, value);
+
+		/// <summary>
 		/// Attempts to remove the value that has the specified key from this dictionary
 		/// </summary>
 		/// <typeparam name="TKey"></typeparam>
@@ -776,7 +784,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
-		public static void Randomize<T>(this IList<T> @object)
+		public static IList<T> Randomize<T>(this IList<T> @object)
 		{
 			if (@object.Count.Equals(2))
 				@object.Swap(0, 1);
@@ -797,6 +805,8 @@ namespace net.vieapps.Components.Utility
 					oldIndex++;
 				}
 			}
+
+			return @object;
 		}
 		#endregion
 
