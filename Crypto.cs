@@ -876,7 +876,7 @@ namespace net.vieapps.Components.Utility
 			=> @string.GetHMACRIPEMD160(null, toHex);
 		#endregion
 
-		#region Check-Sum of an array of bytes or a string
+		#region Get checksum of bytes, string, file
 		/// <summary>
 		/// Gets the check-sum of this array of bytes using double-hash
 		/// </summary>
@@ -900,6 +900,26 @@ namespace net.vieapps.Components.Utility
 			=> string.IsNullOrWhiteSpace(@string)
 				? new byte[0]
 				: @string.ToBytes().GetCheckSum(hashAlgorithm, length);
+
+		/// <summary>
+		/// Gets the check-sum of this file
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <returns></returns>
+		public static byte[] GetCheckSum(this FileInfo fileInfo, string hashAlgorithm = "SHA256")
+		{
+			if (fileInfo == null || !fileInfo.Exists)
+				return new byte[0];
+
+			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
+			{
+				using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
+				{
+					return hasher.ComputeHash(stream);
+				}
+			}
+		}
 		#endregion
 
 		#region Encrypt/Decrypt (using AES)
