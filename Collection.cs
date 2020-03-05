@@ -498,11 +498,12 @@ namespace net.vieapps.Components.Utility
 		{
 			if (typeof(T).IsPrimitive)
 			{
-				var result = new T[@object.Length + arrays.Where(array => array != null).Sum(array => array.Length)];
+				var data = arrays.Where(array => array != null);
+				var result = new T[@object.Length + data.Sum(array => array.Length)];
 				if (@object.Length > 0)
 					Buffer.BlockCopy(@object, 0, result, 0, @object.Length);
 				var offset = @object.Length;
-				arrays.Where(array => array != null).ForEach(array =>
+				data.ForEach(array =>
 				{
 					Buffer.BlockCopy(array, 0, result, offset, array.Length);
 					offset += array.Length;
@@ -525,9 +526,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static IEnumerable<T> Concat<T>(this Queue<T[]> @object)
 		{
-			var result = (new T[0] as IEnumerable<T>).Concat(new T[0]);
-			while (@object.Count > 0)
-				result = result.Concat(@object.Dequeue());
+			var result = new List<T>().Select(o => o);
+			if (@object != null)
+				while (@object.Count > 0)
+					result = result.Concat(@object.Dequeue());
 			return result;
 		}
 
@@ -539,10 +541,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static IEnumerable<T> Concat<T>(this ConcurrentQueue<T[]> @object)
 		{
-			var result = (new T[0] as IEnumerable<T>).Concat(new T[0]);
-			while (@object.Count > 0)
-				if (@object.TryDequeue(out var array))
-					result = result.Concat(array);
+			var result = new List<T>().Select(o => o);
+			if (@object != null)
+				while (@object.Count > 0)
+					if (@object.TryDequeue(out var array))
+						result = result.Concat(array);
 			return result;
 		}
 
@@ -575,7 +578,15 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Splits this array object to sub-arrays
+		/// Takes the array from this array segment
+		/// </summary>
+		/// <param name="segment"></param>
+		/// <returns></returns>
+		public static T[] Take<T>(this ArraySegment<T> segment)
+			=> segment.Array.Take(segment.Offset, segment.Count);
+
+		/// <summary>
+		/// Splits this array to sub-arrays
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
@@ -605,6 +616,16 @@ namespace net.vieapps.Components.Utility
 
 			return arrays;
 		}
+
+		/// <summary>
+		/// Splits this array segment to sub-arrays
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="segment"></param>
+		/// <param name="size">The size (length) of one sub-array</param>
+		/// <returns></returns>
+		public static List<ArraySegment<T>> Split<T>(this ArraySegment<T> segment, int size)
+			=> segment.Take().Split(size).Select(array => new ArraySegment<T>(array)).ToList();
 
 #if NETSTANDARD2_0
 		/// <summary>
@@ -1589,14 +1610,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Conversions (ArraySegment)
-		/// <summary>
-		/// Takes the array from this array segment
-		/// </summary>
-		/// <param name="segment"></param>
-		/// <returns></returns>
-		public static T[] Take<T>(this ArraySegment<T> segment)
-			=> segment.Array.Take(segment.Offset, segment.Count);
-
 		/// <summary>
 		/// Converts this list to array segment
 		/// </summary>
