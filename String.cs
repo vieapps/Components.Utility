@@ -134,7 +134,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsContains(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> substring != null
+			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring)
 				? @string.IndexOf(substring, 0, comparisonType) > -1
 				: false;
 
@@ -146,9 +146,19 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsStartsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> string.IsNullOrWhiteSpace(substring)
-				? false
-				: @string.StartsWith(substring, comparisonType);
+			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring)
+				? @string.StartsWith(substring, comparisonType)
+				: false;
+
+		/// <summary>
+		/// Check to see its starts with
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="char"></param>
+		/// <param name="comparisonType"></param>
+		/// <returns></returns>
+		public static bool IsStartsWith(this string @string, char @char, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
+			=> !string.IsNullOrWhiteSpace(@string) && @string.IsStartsWith($"{@char}", comparisonType);
 
 		/// <summary>
 		/// Check to see its ends with
@@ -158,9 +168,19 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsEndsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> string.IsNullOrWhiteSpace(substring)
-				? false
-				: @string.EndsWith(substring, comparisonType);
+			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring)
+				? @string.EndsWith(substring, comparisonType)
+				: false;
+
+		/// <summary>
+		/// Check to see its ends with
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="char"></param>
+		/// <param name="comparisonType"></param>
+		/// <returns></returns>
+		public static bool IsEndsWith(this string @string, char @char, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
+			=> !string.IsNullOrWhiteSpace(@string) && @string.IsEndsWith($"{@char}", comparisonType);
 
 		/// <summary>
 		/// Gets position of sub-string (index of sub-string)
@@ -171,7 +191,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static int PositionOf(this string @string, string substring, int startIndex = 0, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> string.IsNullOrWhiteSpace(substring) || startIndex >= @string.Length
+			=> string.IsNullOrWhiteSpace(@string) || string.IsNullOrWhiteSpace(substring) || startIndex >= @string.Length
 				? -1
 				: @string.IndexOf(substring, startIndex < 0 ? 0 : startIndex, comparisonType);
 
@@ -185,7 +205,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static int Count(this string @string, string substring, int startIndex = 0, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
 		{
-			if (string.IsNullOrWhiteSpace(substring))
+			if (string.IsNullOrWhiteSpace(@string) || string.IsNullOrWhiteSpace(substring))
 				return 0;
 
 			var count = 0;
@@ -378,34 +398,39 @@ namespace net.vieapps.Components.Utility
 			// convert
 			switch (mode)
 			{
-				case 0:             // UTF8 Literal to unicode
+				// UTF8 Literal to unicode
+				case 0:
 					decodeLength = utf8Unicodes.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < utf8Literals.Length)
 							result = result.Replace(utf8Literals[index], utf8Unicodes[index]);
 					break;
 
-				case 1:             // Unicode to UTF8 Literal
+				// Unicode to UTF8 Literal
+				case 1:
 					decodeLength = utf8Literals.Length;
 					for (int index = 0; index < decodeLength; index++)
 						result = result.Replace(utf8Unicodes[index], utf8Literals[index]);
 					break;
 
-				case 2:             // Unicode to ANSI
+				// Unicode to ANSI
+				case 2:
 					decodeLength = utf8Unicodes.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < ansis.Length)
 							result = result.Replace(utf8Unicodes[index], ansis[index]);
 					break;
 
-				case 3:             // UTF8 Literal to ANSI
+				// UTF8 Literal to ANSI
+				case 3:
 					decodeLength = utf8Literals.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < ansis.Length)
 							result = result.Replace(utf8Literals[index], ansis[index]);
 					break;
 
-				case 4:             // Unicode to Decimal
+				// Unicode to Decimal
+				case 4:
 					decodeLength = utf8Unicodes.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < decimalUnicodes.Length)
@@ -413,7 +438,8 @@ namespace net.vieapps.Components.Utility
 					result = result.Replace("Ð", "D");
 					break;
 
-				case 5:             // Unicode Composite to ANSI
+				// Unicode Composite to ANSI
+				case 5:
 					decodeLength = utf8UnicodeComposites.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < ansis.Length)
@@ -421,14 +447,16 @@ namespace net.vieapps.Components.Utility
 					result = result.Replace("Ð", "D");
 					break;
 
-				case 6:             // Decimal to Unicode
+				// Decimal to Unicode
+				case 6:
 					decodeLength = decimalUnicodes.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < utf8Unicodes.Length)
 							result = result.Replace(decimalUnicodes[index], utf8Unicodes[index]);
 					break;
 
-				case 7:             // TCVN3 to Unicode
+				// TCVN3 to Unicode
+				case 7:
 					// first, convert to decimal
 					decodeLength = tcvn3s.Length;
 					for (int index = 0; index < decodeLength; index++)
@@ -441,14 +469,16 @@ namespace net.vieapps.Components.Utility
 							result = result.Replace(decimalUnicodes[index], utf8Unicodes[index]);
 					break;
 
-				case 8:             // Unicode to Composite Unicode
+				// Unicode to Composite Unicode
+				case 8:
 					decodeLength = utf8Unicodes.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < utf8UnicodeComposites.Length)
 							result = result.Replace(utf8Unicodes[index], utf8UnicodeComposites[index]);
 					break;
 
-				case 9:             // Composite Unicode to Unicode
+				// Composite Unicode to Unicode
+				case 9:
 					decodeLength = utf8UnicodeComposites.Length;
 					for (int index = 0; index < decodeLength; index++)
 						if (index < utf8Unicodes.Length)
@@ -467,56 +497,64 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUTF8ToUnicode(this string @string) => @string.ConvertVietnamese(0);
+		public static string ConvertUTF8ToUnicode(this string @string)
+			=> @string.ConvertVietnamese(0);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Unicode to UTF8
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToUTF8(this string @string) => @string.ConvertVietnamese(1);
+		public static string ConvertUnicodeToUTF8(this string @string)
+			=> @string.ConvertVietnamese(1);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Unicode to ANSI
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToANSI(this string @string) => @string.ConvertVietnamese(2).ConvertVietnamese(5);
+		public static string ConvertUnicodeToANSI(this string @string)
+			=> @string.ConvertVietnamese(2).ConvertVietnamese(5);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Unicode to Decimal
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToDecimal(this string @string) => @string.ConvertVietnamese(4);
+		public static string ConvertUnicodeToDecimal(this string @string)
+			=> @string.ConvertVietnamese(4);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Decimal to Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertDecimalToUnicode(this string @string) => @string.ConvertVietnamese(6);
+		public static string ConvertDecimalToUnicode(this string @string)
+			=> @string.ConvertVietnamese(6);
 
 		/// <summary>
 		/// Converts this Vietnamese string from TCVN3 to Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertTCVN3ToUnicode(this string @string) => @string.ConvertVietnamese(7);
+		public static string ConvertTCVN3ToUnicode(this string @string)
+			=> @string.ConvertVietnamese(7);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Pre-composed Unicode to Composite Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertUnicodeToCompositeUnicode(this string @string) => @string.ConvertVietnamese(8);
+		public static string ConvertUnicodeToCompositeUnicode(this string @string)
+			=> @string.ConvertVietnamese(8);
 
 		/// <summary>
 		/// Converts this Vietnamese string from Composite Unicode to Pre-composed Unicode
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string ConvertCompositeUnicodeToUnicode(this string @string) => @string.ConvertVietnamese(9);
+		public static string ConvertCompositeUnicodeToUnicode(this string @string)
+			=> @string.ConvertVietnamese(9);
 		#endregion
 
 		#region  Conversions (Uri)
