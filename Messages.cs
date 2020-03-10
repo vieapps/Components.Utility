@@ -619,29 +619,6 @@ namespace net.vieapps.Components.Utility
 
 		#region Send email messages
 		/// <summary>
-		/// Sends the collection of email messages using a SMTP client
-		/// </summary>
-		/// <param name="smtp">The SMTP client for sending email</param>
-		/// <param name="messages">The collection of email messages</param>
-		public static void SendMails(this SmtpClient smtp, IEnumerable<MailMessage> messages)
-		{
-			if (smtp == null)
-				throw new InformationInvalidException("The SMTP client is invalid");
-			messages?.Where(message => message != null).ForEach(message => smtp.Send(message.Normalize()));
-		}
-
-		/// <summary>
-		/// Sends the collection of email messages using a SMTP client
-		/// </summary>
-		/// <param name="smtp"></param>
-		/// <param name="messages"></param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		public static Task SendMailsAsync(this SmtpClient smtp, IEnumerable<MailMessage> messages, CancellationToken cancellationToken = default)
-			=> smtp == null
-				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
-				: messages == null ? Task.CompletedTask : messages.Where(message => message != null).ForEachAsync((message, token) => smtp.SendMailAsync(message.Normalize()).WithCancellationToken(token), cancellationToken);
-
-		/// <summary>
 		/// Sends an email message using a SMTP client
 		/// </summary>
 		/// <param name="smtp">The SMTP client for sending email</param>
@@ -657,6 +634,19 @@ namespace net.vieapps.Components.Utility
 			// send
 			smtp.Send(message.Normalize());
 		}
+
+		/// <summary>
+		/// Sends an email message using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="message">The email message</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static Task SendMailAsync(this SmtpClient smtp, MailMessage message, CancellationToken cancellationToken)
+			=> smtp == null
+				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				: message == null
+					? Task.FromException(new InformationInvalidException("The message is invalid"))
+					: smtp.SendMailAsync(message.Normalize()).WithCancellationToken(cancellationToken);
 
 		/// <summary>
 		/// Sends an email message using a SMTP client
@@ -703,7 +693,7 @@ namespace net.vieapps.Components.Utility
 		public static Task SendMailAsync(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
 			=> smtp == null
 				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
-				: smtp.SendMailAsync(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer).Normalize()).WithCancellationToken(cancellationToken);
+				: smtp.SendMailAsync(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer), cancellationToken);
 
 		/// <summary>
 		/// Sends an email message using the default SMTP client
@@ -809,7 +799,7 @@ namespace net.vieapps.Components.Utility
 		public static Task SendMailAsync(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
 			=> smtp == null
 				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
-				: smtp.SendMailAsync(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer).Normalize()).WithCancellationToken(cancellationToken);
+				: smtp.SendMailAsync(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer), cancellationToken);
 
 		/// <summary>
 		/// Sends an email message using the default SMTP client
@@ -869,6 +859,31 @@ namespace net.vieapps.Components.Utility
 				await smtp.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer, cancellationToken).ConfigureAwait(false);
 			}
 		}
+
+		/// <summary>
+		/// Sends the collection of email messages using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="messages">The collection of email messages</param>
+		public static void SendMails(this SmtpClient smtp, IEnumerable<MailMessage> messages)
+		{
+			if (smtp == null)
+				throw new InformationInvalidException("The SMTP client is invalid");
+			messages?.Where(message => message != null).ForEach(message => smtp.Send(message.Normalize()));
+		}
+
+		/// <summary>
+		/// Sends the collection of email messages using a SMTP client
+		/// </summary>
+		/// <param name="smtp"></param>
+		/// <param name="messages"></param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static Task SendMailsAsync(this SmtpClient smtp, IEnumerable<MailMessage> messages, CancellationToken cancellationToken = default)
+			=> smtp == null
+				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				: messages == null
+					? Task.CompletedTask
+					: messages.Where(message => message != null).ForEachAsync((message, token) => smtp.SendMailAsync(message, token), cancellationToken);
 
 		/// <summary>
 		/// Sends this email message
