@@ -99,7 +99,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Hash an array of bytes or a string
-		static Dictionary<string, Func<HashAlgorithm>> HashAlgorithmFactories { get; } = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
+		internal static Dictionary<string, Func<HashAlgorithm>> HashAlgorithmFactories { get; } = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", () => MD5.Create() },
 			{ "sha1", () => SHA1.Create() },
@@ -446,7 +446,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region HMAC Hash an array of bytes or string
-		static Dictionary<string, Func<byte[], HMAC>> HmacHashAlgorithmFactories { get; } = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
+		internal static Dictionary<string, Func<byte[], HMAC>> HmacHashAlgorithmFactories { get; } = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", key => new HMACMD5(key) },
 			{ "sha1", key => new HMACSHA1(key) },
