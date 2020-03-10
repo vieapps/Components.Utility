@@ -4,11 +4,12 @@ using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
@@ -25,30 +26,14 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Initializes a new email message
 		/// </summary>
-		/// <param name="encryptedMessage"></param>
-		public EmailMessage(string encryptedMessage = null)
-		{
-			this.ID = UtilityService.NewUUID;
-			this.SendingTime = DateTime.Now;
-			this.From = "";
-			this.ReplyTo = "";
-			this.To = "";
-			this.Cc = "";
-			this.Bcc = "";
-			this.Subject = "";
-			this.Body = "";
-			this.Footer = "";
-			this.Attachment = "";
-			this.Priority = MailPriority.Normal;
-			this.IsHtmlFormat = true;
-			this.Encoding = System.Text.Encoding.UTF8.CodePage;
-			this.SmtpServer = "";
-			this.SmtpServerPort = 25;
-			this.SmtpUsername = "";
-			this.SmtpPassword = "";
-			this.SmtpServerEnableSsl = false;
-			this.SmtpStartTls = false;
+		public EmailMessage() : this(null) { }
 
+		/// <summary>
+		/// Initializes a new email message
+		/// </summary>
+		/// <param name="encryptedMessage">The encrypted message</param>
+		public EmailMessage(string encryptedMessage)
+		{
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try
 				{
@@ -58,28 +43,41 @@ namespace net.vieapps.Components.Utility
 		}
 
 		#region Properties
-		public string From { get; set; }
+		public string From { get; set; } = "";
+
 		public string ReplyTo { get; set; }
-		public string To { get; set; }
-		public string Cc { get; set; }
-		public string Bcc { get; set; }
-		public string Subject { get; set; }
-		public string Body { get; set; }
+
+		public string To { get; set; } = "";
+
+		public string Cc { get; set; } = "";
+
+		public string Bcc { get; set; } = "";
+
+		public string Subject { get; set; } = "";
+
+		public string Body { get; set; } = "";
+
 		public string Footer { get; set; }
+
 		public string Attachment { get; set; }
 		[JsonConverter(typeof(StringEnumConverter))]
-		public MailPriority Priority { get; set; }
-		public bool IsHtmlFormat { get; set; }
-		public int Encoding { get; set; }
-		public string SmtpServer { get; set; }
-		public int SmtpServerPort { get; set; }
-		public string SmtpUsername { get; set; }
-		public string SmtpPassword { get; set; }
-		public bool SmtpServerEnableSsl { get; set; }
-		public bool SmtpStartTls { get; set; }
-		#endregion
 
-		#region Helper properties
+		public MailPriority Priority { get; set; } = MailPriority.Normal;
+
+		public bool IsHtmlFormat { get; set; } = true;
+
+		public int Encoding { get; set; } = System.Text.Encoding.UTF8.CodePage;
+
+		public string SmtpServer { get; set; }
+
+		public int SmtpServerPort { get; set; } = 25;
+
+		public string SmtpUsername { get; set; }
+
+		public string SmtpPassword { get; set; }
+
+		public bool SmtpServerEnableSsl { get; set; } = true;
+
 		static string _EncryptionKey = null;
 
 		internal static string EncryptionKey => EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys"));
@@ -90,7 +88,7 @@ namespace net.vieapps.Components.Utility
 		/// <remarks>
 		/// If other message had same Id, that message will be overried by is message
 		/// </remarks>
-		public string ID { get; set; }
+		public string ID { get; set; } = UtilityService.NewUUID;
 
 		/// <summary>
 		/// Gets or sets time to start to send this message via email.
@@ -98,7 +96,7 @@ namespace net.vieapps.Components.Utility
 		/// <remarks>
 		/// Set a specifict time to tell mailer send this message from this time
 		/// </remarks>
-		public DateTime SendingTime { get; set; }
+		public DateTime SendingTime { get; set; } = DateTime.Now;
 		#endregion
 
 		#region Working with files
@@ -126,13 +124,13 @@ namespace net.vieapps.Components.Utility
 		/// Serializes and saves message into file.
 		/// </summary>
 		/// <param name="message">The message.</param>
-		/// <param name="folderPath">The path to folder that stores queue of email messages.</param>
-		public static void Save(EmailMessage message, string folderPath)
+		/// <param name="directory">The path to a directory that stores queue of email messages.</param>
+		public static void Save(EmailMessage message, string directory)
 		{
-			if (message != null && Directory.Exists(folderPath))
+			if (message != null && Directory.Exists(directory))
 				try
 				{
-					UtilityService.WriteTextFile(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted);
+					UtilityService.WriteTextFile(Path.Combine(directory, message.ID + ".msg"), message.Encrypted);
 				}
 				catch { }
 		}
@@ -141,13 +139,13 @@ namespace net.vieapps.Components.Utility
 		/// Serializes and saves message into file.
 		/// </summary>
 		/// <param name="message">The message.</param>
-		/// <param name="folderPath">The path to folder that stores queue of email messages.</param>
-		public static async Task SaveAsync(EmailMessage message, string folderPath)
+		/// <param name="directory">The path to a directory that stores queue of email messages.</param>
+		public static async Task SaveAsync(EmailMessage message, string directory)
 		{
-			if (message != null && Directory.Exists(folderPath))
+			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await UtilityService.WriteTextFileAsync(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted).ConfigureAwait(false);
+					await UtilityService.WriteTextFileAsync(Path.Combine(directory, message.ID + ".msg"), message.Encrypted).ConfigureAwait(false);
 				}
 				catch { }
 		}
@@ -161,6 +159,8 @@ namespace net.vieapps.Components.Utility
 
 	}
 
+	// ------------------------------------------------------------------------------------------------------
+
 	/// <summary>
 	/// Presents a web-hook message
 	/// </summary>
@@ -170,16 +170,14 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Initializes a new web-hook message
 		/// </summary>
-		/// <param name="encryptedMessage"></param>
-		public WebHookMessage(string encryptedMessage = null)
-		{
-			this.ID = UtilityService.NewUUID;
-			this.SendingTime = DateTime.Now;
-			this.EndpointURL = "";
-			this.Body = "";
-			this.Header = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			this.Query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		public WebHookMessage() : this(null) { }
 
+		/// <summary>
+		/// Initializes a new web-hook message
+		/// </summary>
+		/// <param name="encryptedMessage">The encrypted message</param>
+		public WebHookMessage(string encryptedMessage)
+		{
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try
 				{
@@ -192,27 +190,25 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets or Sets the url of webhook's endpoint
 		/// </summary>
-		public string EndpointURL { get; set; }
+		public string EndpointURL { get; set; } = "";
 
 		/// <summary>
 		/// Gets or Sets the body of the webhook message
 		/// </summary>
-		public string Body { get; set; }
+		public string Body { get; set; } = "";
 
 		/// <summary>
 		/// Gets or Sets header of webhook message
 		/// </summary>
 		[JsonIgnore]
-		public Dictionary<string, string> Header { get; set; }
+		public Dictionary<string, string> Header { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Gets or Sets query-string of webhook message
 		/// </summary>
 		[JsonIgnore]
-		public Dictionary<string, string> Query { get; set; }
-		#endregion
+		public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-		#region Helper properties
 		static string _EncryptionKey = null;
 
 		internal static string EncryptionKey => WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys"));
@@ -220,12 +216,12 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets or sets identity of the message.
 		/// </summary>
-		public string ID { get; set; }
+		public string ID { get; set; } = UtilityService.NewUUID;
 
 		/// <summary>
 		/// Gets or sets time to start to send this message.
 		/// </summary>
-		public DateTime SendingTime { get; set; }
+		public DateTime SendingTime { get; set; } = DateTime.Now;
 		#endregion
 
 		#region Working with files
@@ -295,22 +291,26 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static partial class MessageService
 	{
+		/// <summary>
+		/// Gets the collection of harmful domains need to prevent while sending email messages
+		/// </summary>
+		public static HashSet<string> HarmfulDomains { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-		#region Helper methods
+		#region Working with a email message
 		/// <summary>
 		/// Prepares a valid email address
 		/// </summary>
-		/// <param name="emailInfo">The string that presents information of an email adress before validating</param>
+		/// <param name="emailAddress">The string that presents information of an email adress before validating</param>
 		/// <param name="convertNameToANSI">true to convert display name as ANSI</param>
 		/// <returns><see cref="System.Net.Mail.MailAddress">MailAddress</see> object that contains valid email address</returns>
-		public static MailAddress GetMailAddress(this string emailInfo, bool convertNameToANSI = false)
+		public static MailAddress GetMailAddress(this string emailAddress, bool convertNameToANSI = false)
 		{
-			if (string.IsNullOrWhiteSpace(emailInfo))
+			if (string.IsNullOrWhiteSpace(emailAddress))
 				return null;
 
-			string email = "", displayName = "";
+			string email, displayName = "";
 
-			var emails = emailInfo.ToArray('<');
+			var emails = emailAddress.ToArray('<');
 			if (emails.Length > 1)
 			{
 				email = emails[1];
@@ -348,60 +348,88 @@ namespace net.vieapps.Components.Utility
 			}
 			return domain.ToLower();
 		}
-		#endregion
-
-		#region Methods to send an email
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="from">Sender name and e-mail address.</param>
-		/// <param name="replyTo">Address will be replied to.</param>
-		/// <param name="to">Recipients. Seperate multiple by comma (,).</param>
-		/// <param name="cc">CC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="bcc">BCC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="subject">Mail subject.</param>
-		/// <param name="body">Mail body.</param>
-		/// <param name="attachment">Path to attachment file.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
-		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
-		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, string additionalFooter, HashSet<string> preventDomains)
-			=> MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, false, additionalFooter, preventDomains);
 
 		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
+		/// Gets an e-mail message
 		/// </summary>
-		/// <param name="from">Sender name and e-mail address.</param>
-		/// <param name="replyTo">Address will be replied to.</param>
-		/// <param name="to">Recipients. Seperate multiple by comma (,).</param>
-		/// <param name="cc">CC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="bcc">BCC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="subject">Mail subject.</param>
-		/// <param name="body">Mail body.</param>
-		/// <param name="attachment">Path to attachment file.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		/// <param name="additionalFooter">Additional content will be added into email as footer.</param>
-		/// <param name="preventDomains">Collection of harmful domains need to prevent.</param>
-		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, string additionalFooter, HashSet<string> preventDomains)
+		/// <param name="fromAddress">Sender address</param>
+		/// <param name="replyToAddress">Address will be replied to</param>
+		/// <param name="toAddresses">Collection of recipients</param>
+		/// <param name="ccAddresses">Collection of CC recipients</param>
+		/// <param name="bccAddresses">Collection of BCC recipients</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		public static MailMessage GetMailMessage(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
 		{
-			// check sender
-			if (from.Equals(""))
-				throw new InvalidDataException("No sender information for the message!");
+			// check
+			if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
+				throw new InvalidDataException("The email must have subject and body");
 
-			// validate recipients
+			if (fromAddress == null || string.IsNullOrWhiteSpace(fromAddress.Address))
+				throw new InvalidDataException("The email must have sender address");
+
+			if ((toAddresses == null || toAddresses.Count() < 1)
+				&& (ccAddresses == null || ccAddresses.Count() < 1)
+				&& (bccAddresses == null || bccAddresses.Count() < 1))
+				throw new InvalidDataException("The email must have at least one recipient");
+
+			// create new mail message
+			var message = new MailMessage
+			{
+				From = new MailAddress(fromAddress.Address, fromAddress.DisplayName.ConvertUnicodeToANSI(), encoding ?? Encoding.UTF8),
+				Priority = priority,
+				Subject = subject.Trim(),
+				SubjectEncoding = encoding ?? Encoding.UTF8,
+				Body = $"{body.Trim()}{footer ?? ""}",
+				BodyEncoding = encoding ?? Encoding.UTF8,
+				IsBodyHtml = isHtmlFormat
+			};
+
+			// reply to
+			if (replyToAddress != null)
+				message.ReplyToList.Add(replyToAddress);
+
+			// recipients
+			toAddresses?.Where(emailAddress => emailAddress != null).ForEach(emailAddress => message.To.Add(emailAddress));
+			ccAddresses?.Where(emailAddress => emailAddress != null).ForEach(emailAddress => message.CC.Add(emailAddress));
+			bccAddresses?.Where(emailAddress => emailAddress != null).ForEach(emailAddress => message.Bcc.Add(emailAddress));
+
+			// attachments
+			attachments?.Where(attachment => File.Exists(attachment)).ForEach(attachment => message.Attachments.Add(new Attachment(attachment)));
+
+			// final
+			message.Headers.Add("x-mailer", mailer ?? "VIEApps NGX Mailer");
+			return message;
+		}
+
+		/// <summary>
+		/// Gets an e-mail message
+		/// </summary>
+		/// <param name="from">Sender name and e-mail address</param>
+		/// <param name="replyTo">Address will be replied to</param>
+		/// <param name="to">Recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="cc">CC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="bcc">BCC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachment">The full path to an attachment file</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		public static MailMessage GetMailMessage(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		{
+			// check & validate
+			if (from.Equals(""))
+				throw new InvalidDataException("No sender information for the message");
+
 			var toEmails = string.IsNullOrWhiteSpace(to)
 				? ""
 				: to.Trim();
@@ -414,41 +442,10 @@ namespace net.vieapps.Components.Utility
 				? ""
 				: bcc.Trim();
 
-			// remove all harmful domains
-			if (preventDomains != null && preventDomains.Count > 0)
-			{
-				string[] emails = null;
-
-				// to
-				if (!toEmails.Equals(""))
-				{
-					emails = toEmails.ToArray(';');
-					toEmails = "";
-					emails.ForEach(email => toEmails += (!toEmails.Equals("") ? ";" : "") + (!preventDomains.Contains(email.GetDomain()) ? email : ""));
-				}
-
-				// cc
-				if (!ccEmails.Equals(""))
-				{
-					emails = ccEmails.ToArray(';');
-					ccEmails = "";
-					emails.ForEach(email => ccEmails += (!ccEmails.Equals("") ? ";" : "") + (!preventDomains.Contains(email.GetDomain()) ? email : ""));
-				}
-
-				// bcc
-				if (!bccEmails.Equals(""))
-				{
-					emails = bccEmails.ToArray(';');
-					bccEmails = "";
-					emails.ForEach(email => bccEmails += (!bccEmails.Equals("") ? ";" : "") + (!preventDomains.Contains(email.GetDomain()) ? email : ""));
-				}
-			}
-
-			// check recipients
 			if (toEmails.Equals("") && ccEmails.Equals("") && bccEmails.Equals(""))
-				throw new InvalidDataException("No recipients for the message!");
+				throw new InvalidDataException("No recipient for the message");
 
-			// get sender information
+			// prepare
 			MailAddress fromAddress = null;
 			try
 			{
@@ -456,10 +453,9 @@ namespace net.vieapps.Components.Utility
 			}
 			catch
 			{
-				fromAddress = "VIEApps NGX <vieapps.net@gmail.com>".GetMailAddress();
+				fromAddress = UtilityService.GetAppSetting("Email:DefaultSender", "VIEApps NGX <vieapps.net@gmail.com>").GetMailAddress();
 			}
 
-			// reply to
 			MailAddress replyToAddress = null;
 			if (!string.IsNullOrWhiteSpace(replyTo))
 				try
@@ -468,270 +464,519 @@ namespace net.vieapps.Components.Utility
 				}
 				catch { }
 
-			// recipients
-			List<MailAddress> toAddresses = null;
-			if (!string.IsNullOrWhiteSpace(toEmails))
-			{
-				toAddresses = new List<MailAddress>();
-				toEmails.ToArray(';').ForEach(email =>
+			var toAddresses = string.IsNullOrWhiteSpace(toEmails)
+				? null
+				: toEmails.ToArray(';', true, true).Select(email =>
 				{
 					try
 					{
-						toAddresses.Add(email.GetMailAddress());
+						return email.GetMailAddress();
 					}
-					catch { }
+					catch
+					{
+						return null;
+					}
 				});
-			}
 
-			List<MailAddress> ccAddresses = null;
-			if (!string.IsNullOrWhiteSpace(ccEmails))
-			{
-				ccAddresses = new List<MailAddress>();
-				ccEmails.ToArray(';').ForEach(email =>
+			var ccAddresses = string.IsNullOrWhiteSpace(toEmails)
+				? null
+				: ccEmails.ToArray(';', true, true).Select(email =>
 				{
 					try
 					{
-						ccAddresses.Add(email.GetMailAddress());
+						return email.GetMailAddress();
 					}
-					catch { }
+					catch
+					{
+						return null;
+					}
 				});
-			}
 
-			List<MailAddress> bccAddresses = null;
-			if (!string.IsNullOrWhiteSpace(bccEmails))
-			{
-				bccAddresses = new List<MailAddress>();
-				bccEmails.ToArray(';').ForEach(email =>
+			var bccAddresses = string.IsNullOrWhiteSpace(toEmails)
+				? null
+				: bccEmails.ToArray(';', true, true).Select(email =>
 				{
 					try
 					{
-						bccAddresses.Add(email.GetMailAddress());
+						return email.GetMailAddress();
 					}
-					catch { }
+					catch
+					{
+						return null;
+					}
 				});
-			}
 
-			// prepare attachments
-			var attachments = attachment != null && File.Exists(attachment)
-				? new List<string>() { attachment }
-				:  null;
-
-			// send mail
-			MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl);
+			// get the mail message
+			return MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, new[] { attachment }, footer, priority, isHtmlFormat, encoding, mailer);
 		}
 
 		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
+		/// Normalizes the email message
 		/// </summary>
-		/// <param name="fromAddress">Sender address.</param>
-		/// <param name="replyToAddress">Address will be replied to.</param>
-		/// <param name="toAddresses">Collection of recipients</param>
-		/// <param name="ccAddresses">Collection of CC recipients</param>
-		/// <param name="bccAddresses">Collection of BCC recipients</param>
-		/// <param name="subject">The message subject.</param>
-		/// <param name="body">The message body.</param>
-		/// <param name="attachments">Collection of attachment files (all are full path of attachments).</param>
-		/// <param name="additionalFooter">The data will be added into email as footer.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl)
+		/// <param name="message"></param>
+		/// <returns></returns>
+		public static MailMessage Normalize(this MailMessage message)
 		{
-			// prepare SMTP server
-			var smtp = new SmtpClient
+			if (message == null)
+				throw new InformationInvalidException("The message is invalid");
+
+			if (MessageService.HarmfulDomains.Count > 0)
 			{
-				Host = !string.IsNullOrWhiteSpace(smtpServer) ? smtpServer : "127.0.0.1"
-			};
-
-			// port
-			try
-			{
-				smtp.Port = Convert.ToInt32(smtpServerPort);
-			}
-			catch
-			{
-				smtp.Port = 25;
-			}
-
-			// credential (username/password)
-			if (!string.IsNullOrWhiteSpace(smtpUsername) && !string.IsNullOrWhiteSpace(smtpPassword))
-				smtp.Credentials = new NetworkCredential(smtpUsername, smtpPassword);
-
-			// SSL
-			smtp.EnableSsl = smtpEnableSsl;
-
-			// delivery method
-			smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
-
-			// send email
-			MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp);
-		}
-
-		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
-		/// </summary>
-		/// <param name="fromAddress">Sender address.</param>
-		/// <param name="replyToAddress">Address will be replied to.</param>
-		/// <param name="toAddresses">Collection of recipients</param>
-		/// <param name="ccAddresses">Collection of CC recipients</param>
-		/// <param name="bccAddresses">Collection of BCC recipients</param>
-		/// <param name="subject">The message subject.</param>
-		/// <param name="body">The message body.</param>
-		/// <param name="attachments">Collection of attachment files (all are full path of attachments).</param>
-		/// <param name="additionalFooter">The data will be added into email as footer.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtp">Informaiton of SMTP server for sending email.</param>
-		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp)
-		{
-			// check
-			if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
-				throw new InvalidDataException("The email must have subject and body");
-
-			if (fromAddress == null || string.IsNullOrWhiteSpace(fromAddress.Address))
-				throw new InvalidDataException("The email must have sender address");
-
-			if ((toAddresses == null || toAddresses.Count < 1)
-				&& (ccAddresses == null || ccAddresses.Count < 1)
-				&& (bccAddresses == null || bccAddresses.Count < 1))
-				throw new InvalidDataException("The email must have at least one recipients");
-
-			if (smtp == null)
-				throw new InvalidDataException("You must provide SMTP information for sending an email.");
-
-			// create new message object
-			var message = new MailMessage
-			{
-				From = new MailAddress(fromAddress.Address, fromAddress.DisplayName.ConvertUnicodeToANSI(), Encoding.UTF8)
-			};
-
-			// reply to
-			if (replyToAddress != null)
-				message.ReplyToList.Add(replyToAddress);
-
-			// recipients (TO)
-			if (toAddresses != null)
-				foreach (MailAddress emailAddress in toAddresses)
-					message.To.Add(emailAddress);
-
-			// recipients (CC)
-			if (ccAddresses != null)
-				foreach (MailAddress emailAddress in ccAddresses)
-					message.CC.Add(emailAddress);
-
-			// recipients (BCC)
-			if (bccAddresses != null)
-				foreach (MailAddress emailAddress in bccAddresses)
-					message.Bcc.Add(emailAddress);
-
-			// format
-			message.Priority = priority;
-			message.BodyEncoding = message.SubjectEncoding = encoding;
-			message.IsBodyHtml = isHtmlFormat;
-
-			// subject
-			message.Subject = subject;
-
-			// body
-			message.Body = body + (!string.IsNullOrWhiteSpace(additionalFooter) ? additionalFooter : "");
-
-			// attachment
-			if (attachments != null && attachments.Count > 0)
-				attachments.ForEach(attachment =>
+				if (message.To != null && message.To.Count > 0)
 				{
-					if (!string.IsNullOrWhiteSpace(attachment) && File.Exists(attachment))
-						message.Attachments.Add(new System.Net.Mail.Attachment(attachment));
-				});
+					var index = 0;
+					while (index < message.To.Count)
+					{
+						if (MessageService.HarmfulDomains.Contains(message.To[index].Address.GetDomain()))
+							message.To.RemoveAt(index);
+						else
+							index++;
+					}
+				}
 
-			// additional headers
-			message.Headers.Add("x-mailer", "VIEApps NGX Mailer");
+				if (message.CC != null && message.CC.Count > 0)
+				{
+					var index = 0;
+					while (index < message.CC.Count)
+					{
+						if (MessageService.HarmfulDomains.Contains(message.CC[index].Address.GetDomain()))
+							message.CC.RemoveAt(index);
+						else
+							index++;
+					}
+				}
 
-			// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
-			ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
-			{
-				return true;
-			};
+				if (message.Bcc != null && message.Bcc.Count > 0)
+				{
+					var index = 0;
+					while (index < message.Bcc.Count)
+					{
+						if (MessageService.HarmfulDomains.Contains(message.Bcc[index].Address.GetDomain()))
+							message.Bcc.RemoveAt(index);
+						else
+							index++;
+					}
+				}
+			}
 
-			// send message
-			smtp.Send(message);
+			if ((message.To == null || message.To.Count < 1)
+				&& (message.CC == null || message.CC.Count < 1)
+				&& (message.Bcc == null || message.Bcc.Count < 1))
+				throw new InvalidDataException("The message must have at least one recipient");
+
+			return message;
 		}
 		#endregion
 
-		#region Methods to send an email in asynchronous way
+		#region Working with  a SMTP client
 		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
+		/// Gets the Smtp client for sending email messages
 		/// </summary>
-		/// <param name="from">Sender name and e-mail address.</param>
-		/// <param name="replyTo">Address will be replied to.</param>
-		/// <param name="to">Recipients. Seperate multiple by comma (,).</param>
-		/// <param name="cc">CC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="bcc">BCC recipients. Seperate multiple by comma (,).</param>
-		/// <param name="subject">Mail subject.</param>
-		/// <param name="body">Mail body.</param>
-		/// <param name="attachment">Path to attachment file.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, System.Net.Mail.MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl = true, CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => MessageService.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl, null, null), cancellationToken);
+		/// <param name="host">The host address of the SMTP server (IP or host name)</param>
+		/// <param name="port">The port number of SMTP service on the SMTP server</param>
+		/// <param name="user">The name of user for connecting with SMTP server</param>
+		/// <param name="password">The password of user for connecting with SMTP server</param>
+		/// <param name="enableSsl">true if the SMTP server requires SSL</param>
+		public static SmtpClient GetSmtpClient(string host, int port, string user, string password, bool enableSsl)
+		{
+			var smtp = new SmtpClient
+			{
+				Host = host ?? "127.0.0.1",
+				Port = port,
+				EnableSsl = enableSsl,
+				DeliveryMethod = SmtpDeliveryMethod.Network
+			};
+
+			// credential
+			if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(password))
+				smtp.Credentials = new NetworkCredential(user, password);
+
+			// service point - only available on Windows with .NET Framework
+			if (RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
+				smtp.ServicePoint.Expect100Continue = false;
+
+			return smtp;
+		}
 
 		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
+		/// Gets the SMTP client for sending email messages
 		/// </summary>
-		/// <param name="fromAddress">Sender address.</param>
-		/// <param name="replyToAddress">Address will be replied to.</param>
+		/// <param name="host">The host address of the SMTP server (IP or host name)</param>
+		/// <param name="port">The port number of SMTP service on the SMTP server</param>
+		/// <param name="user">The name of user for connecting with SMTP server</param>
+		/// <param name="password">The password of user for connecting with SMTP server</param>
+		/// <param name="enableSsl">true if the SMTP server requires SSL</param>
+		public static SmtpClient GetSmtpClient(string host, string port, string user, string password, bool enableSsl)
+		{
+			enableSsl = !string.IsNullOrWhiteSpace(host) ? enableSsl : "true".IsEquals(UtilityService.GetAppSetting("Email:SmtpServerEnableSsl"));
+			host = !string.IsNullOrWhiteSpace(host) ? host : UtilityService.GetAppSetting("Email:SmtpServer");
+			port = !string.IsNullOrWhiteSpace(port) ? port : UtilityService.GetAppSetting("Email:SmtpPort");
+			user = !string.IsNullOrWhiteSpace(user) ? user : UtilityService.GetAppSetting("Email:SmtpUser");
+			password = !string.IsNullOrWhiteSpace(password) ? password : UtilityService.GetAppSetting("Email:SmtpUserPassword");
+			return MessageService.GetSmtpClient(host, Int32.TryParse(port, out var sport) ? sport : 25, user, password, enableSsl);
+		}
+		#endregion
+
+		#region Send email messages
+		/// <summary>
+		/// Sends the collection of email messages using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="messages">The collection of email messages</param>
+		public static void SendMails(this SmtpClient smtp, IEnumerable<MailMessage> messages)
+		{
+			if (smtp == null)
+				throw new InformationInvalidException("The SMTP client is invalid");
+			messages?.Where(message => message != null).ForEach(message => smtp.Send(message.Normalize()));
+		}
+
+		/// <summary>
+		/// Sends the collection of email messages using a SMTP client
+		/// </summary>
+		/// <param name="smtp"></param>
+		/// <param name="messages"></param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static Task SendMailsAsync(this SmtpClient smtp, IEnumerable<MailMessage> messages, CancellationToken cancellationToken = default)
+			=> smtp == null
+				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				: messages == null ? Task.CompletedTask : messages.Where(message => message != null).ForEachAsync((message, token) => smtp.SendMailAsync(message.Normalize()).WithCancellationToken(token), cancellationToken);
+
+		/// <summary>
+		/// Sends an email message using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="message">The email message</param>
+		public static void SendMail(this SmtpClient smtp, MailMessage message)
+		{
+			// check
+			if (smtp == null)
+				throw new InformationInvalidException("The SMTP client is invalid");
+			if (message == null)
+				throw new InformationInvalidException("The message is invalid");
+
+			// send
+			smtp.Send(message.Normalize());
+		}
+
+		/// <summary>
+		/// Sends an email message using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="fromAddress">Sender address</param>
+		/// <param name="replyToAddress">Address will be replied to</param>
 		/// <param name="toAddresses">Collection of recipients</param>
 		/// <param name="ccAddresses">Collection of CC recipients</param>
 		/// <param name="bccAddresses">Collection of BCC recipients</param>
-		/// <param name="subject">The message subject.</param>
-		/// <param name="body">The message body.</param>
-		/// <param name="attachments">Collection of attachment files (all are full path of attachments).</param>
-		/// <param name="additionalFooter">The data will be added into email as footer.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtpServer">IP address or host name of SMTP server.</param>
-		/// <param name="smtpServerPort">Port number for SMTP service on the SMTP server.</param>
-		/// <param name="smtpUsername">Username of the SMTP server use for sending mail.</param>
-		/// <param name="smtpPassword">Password of user on the SMTP server use for sending mail.</param>
-		/// <param name="smtpEnableSsl">TRUE if the SMTP server requires SSL.</param>
-		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, string smtpServer, string smtpServerPort, string smtpUsername, string smtpPassword, bool smtpEnableSsl, CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtpServer, smtpServerPort, smtpUsername, smtpPassword, smtpEnableSsl), cancellationToken);
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		public static void SendMail(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		{
+			if (smtp == null)
+				throw new InformationInvalidException("The SMTP client is invalid");
+			smtp.SendMail(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer));
+		}
 
 		/// <summary>
-		/// Send an e-mail within VIE Portal software using System.Net.Mail namespace.
+		/// Sends an email message using a SMTP client
 		/// </summary>
-		/// <param name="fromAddress">Sender address.</param>
-		/// <param name="replyToAddress">Address will be replied to.</param>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="fromAddress">Sender address</param>
+		/// <param name="replyToAddress">Address will be replied to</param>
 		/// <param name="toAddresses">Collection of recipients</param>
 		/// <param name="ccAddresses">Collection of CC recipients</param>
 		/// <param name="bccAddresses">Collection of BCC recipients</param>
-		/// <param name="subject">The message subject.</param>
-		/// <param name="body">The message body.</param>
-		/// <param name="attachments">Collection of attachment files (all are full path of attachments).</param>
-		/// <param name="additionalFooter">The data will be added into email as footer.</param>
-		/// <param name="priority">Priority. See <c>System.Net.Mail.MailPriority</c> class for more information.</param>
-		/// <param name="isHtmlFormat">TRUE if the message body is HTML formated.</param>
-		/// <param name="encoding">Encoding of body message. See <c>System.Web.Mail.MailEncoding</c> class for more information.</param>
-		/// <param name="smtp">Informaiton of SMTP server for sending email.</param>
-		/// <param name="cancellationToken">Token for cancelling this task.</param>
-		public static Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, List<MailAddress> toAddresses, List<MailAddress> ccAddresses, List<MailAddress> bccAddresses, string subject, string body, List<string> attachments, string additionalFooter, MailPriority priority, bool isHtmlFormat, Encoding encoding, SmtpClient smtp, CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => MessageService.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, additionalFooter, priority, isHtmlFormat, encoding, smtp), cancellationToken);
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static Task SendMailAsync(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
+			=> smtp == null
+				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				: smtp.SendMailAsync(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer).Normalize()).WithCancellationToken(cancellationToken);
+
+		/// <summary>
+		/// Sends an email message using the default SMTP client
+		/// </summary>
+		/// <param name="fromAddress">Sender address</param>
+		/// <param name="replyToAddress">Address will be replied to</param>
+		/// <param name="toAddresses">Collection of recipients</param>
+		/// <param name="ccAddresses">Collection of CC recipients</param>
+		/// <param name="bccAddresses">Collection of BCC recipients</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
+		/// <param name="smtpServerPort">The port number of SMTP service on the SMTP server</param>
+		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
+		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
+		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
+		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
+		{
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			{
+				smtp.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer);
+			}
+		}
+
+		/// <summary>
+		/// Sends an email message using the default SMTP client
+		/// </summary>
+		/// <param name="fromAddress">Sender address</param>
+		/// <param name="replyToAddress">Address will be replied to</param>
+		/// <param name="toAddresses">Collection of recipients</param>
+		/// <param name="ccAddresses">Collection of CC recipients</param>
+		/// <param name="bccAddresses">Collection of BCC recipients</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
+		/// <param name="smtpServerPort">The port number of SMTP service on the SMTP server</param>
+		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
+		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
+		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static async Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
+		{
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			{
+				await smtp.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer, cancellationToken).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Sends an email message using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="from">Sender name and e-mail address</param>
+		/// <param name="replyTo">Address will be replied to</param>
+		/// <param name="to">Recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="cc">CC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="bcc">BCC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachment">The full path to an attachment file</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		public static void SendMail(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		{
+			if (smtp == null)
+				throw new InformationInvalidException("The SMTP client is invalid");
+			smtp.SendMail(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer));
+		}
+
+		/// <summary>
+		/// Sends an email message using a SMTP client
+		/// </summary>
+		/// <param name="smtp">The SMTP client for sending email</param>
+		/// <param name="from">Sender name and e-mail address</param>
+		/// <param name="replyTo">Address will be replied to</param>
+		/// <param name="to">Recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="cc">CC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="bcc">BCC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachment">The full path to an attachment file</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static Task SendMailAsync(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
+			=> smtp == null
+				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				: smtp.SendMailAsync(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer).Normalize()).WithCancellationToken(cancellationToken);
+
+		/// <summary>
+		/// Sends an email message using the default SMTP client
+		/// </summary>
+		/// <param name="from">Sender name and e-mail address</param>
+		/// <param name="replyTo">Address will be replied to</param>
+		/// <param name="to">Recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="cc">CC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="bcc">BCC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachment">The full path to an attachment file</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
+		/// <param name="smtpServerPort">The port number of SMTP service on the SMTP server</param>
+		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
+		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
+		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
+		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
+		{
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			{
+				smtp.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer);
+			}
+		}
+
+		/// <summary>
+		/// Sends an email message using the default SMTP client
+		/// </summary>
+		/// <param name="from">Sender name and e-mail address</param>
+		/// <param name="replyTo">Address will be replied to</param>
+		/// <param name="to">Recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="cc">CC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="bcc">BCC recipients, seperated multiple by semi-colon (;)</param>
+		/// <param name="subject">The message subject</param>
+		/// <param name="body">The message body</param>
+		/// <param name="attachment">The full path to an attachment file</param>
+		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
+		/// <param name="priority">The priority</param>
+		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="encoding">Encoding of subject and body message</param>
+		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
+		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
+		/// <param name="smtpServerPort">The port number of SMTP service on the SMTP server</param>
+		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
+		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
+		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static async Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
+		{
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			{
+				await smtp.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer, cancellationToken).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Sends this email message
+		/// </summary>
+		/// <param name="message">The email message</param>
+		public static void SendMessage(this EmailMessage message)
+		{
+			if (message == null)
+				throw new InformationInvalidException("The message is invalid");
+			MessageService.SendMail(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, null, message.Priority, message.IsHtmlFormat, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl);
+		}
+
+		/// <summary>
+		/// Sends this email message
+		/// </summary>
+		/// <param name="message">The email message</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static Task SendMessageAsync(this EmailMessage message, CancellationToken cancellationToken = default)
+			=> message == null
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, null, message.Priority, message.IsHtmlFormat, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, cancellationToken);
+		#endregion
+
+		#region Send webhook messages
+		/// <summary>
+		/// Sends a web-hook message
+		/// </summary>
+		/// <param name="message">The webhook message to send</param>
+		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="signKey">The key that use to sign</param>
+		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
+		/// <param name="placeSignatureInQueryString">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task SendMessageAsync(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool placeSignatureInQueryString = false, string agent = null, CancellationToken cancellationToken = default)
+		{
+			// prepare
+			if (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
+				return Task.FromException(new InformationInvalidException("The message is invalid"));
+
+			signAlgorithm = signAlgorithm ?? "SHA256";
+			if (!CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
+				signAlgorithm = "SHA256";
+			signKey = signKey ?? CryptoService.DEFAULT_PASS_PHRASE;
+
+			signatureName = signatureName ?? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
+			var query = new Dictionary<string, string>(message.Query ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			var header = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			using (var hasher = CryptoService.GetHMACHashAlgorithm(signKey.ToBytes(), signAlgorithm))
+			{
+				if (placeSignatureInQueryString)
+					query[signatureName] = hasher.ComputeHash(message.Body.ToBytes()).ToHex();
+				else
+					header[signatureName] = hasher.ComputeHash(message.Body.ToBytes()).ToHex();
+			}
+
+			// send
+			return UtilityService.GetWebResponseAsync(
+				"POST",
+				$"{message.EndpointURL}{(message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => kvp.Key + "=" + kvp.Value.UrlEncode()).Join("&")}",
+				message.Header,
+				null,
+				message.Body,
+				"application/json",
+				45,
+				$"{UtilityService.DesktopUserAgent} {agent ?? "VIEApps NGX WebHook Sender"}",
+				null,
+				null,
+				null,
+				cancellationToken
+			);
+		}
+
+		/// <summary>
+		/// Sends a web-hook message
+		/// </summary>
+		/// <param name="message">The webhook message to send</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
+			=> message == null
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: message.SendMessageAsync(null, null, null, false, null, cancellationToken);
+
+		/// <summary>
+		/// Sends a web-hook message
+		/// </summary>
+		/// <param name="message">The webhook message to send</param>
+		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="signKey">The key that use to sign</param>
+		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
+		/// <param name="placeSignatureInQueryString">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static void SendMessage(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool placeSignatureInQueryString = false, string agent = null, CancellationToken cancellationToken = default)
+			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(signAlgorithm, signKey, signatureName, placeSignatureInQueryString, agent, cancellationToken)).Wait();
+
+		/// <summary>
+		/// Sends a web-hook message
+		/// </summary>
+		/// <param name="message">The webhook message to send</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static void SendMessage(this WebHookMessage message, CancellationToken cancellationToken = default)
+			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(cancellationToken)).Wait();
 		#endregion
 
 	}
-
 }
