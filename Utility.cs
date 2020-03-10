@@ -34,6 +34,21 @@ namespace net.vieapps.Components.Utility
 	public static partial class UtilityService
 	{
 
+		#region Constructor
+		static UtilityService()
+		{
+			// global settings of service point - not available on macOS
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+			{
+				// default security protocol is TLS 1.2
+				ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+				// switch off certificate validation - http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using
+				ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+			}
+		}
+		#endregion
+
 		#region UUID
 		/// <summary>
 		/// Gets the UUID (unique universal identity - in 128 bits)
@@ -528,20 +543,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="secureProtocol"></param>
 		/// <returns></returns>
 		public static ICredentials GetWebCredential(Uri uri, string username, string password, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Tls12)
-		{
-			// check
-			if (uri == null || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-				return null;
-
-			// remark: not available on OSX
-			if (useSecureProtocol && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-				ServicePointManager.SecurityProtocol = secureProtocol;
-
-			return new CredentialCache
-			{
-				{ uri, "Basic", new NetworkCredential(username, password) }
-			};
-		}
+			=> uri == null || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)
+				? null
+				: new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } };
 
 		/// <summary>
 		/// Gets the web proxy
@@ -605,7 +609,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// compression
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2
+#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_1
 			webRequest.Headers.Add("accept-encoding", "deflate, gzip");
 			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 #else
@@ -620,7 +624,7 @@ namespace net.vieapps.Components.Utility
 				webRequest.PreAuthenticate = true;
 			}
 
-			// service point - only available on Windows wit .NET Framework
+			// service point - only available on Windows with .NET Framework
 			if (RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
 				webRequest.ServicePoint.Expect100Continue = false;
 
@@ -640,7 +644,7 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			// switch off certificate validation - not available on OSX
+			// switch off certificate validation - not available on macOS
 			// source: http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using)
 			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
 				webRequest.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
