@@ -969,7 +969,7 @@ namespace net.vieapps.Components.Utility
 				? Task.FromException(new InformationInvalidException("The message is invalid"))
 				: UtilityService.GetWebResponseAsync(
 					"POST",
-					$"{message.EndpointURL}{(message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
+					$"{message.EndpointURL}{(message.Query.Count < 1 ? "" : message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
 					message.Header,
 					null,
 					message.Body,
