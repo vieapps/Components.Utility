@@ -61,11 +61,11 @@ namespace net.vieapps.Components.Utility
 		public string Footer { get; set; }
 
 		public string Attachment { get; set; }
-		[JsonConverter(typeof(StringEnumConverter))]
 
+		[JsonConverter(typeof(StringEnumConverter))]
 		public MailPriority Priority { get; set; } = MailPriority.Normal;
 
-		public bool IsHtmlFormat { get; set; } = true;
+		public bool IsBodyHtml { get; set; } = true;
 
 		public int Encoding { get; set; } = System.Text.Encoding.UTF8.CodePage;
 
@@ -899,7 +899,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (message == null)
 				throw new InformationInvalidException("The message is invalid");
-			MessageService.SendMail(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, null, message.Priority, message.IsHtmlFormat, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl);
+			MessageService.SendMail(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, null, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl);
 		}
 
 		/// <summary>
@@ -910,7 +910,7 @@ namespace net.vieapps.Components.Utility
 		public static Task SendMessageAsync(this EmailMessage message, CancellationToken cancellationToken = default)
 			=> message == null
 				? Task.FromException(new InformationInvalidException("The message is invalid"))
-				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, null, message.Priority, message.IsHtmlFormat, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, cancellationToken);
+				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, null, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, cancellationToken);
 		#endregion
 
 		#region Send webhook messages
