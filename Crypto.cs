@@ -122,7 +122,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static HashAlgorithm GetHashAlgorithm(string hashAlgorithm = "SHA256")
 		{
-			if (!CryptoService.HashAlgorithmFactories.TryGetValue(hashAlgorithm, out var func))
+			if (!CryptoService.HashAlgorithmFactories.TryGetValue(hashAlgorithm ?? "SHA256", out var func))
 				func = () => SHA256.Create();
 			return func();
 		}
@@ -470,7 +470,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static HMAC GetHMACHashAlgorithm(byte[] key, string hashAlgorithm = "SHA256")
 		{
-			if (!CryptoService.HmacHashAlgorithmFactories.TryGetValue(hashAlgorithm, out var func))
+			if (!CryptoService.HmacHashAlgorithmFactories.TryGetValue(hashAlgorithm ?? "SHA256", out var func))
 				func = k => new HMACSHA256(k);
 			return func(key);
 		}
