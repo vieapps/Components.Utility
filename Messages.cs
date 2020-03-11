@@ -102,9 +102,9 @@ namespace net.vieapps.Components.Utility
 
 		#region Working with files
 		/// <summary>
-		/// Loads message from file and deserialize as object.
+		/// Loads message from file and deserialize as object
 		/// </summary>
-		/// <param name="filePath">The file path.</param>
+		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
 		/// <returns></returns>
 		public static EmailMessage Load(string filePath)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
@@ -112,20 +112,21 @@ namespace net.vieapps.Components.Utility
 				: null;
 
 		/// <summary>
-		/// Loads message from file and deserialize as object.
+		/// Loads message from file and deserialize as object
 		/// </summary>
-		/// <param name="filePath">The file path.</param>
+		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<EmailMessage> LoadAsync(string filePath)
+		public static async Task<EmailMessage> LoadAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new EmailMessage(await UtilityService.ReadTextFileAsync(filePath).ConfigureAwait(false))
+				? new EmailMessage(await UtilityService.ReadTextFileAsync(filePath, null, cancellationToken).ConfigureAwait(false))
 				: null;
 
 		/// <summary>
-		/// Serializes and saves message into file.
+		/// Serializes and saves message into file
 		/// </summary>
-		/// <param name="message">The message.</param>
-		/// <param name="directory">The path to a directory that stores queue of email messages.</param>
+		/// <param name="message">The message</param>
+		/// <param name="directory">The path to a directory that stores the queue of messages</param>
 		public static void Save(EmailMessage message, string directory)
 		{
 			if (message != null && Directory.Exists(directory))
@@ -137,16 +138,17 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Serializes and saves message into file.
+		/// Serializes and saves message into file
 		/// </summary>
-		/// <param name="message">The message.</param>
-		/// <param name="directory">The path to a directory that stores queue of email messages.</param>
-		public static async Task SaveAsync(EmailMessage message, string directory)
+		/// <param name="message">The message</param>
+		/// <param name="directory">The path to a directory that stores the queue of messages</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static async Task SaveAsync(EmailMessage message, string directory, CancellationToken cancellationToken = default)
 		{
 			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await UtilityService.WriteTextFileAsync(Path.Combine(directory, message.ID + ".msg"), message.Encrypted).ConfigureAwait(false);
+					await UtilityService.WriteTextFileAsync(Path.Combine(directory, message.ID + ".msg"), message.Encrypted, false, null, cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 		}
@@ -227,9 +229,9 @@ namespace net.vieapps.Components.Utility
 
 		#region Working with files
 		/// <summary>
-		/// Loads message from file and deserialize as object.
+		/// Loads message from file and deserialize as object
 		/// </summary>
-		/// <param name="filePath">The file path.</param>
+		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
 		/// <returns></returns>
 		public static WebHookMessage Load(string filePath)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
@@ -237,41 +239,43 @@ namespace net.vieapps.Components.Utility
 				: null;
 
 		/// <summary>
-		/// Loads message from file and deserialize as object.
+		/// Loads message from file and deserialize as object
 		/// </summary>
-		/// <param name="filePath">The file path.</param>
+		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
+		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<WebHookMessage> LoadAsync(string filePath)
+		public static async Task<WebHookMessage> LoadAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new WebHookMessage(await UtilityService.ReadTextFileAsync(filePath).ConfigureAwait(false))
+				? new WebHookMessage(await UtilityService.ReadTextFileAsync(filePath, null, cancellationToken).ConfigureAwait(false))
 				: null;
 
 		/// <summary>
-		/// Serializes and saves message into file.
+		/// Serializes and saves message into file
 		/// </summary>
-		/// <param name="message">The message.</param>
-		/// <param name="folderPath">The path to folder that stores queue of messages.</param>
-		public static void Save(WebHookMessage message, string folderPath)
+		/// <param name="message">The message</param>
+		/// <param name="directory">The path to a directory that stores the queue of messages</param>
+		public static void Save(WebHookMessage message, string directory)
 		{
-			if (message != null && Directory.Exists(folderPath))
+			if (message != null && Directory.Exists(directory))
 				try
 				{
-					UtilityService.WriteTextFile(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted);
+					UtilityService.WriteTextFile(Path.Combine(directory, message.ID + ".msg"), message.Encrypted);
 				}
 				catch { }
 		}
 
 		/// <summary>
-		/// Serializes and saves message into file.
+		/// Serializes and saves message into file
 		/// </summary>
-		/// <param name="message">The message.</param>
-		/// <param name="folderPath">The path to folder that stores queue of messages.</param>
-		public static async Task SaveAsync(WebHookMessage message, string folderPath)
+		/// <param name="message">The message</param>
+		/// <param name="directory">The path to a directory that stores the queue of messages</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		public static async Task SaveAsync(WebHookMessage message, string directory, CancellationToken cancellationToken = default)
 		{
-			if (message != null && Directory.Exists(folderPath))
+			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await UtilityService.WriteTextFileAsync(Path.Combine(folderPath, message.ID + ".msg"), message.Encrypted).ConfigureAwait(false);
+					await UtilityService.WriteTextFileAsync(Path.Combine(directory, message.ID + ".msg"), message.Encrypted, false, null, cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 		}
