@@ -20,9 +20,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="filePath">The absolute path to the file of external process</param>
 		/// <param name="arguments">The arguments</param>
 		/// <param name="workingDirectory">The working directory</param>
-		/// <param name="onExited">The action to run when the process is exited (Exited event)</param>
-		/// <param name="onOutputDataReceived">The action to run when an output message is received (OutputDataReceived event)</param>
-		/// <param name="onErrorDataReceived">The action to run when an error message is received (ErrorDataReceived event)</param>
+		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
+		/// <param name="onOutputDataReceived">The action to run when an output message was received (OutputDataReceived event)</param>
+		/// <param name="onErrorDataReceived">The action to run when an error message was received (ErrorDataReceived event)</param>
 		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
 		/// <returns></returns>
 		/// <remarks>
@@ -60,7 +60,7 @@ namespace net.vieapps.Components.Utility
 						path = path.Remove(0, pos + 1);
 						pos = path.IndexOf(Path.DirectorySeparatorChar);
 					}
-					if (workingDirectory.IsEndsWith($"{Path.DirectorySeparatorChar}"))
+					if (workingDirectory.IsEndsWith(Path.DirectorySeparatorChar))
 						workingDirectory = workingDirectory.Left(workingDirectory.Length - 1);
 				}
 			}
@@ -117,7 +117,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath">The absolute path to the file of external process</param>
 		/// <param name="arguments">The arguments</param>
-		/// <param name="onExited">The action to run when the process is exited (Exited event)</param>
+		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
 		/// <param name="onDataReceived">The method to handle the data receive events (include OutputDataReceived and ErrorDataReceived events)</param>
 		/// <returns></returns>
 		/// <remarks>
@@ -131,9 +131,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="command">The command to run</param>
 		/// <param name="workingDirectory">The working directory</param>
-		/// <param name="onExited">The action to run when the process is exited (Exited event)</param>
-		/// <param name="onOutputDataReceived">The action to run when an output message is received (OutputDataReceived event)</param>
-		/// <param name="onErrorDataReceived">The action to run when an error message is received (ErrorDataReceived event)</param>
+		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
+		/// <param name="onOutputDataReceived">The action to run when an output message was received (OutputDataReceived event)</param>
+		/// <param name="onErrorDataReceived">The action to run when an error message was received (ErrorDataReceived event)</param>
 		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
 		/// <returns></returns>
 		/// <remarks>
