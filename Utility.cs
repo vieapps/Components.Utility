@@ -297,10 +297,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (WebException ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 				catch (Exception)
 				{
@@ -326,10 +323,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 			}
 		}
@@ -351,10 +345,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 			}
 		}
@@ -376,10 +367,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 			}
 		}
@@ -401,10 +389,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 			}
 		}
@@ -427,10 +412,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 			}
 		}
@@ -453,10 +435,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					if (cancellationToken.IsCancellationRequested)
-						throw new OperationCanceledException(ex.Message, ex, cancellationToken);
-					else
-						throw ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
 				}
 			}
 		}
