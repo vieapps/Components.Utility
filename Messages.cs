@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -362,10 +363,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
-		public static MailMessage GetMailMessage(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		public static MailMessage GetMailMessage(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null)
 		{
 			// check
 			if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
@@ -388,7 +389,7 @@ namespace net.vieapps.Components.Utility
 				SubjectEncoding = encoding ?? Encoding.UTF8,
 				Body = $"{body.Trim()}{footer ?? ""}",
 				BodyEncoding = encoding ?? Encoding.UTF8,
-				IsBodyHtml = isHtmlFormat
+				IsBodyHtml = isBodyHtml
 			};
 
 			// reply to
@@ -421,10 +422,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachment">The full path to an attachment file</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
-		public static MailMessage GetMailMessage(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		public static MailMessage GetMailMessage(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null)
 		{
 			// check & validate
 			if (from.Equals(""))
@@ -507,7 +508,7 @@ namespace net.vieapps.Components.Utility
 				});
 
 			// get the mail message
-			return MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, new[] { attachment }, footer, priority, isHtmlFormat, encoding, mailer);
+			return MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, new[] { attachment }, footer, priority, isBodyHtml, encoding, mailer);
 		}
 
 		/// <summary>
@@ -662,14 +663,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
-		public static void SendMail(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		public static void SendMail(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null)
 		{
 			if (smtp == null)
 				throw new InformationInvalidException("The SMTP client is invalid");
-			smtp.SendMail(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer));
+			smtp.SendMail(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer));
 		}
 
 		/// <summary>
@@ -708,7 +709,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
 		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
@@ -716,11 +717,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
-		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
+		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
 			{
-				smtp.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer);
+				smtp.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer);
 			}
 		}
 
@@ -737,7 +738,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachments">Collection of attachment files (means the collection of files with full path)</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
 		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
@@ -746,11 +747,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		public static async Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
+		public static async Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
 			{
-				await smtp.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer, cancellationToken).ConfigureAwait(false);
+				await smtp.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -768,14 +769,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachment">The full path to an attachment file</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
-		public static void SendMail(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null)
+		public static void SendMail(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null)
 		{
 			if (smtp == null)
 				throw new InformationInvalidException("The SMTP client is invalid");
-			smtp.SendMail(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer));
+			smtp.SendMail(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer));
 		}
 
 		/// <summary>
@@ -792,14 +793,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachment">The full path to an attachment file</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		public static Task SendMailAsync(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
+		public static Task SendMailAsync(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
 			=> smtp == null
 				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
-				: smtp.SendMailAsync(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer), cancellationToken);
+				: smtp.SendMailAsync(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer), cancellationToken);
 
 		/// <summary>
 		/// Sends an email message using the default SMTP client
@@ -814,7 +815,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachment">The full path to an attachment file</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
 		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
@@ -822,11 +823,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
-		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
+		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
 			{
-				smtp.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer);
+				smtp.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer);
 			}
 		}
 
@@ -843,7 +844,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attachment">The full path to an attachment file</param>
 		/// <param name="footer">The additional footer (will be placed at the bottom of the body)</param>
 		/// <param name="priority">The priority</param>
-		/// <param name="isHtmlFormat">true if the message body is HTML formated</param>
+		/// <param name="isBodyHtml">true if the message body is HTML formated</param>
 		/// <param name="encoding">Encoding of subject and body message</param>
 		/// <param name="mailer">The name of mailer agent (means 'x-mailer' header)</param>
 		/// <param name="smtpServerHost">The host address of the SMTP server (IP or host name)</param>
@@ -852,11 +853,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		public static async Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
+		public static async Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
 			{
-				await smtp.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isHtmlFormat, encoding, mailer, cancellationToken).ConfigureAwait(false);
+				await smtp.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -909,57 +910,76 @@ namespace net.vieapps.Components.Utility
 
 		#region Send webhook messages
 		/// <summary>
-		/// Sends a web-hook message
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The webhook message to send</param>
 		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signKey">The key that use to sign</param>
 		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="placeSignatureInQueryString">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
+		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
 		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task SendMessageAsync(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool placeSignatureInQueryString = false, string agent = null, CancellationToken cancellationToken = default)
+		public static Task SendMessageAsync(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 		{
 			// prepare
 			if (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
 				return Task.FromException(new InformationInvalidException("The message is invalid"));
 
-			signAlgorithm = signAlgorithm ?? "SHA256";
-			if (!CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
-				signAlgorithm = "SHA256";
-			signKey = signKey ?? CryptoService.DEFAULT_PASS_PHRASE;
-
-			signatureName = signatureName ?? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
 			var query = new Dictionary<string, string>(message.Query ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			var header = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-			using (var hasher = CryptoService.GetHMACHashAlgorithm(signKey.ToBytes(), signAlgorithm))
+
+			if (string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
+				signAlgorithm = "SHA256";
+
+			using (var hasher = CryptoService.GetHMACHashAlgorithm((signKey ?? CryptoService.DEFAULT_PASS_PHRASE).ToBytes(), signAlgorithm))
 			{
-				if (placeSignatureInQueryString)
-					query[signatureName] = hasher.ComputeHash(message.Body.ToBytes()).ToHex();
+				var key = signatureName ?? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
+				var value = signatureAsHex ? hasher.ComputeHash(message.Body.ToBytes()).ToHex() : hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
+				if (signatureInQuery)
+					query[key] = value;
 				else
-					header[signatureName] = hasher.ComputeHash(message.Body.ToBytes()).ToHex();
+					header[key] = value;
 			}
 
 			// send
 			return UtilityService.GetWebResponseAsync(
 				"POST",
-				$"{message.EndpointURL}{(message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => kvp.Key + "=" + kvp.Value.UrlEncode()).Join("&")}",
-				message.Header,
+				$"{message.EndpointURL}{(message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
+				header,
 				null,
 				message.Body,
 				"application/json",
 				45,
-				$"{UtilityService.DesktopUserAgent} {agent ?? "VIEApps NGX WebHook Sender"}",
+				$"{UtilityService.DesktopUserAgent} {agent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
 				null,
 				null,
-				null,
+				proxy,
 				cancellationToken
 			);
 		}
 
 		/// <summary>
-		/// Sends a web-hook message
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
+		/// </summary>
+		/// <param name="message">The webhook message to send</param>
+		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="signKey">The key that use to sign</param>
+		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
+		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
+		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task SendMessageAsync(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, CancellationToken cancellationToken = default)
+			=> message == null
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: message.SendMessageAsync(signAlgorithm, signKey, signatureName, signatureAsHex, signatureInQuery, agent, null, cancellationToken);
+
+		/// <summary>
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
@@ -967,24 +987,41 @@ namespace net.vieapps.Components.Utility
 		public static Task SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
 			=> message == null
 				? Task.FromException(new InformationInvalidException("The message is invalid"))
-				: message.SendMessageAsync(null, null, null, false, null, cancellationToken);
+				: message.SendMessageAsync(null, null, null, true, false, null, cancellationToken);
 
 		/// <summary>
-		/// Sends a web-hook message
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The webhook message to send</param>
 		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signKey">The key that use to sign</param>
 		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="placeSignatureInQueryString">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
+		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="proxy">The proxy to use</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static void SendMessage(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(signAlgorithm, signKey, signatureName, signatureAsHex, signatureInQuery, agent, proxy, cancellationToken)).Wait();
+
+		/// <summary>
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
+		/// </summary>
+		/// <param name="message">The webhook message to send</param>
+		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="signKey">The key that use to sign</param>
+		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
+		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
+		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
 		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static void SendMessage(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool placeSignatureInQueryString = false, string agent = null, CancellationToken cancellationToken = default)
-			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(signAlgorithm, signKey, signatureName, placeSignatureInQueryString, agent, cancellationToken)).Wait();
+		public static void SendMessage(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, CancellationToken cancellationToken = default)
+			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(signAlgorithm, signKey, signatureName, signatureAsHex, signatureInQuery, agent, cancellationToken)).Wait();
 
 		/// <summary>
-		/// Sends a web-hook message
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
