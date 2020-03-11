@@ -292,12 +292,13 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static partial class MessageService
 	{
+
+		#region Working with a email message
 		/// <summary>
 		/// Gets the collection of harmful domains need to prevent while sending email messages
 		/// </summary>
 		public static HashSet<string> HarmfulDomains { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-		#region Working with a email message
 		/// <summary>
 		/// Prepares a valid email address
 		/// </summary>
@@ -910,26 +911,27 @@ namespace net.vieapps.Components.Utility
 
 		#region Send webhook messages
 		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
+		/// Normalizes the web-hook message
 		/// </summary>
-		/// <param name="message">The webhook message to send</param>
+		/// <param name="message">The web-hook message</param>
 		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signKey">The key that use to sign</param>
 		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
 		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
 		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
-		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
-		/// <param name="proxy">The proxy to use</param>
-		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="additionalQuery">The additional query string</param>
+		/// <param name="additionalHeader">The additional header</param>
 		/// <returns></returns>
-		public static Task SendMessageAsync(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, Dictionary<string, string> additionalQuery = null, Dictionary<string, string> additionalHeader = null)
 		{
-			// prepare
 			if (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
-				return Task.FromException(new InformationInvalidException("The message is invalid"));
+				throw new InformationInvalidException("The message is invalid");
 
-			var query = new Dictionary<string, string>(message.Query ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-			var header = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			var query = new Dictionary<string, string>(additionalQuery ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			message.Query?.ForEach(kvp => query[kvp.Key] = kvp.Value);
+
+			var header = new Dictionary<string, string>(additionalHeader ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			message.Header?.ForEach(kvp => header[kvp.Key] = kvp.Value);
 
 			if (string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
 				signAlgorithm = "SHA256";
@@ -944,90 +946,72 @@ namespace net.vieapps.Components.Utility
 					header[key] = value;
 			}
 
-			// send
-			return UtilityService.GetWebResponseAsync(
-				"POST",
-				$"{message.EndpointURL}{(message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
-				header,
-				null,
-				message.Body,
-				"application/json",
-				45,
-				$"{UtilityService.DesktopUserAgent} {agent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
-				null,
-				null,
-				proxy,
-				cancellationToken
-			);
+			message.Query = query;
+			message.Header = header;
+
+			return message;
 		}
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
-		/// <param name="message">The webhook message to send</param>
-		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="signKey">The key that use to sign</param>
-		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
-		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
-		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task SendMessageAsync(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, CancellationToken cancellationToken = default)
-			=> message == null
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
-				: message.SendMessageAsync(signAlgorithm, signKey, signatureName, signatureAsHex, signatureInQuery, agent, null, cancellationToken);
-
-		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
-		/// </summary>
-		/// <param name="message">The webhook message to send</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
-			=> message == null
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
-				: message.SendMessageAsync(null, null, null, true, false, null, cancellationToken);
-
-		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
-		/// </summary>
-		/// <param name="message">The webhook message to send</param>
-		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="signKey">The key that use to sign</param>
-		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
-		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
 		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static void SendMessage(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(signAlgorithm, signKey, signatureName, signatureAsHex, signatureInQuery, agent, proxy, cancellationToken)).Wait();
+		public static Task SendMessageAsync(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: UtilityService.GetWebResponseAsync(
+					"POST",
+					$"{message.EndpointURL}{(message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
+					message.Header,
+					null,
+					message.Body,
+					"application/json",
+					45,
+					$"{UtilityService.DesktopUserAgent} {agent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
+					null,
+					null,
+					proxy,
+					cancellationToken
+				);
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
-		/// <param name="message">The webhook message to send</param>
-		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="signKey">The key that use to sign</param>
-		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
-		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
+		/// <param name="message">The well-formed webhook message to send</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken)
+			=> message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: message.SendMessageAsync(null, null, cancellationToken);
+
+		/// <summary>
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
+		/// </summary>
+		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static void SendMessage(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, string agent = null, CancellationToken cancellationToken = default)
-			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(signAlgorithm, signKey, signatureName, signatureAsHex, signatureInQuery, agent, cancellationToken)).Wait();
+		public static void SendMessage(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: message.SendMessageAsync(agent, proxy, cancellationToken)).Wait();
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
-		/// <param name="message">The webhook message to send</param>
+		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static void SendMessage(this WebHookMessage message, CancellationToken cancellationToken = default)
-			=> (message == null ? Task.FromException(new InformationInvalidException("The message is invalid")) : message.SendMessageAsync(cancellationToken)).Wait();
+		public static void SendMessage(this WebHookMessage message, CancellationToken cancellationToken)
+			=> (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
+				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				: message.SendMessageAsync(cancellationToken)).Wait();
 		#endregion
 
 	}
