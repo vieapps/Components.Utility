@@ -14,12 +14,12 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// The Unix Epoch
 		/// </summary>
-		public static DateTime UnixEpoch => new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+		public static DateTime UnixEpoch { get; } = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
 		/// <summary>
 		/// Gets the default date-time for checking (1/1/1900)
 		/// </summary>
-		public static DateTime CheckingDateTime => new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+		public static DateTime CheckingDateTime { get; } = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
 		/// <summary>
 		/// Gets the string that presents elapsed times (means times for processing)
