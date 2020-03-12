@@ -139,31 +139,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		///  Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <returns></returns>
-		public static async ValueTask ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, ValueTask> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
-		{
-			if (!parallelExecutions)
-				foreach (var item in enumerable)
-					await actionAsync(item, cancellationToken).ConfigureAwait(captureContext);
-
-			else
-			{
-				var tasks = enumerable.Select(item => actionAsync(item, cancellationToken)).ToList();
-				if (waitForAllCompleted)
-					await Task.WhenAll(tasks.Select(task => task.AsTask())).ConfigureAwait(captureContext);
-			}
-		}
-
-		/// <summary>
 		/// Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -199,41 +174,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <returns></returns>
-		public static async ValueTask ForEachAsync<T>(this IEnumerable<T> dictionary, Func<T, int, CancellationToken, ValueTask> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
-		{
-			var index = -1;
-			if (!parallelExecutions)
-				foreach (var kvp in dictionary)
-				{
-					index++;
-					await actionAsync(kvp, index, cancellationToken).ConfigureAwait(captureContext);
-				}
-
-			else
-			{
-				var tasks = new List<ValueTask>();
-				foreach (var kvp in dictionary)
-				{
-					index++;
-					tasks.Add(actionAsync(kvp, index, cancellationToken));
-				}
-
-				if (waitForAllCompleted)
-					await Task.WhenAll(tasks.Select(task => task.AsTask())).ConfigureAwait(captureContext);
-			}
-		}
-
-		/// <summary>
 		///  Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
 		/// <typeparam name="TKey"></typeparam>
@@ -256,32 +196,6 @@ namespace net.vieapps.Components.Utility
 				var tasks = dictionary.Select(kvp => actionAsync(kvp.Value, cancellationToken)).ToList();
 				if (waitForAllCompleted)
 					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
-			}
-		}
-
-		/// <summary>
-		///  Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <returns></returns>
-		public static async ValueTask ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, ValueTask> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
-		{
-			if (!parallelExecutions)
-				foreach (var kvp in dictionary)
-					await actionAsync(kvp.Value, cancellationToken).ConfigureAwait(captureContext);
-
-			else
-			{
-				var tasks = dictionary.Select(kvp => actionAsync(kvp.Value, cancellationToken)).ToList();
-				if (waitForAllCompleted)
-					await Task.WhenAll(tasks.Select(task => task.AsTask())).ConfigureAwait(captureContext);
 			}
 		}
 
@@ -322,42 +236,6 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <returns></returns>
-		public static async ValueTask ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, ValueTask> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
-		{
-			var index = -1;
-			if (!parallelExecutions)
-				foreach (var kvp in dictionary)
-				{
-					index++;
-					await actionAsync(kvp.Value, index, cancellationToken).ConfigureAwait(captureContext);
-				}
-
-			else
-			{
-				var tasks = new List<ValueTask>();
-				foreach (var kvp in dictionary)
-				{
-					index++;
-					tasks.Add(actionAsync(kvp.Value, index, cancellationToken));
-				}
-
-				if (waitForAllCompleted)
-					await Task.WhenAll(tasks.Select(task => task.AsTask())).ConfigureAwait(captureContext);
-			}
-		}
-
-		/// <summary>
 		///  Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
 		/// <typeparam name="TKey"></typeparam>
@@ -380,32 +258,6 @@ namespace net.vieapps.Components.Utility
 				var tasks = dictionary.Select(kvp => actionAsync(kvp, cancellationToken)).ToList();
 				if (waitForAllCompleted)
 					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
-			}
-		}
-
-		/// <summary>
-		///  Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <returns></returns>
-		public static async ValueTask ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, ValueTask> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
-		{
-			if (!parallelExecutions)
-				foreach (var kvp in dictionary)
-					await actionAsync(kvp, cancellationToken).ConfigureAwait(captureContext);
-
-			else
-			{
-				var tasks = dictionary.Select(kvp => actionAsync(kvp, cancellationToken)).ToList();
-				if (waitForAllCompleted)
-					await Task.WhenAll(tasks.Select(task => task.AsTask())).ConfigureAwait(captureContext);
 			}
 		}
 
@@ -442,42 +294,6 @@ namespace net.vieapps.Components.Utility
 
 				if (waitForAllCompleted)
 					await Task.WhenAll(tasks).ConfigureAwait(captureContext);
-			}
-		}
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <returns></returns>
-		public static async ValueTask ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, ValueTask> actionAsync, CancellationToken cancellationToken = default, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false)
-		{
-			var index = -1;
-			if (!parallelExecutions)
-				foreach (var kvp in dictionary)
-				{
-					index++;
-					await actionAsync(kvp, index, cancellationToken).ConfigureAwait(captureContext);
-				}
-
-			else
-			{
-				var tasks = new List<ValueTask>();
-				foreach (var kvp in dictionary)
-				{
-					index++;
-					tasks.Add(actionAsync(kvp, index, cancellationToken));
-				}
-
-				if (waitForAllCompleted)
-					await Task.WhenAll(tasks.Select(task => task.AsTask())).ConfigureAwait(captureContext);
 			}
 		}
 		#endregion
