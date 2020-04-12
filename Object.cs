@@ -14,6 +14,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Dynamic;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -535,7 +536,7 @@ namespace net.vieapps.Components.Utility
 			{
 				fieldInfo.SetValue(@object, value);
 				if (@object is IPropertyChangedNotifier)
-					(@object as IPropertyChangedNotifier).OnPropertyChanged(name, @object);
+					(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
 				return true;
 			}
 
@@ -546,7 +547,7 @@ namespace net.vieapps.Components.Utility
 				{
 					propertyInfo.SetValue(@object, value);
 					if (@object is IPropertyChangedNotifier)
-						(@object as IPropertyChangedNotifier).OnPropertyChanged(name, @object);
+						(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
 					return true;
 				}
 			}
@@ -1843,7 +1844,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="sender"></param>
-		void OnPropertyChanged(string name, object sender = null);
+		void NotifyPropertyChanged([CallerMemberName] string name = "", object sender = null);
 
 		/// <summary>
 		/// Fires automatically when receive an event of property value was changed
