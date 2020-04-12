@@ -1329,32 +1329,34 @@ namespace net.vieapps.Components.Utility
 			{
 				// assign value
 				object value = element;
-
-				// value is list/hash-set
-				if (type.IsGenericListOrHashSet() && value is List<object>)
-					value = type.IsGenericList()
-						? (value as List<object>).ToList(type.GenericTypeArguments[0])
-						: (value as List<object>).ToHashSet(type.GenericTypeArguments[0]);
-
-				// value is dictionary/collection or object
-				else if (value is ExpandoObject)
+				if (value != null)
 				{
-					if (type.IsGenericDictionaryOrCollection())
-						value = type.IsGenericDictionary()
-							? (value as ExpandoObject).ToDictionary(type.GenericTypeArguments[0], type.GenericTypeArguments[1])
-							: (value as ExpandoObject).ToCollection(type.GenericTypeArguments[0], type.GenericTypeArguments[1]);
+					// value is list/hash-set
+					if (type.IsGenericListOrHashSet() && value is List<object>)
+						value = type.IsGenericList()
+							? (value as List<object>).ToList(type.GenericTypeArguments[0])
+							: (value as List<object>).ToHashSet(type.GenericTypeArguments[0]);
 
-					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
+					// value is dictionary/collection or object
+					else if (value is ExpandoObject)
 					{
-						var temp = type.CreateInstance();
-						temp.CopyFrom(value as ExpandoObject);
-						value = temp;
-					}
-				}
+						if (type.IsGenericDictionaryOrCollection())
+							value = type.IsGenericDictionary()
+								? (value as ExpandoObject).ToDictionary(type.GenericTypeArguments[0], type.GenericTypeArguments[1])
+								: (value as ExpandoObject).ToCollection(type.GenericTypeArguments[0], type.GenericTypeArguments[1]);
 
-				// value is primitive type
-				else if (type.IsPrimitiveType() && !type.Equals(value.GetType()))
-					value = Convert.ChangeType(value, type);
+						else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
+						{
+							var temp = type.CreateInstance();
+							temp.CopyFrom(value as ExpandoObject);
+							value = temp;
+						}
+					}
+
+					// value is primitive type
+					else if (type.IsPrimitiveType() && !type.Equals(value.GetType()))
+						value = Convert.ChangeType(value, type);
+				}
 
 				// update into the collection
 				list.Add(value);
@@ -1415,32 +1417,34 @@ namespace net.vieapps.Components.Utility
 
 				// value
 				object value = kvp.Value;
-
-				// value is list/hash-set
-				if (valueType.IsGenericListOrHashSet() && value is List<object>)
-					value = valueType.IsGenericList()
-						? (value as List<object>).ToList(valueType.GenericTypeArguments[0])
-						: (value as List<object>).ToHashSet(valueType.GenericTypeArguments[0]);
-
-				// value is dictionary/collection or object
-				else if (value is ExpandoObject)
+				if (value != null)
 				{
-					if (valueType.IsGenericDictionaryOrCollection())
-						value = valueType.IsGenericDictionary()
-							? (value as ExpandoObject).ToDictionary(valueType.GenericTypeArguments[0], valueType.GenericTypeArguments[1])
-							: (value as ExpandoObject).ToCollection(valueType.GenericTypeArguments[0], valueType.GenericTypeArguments[1]);
+					// value is list/hash-set
+					if (valueType.IsGenericListOrHashSet() && value is List<object>)
+						value = valueType.IsGenericList()
+							? (value as List<object>).ToList(valueType.GenericTypeArguments[0])
+							: (value as List<object>).ToHashSet(valueType.GenericTypeArguments[0]);
 
-					else if (valueType.IsClassType() && !valueType.Equals(typeof(ExpandoObject)))
+					// value is dictionary/collection or object
+					else if (value is ExpandoObject)
 					{
-						var temp = valueType.CreateInstance();
-						temp.CopyFrom(value as ExpandoObject);
-						value = temp;
-					}
-				}
+						if (valueType.IsGenericDictionaryOrCollection())
+							value = valueType.IsGenericDictionary()
+								? (value as ExpandoObject).ToDictionary(valueType.GenericTypeArguments[0], valueType.GenericTypeArguments[1])
+								: (value as ExpandoObject).ToCollection(valueType.GenericTypeArguments[0], valueType.GenericTypeArguments[1]);
 
-				// value is primitive
-				else if (valueType.IsPrimitiveType() && !valueType.Equals(value.GetType()))
-					value = Convert.ChangeType(value, valueType);
+						else if (valueType.IsClassType() && !valueType.Equals(typeof(ExpandoObject)))
+						{
+							var temp = valueType.CreateInstance();
+							temp.CopyFrom(value as ExpandoObject);
+							value = temp;
+						}
+					}
+
+					// value is primitive
+					else if (valueType.IsPrimitiveType() && !valueType.Equals(value.GetType()))
+						value = Convert.ChangeType(value, valueType);
+				}
 
 				// update into the collection
 				dictionary.Add(key, value);
@@ -1498,7 +1502,7 @@ namespace net.vieapps.Components.Utility
 			if (type.IsPrimitiveType() || type.IsClassType())
 			{
 				var json = new JArray();
-				@object.ForEach(item => json.Add(converter?.Invoke(item) ?? item?.ToJson()));
+				@object.ForEach(item => json.Add(converter != null ? converter(item) : item?.ToJson()));
 				return json;
 			}
 			else
@@ -1514,7 +1518,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static JArray ToJArray<TKey, TValue>(this IDictionary<TKey, TValue> @object, Func<TValue, JToken> converter = null)
-			=> @object.Select(kvp => converter?.Invoke(kvp.Value) ?? kvp.Value.ToJson()).ToJArray();
+			=> @object.Select(kvp => converter != null ? converter(kvp.Value) : kvp.Value?.ToJson()).ToJArray();
 
 		/// <summary>
 		/// Creates a JArray object from this collection
@@ -1525,7 +1529,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="converter">The conversion</param>
 		/// <returns></returns>
 		public static JArray ToJArray<TKey, TValue>(this IDictionary<TKey, TValue> @object, Func<KeyValuePair<TKey, TValue>, JToken> converter = null)
-			=> @object.Select(kvp => converter?.Invoke(kvp) ?? kvp.Value.ToJson()).ToJArray();
+			=> @object.Select(kvp => converter != null ? converter(kvp) : kvp.Value?.ToJson()).ToJArray();
 
 		/// <summary>
 		/// Creates a JArray object from this collection
@@ -1538,7 +1542,7 @@ namespace net.vieapps.Components.Utility
 			var json = new JArray();
 			var enumerator = @object.GetEnumerator();
 			while (enumerator.MoveNext())
-				json.Add(converter?.Invoke(enumerator.Current) ?? enumerator.Current?.ToJson());
+				json.Add(converter != null ? converter?.Invoke(enumerator.Current) : enumerator.Current?.ToJson());
 			return json;
 		}
 
@@ -1554,13 +1558,8 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(keyAttribute))
 				throw new ArgumentNullException(nameof(keyAttribute), "The name of key attribute is null");
-
 			var json = new JObject();
-			@object.Where(item => item != null).ForEach(item =>
-			{
-				var key = item.GetAttributeValue(keyAttribute) ?? item.GetHashCode();
-				json[key.ToString()] = converter?.Invoke(item) ?? item.ToJson();
-			});
+			@object.Where(item => item != null).ForEach(item => json[(item?.GetAttributeValue(keyAttribute) ?? item?.GetHashCode()).ToString()] = converter != null ? converter(item) : item?.ToJson());
 			return json;
 		}
 
@@ -1604,7 +1603,7 @@ namespace net.vieapps.Components.Utility
 		{
 			var json = new JObject();
 			foreach (string key in @object.Keys)
-				json[key] = @object[key];
+				json[key] = @object[key]?.ToJson();
 			return json;
 		}
 		#endregion
