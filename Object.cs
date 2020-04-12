@@ -13,6 +13,7 @@ using System.Xml.Xsl;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Dynamic;
+using System.ComponentModel;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -79,8 +80,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="type">The type for processing</param>
 		/// <param name="predicate">The predicate</param>
+		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties(Type type, Func<AttributeInfo, bool> predicate = null)
+		public static List<AttributeInfo> GetProperties(Type type, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
 		{
 			if (type == null)
 				return null;
@@ -91,10 +93,28 @@ namespace net.vieapps.Components.Utility
 					if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
 					{
 						var defaultMember = type.GetCustomAttributes(typeof(DefaultMemberAttribute))?.FirstOrDefault() as DefaultMemberAttribute;
-						ObjectService.ObjectProperties[type] = properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-							.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-							.Select(info => new AttributeInfo(info))
-							.ToList();
+						if (allowDuplicatedName)
+							ObjectService.ObjectProperties[type] = properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+								.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
+								.Select(info => new AttributeInfo(info))
+								.ToList();
+						else
+						{
+							properties = new List<AttributeInfo>();
+							var names = new HashSet<string>();
+							type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+								.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
+								.Select(info => new AttributeInfo(info))
+								.ForEach(attribute =>
+								{
+									if (!names.Contains(attribute.Name))
+									{
+										properties.Add(attribute);
+										names.Add(attribute.Name);
+									}
+								});
+							ObjectService.ObjectProperties[type] = properties;
+						}
 					}
 				}
 
@@ -107,18 +127,20 @@ namespace net.vieapps.Components.Utility
 		/// Gets the collection of public properties of the object's type
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
+		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null)
-			=> ObjectService.GetProperties(typeof(T), predicate);
+		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
+			=> ObjectService.GetProperties(typeof(T), predicate, allowDuplicatedName);
 
 		/// <summary>
 		/// Gets the collection of public properties of the object's type
 		/// </summary>
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
+		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null)
-			=> ObjectService.GetProperties(@object.GetType(), predicate);
+		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
+			=> ObjectService.GetProperties(@object.GetType(), predicate, allowDuplicatedName);
 
 		/// <summary>
 		/// Gets the collection of fields (private attributes) of the type
@@ -502,21 +524,34 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object need to get data from.</param>
 		/// <param name="name">The string that presents the name of the attribute need to get.</param>
 		/// <param name="value">The object that presents the value of the attribute need to set.</param>
-		public static void SetAttributeValue(this object @object, string name, object value)
+		/// <returns>true if success, otherwise false</returns>
+		public static bool SetAttributeValue(this object @object, string name, object value)
 		{
 			if (string.IsNullOrWhiteSpace(name))
-				throw new ArgumentException(nameof(name));
+				throw new ArgumentNullException(nameof(name));
 
 			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 			if (fieldInfo != null)
+			{
 				fieldInfo.SetValue(@object, value);
+				if (@object is IPropertyChangedNotifier)
+					(@object as IPropertyChangedNotifier).OnPropertyChanged(@object, new PropertyChangedEventArgs(name));
+				return true;
+			}
 
 			else
 			{
 				var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 				if (propertyInfo != null && propertyInfo.CanWrite)
+				{
 					propertyInfo.SetValue(@object, value);
+					if (@object is IPropertyChangedNotifier)
+						(@object as IPropertyChangedNotifier).OnPropertyChanged(@object, new PropertyChangedEventArgs(name));
+					return true;
+				}
 			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -526,12 +561,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The object that presents information of the attribute need to get</param>
 		/// <param name="value">The object that presents the value of the attribute need to set.</param>
 		/// <param name="cast">true to cast the type of attribute</param>
-		public static void SetAttributeValue(this object @object, AttributeInfo attribute, object value, bool cast = false)
-		{
-			if (attribute == null)
-				throw new ArgumentException(nameof(attribute));
-			@object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value);
-		}
+		public static bool SetAttributeValue(this object @object, AttributeInfo attribute, object value, bool cast = false)
+			=> attribute != null ? @object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value) : throw new ArgumentNullException(nameof(attribute));
 
 		/// <summary>
 		/// Gets value of an attribute of an object.
@@ -738,7 +769,12 @@ namespace net.vieapps.Components.Utility
 					continue;
 
 				// check token
-				var token = json[attribute.Name];
+				JToken token = null;
+				try
+				{
+					token = json[attribute.Name];
+				}
+				catch { }
 				if (token == null)
 					continue;
 
@@ -1100,7 +1136,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static JToken ToJson(this string json, Action<JToken> onPreCompleted = null)
 		{
-			var token = JToken.Parse((json ?? "{}").Trim());
+			var token = JToken.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json.Trim());
 			onPreCompleted?.Invoke(token);
 			return token;
 		}
@@ -1793,6 +1829,27 @@ namespace net.vieapps.Components.Utility
 		/// Gets or sets the name of attribute to use as the key (if not value is provided, the name 'ID' will be used while processing)
 		/// </summary>
 		public string KeyAttribute { get; set; }
+	}
+	#endregion
+
+	#region Property changed notifier
+	/// <summary>
+	/// Presents the notifier for notifying an event when a property value was change
+	/// </summary>
+	public interface IPropertyChangedNotifier : INotifyPropertyChanged
+	{
+		/// <summary>
+		/// Calls for notifying an event when a property value was change
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="args"></param>
+		void OnPropertyChanged(object sender, PropertyChangedEventArgs args);
+
+		/// <summary>
+		/// Fires automatically when receive an event of property value was changed
+		/// </summary>
+		/// <param name="name"></param>
+		void ProcessPropertyChanged(string name);
 	}
 	#endregion
 
