@@ -535,7 +535,7 @@ namespace net.vieapps.Components.Utility
 			{
 				fieldInfo.SetValue(@object, value);
 				if (@object is IPropertyChangedNotifier)
-					(@object as IPropertyChangedNotifier).OnPropertyChanged(@object, new PropertyChangedEventArgs(name));
+					(@object as IPropertyChangedNotifier).OnPropertyChanged(name, @object);
 				return true;
 			}
 
@@ -546,7 +546,7 @@ namespace net.vieapps.Components.Utility
 				{
 					propertyInfo.SetValue(@object, value);
 					if (@object is IPropertyChangedNotifier)
-						(@object as IPropertyChangedNotifier).OnPropertyChanged(@object, new PropertyChangedEventArgs(name));
+						(@object as IPropertyChangedNotifier).OnPropertyChanged(name, @object);
 					return true;
 				}
 			}
@@ -1841,9 +1841,9 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Calls for notifying an event when a property value was change
 		/// </summary>
+		/// <param name="name"></param>
 		/// <param name="sender"></param>
-		/// <param name="args"></param>
-		void OnPropertyChanged(object sender, PropertyChangedEventArgs args);
+		void OnPropertyChanged(string name, object sender = null);
 
 		/// <summary>
 		/// Fires automatically when receive an event of property value was changed
