@@ -518,10 +518,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="uri"></param>
 		/// <param name="username"></param>
 		/// <param name="password"></param>
-		/// <param name="useSecureProtocol"></param>
-		/// <param name="secureProtocol"></param>
 		/// <returns></returns>
-		public static ICredentials GetWebCredential(Uri uri, string username, string password, bool useSecureProtocol = true, SecurityProtocolType secureProtocol = SecurityProtocolType.Tls12)
+		public static ICredentials GetWebCredential(Uri uri, string username, string password)
 			=> uri == null || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)
 				? null
 				: new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } };
@@ -1399,7 +1397,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task WriteTextFileAsync(string filePath, string content, bool append = false, Encoding encoding = null, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath)
-				? UtilityService.WriteTextFileAsync(new FileInfo(filePath), content, append, encoding)
+				? UtilityService.WriteTextFileAsync(new FileInfo(filePath), content, append, encoding, cancellationToken)
 				: Task.FromException<string>(new ArgumentException("File path is invalid", nameof(filePath)));
 		#endregion
 
