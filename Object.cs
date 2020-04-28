@@ -244,12 +244,56 @@ namespace net.vieapps.Components.Utility
 			=> @object.GetType().GetTypeName(justName);
 
 		/// <summary>
+		/// Gets the collection of custom attributes
+		/// </summary>
+		/// <param name="type">The type for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The collection of custom attributes</returns>
+		public static List<T> GetCustomAttributes<T>(this Type type, bool inherit = true) where T : class
+			=> type.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
+
+		/// <summary>
+		/// Gets the first custom attribute
+		/// </summary>
+		/// <param name="type">The type for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The first custom attribute</returns>
+		public static T GetCustomAttribute<T>(this Type type, bool inherit = true) where T : class
+			=> type.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
+
+		/// <summary>
+		/// Gets the collection of custom attributes
+		/// </summary>
+		/// <param name="attribute">The attribute for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The collection of custom attributes</returns>
+		public static List<T> GetCustomAttributes<T>(this AttributeInfo attribute, bool inherit = true) where T : class
+			=> attribute.Info.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
+
+		/// <summary>
+		/// Gets the first custom attribute
+		/// </summary>
+		/// <param name="attribute">The attribute for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The first custom attribute</returns>
+		public static T GetCustomAttribute<T>(this AttributeInfo attribute, bool inherit = true) where T : class
+			=> attribute.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
+
+		/// <summary>
 		/// Gets the state to determines the type is primitive or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is primitive</returns>
 		public static bool IsPrimitiveType(this Type type)
 			=> type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is primitive or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsPrimitiveType(this AttributeInfo attribute)
+			=> attribute.Type.IsPrimitiveType();
 
 		/// <summary>
 		/// Gets the state to determines the type is string or not
@@ -260,12 +304,28 @@ namespace net.vieapps.Components.Utility
 			=> type.Equals(typeof(string));
 
 		/// <summary>
+		/// Gets the state to determines the attribute type is string or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsStringType(this AttributeInfo attribute)
+			=> attribute.Type.IsStringType();
+
+		/// <summary>
 		/// Gets the state to determines the type is date-time or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
 		public static bool IsDateTimeType(this Type type)
 			=> type.Equals(typeof(DateTime)) || type.Equals(typeof(DateTimeOffset));
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is date-time or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsDateTimeType(this AttributeInfo attribute)
+			=> attribute.Type.IsDateTimeType();
 
 		/// <summary>
 		/// Gets the state to determines the type is integral numeric or not
@@ -278,12 +338,28 @@ namespace net.vieapps.Components.Utility
 				|| type.Equals(typeof(ushort)) || type.Equals(typeof(uint)) || type.Equals(typeof(ulong));
 
 		/// <summary>
+		/// Gets the state to determines the attribute type is integral numeric or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsIntegralType(this AttributeInfo attribute)
+			=> attribute.Type.IsIntegralType();
+
+		/// <summary>
 		/// Gets the state to determines the type is floating numeric or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
 		public static bool IsFloatingPointType(this Type type)
 			=> type.Equals(typeof(decimal)) || type.Equals(typeof(double)) || type.Equals(typeof(float));
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is floating numeric or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsFloatingPointType(this AttributeInfo attribute)
+			=> attribute.Type.IsFloatingPointType();
 
 		/// <summary>
 		/// Gets the state to determines the type is numeric or not
@@ -294,12 +370,36 @@ namespace net.vieapps.Components.Utility
 			=> type.IsIntegralType() || type.IsFloatingPointType();
 
 		/// <summary>
+		/// Gets the state to determines the attribute type is numeric or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsNumericType(this AttributeInfo attribute)
+			=> attribute.Type.IsNumericType();
+
+		/// <summary>
 		/// Gets the state to determines the type is a reference of a class or not
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsClassType(this Type type)
 			=> !type.IsPrimitiveType() && type.IsClass;
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a reference of a class or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsClassType(this AttributeInfo attribute)
+			=> attribute.Type.IsClassType();
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is enumeration or not
+		/// </summary>
+		/// <param name="attribute">The attribute for checking</param>
+		/// <returns>true if type is numeric</returns>
+		public static bool IsEnum(this AttributeInfo attribute)
+			=> attribute.Type.IsEnum;
 		#endregion
 
 		#region Collection meta data
