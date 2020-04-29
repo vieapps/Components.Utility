@@ -764,6 +764,20 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static object GetStaticObject(string @class, string name)
 			=> Type.GetType(@class)?.GetStaticObject(name);
+
+		/// <summary>
+		/// Trims all string properties
+		/// </summary>
+		/// <param name="object"></param>
+		public static void TrimAll(this object @object)
+		{
+			if (@object != null && @object.GetType().IsClassType())
+				@object.GetProperties(attribute => attribute.IsStringType()).ForEach(attribute =>
+				{
+					if (@object.GetAttributeValue(attribute) is string value && value != null)
+						@object.SetAttributeValue(attribute, value.Trim());
+				});
+		}
 		#endregion
 
 		#region Copy objects' properties to/from other object
