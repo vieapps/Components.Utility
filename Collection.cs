@@ -359,9 +359,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="separator"></param>
 		/// <param name="removeEmptyElements"></param>
 		/// <param name="trim"></param>
+		/// <param name="comparer"></param>
 		/// <returns></returns>
-		public static HashSet<string> ToHashSet(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
-			=> new HashSet<string>(@string.ToArray(separator, removeEmptyElements, trim));
+		public static HashSet<string> ToHashSet(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true, IEqualityComparer<string> comparer = null)
+			=> new HashSet<string>(@string.ToArray(separator, removeEmptyElements, trim), comparer ?? StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Converts this string to a hash-set
@@ -370,9 +371,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="separator"></param>
 		/// <param name="removeEmptyElements"></param>
 		/// <param name="trim"></param>
+		/// <param name="comparer"></param>
 		/// <returns></returns>
-		public static HashSet<string> ToHashSet(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
-			=> @string.ToHashSet(separator.ToString(), removeEmptyElements, trim);
+		public static HashSet<string> ToHashSet(this string @string, char separator, bool removeEmptyElements = false, bool trim = true, IEqualityComparer<string> comparer = null)
+			=> @string.ToHashSet(separator.ToString(), removeEmptyElements, trim, comparer);
 
 		/// <summary>
 		/// Converts this collection to string
