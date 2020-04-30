@@ -92,6 +92,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Object meta data
 		static Dictionary<Type, List<AttributeInfo>> ObjectProperties { get; } = new Dictionary<Type, List<AttributeInfo>>();
+
 		static Dictionary<Type, List<AttributeInfo>> ObjectFields { get; } = new Dictionary<Type, List<AttributeInfo>>();
 
 		/// <summary>
@@ -103,8 +104,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns>Collection of public properties</returns>
 		public static List<AttributeInfo> GetProperties(Type type, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
 		{
-			if (type == null)
-				return null;
+			if (type == null || !type.IsClassType())
+				return new List<AttributeInfo>();
 
 			if (!ObjectService.ObjectProperties.TryGetValue(type, out var properties))
 				lock (ObjectService.ObjectProperties)
@@ -148,7 +149,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="predicate">The predicate</param>
 		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
 		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
+		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false) where T : class
 			=> ObjectService.GetProperties(typeof(T), predicate, allowDuplicatedName);
 
 		/// <summary>
@@ -159,7 +160,27 @@ namespace net.vieapps.Components.Utility
 		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
 		/// <returns>Collection of public properties</returns>
 		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
-			=> ObjectService.GetProperties(@object.GetType(), predicate, allowDuplicatedName);
+			=> @object != null ? ObjectService.GetProperties(@object.GetType(), predicate, allowDuplicatedName) : new List<AttributeInfo>();
+
+		/// <summary>
+		/// Gets the collection of public attributes of this type
+		/// </summary>
+		/// <param name="type">The type for processing</param>
+		/// <param name="predicate">The predicate</param>
+		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
+		/// <returns>Collection of public attributes</returns>
+		public static List<AttributeInfo> GetPublicAttributes(this Type type, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
+			=> type != null ? ObjectService.GetProperties(type, predicate, allowDuplicatedName) : new List<AttributeInfo>();
+
+		/// <summary>
+		/// Gets the collection of public attributes of the object's type
+		/// </summary>
+		/// <param name="object">The object for processing</param>
+		/// <param name="predicate">The predicate</param>
+		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
+		/// <returns>Collection of public attributes</returns>
+		public static List<AttributeInfo> GetPublicAttributes(this object @object, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
+			=> @object?.GetType().GetPublicAttributes(predicate, allowDuplicatedName) ?? new List<AttributeInfo>();
 
 		/// <summary>
 		/// Gets the collection of fields (private attributes) of the type
@@ -169,8 +190,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns>Collection of private fields/attributes</returns>
 		public static List<AttributeInfo> GetFields(Type type, Func<AttributeInfo, bool> predicate = null)
 		{
-			if (type == null)
-				return null;
+			if (type == null || !type.IsClassType())
+				return new List<AttributeInfo>();
 
 			if (!ObjectService.ObjectFields.TryGetValue(type, out var fields))
 				lock (ObjectService.ObjectFields)
@@ -181,7 +202,7 @@ namespace net.vieapps.Components.Utility
 							.Select(info => new AttributeInfo(info))
 							.ToList();
 				}
-
+			
 			return predicate != null
 				? fields.Where(info => predicate(info)).ToList()
 				: fields;
@@ -192,7 +213,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null)
+		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null) where T : class
 			=> ObjectService.GetFields(typeof(T), predicate);
 
 		/// <summary>
@@ -202,33 +223,51 @@ namespace net.vieapps.Components.Utility
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
 		public static List<AttributeInfo> GetFields(this object @object, Func<AttributeInfo, bool> predicate = null)
-			=> ObjectService.GetFields(@object.GetType(), predicate);
+			=> @object != null ? ObjectService.GetFields(@object.GetType(), predicate) : new List<AttributeInfo>();
 
 		/// <summary>
-		/// Gets the collection of attributes of the type (means contains all public properties and private fields)
+		/// Gets the collection of private attributes of this type
 		/// </summary>
 		/// <param name="type">The type for processing</param>
 		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null)
-			=> ObjectService.GetProperties(type, predicate).Concat(ObjectService.GetFields(type, predicate)).ToList();
+		/// <returns>Collection of private attributes</returns>
+		public static List<AttributeInfo> GetPrivateAttributes(this Type type, Func<AttributeInfo, bool> predicate = null)
+			=> type != null ? ObjectService.GetFields(type, predicate) : new List<AttributeInfo>();
 
 		/// <summary>
-		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
+		/// Gets the collection of private attributes of this object type
+		/// </summary>
+		/// <param name="object">The object for processing</param>
+		/// <param name="predicate">The predicate</param>
+		/// <returns>Collection of private attributes</returns>
+		public static List<AttributeInfo> GetPrivateAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
+			=> @object?.GetType().GetPrivateAttributes(predicate) ?? new List<AttributeInfo>();
+
+		/// <summary>
+		/// Gets the collection of attributes of the type (means contains all public and private attributes)
+		/// </summary>
+		/// <param name="type">The type for processing</param>
+		/// <param name="predicate">The predicate</param>
+		/// <returns>Collection of all attributes</returns>
+		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null)
+			=> type != null ? type.GetPublicAttributes(predicate).Concat(type.GetPrivateAttributes(predicate)).ToList() : new List<AttributeInfo>();
+
+		/// <summary>
+		/// Gets the collection of attributes of the object's type (means contains all public and private attributes)
 		/// </summary>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null)
+		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null) where T : class
 			=> ObjectService.GetAttributes(typeof(T), predicate);
 
 		/// <summary>
-		/// Gets the collection of attributes of the object's type (means contains all public properties and private fields)
+		/// Gets the collection of attributes of the object's type (means contains all public and private attributes)
 		/// </summary>
 		/// <param name="object">The object for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
 		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
-			=> ObjectService.GetAttributes(@object.GetType(), predicate);
+			=> @object != null ? ObjectService.GetAttributes(@object.GetType(), predicate) : new List<AttributeInfo>();
 
 		/// <summary>
 		/// Get the full type name (type name with assembly name) of this type
@@ -259,7 +298,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="justName">true to get only name (means last element in full namespace)</param>
 		/// <returns></returns>
 		public static string GetTypeName(this object @object, bool justName = false)
-			=> @object.GetType().GetTypeName(justName);
+			=> @object?.GetType().GetTypeName(justName);
 
 		/// <summary>
 		/// Gets the collection of custom attributes
@@ -268,7 +307,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The collection of custom attributes</returns>
 		public static List<T> GetCustomAttributes<T>(this Type type, bool inherit = true) where T : class
-			=> type.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
+			=> type?.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
 
 		/// <summary>
 		/// Gets the first custom attribute
@@ -277,7 +316,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this Type type, bool inherit = true) where T : class
-			=> type.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
+			=> type?.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
 
 		/// <summary>
 		/// Gets the collection of custom attributes
@@ -286,7 +325,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The collection of custom attributes</returns>
 		public static List<T> GetCustomAttributes<T>(this AttributeInfo attribute, bool inherit = true) where T : class
-			=> attribute.Info.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
+			=> attribute?.Info?.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
 
 		/// <summary>
 		/// Gets the first custom attribute
@@ -295,7 +334,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this AttributeInfo attribute, bool inherit = true) where T : class
-			=> attribute.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
+			=> attribute?.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
 
 		/// <summary>
 		/// Gets the state to determines the type is primitive or not
