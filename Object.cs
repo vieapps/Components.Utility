@@ -61,17 +61,17 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Gets the name
 			/// </summary>
-			public string Name { get; internal set; }
+			public string Name { get; }
 
 			/// <summary>
 			/// Gets the information
 			/// </summary>
-			public MemberInfo Info { get; internal set; }
+			public MemberInfo Info { get; }
 
 			/// <summary>
 			/// Specifies this attribute is public (everyone can access)
 			/// </summary>
-			public bool IsPublic => this.Info is PropertyInfo;
+			public bool IsPublic => this.Info  != null && this.Info is PropertyInfo;
 
 			/// <summary>
 			/// Specifies this attribute can be read
@@ -86,7 +86,7 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Gets the type of the attribute
 			/// </summary>
-			public Type Type => this.IsPublic ? (this.Info as PropertyInfo).PropertyType : (this.Info as FieldInfo).FieldType;
+			public Type Type => this.IsPublic ? (this.Info as PropertyInfo)?.PropertyType : (this.Info as FieldInfo)?.FieldType;
 		}
 		#endregion
 
@@ -267,7 +267,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of attributes</returns>
 		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
-			=> @object != null ? ObjectService.GetAttributes(@object.GetType(), predicate) : new List<AttributeInfo>();
+			=> ObjectService.GetAttributes(@object?.GetType(), predicate);
 
 		/// <summary>
 		/// Get the full type name (type name with assembly name) of this type
@@ -277,9 +277,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The string that presents type name</returns>
 		public static string GetTypeName(this Type type, bool justName = false)
 		{
+			if (type == null)
+				return "";
+
 			if (!justName)
 				return type.FullName + "," + type.Assembly.GetName().Name;
-			else if (!type.IsGenericType)
+
+			if (!type.IsGenericType)
 				return type.FullName.ToArray('.').Last();
 
 			var typeName = type.FullName;
@@ -342,7 +346,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is primitive</returns>
 		public static bool IsPrimitiveType(this Type type)
-			=> type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType();
+			=> type != null && (type.IsPrimitive || type.IsStringType() || type.IsDateTimeType() || type.IsNumericType());
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is primitive or not
@@ -350,7 +354,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsPrimitiveType(this AttributeInfo attribute)
-			=> attribute.Type.IsPrimitiveType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsPrimitiveType();
 
 		/// <summary>
 		/// Gets the state to determines the type is string or not
@@ -358,7 +362,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is string</returns>
 		public static bool IsStringType(this Type type)
-			=> type.Equals(typeof(string));
+			=> type != null && type.Equals(typeof(string));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is string or not
@@ -366,7 +370,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsStringType(this AttributeInfo attribute)
-			=> attribute.Type.IsStringType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsStringType();
 
 		/// <summary>
 		/// Gets the state to determines the type is date-time or not
@@ -374,7 +378,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
 		public static bool IsDateTimeType(this Type type)
-			=> type.Equals(typeof(DateTime)) || type.Equals(typeof(DateTimeOffset));
+			=> type != null && (type.Equals(typeof(DateTime)) || type.Equals(typeof(DateTimeOffset)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is date-time or not
@@ -382,7 +386,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsDateTimeType(this AttributeInfo attribute)
-			=> attribute.Type.IsDateTimeType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsDateTimeType();
 
 		/// <summary>
 		/// Gets the state to determines the type is integral numeric or not
@@ -390,9 +394,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is integral numeric</returns>
 		public static bool IsIntegralType(this Type type)
-			=> type.Equals(typeof(byte)) || type.Equals(typeof(sbyte))
+			=> type != null && (type.Equals(typeof(byte)) || type.Equals(typeof(sbyte))
 				|| type.Equals(typeof(short)) || type.Equals(typeof(int)) || type.Equals(typeof(long))
-				|| type.Equals(typeof(ushort)) || type.Equals(typeof(uint)) || type.Equals(typeof(ulong));
+				|| type.Equals(typeof(ushort)) || type.Equals(typeof(uint)) || type.Equals(typeof(ulong)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is integral numeric or not
@@ -400,7 +404,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsIntegralType(this AttributeInfo attribute)
-			=> attribute.Type.IsIntegralType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsIntegralType();
 
 		/// <summary>
 		/// Gets the state to determines the type is floating numeric or not
@@ -408,7 +412,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
 		public static bool IsFloatingPointType(this Type type)
-			=> type.Equals(typeof(decimal)) || type.Equals(typeof(double)) || type.Equals(typeof(float));
+			=> type != null && (type.Equals(typeof(decimal)) || type.Equals(typeof(double)) || type.Equals(typeof(float)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is floating numeric or not
@@ -416,7 +420,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsFloatingPointType(this AttributeInfo attribute)
-			=> attribute.Type.IsFloatingPointType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsFloatingPointType();
 
 		/// <summary>
 		/// Gets the state to determines the type is numeric or not
@@ -424,7 +428,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsNumericType(this Type type)
-			=> type.IsIntegralType() || type.IsFloatingPointType();
+			=> type != null && (type.IsIntegralType() || type.IsFloatingPointType());
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is numeric or not
@@ -432,7 +436,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsNumericType(this AttributeInfo attribute)
-			=> attribute.Type.IsNumericType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsNumericType();
 
 		/// <summary>
 		/// Gets the state to determines the type is a reference of a class or not
@@ -440,7 +444,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsClassType(this Type type)
-			=> !type.IsPrimitiveType() && type.IsClass;
+			=> type != null && !type.IsPrimitiveType() && type.IsClass;
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is a reference of a class or not
@@ -448,7 +452,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsClassType(this AttributeInfo attribute)
-			=> attribute.Type.IsClassType();
+			=> attribute != null && attribute.Type != null && attribute.Type.IsClassType();
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is enumeration or not
@@ -456,7 +460,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="attribute">The attribute for checking</param>
 		/// <returns>true if type is numeric</returns>
 		public static bool IsEnum(this AttributeInfo attribute)
-			=> attribute.Type.IsEnum;
+			=> attribute != null && attribute.Type != null && attribute.Type.IsEnum;
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is serializable (got 'Serializable' attribute) or not
@@ -670,7 +674,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericDictionaryOrCollection(this object @object)
-			=> @object.GetType().IsGenericDictionaryOrCollection();
+			=> @object != null && @object.GetType().IsGenericDictionaryOrCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
@@ -799,7 +803,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if success, otherwise false</returns>
 		public static bool SetAttributeValue(this object @object, string name, object value)
 		{
-			if (string.IsNullOrWhiteSpace(name))
+			if (@object == null || string.IsNullOrWhiteSpace(name))
 				throw new ArgumentNullException(nameof(name));
 
 			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
@@ -834,7 +838,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="value">The object that presents the value of the attribute need to set.</param>
 		/// <param name="cast">true to cast the type of attribute</param>
 		public static bool SetAttributeValue(this object @object, AttributeInfo attribute, object value, bool cast = false)
-			=> attribute != null ? @object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value) : throw new ArgumentNullException(nameof(attribute));
+			=> @object != null && attribute != null ? @object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value) : throw new ArgumentNullException(nameof(attribute));
 
 		/// <summary>
 		/// Gets value of an attribute of an object.
@@ -911,20 +915,17 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static object GetStaticObject(this Type type, string name)
 		{
-			if (string.IsNullOrEmpty(name))
+			if (type == null || string.IsNullOrEmpty(name))
 				return null;
 
 			var fieldInfo = type.GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 			if (fieldInfo != null)
 				return fieldInfo.GetValue(null);
 
-			else
-			{
-				var propertyInfo = type.GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-				return propertyInfo != null && propertyInfo.CanRead
-					? propertyInfo.GetValue(null, null)
-					: null;
-			}
+			var propertyInfo = type.GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+			return propertyInfo != null && propertyInfo.CanRead
+				? propertyInfo.GetValue(null, null)
+				: null;
 		}
 
 		/// <summary>
@@ -934,7 +935,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The name of the static object</param>
 		/// <returns></returns>
 		public static object GetStaticObject(string @class, string name)
-			=> Type.GetType(@class)?.GetStaticObject(name);
+			=> string.IsNullOrWhiteSpace(@class) ? null : Type.GetType(@class)?.GetStaticObject(name);
 
 		/// <summary>
 		/// Trims all string properties
@@ -943,7 +944,7 @@ namespace net.vieapps.Components.Utility
 		public static void TrimAll(this object @object)
 		{
 			if (@object != null && @object.GetType().IsClassType())
-				@object.GetProperties(attribute => attribute.IsStringType()).ForEach(attribute =>
+				@object.GetPublicAttributes(attribute => attribute.IsStringType()).ForEach(attribute =>
 				{
 					if (@object.GetAttributeValue(attribute) is string value && value != null)
 						@object.SetAttributeValue(attribute, value.Trim());
@@ -962,7 +963,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The action to run when got any error</param>
 		public static void CopyTo<T>(this T @object, T destination, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
-			if (destination == null)
+			if (@object == null || destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
 
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
@@ -1004,7 +1005,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The action to run when got any error</param>
 		public static void CopyFrom<T>(this T @object, object source, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
-			if (source == null)
+			if (@object == null || source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
 
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
@@ -1048,7 +1049,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The action to run when got any error</param>
 		public static void CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
-			if (json == null)
+			if (@object == null || json == null)
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
 
 			var serializer = new JsonSerializer();
@@ -1225,6 +1226,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The action to run when got any error</param>
 		public static void CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
+			if (@object == null)
+				return;
+
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
 			foreach (var attribute in @object.GetPublicAttributes())
 			{
@@ -1574,7 +1578,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onPreCompleted">The action to run on pre-completed</param>
 		/// <returns></returns>
 		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null)
-			=> json.ToJson().FromJson(copy, onPreCompleted);
+			=> (json ?? "").ToJson().FromJson(copy, onPreCompleted);
 
 		/// <summary>
 		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
@@ -1861,7 +1865,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class
-			=> (@object is JToken ? @object as JToken : @object.ToJson()).ToExpandoObject();
+			=> (@object is JToken ? @object as JToken : @object?.ToJson())?.ToExpandoObject();
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
@@ -1883,7 +1887,7 @@ namespace net.vieapps.Components.Utility
 		{
 			// assign & check
 			value = null;
-			if (string.IsNullOrWhiteSpace(name))
+			if (@object == null || string.IsNullOrWhiteSpace(name))
 				return false;
 
 			// prepare
@@ -1923,6 +1927,8 @@ namespace net.vieapps.Components.Utility
 		{
 			// assign default
 			value = default;
+			if (@object == null)
+				return false;
 
 			// get value & normalize
 			if (@object.TryGet(name, out object tempValue))
