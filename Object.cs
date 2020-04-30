@@ -457,6 +457,22 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if type is numeric</returns>
 		public static bool IsEnum(this AttributeInfo attribute)
 			=> attribute.Type.IsEnum;
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is serializable (got 'Serializable' attribute) or not
+		/// </summary>
+		/// <param name="attribute"></param>
+		/// <returns></returns>
+		public static bool IsSerializable(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsSerializable;
+
+		/// <summary>
+		/// Gets the state to determines the object is serializable (got 'Serializable' attribute) or not
+		/// </summary>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static bool IsSerializable(this object @object)
+			=> @object != null && @object.GetType().IsSerializable;
 		#endregion
 
 		#region Collection meta data
@@ -468,23 +484,49 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if the checking type is sub-class of the generic type</returns>
 		public static bool IsSubclassOfGeneric(this Type type, Type genericType)
 		{
-			if (genericType == null || !genericType.IsGenericType)
+			if (type == null || genericType == null || !genericType.IsGenericType)
 				return false;
 
-			while (type != null && type != typeof(object))
+			var baseType = type;
+			var objectType = typeof(object);
+			while (baseType != null && baseType != objectType)
 			{
 				var current = type.IsGenericType
-					? type.GetGenericTypeDefinition()
-					: type;
+					? baseType.GetGenericTypeDefinition()
+					: baseType;
 
 				if (genericType == current)
 					return true;
 
-				type = type.BaseType;
+				baseType = baseType.BaseType;
 			}
 
 			return false;
 		}
+
+		/// <summary>
+		/// Gets the generic type arguments of this type
+		/// </summary>
+		/// <param name="type">The type for processing</param>
+		/// <returns></returns>
+		public static List<Type> GetGenericTypeArguments(this Type type)
+			=> type != null && type.IsGenericType ? type.GenericTypeArguments.ToList() : new List<Type>();
+
+		/// <summary>
+		/// Gets the generic type arguments of this attribute type
+		/// </summary>
+		/// <param name="attribute">The attribute for processing</param>
+		/// <returns></returns>
+		public static List<Type> GetGenericTypeArguments(this AttributeInfo attribute)
+			=> attribute?.Type?.GetGenericTypeArguments() ?? new List<Type>();
+
+		/// <summary>
+		/// Gets the generic type arguments of this object
+		/// </summary>
+		/// <param name="object">The type for processing</param>
+		/// <returns></returns>
+		public static List<Type> GetGenericTypeArguments(this object @object)
+			=> @object?.GetType().GetGenericTypeArguments() ?? new List<Type>();
 
 		/// <summary>
 		/// Gets the state to determines the type is a generic list
@@ -492,7 +534,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a generic list; otherwise false.</returns>
 		public static bool IsGenericList(this Type type)
-			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(List<>));
+			=> type != null && type.IsGenericType && type.IsSubclassOfGeneric(typeof(List<>));
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a generic list
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsGenericList(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsGenericList();
 
 		/// <summary>
 		/// Gets the state to determines the object's type is a generic list
@@ -500,7 +550,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list; otherwise false.</returns>
 		public static bool IsGenericList(this object @object)
-			=> @object.GetType().IsGenericList();
+			=> @object != null && @object.GetType().IsGenericList();
 
 		/// <summary>
 		/// Gets the state to determines the type is a generic hash-set
@@ -508,7 +558,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
 		public static bool IsGenericHashSet(this Type type)
-			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(HashSet<>));
+			=> type != null && type.IsGenericType && type.IsSubclassOfGeneric(typeof(HashSet<>));
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a generic hash-set
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsGenericHashSet(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsGenericHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the object's type is a generic hash-set
@@ -516,15 +574,23 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic hash-set; otherwise false.</returns>
 		public static bool IsGenericHashSet(this object @object)
-			=> @object.GetType().IsGenericHashSet();
+			=> @object != null && @object.GetType().IsGenericHashSet();
 
 		/// <summary>
-		/// Gets the state to determines the type is generic list or generic hash-set
+		/// Gets the state to determines the type is a generic list or generic hash-set
 		/// </summary>
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
 		public static bool IsGenericListOrHashSet(this Type type)
-			=> type.IsGenericList() || type.IsGenericHashSet();
+			=> type != null && type.IsGenericList() || type.IsGenericHashSet();
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a generic list or generic hash-set
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsGenericListOrHashSet(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsGenericListOrHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the object's type is generic list or generic hash-set
@@ -532,7 +598,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
 		public static bool IsGenericListOrHashSet(this object @object)
-			=> @object.GetType().IsGenericListOrHashSet();
+			=> @object != null && @object.GetType().IsGenericListOrHashSet();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic dictionary
@@ -540,7 +606,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
 		public static bool IsGenericDictionary(this Type type)
-			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(Dictionary<,>));
+			=> type != null && type.IsGenericType && type.IsSubclassOfGeneric(typeof(Dictionary<,>));
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a generic dictionary
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsGenericDictionary(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsGenericDictionary();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic dictionary
@@ -548,7 +622,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is a reference (or sub-class) of a generic dictionary; otherwise false.</returns>
 		public static bool IsGenericDictionary(this object @object)
-			=> @object.GetType().IsGenericDictionary();
+			=> @object != null && @object.GetType().IsGenericDictionary();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic collection
@@ -556,7 +630,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericCollection(this Type type)
-			=> type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
+			=> type != null && type.IsGenericType && type.IsSubclassOfGeneric(typeof(Collection<,>));
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a generic collection
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsGenericCollection(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsGenericCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic collection
@@ -564,7 +646,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericCollection(this object @object)
-			=> @object.GetType().IsGenericCollection();
+			=> @object != null && @object.GetType().IsGenericCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference of a generic dictionary or a generic collection
@@ -572,7 +654,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericDictionaryOrCollection(this Type type)
-			=> type.IsGenericDictionary() || type.IsGenericCollection();
+			=> type != null && type.IsGenericDictionary() || type.IsGenericCollection();
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is a generic dictionary or a generic collection
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsGenericDictionaryOrCollection(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsGenericDictionaryOrCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a generic dictionary or a generic collection
@@ -588,7 +678,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
 		public static bool IsICollection(this Type type)
-			=> typeof(ICollection).IsAssignableFrom(type) || type.IsGenericHashSet();
+			=> type != null && (typeof(ICollection).IsAssignableFrom(type) || type.IsGenericHashSet());
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsICollection(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsICollection();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface
@@ -596,7 +694,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is reference of a class that is sub-class of the <see cref="ICollection">ICollection</see> interface; otherwise false.</returns>
 		public static bool IsICollection(this object @object)
-			=> @object.GetType().IsICollection();
+			=> @object != null && @object.GetType().IsICollection();
 
 		/// <summary>
 		/// Gets the state to determines the type is reference (or sub-class) of the the <see cref="System.Collections.Specialized.Collection">Collection</see> class
@@ -604,7 +702,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is is reference (or sub-class) of the the <see cref="System.Collections.Specialized.Collection">Collection</see> class; otherwise false.</returns>
 		public static bool IsCollection(this Type type)
-			=> typeof(System.Collections.Specialized.Collection).IsAssignableFrom(type);
+			=> type != null && typeof(System.Collections.Specialized.Collection).IsAssignableFrom(type);
+
+		/// <summary>
+		/// Gets the state to determines the attribute type is reference (or sub-class) of the the <see cref="System.Collections.Specialized.Collection">Collection</see> class
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsCollection(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsCollection();
 
 		/// <summary>
 		/// Gets the state to determines the type of the object is reference (or sub-class) of the the Collection class
@@ -612,15 +718,23 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the Collection class; otherwise false.</returns>
 		public static bool IsCollection(this object @object)
-			=> @object.GetType().IsCollection();
+			=> @object != null && @object.GetType().IsCollection();
 
 		/// <summary>
-		/// Gets the state to determines the the object is array or not
+		/// Gets the state to determines the attribute type is is array or not
+		/// </summary>
+		/// <param name="attribute">Teh attribute for checking</param>
+		/// <returns>true if the type is a generic list; otherwise false.</returns>
+		public static bool IsArray(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsArray;
+
+		/// <summary>
+		/// Gets the state to determines the object is array or not
 		/// </summary>
 		/// <param name="object">The object for checking type</param>
 		/// <returns>true if the type of the object is is reference (or sub-class) of the the Collection class; otherwise false.</returns>
 		public static bool IsArray(this object @object)
-			=> @object.GetType().IsArray;
+			=> @object != null && @object.GetType().IsArray;
 		#endregion
 
 		#region Create new instance & Cast
@@ -851,7 +965,9 @@ namespace net.vieapps.Components.Utility
 			if (destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
 
-			@object.GetProperties(attribute => attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))).ForEach(attribute =>
+			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+
+			@object.GetPublicAttributes(attribute => attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -863,7 +979,7 @@ namespace net.vieapps.Components.Utility
 				}
 			});
 
-			@object.GetFields(attribute => excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)).ForEach(attribute =>
+			@object.GetPrivateAttributes(attribute => !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -891,7 +1007,9 @@ namespace net.vieapps.Components.Utility
 			if (source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
 
-			@object.GetProperties(attribute => attribute.CanWrite && (excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name))).ForEach(attribute =>
+			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+
+			@object.GetPublicAttributes(attribute => attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -903,7 +1021,7 @@ namespace net.vieapps.Components.Utility
 				}
 			});
 
-			@object.GetFields(attribute => excluded == null || excluded.Count < 1 || !excluded.Contains(attribute.Name)).ForEach(attribute =>
+			@object.GetPrivateAttributes(attribute => !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -934,10 +1052,12 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
 
 			var serializer = new JsonSerializer();
-			foreach (var attribute in @object.GetProperties())
+			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+
+			foreach (var attribute in @object.GetPublicAttributes())
 			{
-				// check excluded
-				if (!attribute.CanWrite || (excluded != null && excluded.Contains(attribute.Name)))
+				// check
+				if (!attribute.CanWrite || excludedAttributes.Contains(attribute.Name))
 					continue;
 
 				// check token
@@ -951,28 +1071,30 @@ namespace net.vieapps.Components.Utility
 					continue;
 
 				// array
-				if (attribute.Type.IsArray)
+				if (attribute.IsArray())
 				{
 					var type = attribute.Type.GetElementType().MakeArrayType();
 					@object.SetAttributeValue(attribute, serializer.Deserialize(new JTokenReader(token), type));
 				}
 
 				// generic list/hash-set
-				else if (attribute.Type.IsGenericListOrHashSet())
+				else if (attribute.IsGenericListOrHashSet())
 					try
 					{
 						// prepare
 						JArray data = null;
-						if (attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetAsObjectAttribute() != null && token is JObject)
+						var dataType = attribute.GetGenericTypeArguments().First();
+
+						if (dataType.IsClassType() && attribute.GetAsObjectAttribute() != null && token is JObject)
 						{
 							data = new JArray();
 							if ((token as JObject).Count > 0)
 							{
-								var gotSpecialAttributes = attribute.Type.GenericTypeArguments[0].GetSpecialSerializeAttributes().Count > 0;
+								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
 								foreach (var item in token as JObject)
 									if (gotSpecialAttributes)
 									{
-										var child = attribute.Type.GenericTypeArguments[0].CreateInstance();
+										var child = dataType.CreateInstance();
 										child.CopyFrom(item.Value);
 										data.Add(JObject.FromObject(child));
 									}
@@ -984,9 +1106,9 @@ namespace net.vieapps.Components.Utility
 							data = token as JArray;
 
 						// update
-						var type = attribute.Type.IsGenericList()
-							? typeof(List<>).MakeGenericType(attribute.Type.GenericTypeArguments[0])
-							: typeof(HashSet<>).MakeGenericType(attribute.Type.GenericTypeArguments[0]);
+						var type = attribute.IsGenericList()
+							? typeof(List<>).MakeGenericType(dataType)
+							: typeof(HashSet<>).MakeGenericType(dataType);
 						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? serializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
@@ -995,12 +1117,14 @@ namespace net.vieapps.Components.Utility
 					}
 
 				// generic dictionary/collection
-				else if (attribute.Type.IsGenericDictionaryOrCollection())
+				else if (attribute.IsGenericDictionaryOrCollection())
 					try
 					{
 						// prepare
 						JObject data = null;
-						if (attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetAsArrayAttribute() != null && token is JArray)
+						var dataType = attribute.GetGenericTypeArguments().Last();
+
+						if (dataType.IsClassType() && attribute.GetAsArrayAttribute() != null && token is JArray)
 						{
 							data = new JObject();
 							if ((token as JArray).Count > 0)
@@ -1009,11 +1133,11 @@ namespace net.vieapps.Components.Utility
 								var keyAttribute = !string.IsNullOrWhiteSpace(asArray.KeyAttribute)
 									? asArray.KeyAttribute
 									: "ID";
-								var gotSpecialAttributes = attribute.Type.GenericTypeArguments[1].GetSpecialSerializeAttributes().Count > 0;
+								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
 								foreach (JObject item in token as JArray)
 									if (gotSpecialAttributes)
 									{
-										object child = attribute.Type.GenericTypeArguments[1].CreateInstance();
+										object child = dataType.CreateInstance();
 										child.CopyFrom(item);
 										var keyValue = child.GetAttributeValue(keyAttribute);
 										if (keyValue != null)
@@ -1032,8 +1156,8 @@ namespace net.vieapps.Components.Utility
 
 						// update
 						var type = attribute.Type.IsGenericDictionary()
-							? typeof(Dictionary<,>).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
-							: typeof(Collection<,>).MakeGenericType(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
+							? typeof(Dictionary<,>).MakeGenericType(attribute.GetGenericTypeArguments().First(), dataType)
+							: typeof(Collection<,>).MakeGenericType(attribute.GetGenericTypeArguments().First(), dataType);
 						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? serializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
@@ -1042,7 +1166,7 @@ namespace net.vieapps.Components.Utility
 					}
 
 				// collection
-				else if (attribute.Type.IsCollection())
+				else if (attribute.IsCollection())
 					try
 					{
 						@object.SetAttributeValue(attribute, token is JObject && (token as JObject).Count > 0 ? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection)) : typeof(System.Collections.Specialized.Collection).CreateInstance());
@@ -1061,7 +1185,7 @@ namespace net.vieapps.Components.Utility
 					catch { }
 
 				// class
-				else if (attribute.Type.IsClassType())
+				else if (attribute.IsClassType())
 					try
 					{
 						var instance = attribute.Type.CreateInstance();
@@ -1101,13 +1225,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The action to run when got any error</param>
 		public static void CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
 		{
-			foreach (var attribute in @object.GetProperties())
+			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+			foreach (var attribute in @object.GetPublicAttributes())
 			{
-				// check excluded
-				if (!attribute.CanWrite || (excluded != null && excluded.Contains(attribute.Name)))
+				// check
+				if (!attribute.CanWrite || excludedAttributes.Contains(attribute.Name))
 					continue;
 
-				// get and check the value
 				if (!expandoObject.TryGet(attribute.Name, out object value))
 					continue;
 
@@ -1115,19 +1239,19 @@ namespace net.vieapps.Components.Utility
 				if (value != null)
 				{
 					// generic list/hash-set
-					if (value is List<object> && attribute.Type.IsGenericListOrHashSet())
-						value = attribute.Type.IsGenericList()
-							? (value as List<object>).ToList(attribute.Type.GenericTypeArguments[0])
-							: (value as List<object>).ToHashSet(attribute.Type.GenericTypeArguments[0]);
+					if (value is List<object> && attribute.IsGenericListOrHashSet())
+						value = attribute.IsGenericList()
+							? (value as List<object>).ToList(attribute.GetGenericTypeArguments().First())
+							: (value as List<object>).ToHashSet(attribute.GetGenericTypeArguments().First());
 
 					// generic dictionary/collection
-					else if (value is ExpandoObject && attribute.Type.IsGenericDictionaryOrCollection())
-						value = attribute.Type.IsGenericDictionary()
-							? (value as ExpandoObject).ToDictionary(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1])
-							: (value as ExpandoObject).ToCollection(attribute.Type.GenericTypeArguments[0], attribute.Type.GenericTypeArguments[1]);
+					else if (value is ExpandoObject && attribute.IsGenericDictionaryOrCollection())
+						value = attribute.IsGenericDictionary()
+							? (value as ExpandoObject).ToDictionary(attribute.GetGenericTypeArguments().First(), attribute.GetGenericTypeArguments().Last())
+							: (value as ExpandoObject).ToCollection(attribute.GetGenericTypeArguments().First(), attribute.GetGenericTypeArguments().Last());
 
 					// class/array
-					else if (value is ExpandoObject && attribute.Type.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
+					else if (value is ExpandoObject && attribute.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
 					{
 						var obj = attribute.Type.CreateInstance();
 						obj.CopyFrom(value as ExpandoObject);
@@ -1233,9 +1357,11 @@ namespace net.vieapps.Components.Utility
 		{
 			// initialize the object
 			var instance = default(T);
+			if (@object == null)
+				return instance;
 
 			// the object is serializable
-			if (@object.GetType().IsSerializable)
+			if (@object.IsSerializable())
 				using (var stream = UtilityService.CreateMemoryStream())
 				{
 					try
@@ -1266,25 +1392,15 @@ namespace net.vieapps.Components.Utility
 
 		#region JSON conversions
 		internal static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
-			=> ObjectService.GetProperties(type)
-				.Where(attribute => (attribute.Type.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.Type.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
-				.ToList();
+			=> type?.GetPublicAttributes()
+				.Where(attribute => (attribute.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
+				.ToList() ?? new List<AttributeInfo>();
 
 		internal static AsArrayAttribute GetAsArrayAttribute(this AttributeInfo attribute)
-		{
-			var attributes = attribute.Info.GetCustomAttributes(typeof(AsArrayAttribute), true);
-			return attributes.Length > 0
-				? attributes[0] as AsArrayAttribute
-				: null;
-		}
+			=> attribute?.GetCustomAttribute<AsArrayAttribute>();
 
 		internal static AsObjectAttribute GetAsObjectAttribute(this AttributeInfo attribute)
-		{
-			var attributes = attribute.Info.GetCustomAttributes(typeof(AsObjectAttribute), true);
-			return attributes.Length > 0
-				? attributes[0] as AsObjectAttribute
-				: null;
-		}
+			=> attribute?.GetCustomAttribute<AsObjectAttribute>();
 
 		/// <summary>
 		/// Converts this XmlNode object to JSON object
@@ -1322,6 +1438,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static JToken ToJson<T>(this T @object, Action<JToken> onPreCompleted = null)
 		{
+			// check
+			if (@object == null)
+				return null;
+
 			// by-pass on JSON Token
 			if (@object is JToken)
 			{
@@ -1337,7 +1457,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var type = @object.IsArray()
 					? @object.GetType().GetElementType()
-					: @object.GetType().GenericTypeArguments[0];
+					: @object.GetGenericTypeArguments().First();
 
 				if (type.IsClassType())
 				{
@@ -1352,7 +1472,7 @@ namespace net.vieapps.Components.Utility
 			// generict dictionary/collection
 			else if (@object.IsGenericDictionaryOrCollection())
 			{
-				if (@object.GetType().GenericTypeArguments[1].IsClassType())
+				if (@object.GetGenericTypeArguments().Last().IsClassType())
 				{
 					json = new JObject();
 					var enumerator = (@object as IDictionary).GetEnumerator();
@@ -1369,7 +1489,7 @@ namespace net.vieapps.Components.Utility
 				json = JObject.FromObject(@object);
 				@object.GetType().GetSpecialSerializeAttributes().ForEach(attribute =>
 				{
-					if (attribute.Type.IsGenericListOrHashSet() && attribute.Type.GenericTypeArguments[0].IsClassType() && attribute.GetAsObjectAttribute() != null)
+					if (attribute.IsGenericListOrHashSet() && attribute.GetGenericTypeArguments().First().IsClassType() && attribute.GetAsObjectAttribute() != null)
 					{
 						var jsonObject = new JObject();
 
@@ -1391,7 +1511,7 @@ namespace net.vieapps.Components.Utility
 
 						json[attribute.Name] = jsonObject;
 					}
-					else if (attribute.Type.IsGenericDictionaryOrCollection() && attribute.Type.GenericTypeArguments[1].IsClassType() && attribute.GetAsArrayAttribute() != null)
+					else if (attribute.IsGenericDictionaryOrCollection() && attribute.GetGenericTypeArguments().Last().IsClassType() && attribute.GetAsArrayAttribute() != null)
 					{
 						var jsonArray = new JArray();
 						if (@object.GetAttributeValue(attribute.Name) is IEnumerable items)
