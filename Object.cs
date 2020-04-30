@@ -488,8 +488,8 @@ namespace net.vieapps.Components.Utility
 				return false;
 
 			var baseType = type;
-			var objectType = typeof(object);
-			while (baseType != null && baseType != objectType)
+			var rootType = typeof(object);
+			while (baseType != null && baseType != rootType)
 			{
 				var current = type.IsGenericType
 					? baseType.GetGenericTypeDefinition()
@@ -582,7 +582,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is a reference (or sub-class) of a generic list or generic hash-set; otherwise false.</returns>
 		public static bool IsGenericListOrHashSet(this Type type)
-			=> type != null && type.IsGenericList() || type.IsGenericHashSet();
+			=> type != null && (type.IsGenericList() || type.IsGenericHashSet());
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is a generic list or generic hash-set
@@ -654,7 +654,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if the type is sub-class of the generic collection class; otherwise false.</returns>
 		public static bool IsGenericDictionaryOrCollection(this Type type)
-			=> type != null && type.IsGenericDictionary() || type.IsGenericCollection();
+			=> type != null && (type.IsGenericDictionary() || type.IsGenericCollection());
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is a generic dictionary or a generic collection
