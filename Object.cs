@@ -33,32 +33,40 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Presents information of an attribute of an objects
 		/// </summary>
-		[Serializable, DebuggerDisplay("Name = {Name}")]
+		[Serializable, DebuggerDisplay("Name = {Name}, IsPublic = {IsPublic}, CanRead = {CanRead}, CanWrite = {CanWrite}")]
 		public class AttributeInfo
 		{
+			/// <summary>
+			/// Initializes information of an objects' attribute
+			/// </summary>
 			public AttributeInfo() : this(null) { }
 
+			/// <summary>
+			/// Initializes information of an objects' attribute
+			/// </summary>
+			/// <param name="info"></param>
 			public AttributeInfo(MemberInfo info) : this(info?.Name, info) { }
 
+			/// <summary>
+			/// Initializes information of an objects' attribute
+			/// </summary>
+			/// <param name="name"></param>
+			/// <param name="info"></param>
 			public AttributeInfo(string name, MemberInfo info)
 			{
-				this.Name = name;
+				this.Name = name ?? info?.Name;
 				this.Info = info;
 			}
 
+			/// <summary>
+			/// Gets the name
+			/// </summary>
 			public string Name { get; internal set; }
 
+			/// <summary>
+			/// Gets the information
+			/// </summary>
 			public MemberInfo Info { get; internal set; }
-
-			/// <summary>
-			/// Specifies this attribute can be read
-			/// </summary>
-			public bool CanRead => this.Info is PropertyInfo ? (this.Info as PropertyInfo).CanRead : true;
-
-			/// <summary>
-			/// Specifies this attribute can be written
-			/// </summary>
-			public bool CanWrite => this.Info is PropertyInfo ? (this.Info as PropertyInfo).CanWrite : true;
 
 			/// <summary>
 			/// Specifies this attribute is public (everyone can access)
@@ -66,9 +74,19 @@ namespace net.vieapps.Components.Utility
 			public bool IsPublic => this.Info is PropertyInfo;
 
 			/// <summary>
+			/// Specifies this attribute can be read
+			/// </summary>
+			public bool CanRead => this.IsPublic ? (this.Info as PropertyInfo).CanRead : true;
+
+			/// <summary>
+			/// Specifies this attribute can be written
+			/// </summary>
+			public bool CanWrite => this.IsPublic ? (this.Info as PropertyInfo).CanWrite : true;
+
+			/// <summary>
 			/// Gets the type of the attribute
 			/// </summary>
-			public Type Type => this.Info is PropertyInfo ? (this.Info as PropertyInfo).PropertyType : (this.Info as FieldInfo).FieldType;
+			public Type Type => this.IsPublic ? (this.Info as PropertyInfo).PropertyType : (this.Info as FieldInfo).FieldType;
 		}
 		#endregion
 
