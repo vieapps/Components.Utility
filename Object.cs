@@ -495,7 +495,7 @@ namespace net.vieapps.Components.Utility
 			var rootType = typeof(object);
 			while (baseType != null && baseType != rootType)
 			{
-				var current = type.IsGenericType
+				var current = baseType.IsGenericType
 					? baseType.GetGenericTypeDefinition()
 					: baseType;
 
