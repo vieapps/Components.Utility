@@ -311,7 +311,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The collection of custom attributes</returns>
 		public static List<T> GetCustomAttributes<T>(this Type type, bool inherit = true) where T : class
-			=> type?.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
+			=> type?.GetCustomAttributes(typeof(T), inherit).Select(attribute => attribute as T).ToList();
 
 		/// <summary>
 		/// Gets the first custom attribute
@@ -320,7 +320,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this Type type, bool inherit = true) where T : class
-			=> type?.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
+			=> type?.GetCustomAttributes<T>(inherit).FirstOrDefault();
 
 		/// <summary>
 		/// Gets the collection of custom attributes
@@ -338,7 +338,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this AttributeInfo attribute, bool inherit = true) where T : class
-			=> attribute?.GetCustomAttributes<T>(inherit).Select(attr => attr as T).ToList().FirstOrDefault();
+			=> attribute?.GetCustomAttributes<T>(inherit).FirstOrDefault();
 
 		/// <summary>
 		/// Gets the state to determines the type is primitive or not
