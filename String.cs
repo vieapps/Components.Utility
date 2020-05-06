@@ -576,8 +576,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toLowerCase">true to return lower case</param>
+		/// <param name="allowEmpty">true to allow empty (default is false - will be updated as a random value)</param>
 		/// <returns></returns>
-		public static string GetANSIUri(this string @string, bool toLowerCase = true)
+		public static string GetANSIUri(this string @string, bool toLowerCase = true, bool allowEmpty = false)
 		{
 			// convert Vietnamese characters
 			var result = @string.Trim().ConvertUnicodeToANSI();
@@ -599,7 +600,7 @@ namespace net.vieapps.Components.Utility
 				result = result.Left(result.Length - 1);
 
 			// add timestamp if has no value
-			if (result.Equals(""))
+			if (result.Equals("") && !allowEmpty)
 				result = "v" + DateTime.Now.ToUnixTimestamp();
 
 			// numeric
