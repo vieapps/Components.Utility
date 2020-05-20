@@ -410,10 +410,11 @@ namespace net.vieapps.Components.Utility
 		/// Converts this date-time to string in format 'yyyy/MM/dd HH:mm:ss'
 		/// </summary>
 		/// <param name="datetime"></param>
-		/// <param name="useUTC"></param>
+		/// <param name="useUTC">true to use UTC date-time</param>
+		/// <param name="allowTime">true to allow time, false to use date onlye</param>
 		/// <returns></returns>
-		public static string ToDTString(this DateTime datetime, bool useUTC = false)
-			=> (useUTC ? datetime.ToUniversalTime() : datetime).ToString("yyyy/MM/dd HH:mm:ss");
+		public static string ToDTString(this DateTime datetime, bool useUTC = false, bool allowTime = true)
+			=> (useUTC ? datetime.ToUniversalTime() : datetime).ToString(allowTime ? "yyyy/MM/dd HH:mm:ss" : "yyyy/MM/dd");
 
 		/// <summary>
 		/// Converts this date-time to string in format 'yyyy-MM-ddTHH:mm:ssZzzzz'

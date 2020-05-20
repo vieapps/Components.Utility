@@ -265,11 +265,22 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="string"></param>
 		/// <returns></returns>
-		public static string GetCapitalizedFirstLetter(this string @string)
+		public static string GetCapitalizedFirstLetter(this string @string, bool wordsSeperatedByDots = true)
 		{
-			var chars = @string.ToLower().ToCharArray();
-			chars[0] = char.ToUpper(chars[0]);
-			return new string(chars);
+			if (wordsSeperatedByDots)
+				return @string.ToArray(".").Select(str =>
+				{
+					var chars = str.ToLower().ToCharArray();
+					chars[0] = char.ToUpper(chars[0]);
+					return new string(chars);
+				})
+				.Join(".");
+			else
+			{
+				var chars = @string.ToLower().ToCharArray();
+				chars[0] = char.ToUpper(chars[0]);
+				return new string(chars);
+			}
 		}
 
 		/// <summary>
@@ -569,23 +580,28 @@ namespace net.vieapps.Components.Utility
 				? false
 				: double.TryParse(@string, out var number);
 
-		static Regex Normal { get; } = new Regex("[^a-zA-Z0-9_-]+");
+		static Regex URICharacters { get; } = new Regex("[^a-zA-Z0-9_-]+");
+
+		static Regex URICharactersWithDot { get; } = new Regex("[^a-zA-Z0-9._-]+");
 
 		/// <summary>
 		/// Generates the ANSI uri from this string (means remove all white spaces and special characters)
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="toLowerCase">true to return lower case</param>
+		/// <param name="allowDotSymbols">true to allow dot symbols (.)</param>
 		/// <param name="allowEmpty">true to allow empty (default is false - will be updated as a random value)</param>
 		/// <returns></returns>
-		public static string GetANSIUri(this string @string, bool toLowerCase = true, bool allowEmpty = false)
+		public static string GetANSIUri(this string @string, bool toLowerCase = true, bool allowDotSymbols = false, bool allowEmpty = false)
 		{
 			// convert Vietnamese characters
 			var result = @string.Trim().ConvertUnicodeToANSI();
 
 			// remove all special characters
 			result = result.Replace(StringComparison.OrdinalIgnoreCase, "C#", "CSharp").Replace(StringComparison.OrdinalIgnoreCase, "F#", "FSharp").Replace(StringComparison.OrdinalIgnoreCase, "Q#", "QSharp").Replace(" ", "-");
-			result = StringService.Normal.Replace(result, "");
+			result = allowDotSymbols
+				? StringService.URICharactersWithDot.Replace(result, "")
+				: StringService.URICharacters.Replace(result, "");
 
 			// remove duplicate characters
 			while (result.Contains("--"))
@@ -616,11 +632,12 @@ namespace net.vieapps.Components.Utility
 		/// Validate the ANSI uri
 		/// </summary>
 		/// <param name="ansiUri">The string that presents an ANSI uri to check</param>
+		/// <param name="allowDotSymbols">true to allow dot symbols (.)</param>
 		/// <returns>true if valid; otherwise false.</returns>
-		public static bool IsValidANSIUri(this string ansiUri)
+		public static bool IsValidANSIUri(this string ansiUri, bool allowDotSymbols = false)
 			=> string.IsNullOrWhiteSpace(ansiUri)
 				? false
-				: ansiUri.IsEquals(StringService.Normal.Replace(ansiUri, ""));
+				: ansiUri.IsEquals(allowDotSymbols ? StringService.URICharactersWithDot.Replace(ansiUri, "") : StringService.URICharacters.Replace(ansiUri, ""));
 		#endregion
 
 	}
