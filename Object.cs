@@ -305,10 +305,28 @@ namespace net.vieapps.Components.Utility
 			=> @object?.GetType().GetTypeName(justName);
 
 		/// <summary>
-		/// Gets the collection of custom attributes
+		/// Gets the state that indicates the custom attribute is defined or not
 		/// </summary>
 		/// <param name="type">The type for working with</param>
 		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The first custom attribute</returns>
+		public static bool IsDefined<T>(this Type type, bool inherit) where T : class
+			=> type != null && type.IsDefined(typeof(T), inherit);
+
+		/// <summary>
+		/// Gets the state that indicates the custom attribute is defined or not
+		/// </summary>
+		/// <param name="attribute">The attribute for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The first custom attribute</returns>
+		public static bool IsDefined<T>(this AttributeInfo attribute, bool inherit) where T : class
+			=> attribute != null && attribute.Type != null && attribute.Type.IsDefined<T>(inherit);
+
+		/// <summary>
+		/// Gets the collection of custom attributes
+		/// </summary>
+		/// <param name="type">The type for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes (default is true)</param>
 		/// <returns>The collection of custom attributes</returns>
 		public static List<T> GetCustomAttributes<T>(this Type type, bool inherit = true) where T : class
 			=> type?.GetCustomAttributes(typeof(T), inherit).Select(attribute => attribute as T).ToList();
@@ -317,7 +335,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the first custom attribute
 		/// </summary>
 		/// <param name="type">The type for working with</param>
-		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes (default is true)</param>
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this Type type, bool inherit = true) where T : class
 			=> type?.GetCustomAttributes<T>(inherit).FirstOrDefault();
@@ -326,7 +344,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the collection of custom attributes
 		/// </summary>
 		/// <param name="attribute">The attribute for working with</param>
-		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes (default is true)</param>
 		/// <returns>The collection of custom attributes</returns>
 		public static List<T> GetCustomAttributes<T>(this AttributeInfo attribute, bool inherit = true) where T : class
 			=> attribute?.Info?.GetCustomAttributes(typeof(T), inherit).Select(attr => attr as T).ToList();
@@ -335,7 +353,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the first custom attribute
 		/// </summary>
 		/// <param name="attribute">The attribute for working with</param>
-		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes (default is true)</param>
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this AttributeInfo attribute, bool inherit = true) where T : class
 			=> attribute?.GetCustomAttributes<T>(inherit).FirstOrDefault();
