@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
 using System.Xml;
-using System.Xml.Xsl;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using System.Dynamic;
@@ -396,7 +395,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
 		public static bool IsDateTimeType(this Type type)
-			=> type != null && (type.Equals(typeof(DateTime)) || type.Equals(typeof(DateTimeOffset)));
+			=> type != null && (type.Equals(typeof(DateTime))|| type.Equals(typeof(DateTimeOffset)) || type.Equals(typeof(DateTime?)) || type.Equals(typeof(DateTimeOffset?)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is date-time or not
@@ -413,8 +412,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns>true if type is integral numeric</returns>
 		public static bool IsIntegralType(this Type type)
 			=> type != null && (type.Equals(typeof(byte)) || type.Equals(typeof(sbyte))
+				|| type.Equals(typeof(byte?)) || type.Equals(typeof(sbyte?))
 				|| type.Equals(typeof(short)) || type.Equals(typeof(int)) || type.Equals(typeof(long))
-				|| type.Equals(typeof(ushort)) || type.Equals(typeof(uint)) || type.Equals(typeof(ulong)));
+				|| type.Equals(typeof(short?)) || type.Equals(typeof(int?)) || type.Equals(typeof(long?))
+				|| type.Equals(typeof(ushort)) || type.Equals(typeof(uint)) || type.Equals(typeof(ulong))
+				|| type.Equals(typeof(ushort?)) || type.Equals(typeof(uint?)) || type.Equals(typeof(ulong?)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is integral numeric or not
@@ -430,7 +432,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is floating numeric</returns>
 		public static bool IsFloatingPointType(this Type type)
-			=> type != null && (type.Equals(typeof(decimal)) || type.Equals(typeof(double)) || type.Equals(typeof(float)));
+			=> type != null && (type.Equals(typeof(decimal)) || type.Equals(typeof(double)) || type.Equals(typeof(float)) || type.Equals(typeof(decimal?)) || type.Equals(typeof(double?)) || type.Equals(typeof(float?)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is floating numeric or not
@@ -1773,76 +1775,6 @@ namespace net.vieapps.Components.Utility
 				if (document.Declaration != null)
 					doc.InsertBefore(doc.CreateXmlDeclaration(document.Declaration.Version, document.Declaration.Encoding, document.Declaration.Standalone), doc.FirstChild);
 				return doc;
-			}
-		}
-
-		/// <summary>
-		/// Transforms this XmlDocument object by the specified stylesheet to XHTML/XML string
-		/// </summary>
-		/// <param name="document"></param>
-		/// <param name="xslTransfrom">The stylesheet for transfroming</param>
-		/// <returns></returns>
-		public static string Transfrom(this XmlDocument document, XslCompiledTransform xslTransfrom)
-		{
-			// transform
-			string results = "";
-			if (xslTransfrom == null)
-				return results;
-
-			using (var writer = new StringWriter())
-			{
-				try
-				{
-					xslTransfrom.Transform(document, null, writer);
-					results = writer.ToString();
-				}
-				catch (Exception)
-				{
-					throw;
-				}
-			}
-
-			// refine characters
-			results = results.Replace(StringComparison.OrdinalIgnoreCase, "&#xD;", "").Replace(StringComparison.OrdinalIgnoreCase, "&#xA;", "").Replace(StringComparison.OrdinalIgnoreCase, "\t", "").Replace(StringComparison.OrdinalIgnoreCase, "&#x9;", "").Replace(StringComparison.OrdinalIgnoreCase, "<?xml version=\"1.0\" encoding=\"utf-16\"?>", "");
-
-			// remove "xmlns:" attributes
-			var start = results.PositionOf("xmlns:");
-			while (start > 0)
-			{
-				var end = results.PositionOf("\"", start);
-				end = results.PositionOf("\"", end + 1);
-				results = results.Remove(start, end - start + 1);
-				start = results.PositionOf("xmlns:");
-			}
-
-			// return the result
-			return results;
-		}
-
-		/// <summary>
-		/// Transforms this XmlDocument object by the specified stylesheet to XHTML/XML string
-		/// </summary>
-		/// <param name="document"></param>
-		/// <param name="xmlStylesheet">The stylesheet for transfroming</param>
-		/// <param name="enableScript">true to enable inline script (like C#) while processing</param>
-		/// <returns></returns>
-		public static string Transfrom(this XmlDocument document, string xmlStylesheet, bool enableScript = true)
-		{
-			using (var stream = UtilityService.CreateMemoryStream(xmlStylesheet.ToBytes()))
-			{
-				using (var reader = new XmlTextReader(stream))
-				{
-					try
-					{
-						var xslTransform = new XslCompiledTransform();
-						xslTransform.Load(reader, enableScript ? new XsltSettings { EnableScript = true } : null, null);
-						return document.Transfrom(xslTransform);
-					}
-					catch (Exception)
-					{
-						throw;
-					}
-				}
 			}
 		}
 		#endregion
