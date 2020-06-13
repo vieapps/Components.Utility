@@ -267,6 +267,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string GetCapitalizedFirstLetter(this string @string, bool wordsSeperatedByDots = true)
 		{
+			if (string.IsNullOrWhiteSpace(@string))
+				return "";
 			if (wordsSeperatedByDots)
 				return @string.ToArray(".").Select(str =>
 				{
