@@ -70,7 +70,7 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Specifies this attribute is public (everyone can access)
 			/// </summary>
-			public bool IsPublic => this.Info  != null && this.Info is PropertyInfo;
+			public bool IsPublic => this.Info != null && this.Info is PropertyInfo;
 
 			/// <summary>
 			/// Specifies this attribute can be read
@@ -201,7 +201,7 @@ namespace net.vieapps.Components.Utility
 							.Select(info => new AttributeInfo(info))
 							.ToList();
 				}
-			
+
 			return predicate != null
 				? fields.Where(info => predicate(info)).ToList()
 				: fields;
@@ -395,7 +395,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="type">Type for checking</param>
 		/// <returns>true if type is date-time</returns>
 		public static bool IsDateTimeType(this Type type)
-			=> type != null && (type.Equals(typeof(DateTime))|| type.Equals(typeof(DateTimeOffset)) || type.Equals(typeof(DateTime?)) || type.Equals(typeof(DateTimeOffset?)));
+			=> type != null && (type.Equals(typeof(DateTime)) || type.Equals(typeof(DateTimeOffset)) || type.Equals(typeof(DateTime?)) || type.Equals(typeof(DateTimeOffset?)));
 
 		/// <summary>
 		/// Gets the state to determines the attribute type is date-time or not
@@ -497,6 +497,65 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static bool IsSerializable(this object @object)
 			=> @object != null && @object.GetType().IsSerializable;
+
+		/// <summary>
+		/// Gets the nullable type from this type
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		public static Type GetNullableType(this Type type)
+		{
+			if (type == null)
+				return null;
+			type = Nullable.GetUnderlyingType(type) ?? type;
+			return type.IsValueType
+				? typeof(Nullable<>).MakeGenericType(type)
+				: type;
+		}
+
+		/// <summary>
+		/// Gets the nullable type from this type
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public static Type GetNullableType<T>()
+			=> typeof(T).GetNullableType();
+
+		/// <summary>
+		/// Gets the state to determines this type is nullable or not
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		public static bool IsNullable(this Type type)
+			=> type != null && Nullable.GetUnderlyingType(type) != null;
+
+		/// <summary>
+		/// Gets the state to determines this attribute is nullable or not
+		/// </summary>
+		/// <param name="attribute"></param>
+		/// <returns></returns>
+		public static bool IsNullable(this AttributeInfo attribute)
+			=> attribute != null && attribute.Type != null && attribute.Type.IsNullable();
+
+		/// <summary>
+		/// Gets the state to determines this type is nullable or not
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public static bool IsNullable<T>()
+		{
+			var type = typeof(T);
+			return type != null && type.IsNullable();
+		}
+
+		/// <summary>
+		/// Gets the state to determines this object is nullable or not
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static bool IsNullable<T>(this T @object)
+			=> @object != null && ObjectService.IsNullable<T>();
 		#endregion
 
 		#region Collection meta data
@@ -979,9 +1038,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object to get data from</param>
 		/// <param name="destination">The destination object that will be copied to</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyTo<T>(this T @object, T destination, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyTo<T>(this T @object, T destination, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			if (@object == null || destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
@@ -1012,7 +1071,7 @@ namespace net.vieapps.Components.Utility
 				}
 			});
 
-			onPreCompleted?.Invoke(destination);
+			onCompleted?.Invoke(destination);
 		}
 
 		/// <summary>
@@ -1021,9 +1080,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="source">Source object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyFrom<T>(this T @object, object source, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyFrom<T>(this T @object, object source, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			if (@object == null || source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
@@ -1054,7 +1113,7 @@ namespace net.vieapps.Components.Utility
 				}
 			});
 
-			onPreCompleted?.Invoke(@object);
+			onCompleted?.Invoke(@object);
 		}
 		#endregion
 
@@ -1065,9 +1124,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="json">JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			if (@object == null || json == null)
 				throw new ArgumentNullException(nameof(json), "The JSON is null");
@@ -1231,7 +1290,7 @@ namespace net.vieapps.Components.Utility
 					}
 			}
 
-			onPreCompleted?.Invoke(@object);
+			onCompleted?.Invoke(@object);
 		}
 		#endregion
 
@@ -1242,9 +1301,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <param name="expandoObject">The <see cref="ExpandoObject">ExpandoObject</see> object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static void CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			if (@object == null)
 				return;
@@ -1313,7 +1372,7 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			onPreCompleted?.Invoke(@object);
+			onCompleted?.Invoke(@object);
 		}
 		#endregion
 
@@ -1324,14 +1383,14 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
-		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(@object, excluded, null, onError);
-			onPreCompleted?.Invoke(instance);
+			onCompleted?.Invoke(instance);
 			return instance;
 		}
 
@@ -1341,14 +1400,14 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
-		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(json, excluded, null, onError);
-			onPreCompleted?.Invoke(instance);
+			onCompleted?.Invoke(instance);
 			return instance;
 		}
 
@@ -1358,14 +1417,14 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="expandoObject">The ExpandoObject object to copy data</param>
 		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onPreCompleted">The action to run before completing the copy process</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
-		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			var instance = ObjectService.CreateInstance<T>();
 			instance.CopyFrom(expandoObject, excluded, null, onError);
-			onPreCompleted?.Invoke(instance);
+			onCompleted?.Invoke(instance);
 			return instance;
 		}
 
@@ -1374,10 +1433,10 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">The type of object being copied</typeparam>
 		/// <param name="object">The object instance to copy</param>
-		/// <param name="onPreCompleted">The action to run before completing the clone process</param>
+		/// <param name="onCompleted">The action to run before completing the clone process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns>The copied object.</returns>
-		public static T Clone<T>(this T @object, Action<T> onPreCompleted = null, Action<Exception> onError = null)
+		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			// initialize the object
 			var instance = default(T);
@@ -1409,7 +1468,7 @@ namespace net.vieapps.Components.Utility
 				instance = @object.Copy(null, null, onError);
 
 			// return the new instance of object
-			onPreCompleted?.Invoke(instance);
+			onCompleted?.Invoke(instance);
 			return instance;
 		}
 		#endregion
@@ -1444,12 +1503,12 @@ namespace net.vieapps.Components.Utility
 		/// Serializes this string to JSON object (with default settings of Json.NET Serializer)
 		/// </summary>
 		/// <param name="json">The JSON string to serialize to JSON object</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static JToken ToJson(this string json, Action<JToken> onPreCompleted = null)
+		public static JToken ToJson(this string json, Action<JToken> onCompleted = null)
 		{
 			var token = JToken.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json.Trim());
-			onPreCompleted?.Invoke(token);
+			onCompleted?.Invoke(token);
 			return token;
 		}
 
@@ -1458,9 +1517,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object">The object to serialize to JSON</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static JToken ToJson<T>(this T @object, Action<JToken> onPreCompleted = null)
+		public static JToken ToJson<T>(this T @object, Action<JToken> onCompleted = null)
 		{
 			// check
 			if (@object == null)
@@ -1469,7 +1528,7 @@ namespace net.vieapps.Components.Utility
 			// by-pass on JSON Token
 			if (@object is JToken)
 			{
-				onPreCompleted?.Invoke(@object as JToken);
+				onCompleted?.Invoke(@object as JToken);
 				return @object as JToken;
 			}
 
@@ -1552,7 +1611,7 @@ namespace net.vieapps.Components.Utility
 				json = new JValue(@object);
 
 			// return the JSON
-			onPreCompleted?.Invoke(json);
+			onCompleted?.Invoke(json);
 			return json;
 		}
 
@@ -1562,9 +1621,9 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON object that contains information for deserializing</param>
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onPreCompleted = null)
+		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
 		{
 			// initialize the object
 			T @object;
@@ -1583,7 +1642,7 @@ namespace net.vieapps.Components.Utility
 					: new JsonSerializer().Deserialize<T>(new JTokenReader(json));
 
 			// run the handler
-			onPreCompleted?.Invoke(@object, json);
+			onCompleted?.Invoke(@object, json);
 
 			// return object
 			return @object;
@@ -1595,10 +1654,10 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON string that contains information for deserializing</param>
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onPreCompleted = null)
-			=> (json ?? "").ToJson().FromJson(copy, onPreCompleted);
+		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
+			=> (json ?? "").ToJson().FromJson(copy, onCompleted);
 
 		/// <summary>
 		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
@@ -1610,8 +1669,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The converted token value</returns>
 		public static T Value<T>(this JToken json, object key, T @default)
 		{
-			var value = json.Value<T>(key);
-			return value != null ? value : @default;
+			var value = json.Value<object>(key);
+			if (value != null)
+				try
+				{
+					return value.GetType().Equals(typeof(T)) ? (T)value : value.CastAs<T>();
+				}
+				catch { }
+			return @default;
 		}
 
 		/// <summary>
@@ -1632,25 +1697,46 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object"></param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static XElement ToXml<T>(this T @object, Action<XElement> onPreCompleted = null)
+		public static XElement ToXml<T>(this T @object, Action<XElement> onCompleted = null) where T : class
 		{
-			// serialize
-			XElement xml = null;
 			using (var stream = UtilityService.CreateMemoryStream())
 			{
 				using (var writer = new StreamWriter(stream))
 				{
 					new XmlSerializer(typeof(T)).Serialize(writer, @object);
-					xml = XElement.Parse(stream.ToBytes().GetString());
+					var xml = XElement.Parse(stream.ToBytes().GetString());
+					onCompleted?.Invoke(xml);
+					return xml;
 				}
 			}
+		}
 
-			// run the handler
-			onPreCompleted?.Invoke(xml);
+		/// <summary>
+		/// Converts this string object to XML object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="onCompleted">The action to run when completed</param>
+		/// <returns></returns>
+		public static XElement ToXml(this string @object, Action<XElement> onCompleted = null)
+		{
+			var xml = XDocument.Parse(@object);
+			onCompleted?.Invoke(xml.Root);
+			return xml.Root;
+		}
 
-			// return the XML
+		/// <summary>
+		/// Converts this JSON object to XML object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="rootElementName"></param>
+		/// <param name="onCompleted">The action to run when completed</param>
+		/// <returns></returns>
+		public static XElement ToXml(this JObject @object, string rootElementName = null, Action<XElement> onCompleted = null)
+		{
+			var xml = JsonConvert.DeserializeXNode(@object?.ToString(), rootElementName)?.Root;
+			onCompleted?.Invoke(xml);
 			return xml;
 		}
 
@@ -1659,15 +1745,15 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="xml">The XML object that contains information for deserializing</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static T FromXml<T>(this XContainer xml, Action<T, XContainer> onPreCompleted = null)
+		public static T FromXml<T>(this XContainer xml, Action<T, XContainer> onCompleted = null) where T : class
 		{
 			// deserialize
 			var @object = (T)new XmlSerializer(typeof(T)).Deserialize(xml.CreateReader());
 
 			// run the handler
-			onPreCompleted?.Invoke(@object, xml);
+			onCompleted?.Invoke(@object, xml);
 
 			// return the object
 			return @object;
@@ -1678,9 +1764,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="xml">The XML string that contains information for deserializing</param>
-		/// <param name="onPreCompleted">The action to run on pre-completed</param>
+		/// <param name="onCompleted">The action to run when completed</param>
 		/// <returns></returns>
-		public static T FromXml<T>(this string xml, Action<T> onPreCompleted = null)
+		public static T FromXml<T>(this string xml, Action<T> onCompleted = null) where T : class
 		{
 			// deserialize
 			T @object;
@@ -1693,7 +1779,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// run the handler
-			onPreCompleted?.Invoke(@object);
+			onCompleted?.Invoke(@object);
 
 			// return the object
 			return @object;
@@ -1860,9 +1946,7 @@ namespace net.vieapps.Components.Utility
 				index++;
 			}
 
-			return dictionary == null
-				? false
-				: dictionary.TryGetValue(names[names.Length - 1], out value);
+			return dictionary != null && dictionary.TryGetValue(names[names.Length - 1], out value);
 		}
 
 		/// <summary>
@@ -2040,9 +2124,7 @@ namespace net.vieapps.Components.Utility
 				index++;
 			}
 
-			return dictionary == null || !dictionary.ContainsKey(names[names.Length - 1])
-				? false
-				: dictionary.Remove(names[names.Length - 1]);
+			return dictionary != null && dictionary.Remove(names[names.Length - 1], out var value);
 		}
 		#endregion
 
