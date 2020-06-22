@@ -1701,6 +1701,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XElement ToXml<T>(this T @object, Action<XElement> onCompleted = null) where T : class
 		{
+			if (@object == null)
+				return null;
+
+			if (@object is JToken)
+				return JsonConvert.DeserializeXNode(@object.ToString())?.Root;
+
 			using (var stream = UtilityService.CreateMemoryStream())
 			{
 				using (var writer = new StreamWriter(stream))
