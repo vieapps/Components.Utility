@@ -323,7 +323,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
 				}
 			}
 		}
@@ -345,7 +345,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
 				}
 			}
 		}
@@ -367,7 +367,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
 				}
 			}
 		}
@@ -389,7 +389,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
 				}
 			}
 		}
@@ -412,7 +412,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
 				}
 			}
 		}
@@ -435,7 +435,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) as Exception : ex;
+					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
 				}
 			}
 		}
@@ -510,7 +510,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets an user-agent as desktop browser
 		/// </summary>
-		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/12.1.1 Safari/605.1.15";
+		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36";
 
 		/// <summary>
 		/// Gets the Basic network credential to perform a web request
@@ -520,9 +520,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="password"></param>
 		/// <returns></returns>
 		public static ICredentials GetWebCredential(Uri uri, string username, string password)
-			=> uri == null || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)
-				? null
-				: new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } };
+			=> uri != null && !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password)
+				? new CredentialCache
+				{
+					{ uri, "Basic", new NetworkCredential(username, password) }
+				}
+				: null;
 
 		/// <summary>
 		/// Gets the web proxy
@@ -532,9 +535,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="password"></param>
 		/// <param name="bypass"></param>
 		/// <returns></returns>
-		public static WebProxy GetWebProxy(Uri uri, string username, string password, string[] bypass = null)
+		public static WebProxy GetWebProxy(Uri uri, string username, string password, IEnumerable<string> bypass = null)
 			=> uri != null
-				? new WebProxy(uri, true, bypass, UtilityService.GetWebCredential(uri, username, password))
+				? new WebProxy(uri, true, bypass?.ToArray(), UtilityService.GetWebCredential(uri, username, password))
 				: null;
 
 		/// <summary>
@@ -546,8 +549,28 @@ namespace net.vieapps.Components.Utility
 		/// <param name="password"></param>
 		/// <param name="bypass"></param>
 		/// <returns></returns>
-		public static WebProxy GetWebProxy(string host, int port, string username, string password, string[] bypass = null)
-			=> UtilityService.GetWebProxy(string.IsNullOrWhiteSpace(host) ? null : new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "https://" : "")}{host}:{port}"), username, password, bypass);
+		public static WebProxy GetWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
+			=> UtilityService.GetWebProxy(string.IsNullOrWhiteSpace(host) ? null : new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "http://" : "")}{host}:{port}"), username, password, bypass);
+
+		/// <summary>
+		/// Gets the pre-configurated web proxy
+		/// </summary>
+		public static WebProxy Proxy { get; private set; }
+
+		/// <summary>
+		/// Assigns the web-proxy
+		/// </summary>
+		/// <param name="host"></param>
+		/// <param name="port"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
+		{
+			UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass);
+			return UtilityService.Proxy;
+		}
 
 		/// <summary>
 		/// Gets the web response
@@ -594,6 +617,9 @@ namespace net.vieapps.Components.Utility
 			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
 #endif
 
+			// web proxy
+			webRequest.Proxy = proxy ?? UtilityService.Proxy;
+
 			// credential
 			if (credential != null)
 			{
@@ -605,12 +631,8 @@ namespace net.vieapps.Components.Utility
 			if (RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
 				webRequest.ServicePoint.Expect100Continue = false;
 
-			// proxy
-			if (proxy != null)
-				webRequest.Proxy = proxy;
-
 			// data to post/put
-			if (!string.IsNullOrWhiteSpace(body) && (webRequest.Method.Equals("POST") || webRequest.Method.Equals("PUT")))
+			if (!string.IsNullOrWhiteSpace(body) && (webRequest.Method.Equals("POST") || webRequest.Method.Equals("PUT") || webRequest.Method.Equals("PATCH")))
 			{
 				if (!string.IsNullOrWhiteSpace(contentType))
 					webRequest.ContentType = contentType;
@@ -907,39 +929,41 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Removing whitespaces & breaks
-		internal static List<object[]> _RegexNormals = null;
+		internal static List<Tuple<Regex, string>> _WhitespacesAndBreaksRegexs = null;
 
-		internal static List<object[]> GetRegEx()
+		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksRegexs
 		{
-			if (UtilityService._RegexNormals == null)
+			get
 			{
-				UtilityService._RegexNormals = new List<object[]>
+				if (UtilityService._WhitespacesAndBreaksRegexs == null)
 				{
-					// remove line-breaks
-					new object[] { new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <" },
-					new object[] { new Regex(@">\n<", RegexOptions.IgnoreCase), "><" },
-
-					// white-spaces between tags
-					new object[] { new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>" },
-					new object[] { new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><" },
-					new object[] { new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <" }
-				};
-
-				// white-spaces before/after special tags
-				var tags = "div,/div,section,/section,nav,/nav,main,/main,header,/header,footer,/footer,p,/p,h1,h2,h3,h4,h5,br,hr,input,textarea,table,tr,/tr,td,ul,/ul,li,select,/select,option,script,/script".Split(',');
-				foreach (var tag in tags)
-				{
-					if (!tag[0].Equals('/'))
-						UtilityService._RegexNormals.Add(new object[] { new Regex(@">\s+<" + tag, RegexOptions.IgnoreCase), "><" + tag });
-					else
+					UtilityService._WhitespacesAndBreaksRegexs = new List<Tuple<Regex, string>>
 					{
-						UtilityService._RegexNormals.Add(new object[] { new Regex(@">\s+<" + tag + @">\s+<", RegexOptions.IgnoreCase), "><" + tag + "><" });
-						UtilityService._RegexNormals.Add(new object[] { new Regex(@">\s+<" + tag + @">", RegexOptions.IgnoreCase), "><" + tag + ">" });
-						UtilityService._RegexNormals.Add(new object[] { new Regex(@"<" + tag + @">\s+<", RegexOptions.IgnoreCase), "<" + tag + "><" });
-					}
+						// remove line-breaks
+						new Tuple<Regex, string>(new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <"),
+						new Tuple<Regex, string>(new Regex(@">\n<", RegexOptions.IgnoreCase), "><"),
+
+						// white-spaces between tags
+						new Tuple<Regex, string>(new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>"),
+						new Tuple<Regex, string>(new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><"),
+						new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <")
+					};
+
+					// white-spaces before/after special tags
+					"div,/div,section,/section,nav,/nav,main,/main,header,/header,footer,/footer,p,/p,h1,h2,h3,h4,h5,br,hr,input,textarea,table,tr,/tr,td,ul,/ul,li,select,/select,option,script,/script".ToArray().ForEach(tag =>
+					{
+						if (!tag[0].Equals('/'))
+							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag, RegexOptions.IgnoreCase), "><" + tag));
+						else
+						{
+							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag + @">\s+<", RegexOptions.IgnoreCase), "><" + tag + "><"));
+							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag + @">", RegexOptions.IgnoreCase), "><" + tag + ">"));
+							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@"<" + tag + @">\s+<", RegexOptions.IgnoreCase), "<" + tag + "><"));
+						}
+					});
 				}
+				return UtilityService._WhitespacesAndBreaksRegexs;
 			}
-			return UtilityService._RegexNormals;
 		}
 
 		/// <summary>
@@ -953,8 +977,7 @@ namespace net.vieapps.Components.Utility
 				return "";
 
 			var output = input.Replace("&nbsp;", " ").Trim();
-			var regexs = UtilityService.GetRegEx();
-			regexs?.ForEach(regex => output = (regex[0] as Regex).Replace(output, regex[1] as string));
+			UtilityService.WhitespacesAndBreaksRegexs.ForEach(regex => output = regex.Item1.Replace(output, regex.Item2));
 			return output;
 		}
 		#endregion

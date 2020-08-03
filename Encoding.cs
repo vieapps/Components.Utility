@@ -690,7 +690,7 @@ namespace net.vieapps.Components.Utility
 		public static string UrlDecode(this string @string)
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
-				: WebUtility.UrlDecode(@string.Trim());
+				: WebUtility.UrlDecode(@string.Trim().Replace("+", " ").Replace("%20", " "));
 
 		/// <summary>
 		/// Encodes this string to Base64Url string

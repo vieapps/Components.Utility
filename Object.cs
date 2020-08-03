@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Diagnostics;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Linq;
@@ -75,12 +76,12 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Specifies this attribute can be read
 			/// </summary>
-			public bool CanRead => this.IsPublic ? (this.Info as PropertyInfo).CanRead : true;
+			public bool CanRead => !this.IsPublic || (this.Info as PropertyInfo).CanRead;
 
 			/// <summary>
 			/// Specifies this attribute can be written
 			/// </summary>
-			public bool CanWrite => this.IsPublic ? (this.Info as PropertyInfo).CanWrite : true;
+			public bool CanWrite => !this.IsPublic || (this.Info as PropertyInfo).CanWrite;
 
 			/// <summary>
 			/// Gets the type of the attribute
@@ -90,9 +91,9 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Object meta data
-		static Dictionary<Type, List<AttributeInfo>> ObjectProperties { get; } = new Dictionary<Type, List<AttributeInfo>>();
+		static ConcurrentDictionary<Type, List<AttributeInfo>> ObjectProperties { get; } = new ConcurrentDictionary<Type, List<AttributeInfo>>();
 
-		static Dictionary<Type, List<AttributeInfo>> ObjectFields { get; } = new Dictionary<Type, List<AttributeInfo>>();
+		static ConcurrentDictionary<Type, List<AttributeInfo>> ObjectFields { get; } = new ConcurrentDictionary<Type, List<AttributeInfo>>();
 
 		/// <summary>
 		/// Gets the collection of public properties of the type
@@ -894,16 +895,13 @@ namespace net.vieapps.Components.Utility
 				return true;
 			}
 
-			else
+			var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+			if (propertyInfo != null && propertyInfo.CanWrite)
 			{
-				var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-				if (propertyInfo != null && propertyInfo.CanWrite)
-				{
-					propertyInfo.SetValue(@object, value);
-					if (@object is IPropertyChangedNotifier)
-						(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
-					return true;
-				}
+				propertyInfo.SetValue(@object, value);
+				if (@object is IPropertyChangedNotifier)
+					(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
+				return true;
 			}
 
 			return false;
@@ -934,13 +932,10 @@ namespace net.vieapps.Components.Utility
 			if (fieldInfo != null)
 				return fieldInfo.GetValue(@object);
 
-			else
-			{
-				var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-				return propertyInfo != null && propertyInfo.CanRead
-					? propertyInfo.GetValue(@object)
-					: null;
-			}
+			var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+			return propertyInfo != null && propertyInfo.CanRead
+				? propertyInfo.GetValue(@object)
+				: null;
 		}
 
 		/// <summary>
@@ -1028,6 +1023,18 @@ namespace net.vieapps.Components.Utility
 					if (@object.GetAttributeValue(attribute) is string value && value != null)
 						@object.SetAttributeValue(attribute, value.Trim());
 				});
+		}
+
+		/// <summary>
+		/// Trims all string properties
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns></returns>
+		public static T TrimAll<T>(this T @object) where T : class
+		{
+			(@object as object)?.TrimAll();
+			return @object;
 		}
 		#endregion
 
@@ -1728,8 +1735,8 @@ namespace net.vieapps.Components.Utility
 		public static XElement ToXml(this string @object, Action<XElement> onCompleted = null)
 		{
 			var xml = XDocument.Parse(@object);
-			onCompleted?.Invoke(xml.Root);
-			return xml.Root;
+			onCompleted?.Invoke(xml?.Root);
+			return xml?.Root;
 		}
 
 		/// <summary>

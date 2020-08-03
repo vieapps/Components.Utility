@@ -1218,7 +1218,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key">Key for the RSA instance, must be formated in JSON or PEM</param>
 		/// <returns>An instance of RSA</returns>
-		public static RSA CreateRSA(string key)
+		public static RSA CreateRSA(string key = null)
 		{
 			// create new instance & set key size
 			var rsa = RSA.Create();
@@ -1245,7 +1245,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="key">Key for the RSA instance, must be formated in JSON or PEM</param>
 		/// <returns>An instance of RSA</returns>
-		public static RSA CreateRSAInstance(string key)
+		public static RSA CreateRSAInstance(string key = null)
 			=> CryptoService.CreateRSA(key);
 		#endregion
 
