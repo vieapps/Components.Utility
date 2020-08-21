@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Globalization;
@@ -349,6 +350,36 @@ namespace net.vieapps.Components.Utility
 			var data = new byte[count > 0 ? count : bytes.Count];
 			Buffer.BlockCopy(bytes.Array, bytes.Offset, data, 0, count > 0 ? count : bytes.Count);
 			return data.GetString(0, encoding);
+		}
+
+		/// <summary>
+		/// Gets the double braces (mustache-style - {{  }}) tokens
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static List<Tuple<string, string>> GetDoubleBracesTokens(this string @string)
+		{
+			var tokens = new List<Tuple<string, string>>();
+			if (!string.IsNullOrWhiteSpace(@string))
+			{
+				var matches = new Regex("{{([^{}]*)}}", RegexOptions.IgnoreCase).Matches(@string);
+				foreach (Match match in matches)
+					tokens.Add(new Tuple<string, string>(match.Groups[0].Value, match.Groups[1].Value.Trim()));
+			}
+			return tokens;
+		}
+
+		/// <summary>
+		/// Formats the string with parameters of double braces (mustache-style - {{  }}) tokens
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="params"></param>
+		/// <returns></returns>
+		public static string Format(this string @string, IDictionary<string, object> @params)
+		{
+			var tokens = @string?.GetDoubleBracesTokens();
+			@params?.ForEach(kvp => tokens?.Where(token => token.Item2.IsEquals(kvp.Key)).ForEach(token => @string = @string?.Replace(StringComparison.OrdinalIgnoreCase, token.Item1, $"{kvp.Value}")));
+			return @string;
 		}
 		#endregion
 
