@@ -84,15 +84,17 @@ namespace net.vieapps.Components.Utility
 		internal static string EncryptionKey => EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys"));
 
 		/// <summary>
-		/// Gets or sets the identity of the email message.
+		/// Gets or sets the identity of the message
 		/// </summary>
-		/// <remarks>
-		/// If other message had same Id, that message will be overried by is message
-		/// </remarks>
 		public string ID { get; set; } = UtilityService.NewUUID;
 
 		/// <summary>
-		/// Gets or sets time to start to send this message via email.
+		/// Gets or sets the correlation identity of the message
+		/// </summary>
+		public string CorrelationID { get; set; } = UtilityService.NewUUID;
+
+		/// <summary>
+		/// Gets or sets time to start to send this message via email
 		/// </summary>
 		/// <remarks>
 		/// Set a specifict time to tell mailer send this message from this time
@@ -217,12 +219,17 @@ namespace net.vieapps.Components.Utility
 		internal static string EncryptionKey => WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys"));
 
 		/// <summary>
-		/// Gets or sets identity of the message.
+		/// Gets or sets identity of the message
 		/// </summary>
 		public string ID { get; set; } = UtilityService.NewUUID;
 
 		/// <summary>
-		/// Gets or sets time to start to send this message.
+		/// Gets or sets the correlation identity of the message
+		/// </summary>
+		public string CorrelationID { get; set; } = UtilityService.NewUUID;
+
+		/// <summary>
+		/// Gets or sets time to start to send this message
 		/// </summary>
 		public DateTime SendingTime { get; set; } = DateTime.Now;
 		#endregion
@@ -574,7 +581,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Working with  a SMTP client
+		#region Working with a SMTP client
 		/// <summary>
 		/// Gets the Smtp client for sending email messages
 		/// </summary>
@@ -619,7 +626,7 @@ namespace net.vieapps.Components.Utility
 			port = !string.IsNullOrWhiteSpace(port) ? port : UtilityService.GetAppSetting("Email:SmtpPort");
 			user = !string.IsNullOrWhiteSpace(user) ? user : UtilityService.GetAppSetting("Email:SmtpUser");
 			password = !string.IsNullOrWhiteSpace(password) ? password : UtilityService.GetAppSetting("Email:SmtpUserPassword");
-			return MessageService.GetSmtpClient(host, Int32.TryParse(port, out var sport) ? sport : 25, user, password, enableSsl);
+			return MessageService.GetSmtpClient(host, Int32.TryParse(port, out var smtpPort) ? smtpPort : 25, user, password, enableSsl);
 		}
 		#endregion
 
@@ -928,8 +935,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, Dictionary<string, string> additionalQuery = null, Dictionary<string, string> additionalHeader = null)
 		{
-			if (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
-				throw new InformationInvalidException("The message is invalid");
+			if (message == null)
+				throw new InformationInvalidException("The message is invalid (null)");
+			else if (string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
+				throw new InformationInvalidException("The message is invalid (no end-point or no body)");
+
+			signatureName = signatureName ?? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
+			if (string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
+				signAlgorithm = "SHA256";
 
 			var query = new Dictionary<string, string>(additionalQuery ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			message.Query?.ForEach(kvp => query[kvp.Key] = kvp.Value);
@@ -937,17 +950,12 @@ namespace net.vieapps.Components.Utility
 			var header = new Dictionary<string, string>(additionalHeader ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			message.Header?.ForEach(kvp => header[kvp.Key] = kvp.Value);
 
-			if (string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
-				signAlgorithm = "SHA256";
-
 			using (var hasher = CryptoService.GetHMACHashAlgorithm((signKey ?? CryptoService.DEFAULT_PASS_PHRASE).ToBytes(), signAlgorithm))
 			{
-				var key = signatureName ?? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
-				var value = signatureAsHex ? hasher.ComputeHash(message.Body.ToBytes()).ToHex() : hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
 				if (signatureInQuery)
-					query[key] = value;
+					query[signatureName] = signatureAsHex ? hasher.ComputeHash(message.Body.ToBytes()).ToHex() : hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
 				else
-					header[key] = value;
+					header[signatureName] = signatureAsHex ? hasher.ComputeHash(message.Body.ToBytes()).ToHex() : hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
 			}
 
 			message.Query = query;
@@ -964,20 +972,17 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task SendMessageAsync(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 			=> message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
-				: UtilityService.GetWebResponseAsync(
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
+				: UtilityService.SendHttpRequestAsync(
 					"POST",
 					$"{message.EndpointURL}{(message.Query.Count < 1 ? "" : message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
 					message.Header,
-					null,
 					message.Body,
 					"application/json",
-					45,
+					120,
 					$"{UtilityService.DesktopUserAgent} {agent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
-					null,
-					null,
 					proxy,
 					cancellationToken
 				);
@@ -988,9 +993,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken)
+		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken)
 			=> message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
 				: message.SendMessageAsync(null, null, cancellationToken);
 
 		/// <summary>
@@ -1003,7 +1008,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static void SendMessage(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 			=> (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
 				: message.SendMessageAsync(agent, proxy, cancellationToken)).Wait();
 
 		/// <summary>
@@ -1014,7 +1019,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static void SendMessage(this WebHookMessage message, CancellationToken cancellationToken)
 			=> (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
 				: message.SendMessageAsync(cancellationToken)).Wait();
 		#endregion
 
