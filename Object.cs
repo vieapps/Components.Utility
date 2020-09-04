@@ -1496,13 +1496,15 @@ namespace net.vieapps.Components.Utility
 		/// Converts this XmlNode object to JSON object
 		/// </summary>
 		/// <param name="node">The XmlNode object to convert to JSON</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static JObject ToJson(this XmlNode node)
+		public static JObject ToJson(this XmlNode node, Action<JObject> onCompleted = null)
 		{
 			var json = new JObject();
 			if (node != null && node.Attributes != null)
 				foreach (XmlAttribute attribute in node.Attributes)
 					json[attribute.Name] = attribute.Value;
+			onCompleted?.Invoke(json);
 			return json;
 		}
 
@@ -1510,7 +1512,7 @@ namespace net.vieapps.Components.Utility
 		/// Serializes this string to JSON object (with default settings of Json.NET Serializer)
 		/// </summary>
 		/// <param name="json">The JSON string to serialize to JSON object</param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static JToken ToJson(this string json, Action<JToken> onCompleted = null)
 		{
@@ -1524,7 +1526,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object">The object to serialize to JSON</param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static JToken ToJson<T>(this T @object, Action<JToken> onCompleted = null)
 		{
@@ -1628,7 +1630,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON object that contains information for deserializing</param>
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
 		{
@@ -1661,7 +1663,7 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON string that contains information for deserializing</param>
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
 			=> (json ?? "").ToJson().FromJson(copy, onCompleted);
@@ -1704,7 +1706,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="object"></param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static XElement ToXml<T>(this T @object, Action<XElement> onCompleted = null) where T : class
 		{
@@ -1730,7 +1732,7 @@ namespace net.vieapps.Components.Utility
 		/// Converts this string object to XML object
 		/// </summary>
 		/// <param name="object"></param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static XElement ToXml(this string @object, Action<XElement> onCompleted = null)
 		{
@@ -1744,7 +1746,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="rootElementName"></param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static XElement ToXml(this JObject @object, string rootElementName = null, Action<XElement> onCompleted = null)
 		{
@@ -1758,7 +1760,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="xml">The XML object that contains information for deserializing</param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static T FromXml<T>(this XContainer xml, Action<T, XContainer> onCompleted = null) where T : class
 		{
@@ -1777,7 +1779,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="xml">The XML string that contains information for deserializing</param>
-		/// <param name="onCompleted">The action to run when completed</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static T FromXml<T>(this string xml, Action<T> onCompleted = null) where T : class
 		{
@@ -1802,13 +1804,15 @@ namespace net.vieapps.Components.Utility
 		/// Converts this XmlNode object to XElement object
 		/// </summary>
 		/// <param name="node"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static XElement ToXElement(this XmlNode node)
+		public static XElement ToXElement(this XmlNode node, Action<XElement> onCompleted = null)
 		{
 			var doc = new XDocument();
 			using (var writer = doc.CreateWriter())
 			{
 				node.WriteTo(writer);
+				onCompleted?.Invoke(doc.Root);
 				return doc.Root;
 			}
 		}
@@ -1817,12 +1821,15 @@ namespace net.vieapps.Components.Utility
 		/// Converts this XElement object to XmlNode object
 		/// </summary>
 		/// <param name="element"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static XmlNode ToXmlNode(XElement element)
+		public static XmlNode ToXmlNode(this XElement element, Action<XmlNode> onCompleted = null)
 		{
 			using (var reader = element.CreateReader())
 			{
-				return new XmlDocument().ReadNode(reader);
+				var node = new XmlDocument().ReadNode(reader);
+				onCompleted?.Invoke(node);
+				return node;
 			}
 		}
 
@@ -1830,14 +1837,16 @@ namespace net.vieapps.Components.Utility
 		/// Converts this XElement object to XmlDocument object
 		/// </summary>
 		/// <param name="element"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static XmlDocument ToXmlDocument(this XElement element)
+		public static XmlDocument ToXmlDocument(this XElement element, Action<XmlDocument> onCompleted = null)
 		{
 			using (var reader = element.CreateReader())
 			{
 				var doc = new XmlDocument();
 				doc.Load(reader);
 				doc.DocumentElement.Attributes.RemoveAll();
+				onCompleted?.Invoke(doc);
 				return doc;
 			}
 		}
@@ -1846,8 +1855,9 @@ namespace net.vieapps.Components.Utility
 		/// Converts this XmlDocument object to XDocument object
 		/// </summary>
 		/// <param name="document"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static XDocument ToXDocument(this XmlDocument document)
+		public static XDocument ToXDocument(this XmlDocument document, Action<XDocument> onCompleted = null)
 		{
 			var doc = new XDocument();
 			using (var writer = doc.CreateWriter())
@@ -1857,6 +1867,7 @@ namespace net.vieapps.Components.Utility
 			var declaration = document.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 			if (declaration != null)
 				doc.Declaration = new XDeclaration(declaration.Version, declaration.Encoding, declaration.Standalone);
+			onCompleted?.Invoke(doc);
 			return doc;
 		}
 
@@ -1864,8 +1875,9 @@ namespace net.vieapps.Components.Utility
 		/// Converts this XDocument object to XmlDocument object
 		/// </summary>
 		/// <param name="document"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static XmlDocument ToXmlDocument(this XDocument document)
+		public static XmlDocument ToXmlDocument(this XDocument document, Action<XmlDocument> onCompleted = null)
 		{
 			using (var reader = document.CreateReader())
 			{
@@ -1873,6 +1885,7 @@ namespace net.vieapps.Components.Utility
 				doc.Load(reader);
 				if (document.Declaration != null)
 					doc.InsertBefore(doc.CreateXmlDeclaration(document.Declaration.Version, document.Declaration.Encoding, document.Declaration.Standalone), doc.FirstChild);
+				onCompleted?.Invoke(doc);
 				return doc;
 			}
 		}
@@ -1883,27 +1896,37 @@ namespace net.vieapps.Components.Utility
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON string
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this string json)
-			=> JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
+		public static ExpandoObject ToExpandoObject(this string json, Action<ExpandoObject> onCompleted = null)
+		{
+			var expando = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
+			onCompleted?.Invoke(expando);
+			return expando;
+		}
 
 		/// <summary>
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON
 		/// </summary>
 		/// <param name="json">The string that presents serialized data to create object</param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this JToken json)
-			=> new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
+		public static ExpandoObject ToExpandoObject(this JToken json, Action<ExpandoObject> onCompleted = null)
+		{
+			var expando = new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
+			onCompleted?.Invoke(expando);
+			return expando;
+		}
 
 		/// <summary>
 		/// Creates an <see cref="ExpandoObject">ExpandoObject</see> object from this dictionary object
 		/// </summary>
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this IDictionary<string, object> @object)
+		public static ExpandoObject ToExpandoObject(this IDictionary<string, object> @object, Action<ExpandoObject> onCompleted = null)
 		{
 			var expando = new ExpandoObject();
-			@object.ForEach(kvp => (expando as IDictionary<string, object>)[kvp.Key] = kvp.Value is IDictionary<string, object> ? (kvp.Value as IDictionary<string, object>).ToExpandoObject() : kvp.Value);
+			@object.ForEach(kvp => (expando as IDictionary<string, object>)[kvp.Key] = kvp.Value is IDictionary<string, object> dictionary ? dictionary.ToExpandoObject() : kvp.Value);
+			onCompleted?.Invoke(expando);
 			return expando;
 		}
 
@@ -1913,17 +1936,52 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject<T>(this T @object) where T : class
-			=> (@object is JToken ? @object as JToken : @object?.ToJson())?.ToExpandoObject();
+		public static ExpandoObject ToExpandoObject<T>(this T @object, Action<ExpandoObject> onCompleted = null) where T : class
+			=> (@object is JToken ? @object as JToken : @object?.ToJson())?.ToExpandoObject(onCompleted);
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static T FromExpandoObject<T>(this ExpandoObject @object) where T : class
-			=> JObject.FromObject(@object).FromJson<T>();
+		public static T FromExpandoObject<T>(this ExpandoObject @object, Action<T, ExpandoObject> onCompleted = null) where T : class
+		{
+			var instance = JObject.FromObject(@object).FromJson<T>();
+			onCompleted?.Invoke(instance, @object);
+			return instance;
+		}
+
+		/// <summary>
+		/// Merges this <see cref="ExpandoObject">ExpandoObject</see> object with other
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="other"></param>
+		/// <param name="onCompleted">The action to run when the merging process is completed</param>
+		/// <returns></returns>
+		public static ExpandoObject Merge(this ExpandoObject @object, ExpandoObject other, Action<ExpandoObject> onCompleted = null)
+		{
+			other?.ForEach(kvp =>
+			{
+				if (@object.TryGet(kvp.Key, out var current))
+				{
+					if (current == null)
+						@object.Set(kvp.Key, kvp.Value);
+					else if (current is ExpandoObject currentAsExpandoObject)
+					{
+						if (kvp.Value is ExpandoObject valueAsExpandoObject)
+							currentAsExpandoObject.Merge(valueAsExpandoObject);
+						else
+							currentAsExpandoObject.Set(kvp.Key, kvp.Value);
+					}
+				}
+				else
+					@object.Set(kvp.Key, kvp.Value);
+			});
+			onCompleted?.Invoke(@object);
+			return @object;
+		}
 
 		/// <summary>
 		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
@@ -1978,30 +2036,30 @@ namespace net.vieapps.Components.Utility
 				return false;
 
 			// get value & normalize
-			if (@object.TryGet(name, out object tempValue))
+			if (@object.TryGet(name, out var tempValue))
 			{
 				// get type
 				var type = typeof(T);
 
 				// generic list/hash-set
-				if (tempValue is List<object> && type.IsGenericListOrHashSet())
+				if (tempValue is List<object> tempList && type.IsGenericListOrHashSet())
 					tempValue = type.IsGenericList()
-						? (tempValue as List<object>).ToList<T>()
-						: (tempValue as List<object>).ToHashSet<T>();
+						? tempList.ToList<T>()
+						: tempList.ToHashSet<T>();
 
 				// generic dictionary/collection or object
-				else if (tempValue is ExpandoObject)
+				else if (tempValue is ExpandoObject tempExpando)
 				{
 					if (type.IsGenericDictionaryOrCollection())
 						tempValue = type.IsGenericDictionary()
-							? (tempValue as ExpandoObject).ToDictionary<T>()
-							: (tempValue as ExpandoObject).ToCollection<T>();
+							? tempExpando.ToDictionary<T>()
+							: tempExpando.ToCollection<T>();
 
 					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
 					{
-						var tempObj = type.CreateInstance();
-						tempObj.CopyFrom(tempValue as ExpandoObject);
-						tempValue = tempObj;
+						var tempObject = type.CreateInstance();
+						tempObject.CopyFrom(tempExpando);
+						tempValue = tempObject;
 					}
 				}
 
@@ -2058,7 +2116,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute for checking, accept the dot (.) to get check of child object</param>
 		/// <returns>true if the object got an attribute with the name</returns>
 		public static bool Has(this ExpandoObject @object, string name)
-			=> @object.TryGet(name, out var value);
+			=> @object != null && (name.IndexOf(".") < 0 ? (@object as IDictionary<string, object>).ContainsKey(name) : @object.TryGet(name, out var value));
 
 		/// <summary>
 		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
@@ -2123,9 +2181,7 @@ namespace net.vieapps.Components.Utility
 
 			// no multiple
 			if (names.Length < 2)
-				return !dictionary.ContainsKey(name)
-					? false
-					: dictionary.Remove(name);
+				return dictionary.ContainsKey(name) && dictionary.Remove(name);
 
 			// got multiple
 			var index = 0;
