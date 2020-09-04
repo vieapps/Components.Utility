@@ -599,7 +599,7 @@ namespace net.vieapps.Components.Utility
 			webRequest.Referer = string.IsNullOrWhiteSpace(referUri) ? "" : referUri;
 
 			// headers
-			headers?.Where(kvp => !kvp.Key.IsEquals("accept-encoding")).ForEach(kvp => webRequest.Headers.Add(kvp.Key, kvp.Value));
+			headers?.Where(kvp => !kvp.Key.IsEquals("accept-encoding")).ForEach(kvp => webRequest.Headers.Add(kvp.Key, kvp.Value?.UrlEncode()));
 
 			// cookies
 			if (webRequest.SupportsCookieContainer && cookies != null && cookies.Count > 0)
@@ -684,6 +684,57 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Sends the HTTP request to a remote  end-point
+		/// </summary>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="cookies">The requesting cookies</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="contentType">The content-type of the requesting body</param>
+		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="userAgent">The string that presents 'User-Agent' header</param>
+		/// <param name="referUri">The string that presents the referring url</param>
+		/// <param name="credential">The credential for marking request</param>
+		/// <param name="proxy">The proxy for marking request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> UtilityService.GetWebResponseAsync(method, uri, headers, cookies, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken);
+
+		/// <summary>
+		/// Gets the web response
+		/// </summary>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="contentType">The content-type of the requesting body</param>
+		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="userAgent">The string that presents 'User-Agent' header</param>
+		/// <param name="proxy">The proxy for marking request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, null, null, proxy, cancellationToken);
+
+		/// <summary>
+		/// Sends the HTTP request to a remote  end-point
+		/// </summary>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="contentType">The content-type of the requesting body</param>
+		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="userAgent">The string that presents 'User-Agent' header</param>
+		/// <param name="proxy">The proxy for marking request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> UtilityService.SendHttpRequestAsync(method, uri, headers, null, body, contentType, timeout, userAgent, null, null, proxy, cancellationToken);
+
+		/// <summary>
 		/// Gets the web resource stream
 		/// </summary>
 		/// <param name="method">The HTTP verb to perform request</param>
@@ -700,7 +751,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referUri = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> (await UtilityService.GetWebResponseAsync(method, uri, headers, cookies, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
+			=> (await UtilityService.SendHttpRequestAsync(method, uri, headers, cookies, body, contentType, timeout, userAgent, referUri, credential, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
 
 		/// <summary>
 		/// Gets the web resource stream
@@ -734,14 +785,13 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var reader = new StreamReader(stream, true))
 				{
-					var html = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-					return html?.HtmlDecode();
+					return (await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false))?.HtmlDecode();
 				}
 			}
 		}
 
 		/// <summary>
-		/// Gets the web page
+		/// Gets a web page of a remote end-point
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="referUri">The string that presents the referring url</param>
@@ -750,6 +800,17 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string uri, string referUri = null, string userAgent = null, CancellationToken cancellationToken = default)
 			=> UtilityService.GetWebPageAsync("GET", uri, null, null, null, null, 90, userAgent, referUri, null, null, cancellationToken);
+
+		/// <summary>
+		/// Gets a web page of a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="referUri">The string that presents the referring url</param>
+		/// <param name="userAgent">The string that presents 'User-Agent' header</param>
+		/// <returns></returns>
+		public static Task<string> FetchWebResourceAsync(string uri, CancellationToken cancellationToken = default, string referUri = null, string userAgent = null)
+			=> UtilityService.GetWebPageAsync(uri, referUri, userAgent, cancellationToken);
 		#endregion
 
 		#region Remove/Clear tags
