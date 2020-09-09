@@ -989,41 +989,42 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Removing whitespaces & breaks
-		internal static List<Tuple<Regex, string>> _WhitespacesAndBreaksRegexs = null;
+		#region Remove/Normalize whitespaces & breaks
+		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksRegexs { get; } = new List<Tuple<Regex, string>>
+		{
+			// remove line-breaks
+			new Tuple<Regex, string>(new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <"),
+			new Tuple<Regex, string>(new Regex(@">\n<", RegexOptions.IgnoreCase), "><"),
 
-		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksRegexs
+			// white-spaces between tags
+			new Tuple<Regex, string>(new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>"),
+			new Tuple<Regex, string>(new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><"),
+			new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <")
+		};
+
+		internal static List<Tuple<Regex, string>> _WhitespacesAndBreaksExtendedRegexs = null;
+
+		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksExtendedRegexs
 		{
 			get
 			{
-				if (UtilityService._WhitespacesAndBreaksRegexs == null)
+				if (UtilityService._WhitespacesAndBreaksExtendedRegexs == null)
 				{
-					UtilityService._WhitespacesAndBreaksRegexs = new List<Tuple<Regex, string>>
-					{
-						// remove line-breaks
-						new Tuple<Regex, string>(new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <"),
-						new Tuple<Regex, string>(new Regex(@">\n<", RegexOptions.IgnoreCase), "><"),
-
-						// white-spaces between tags
-						new Tuple<Regex, string>(new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>"),
-						new Tuple<Regex, string>(new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><"),
-						new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <")
-					};
-
 					// white-spaces before/after special tags
+					UtilityService._WhitespacesAndBreaksExtendedRegexs = new List<Tuple<Regex, string>>();
 					"div,/div,section,/section,nav,/nav,main,/main,header,/header,footer,/footer,p,/p,h1,h2,h3,h4,h5,br,hr,input,textarea,table,tr,/tr,td,ul,/ul,li,select,/select,option,script,/script".ToArray().ForEach(tag =>
 					{
 						if (!tag[0].Equals('/'))
-							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag, RegexOptions.IgnoreCase), "><" + tag));
+							UtilityService._WhitespacesAndBreaksExtendedRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag, RegexOptions.IgnoreCase), "><" + tag));
 						else
 						{
-							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag + @">\s+<", RegexOptions.IgnoreCase), "><" + tag + "><"));
-							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag + @">", RegexOptions.IgnoreCase), "><" + tag + ">"));
-							UtilityService._WhitespacesAndBreaksRegexs.Add(new Tuple<Regex, string>(new Regex(@"<" + tag + @">\s+<", RegexOptions.IgnoreCase), "<" + tag + "><"));
+							UtilityService._WhitespacesAndBreaksExtendedRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag + @">\s+<", RegexOptions.IgnoreCase), "><" + tag + "><"));
+							UtilityService._WhitespacesAndBreaksExtendedRegexs.Add(new Tuple<Regex, string>(new Regex(@">\s+<" + tag + @">", RegexOptions.IgnoreCase), "><" + tag + ">"));
+							UtilityService._WhitespacesAndBreaksExtendedRegexs.Add(new Tuple<Regex, string>(new Regex(@"<" + tag + @">\s+<", RegexOptions.IgnoreCase), "<" + tag + "><"));
 						}
 					});
 				}
-				return UtilityService._WhitespacesAndBreaksRegexs;
+				return UtilityService._WhitespacesAndBreaksExtendedRegexs;
 			}
 		}
 
@@ -1038,8 +1039,23 @@ namespace net.vieapps.Components.Utility
 				return "";
 
 			var output = input.Replace("&nbsp;", " ").Trim();
-			UtilityService.WhitespacesAndBreaksRegexs.ForEach(regex => output = regex.Item1.Replace(output, regex.Item2));
+			UtilityService.WhitespacesAndBreaksRegexs.Concat(UtilityService.WhitespacesAndBreaksExtendedRegexs).ForEach(regex => output = regex.Item1.Replace(output, regex.Item2));
 			return output;
+		}
+
+		/// <summary>
+		/// Normalizes breaks (BR) of HTML code
+		/// </summary>
+		/// <param name="html"></param>
+		/// <param name="noBreakBetweenTags"></param>
+		/// <returns></returns>
+		public static string NormalizeHTMLBreaks(this string html, bool noBreakBetweenTags = true)
+		{
+			html = html?.Replace("\t", "").Replace("\r", "").Replace("\n", "<br/>") ?? "";
+			UtilityService.WhitespacesAndBreaksRegexs.ForEach(regex => html = regex.Item1.Replace(html, regex.Item2));
+			if (noBreakBetweenTags)
+				html = html.Replace("><br/><", "><");
+			return html;
 		}
 		#endregion
 
