@@ -2257,7 +2257,7 @@ namespace System.Collections.Generic
 		/// </summary>
 		/// <param name="key">The object that presents the key of the element</param>
 		/// <returns>The value object that specified by the key</returns>
-		public new TValue GetByKey(TKey key)
+		public TValue GetByKey(TKey key)
 			=> (TValue)base.GetByKey(key);
 
 		/// <summary>

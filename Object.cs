@@ -1450,29 +1450,34 @@ namespace net.vieapps.Components.Utility
 			if (@object == null)
 				return instance;
 
+#if NET5_0
+			// create new instance and copy data
+			instance = @object.Copy(null, null, onError);
+#else
 			// the object is serializable
 			if (@object.IsSerializable())
 				using (var stream = UtilityService.CreateMemoryStream())
 				{
 					try
 					{
-						var formatter = new BinaryFormatter();
-						formatter.Serialize(stream, @object);
+						var binaryFormatter = new BinaryFormatter();
+						binaryFormatter.Serialize(stream, @object);
 						stream.Seek(0, SeekOrigin.Begin);
-						instance = (T)formatter.Deserialize(stream);
+						instance = (T)binaryFormatter.Deserialize(stream);
 					}
 					catch (Exception ex)
 					{
 						if (onError != null)
 							onError.Invoke(ex);
 						else
-							throw ex;
+							throw;
 					}
 				}
 
 			// cannot serialize, then create new instance and copy data
 			else
 				instance = @object.Copy(null, null, onError);
+#endif
 
 			// return the new instance of object
 			onCompleted?.Invoke(instance);

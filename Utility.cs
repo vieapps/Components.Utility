@@ -658,7 +658,7 @@ namespace net.vieapps.Components.Utility
 				if (ex.Message.Contains("did not properly respond after a period of time"))
 					throw new ConnectionTimeoutException(ex.InnerException);
 				else
-					throw ex;
+					throw;
 			}
 			catch (WebException ex)
 			{
@@ -2888,7 +2888,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="minValue">The lower bound.</param>
 		/// <param name="maxValue">The upper bound (non-inclusive).</param>
 		/// <returns>A random BigInteger between start and end (non-inclusive)</returns>
-		public new BigInteger Next(BigInteger minValue, BigInteger maxValue)
+		public BigInteger Next(BigInteger minValue, BigInteger maxValue)
 		{
 			// initialize
 			if (minValue == maxValue)

@@ -1083,7 +1083,7 @@ namespace net.vieapps.Components.Utility
 				if (ex.Message.IsContains("Key does not exist"))
 					throw new CryptographicException($"RSA must contains private key to sign ({ex.Message})", ex);
 				else
-					throw ex;
+					throw;
 			}
 		}
 
@@ -2692,10 +2692,7 @@ namespace net.vieapps.Components.Utility
 		/// <value>
 		/// The block size to use in the hash value. For <see cref="HMACRIPEMD160"/> this is 64 bytes.
 		/// </value>
-		protected int BlockSize
-		{
-			get { return 64; }
-		}
+		protected int BlockSize => 64;
 
 		/// <summary>
 		/// Gets the size, in bits, of the computed hash code.
@@ -2716,14 +2713,8 @@ namespace net.vieapps.Components.Utility
 		/// </returns>
 		public override byte[] Key
 		{
-			get
-			{
-				return base.Key;
-			}
-			set
-			{
-				this.SetKey(value);
-			}
+			get => base.Key;
+			set => this.SetKey(value);
 		}
 
 		/// <summary>
@@ -2757,7 +2748,7 @@ namespace net.vieapps.Components.Utility
 			if (!this._innerPaddingWritten)
 			{
 				// write the inner padding
-				this._hashProvider.TransformBlock(this._innerPadding, 0, BlockSize, _innerPadding, 0);
+				this._hashProvider.TransformBlock(this._innerPadding, 0, this.BlockSize, _innerPadding, 0);
 
 				// ensure we only write inner padding once
 				this._innerPaddingWritten = true;
@@ -2778,7 +2769,7 @@ namespace net.vieapps.Components.Utility
 			var hashValue = this._hashProvider.ComputeHash(new byte[0]);
 
 			// write the outer padding
-			this._hashProvider.TransformBlock(this._outerPadding, 0, BlockSize, _outerPadding, 0);
+			this._hashProvider.TransformBlock(this._outerPadding, 0, this.BlockSize, _outerPadding, 0);
 
 			// write the inner hash and finalize the hash
 			this._hashProvider.TransformFinalBlock(hashValue, 0, hashValue.Length);
