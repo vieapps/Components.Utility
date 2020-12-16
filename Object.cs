@@ -17,6 +17,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 #endregion
@@ -1450,20 +1451,21 @@ namespace net.vieapps.Components.Utility
 			if (@object == null)
 				return instance;
 
-#if NET5_0
-			// create new instance and copy data
-			instance = @object.Copy(null, null, onError);
-#else
 			// the object is serializable
 			if (@object.IsSerializable())
 				using (var stream = UtilityService.CreateMemoryStream())
 				{
 					try
 					{
-						var binaryFormatter = new BinaryFormatter();
-						binaryFormatter.Serialize(stream, @object);
-						stream.Seek(0, SeekOrigin.Begin);
-						instance = (T)binaryFormatter.Deserialize(stream);
+						using (var writer = new BsonDataWriter(stream))
+						{
+							new JsonSerializer().Serialize(writer, @object);
+							stream.Seek(0, SeekOrigin.Begin);
+							using (var reader = new BsonDataReader(stream))
+							{
+								instance = new JsonSerializer().Deserialize<T>(reader);
+							}
+						}
 					}
 					catch (Exception ex)
 					{
@@ -1477,7 +1479,6 @@ namespace net.vieapps.Components.Utility
 			// cannot serialize, then create new instance and copy data
 			else
 				instance = @object.Copy(null, null, onError);
-#endif
 
 			// return the new instance of object
 			onCompleted?.Invoke(instance);

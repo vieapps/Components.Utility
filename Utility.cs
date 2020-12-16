@@ -1663,13 +1663,14 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <param name="content"></param>
+		/// <param name="append"></param>
 		/// <returns></returns>
-		public static void WriteBinaryFile(string filePath, byte[] content)
+		public static void WriteBinaryFile(string filePath, byte[] content, bool append = false)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
+			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 			{
 				stream.Write(content ?? new byte[0], 0, content?.Length ?? 0);
 				stream.Flush();
@@ -1681,14 +1682,15 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <param name="content"></param>
+		/// <param name="append"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task WriteBinaryFileAsync(string filePath, byte[] content, CancellationToken cancellationToken = default)
+		public static async Task WriteBinaryFileAsync(string filePath, byte[] content, bool append = false, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				await stream.WriteAsync(content ?? new byte[0], 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
 				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -1700,13 +1702,17 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <param name="content"></param>
+		/// <param name="append"></param>
 		/// <returns></returns>
-		public static void WriteBinaryFile(string filePath, Stream content)
+		public static void WriteBinaryFile(string filePath, Stream content, bool append = false)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
+			if (content.CanSeek)
+				content.Seek(0, SeekOrigin.Begin);
+
+			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
 				var read = content.Read(buffer, 0, buffer.Length);
@@ -1724,14 +1730,18 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="filePath"></param>
 		/// <param name="content"></param>
+		/// <param name="append"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task WriteBinaryFileAsync(string filePath, Stream content, CancellationToken cancellationToken = default)
+		public static async Task WriteBinaryFileAsync(string filePath, Stream content, bool append = false, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
 
-			using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+			if (content.CanSeek)
+				content.Seek(0, SeekOrigin.Begin);
+
+			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
 				var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
