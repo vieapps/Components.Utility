@@ -1,7 +1,6 @@
 ﻿#region Related components
 using System;
 using System.IO;
-using System.Text;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -15,9 +14,7 @@ using System.Xml.Serialization;
 using System.Dynamic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 #endregion
@@ -1446,42 +1443,12 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The copied object.</returns>
 		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
-			// initialize the object
 			var instance = default(T);
-			if (@object == null)
-				return instance;
-
-			// the object is serializable
-			if (@object.IsSerializable())
-				using (var stream = UtilityService.CreateMemoryStream())
-				{
-					try
-					{
-						using (var writer = new BsonDataWriter(stream))
-						{
-							new JsonSerializer().Serialize(writer, @object);
-							stream.Seek(0, SeekOrigin.Begin);
-							using (var reader = new BsonDataReader(stream))
-							{
-								instance = new JsonSerializer().Deserialize<T>(reader);
-							}
-						}
-					}
-					catch (Exception ex)
-					{
-						if (onError != null)
-							onError.Invoke(ex);
-						else
-							throw;
-					}
-				}
-
-			// cannot serialize, then create new instance and copy data
-			else
+			if (@object != null)
+			{
 				instance = @object.Copy(null, null, onError);
-
-			// return the new instance of object
-			onCompleted?.Invoke(instance);
+				onCompleted?.Invoke(instance);
+			}
 			return instance;
 		}
 		#endregion
@@ -1682,28 +1649,23 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">The token key</param>
 		/// <param name="default">The default value</param>
 		/// <returns>The converted token value</returns>
-		public static T Value<T>(this JToken json, object key, T @default)
+		public static T Get<T>(this JToken json, string key, T @default = default)
 		{
-			var value = json.Value<object>(key);
-			if (value != null)
+			var value = @default;
+			if (json != null)
 				try
 				{
-					return value.GetType().Equals(typeof(T)) ? (T)value : value.CastAs<T>();
+					var jvalue = json.Value<object>(key);
+					value = jvalue != null
+						? jvalue is T tvalue ? tvalue : jvalue.CastAs<T>()
+						: @default;
 				}
-				catch { }
-			return @default;
+				catch
+				{
+					value = @default;
+				}
+			return value;
 		}
-
-		/// <summary>
-		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
-		/// </summary>
-		/// <typeparam name="T">The type to convert the token to</typeparam>
-		/// <param name="json"></param>
-		/// <param name="key">The token key</param>
-		/// <param name="default">The default value</param>
-		/// <returns>The converted token value</returns>
-		public static T Get<T>(this JToken json, object key, T @default = default)
-			=> json.Value(key, @default);
 		#endregion
 
 		#region XML conversions
@@ -2089,7 +2051,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static object Get(this ExpandoObject @object, string name)
-			=> @object.TryGet(name, out object value)
+			=> @object != null && @object.TryGet(name, out object value)
 				? value
 				: null;
 
@@ -2101,19 +2063,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static T Get<T>(this ExpandoObject @object, string name, T @default = default)
-			=> @object.TryGet(name, out T value)
+			=> @object != null && @object.TryGet(name, out T value)
 				? value
 				: @default;
-
-		/// <summary>
-		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="default">Default value when the attribute is not found</param>
-		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Value<T>(this ExpandoObject @object, string name, T @default = default)
-			=> @object.Get(name, @default);
 
 		/// <summary>
 		/// Checks to see the <see cref="ExpandoObject">ExpandoObject</see> object is got an attribute by specified name (accept the dot (.) to get check of child object)
