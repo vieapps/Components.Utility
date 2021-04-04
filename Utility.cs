@@ -608,7 +608,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// compression
-#if NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_1
+#if NETSTANDARD2_0
 			webRequest.Headers.Add("accept-encoding", "deflate, gzip");
 			webRequest.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 #else

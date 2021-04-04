@@ -187,6 +187,8 @@ namespace net.vieapps.Components.Utility
 				try
 				{
 					this.CopyFrom(encryptedMessage.Decrypt(WebHookMessage.EncryptionKey).FromJson<WebHookMessage>());
+					this.Header.Select(kvp => kvp.Key).ToList().ForEach(key => this.Header[key] = this.Header[key]?.UrlDecode());
+					this.Query.Select(kvp => kvp.Key).ToList().ForEach(key => this.Query[key] = this.Query[key]?.UrlDecode());
 				}
 				catch { }
 		}
@@ -205,13 +207,11 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets or Sets header of webhook message
 		/// </summary>
-		[JsonIgnore]
 		public Dictionary<string, string> Header { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Gets or Sets query-string of webhook message
 		/// </summary>
-		[JsonIgnore]
 		public Dictionary<string, string> Query { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
 		static string _EncryptionKey = null;
@@ -940,9 +940,11 @@ namespace net.vieapps.Components.Utility
 			else if (string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
 				throw new InformationInvalidException("The message is invalid (no end-point or no body)");
 
-			signatureName = signatureName ?? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
 			if (string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
 				signAlgorithm = "SHA256";
+
+			if (string.IsNullOrWhiteSpace(signatureName))
+				signatureName = $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
 
 			var query = new Dictionary<string, string>(additionalQuery ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			message.Query?.ForEach(kvp => query[kvp.Key] = kvp.Value);
@@ -952,10 +954,13 @@ namespace net.vieapps.Components.Utility
 
 			using (var hasher = CryptoService.GetHMACHashAlgorithm((signKey ?? CryptoService.DEFAULT_PASS_PHRASE).ToBytes(), signAlgorithm))
 			{
+				var signature = signatureAsHex
+					? hasher.ComputeHash(message.Body.ToBytes()).ToHex()
+					: hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
 				if (signatureInQuery)
-					query[signatureName] = signatureAsHex ? hasher.ComputeHash(message.Body.ToBytes()).ToHex() : hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
+					query[signatureName] = signature;
 				else
-					header[signatureName] = signatureAsHex ? hasher.ComputeHash(message.Body.ToBytes()).ToHex() : hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
+					header[signatureName] = signature;
 			}
 
 			message.Query = query;
@@ -973,9 +978,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
-				: UtilityService.SendHttpRequestAsync(
+			=> !string.IsNullOrWhiteSpace(message?.EndpointURL) && !string.IsNullOrWhiteSpace(message?.Body)
+				? UtilityService.SendHttpRequestAsync(
 					"POST",
 					$"{message.EndpointURL}{(message.Query.Count < 1 ? "" : message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
 					message.Header,
@@ -984,8 +988,8 @@ namespace net.vieapps.Components.Utility
 					120,
 					$"{UtilityService.DesktopUserAgent} {agent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
 					proxy,
-					cancellationToken
-				);
+					cancellationToken)
+				: Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
@@ -994,9 +998,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken)
-			=> message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
-				: message.SendMessageAsync(null, null, cancellationToken);
+			=> !string.IsNullOrWhiteSpace(message?.EndpointURL) && !string.IsNullOrWhiteSpace(message?.Body)
+				? message.SendMessageAsync(null, null, cancellationToken)
+				: Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
@@ -1007,9 +1011,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static void SendMessage(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
-				: message.SendMessageAsync(agent, proxy, cancellationToken)).Wait();
+			=> message.SendMessageAsync(agent, proxy, cancellationToken).Wait(13000, cancellationToken);
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
@@ -1018,9 +1020,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static void SendMessage(this WebHookMessage message, CancellationToken cancellationToken)
-			=> (message == null || string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body)
-				? Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"))
-				: message.SendMessageAsync(cancellationToken)).Wait();
+			=> message.SendMessageAsync(cancellationToken).Wait(13000, cancellationToken);
 		#endregion
 
 	}

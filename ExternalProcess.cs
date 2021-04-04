@@ -97,6 +97,7 @@ namespace net.vieapps.Components.Utility
 				}
 				catch { }
 				onExited?.Invoke(sender, args);
+				(sender as IDisposable)?.Dispose();
 			};
 
 			// start the process
@@ -168,7 +169,8 @@ namespace net.vieapps.Components.Utility
 			else
 				try
 				{
-					ExternalProcess.Kill(
+					ExternalProcess.Kill
+					(
 						info.Process,
 						process =>
 						{

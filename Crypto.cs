@@ -98,7 +98,10 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Hash an array of bytes or a string
-		internal static Dictionary<string, Func<HashAlgorithm>> HashAlgorithmFactories { get; } = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
+		/// <summary>
+		/// Gets the factories of hash algorithm
+		/// </summary>
+		public static Dictionary<string, Func<HashAlgorithm>> HashAlgorithmFactories { get; } = new Dictionary<string, Func<HashAlgorithm>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", () => MD5.Create() },
 			{ "sha1", () => SHA1.Create() },
@@ -445,7 +448,10 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region HMAC Hash an array of bytes or string
-		internal static Dictionary<string, Func<byte[], HMAC>> HmacHashAlgorithmFactories { get; } = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
+		/// <summary>
+		/// Gets the factories of hash algorithm
+		/// </summary>
+		public static Dictionary<string, Func<byte[], HMAC>> HmacHashAlgorithmFactories { get; } = new Dictionary<string, Func<byte[], HMAC>>(StringComparer.OrdinalIgnoreCase)
 		{
 			{ "md5", key => new HMACMD5(key) },
 			{ "sha1", key => new HMACSHA1(key) },
@@ -2673,12 +2679,13 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Computes a Hash-based Message Authentication Code (HMAC) by using the <see cref="RIPEMD160"/> hash function.
 	/// </summary>
-	public sealed class HMACRIPEMD160 : HMAC
+	public class HMACRIPEMD160 : HMAC
 	{
 		IRIPEMD160HashProvider _hashProvider;
 		byte[] _innerPadding;
 		byte[] _outerPadding;
 		readonly int _hashSize;
+		int _blockSizeValue = 64;
 
 		/// <summary>
 		/// Holds value indicating whether the inner padding was already written.
@@ -2686,15 +2693,19 @@ namespace net.vieapps.Components.Utility
 		bool _innerPaddingWritten;
 
 		/// <summary>
-		/// Gets or sets the block size, in bytes, to use in the hash value.
+		/// Gets or sets the block size (in bytes) to use in the hash value.
 		/// </summary>
 		/// <value>
 		/// The block size to use in the hash value. For <see cref="HMACRIPEMD160"/> this is 64 bytes.
 		/// </value>
-		protected int BlockSize => 64;
+		protected new int BlockSizeValue
+		{
+			get => this._blockSizeValue;
+			set => this._blockSizeValue = value;
+		}
 
 		/// <summary>
-		/// Gets the size, in bits, of the computed hash code.
+		/// Gets the size (in bits) of the computed hash code.
 		/// </summary>
 		/// <value>
 		/// The size, in bits, of the computed hash code.
@@ -2747,7 +2758,7 @@ namespace net.vieapps.Components.Utility
 			if (!this._innerPaddingWritten)
 			{
 				// write the inner padding
-				this._hashProvider.TransformBlock(this._innerPadding, 0, this.BlockSize, _innerPadding, 0);
+				this._hashProvider.TransformBlock(this._innerPadding, 0, this.BlockSizeValue, _innerPadding, 0);
 
 				// ensure we only write inner padding once
 				this._innerPaddingWritten = true;
@@ -2768,7 +2779,7 @@ namespace net.vieapps.Components.Utility
 			var hashValue = this._hashProvider.ComputeHash(new byte[0]);
 
 			// write the outer padding
-			this._hashProvider.TransformBlock(this._outerPadding, 0, this.BlockSize, _outerPadding, 0);
+			this._hashProvider.TransformBlock(this._outerPadding, 0, this.BlockSizeValue, _outerPadding, 0);
 
 			// write the inner hash and finalize the hash
 			this._hashProvider.TransformFinalBlock(hashValue, 0, hashValue.Length);
@@ -2805,12 +2816,12 @@ namespace net.vieapps.Components.Utility
 
 		void SetKey(byte[] value)
 		{
-			var shortenedKey = value.Length > this.BlockSize
+			var shortenedKey = value.Length > this.BlockSizeValue
 				? this._hashProvider.ComputeHash(value)
 				: value;
 
-			this._innerPadding = new byte[this.BlockSize];
-			this._outerPadding = new byte[this.BlockSize];
+			this._innerPadding = new byte[this.BlockSizeValue];
+			this._outerPadding = new byte[this.BlockSizeValue];
 
 			// compute inner and outer padding.
 			for (var i = 0; i < shortenedKey.Length; i++)
@@ -2819,7 +2830,7 @@ namespace net.vieapps.Components.Utility
 				this._outerPadding[i] = (byte)(0x5C ^ shortenedKey[i]);
 			}
 
-			for (var i = shortenedKey.Length; i < BlockSize; i++)
+			for (var i = shortenedKey.Length; i < BlockSizeValue; i++)
 			{
 				this._innerPadding[i] = 0x36;
 				this._outerPadding[i] = 0x5C;
