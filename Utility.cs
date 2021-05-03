@@ -99,7 +99,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string BlankUUID => UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
 
-		static readonly Regex HexRegex = new Regex("[^0-9a-fA-F]+");
+		static Regex HexRegex => new Regex("[^0-9a-fA-F]+");
 
 		/// <summary>
 		/// Validates the UUID string
@@ -448,6 +448,25 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task WriteAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
 			=> writer.WriteAsync(@string).WithCancellationToken(cancellationToken);
+
+		/// <summary>
+		/// Writes a line of string to the stream asynchronously
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="string"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task WriteLineAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
+			=> writer.WriteLineAsync(@string).WithCancellationToken(cancellationToken);
+
+		/// <summary>
+		/// Clears all buffers for this stream asynchronously and causes any buffered data to be written to the underlying device
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task FlushAsync(this StreamWriter writer, CancellationToken cancellationToken)
+			=> writer.FlushAsync().WithCancellationToken(cancellationToken);
 
 		/// <summary>
 		/// Reads all characters from the current position to the end of the stream asynchronously and returns them as one string
@@ -1407,7 +1426,7 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var reader = encoding != null ? new StreamReader(stream, encoding) : new StreamReader(stream, true))
 				{
-					return await reader.ReadToEndAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
+					return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}
@@ -1481,7 +1500,8 @@ namespace net.vieapps.Components.Utility
 			{
 				using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 				{
-					await writer.WriteAsync(content).WithCancellationToken(cancellationToken).ConfigureAwait(false);
+					await writer.WriteAsync(content, cancellationToken).ConfigureAwait(false);
+					await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}
@@ -1564,7 +1584,7 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("File path is invalid", nameof(filePath));
 
-			if (lines != null && lines.Count > 0)
+			if (lines != null && lines.Any())
 				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 				{
 					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
@@ -1588,13 +1608,13 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("File path is invalid", nameof(filePath));
 
-			if (lines != null && lines.Count > 0)
+			if (lines != null && lines.Any())
 				using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 				{
 					using (var writer = new StreamWriter(stream, encoding ?? Encoding.UTF8))
 					{
-						await lines.Where(line => line != null).ForEachAsync((line, token) => writer.WriteLineAsync(line).WithCancellationToken(token), cancellationToken, true, false).ConfigureAwait(false);
-						await writer.FlushAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
+						await lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line, cancellationToken).ConfigureAwait(false), true, false).ConfigureAwait(false);
+						await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 					}
 				}
 		}
@@ -1671,7 +1691,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 			{
-				stream.Write(content ?? new byte[0], 0, content?.Length ?? 0);
+				stream.Write(content ?? Array.Empty<byte>(), 0, content?.Length ?? 0);
 				stream.Flush();
 			}
 		}
@@ -1691,7 +1711,7 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
-				await stream.WriteAsync(content ?? new byte[0], 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
+				await stream.WriteAsync(content ?? Array.Empty<byte>(), 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
 				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 			}
 		}
