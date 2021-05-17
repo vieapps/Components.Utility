@@ -503,7 +503,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string[] ToArray(this string @string, char separator, bool removeEmptyElements = false, bool trim = true)
 			=> @string == null
-				? new string[] { }
+				? Array.Empty<string>()
 				: @string.ToArray($"{separator}", removeEmptyElements, trim);
 
 		/// <summary>

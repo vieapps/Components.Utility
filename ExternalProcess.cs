@@ -187,13 +187,23 @@ namespace net.vieapps.Components.Utility
 								info.ExitCode = process.ExitCode;
 								info.ExitTime = process.ExitTime;
 							}
+							catch (InvalidOperationException ex)
+							{
+								if (ex.Message.IsContains("No process is associated with this object"))
+								{
+									info.ExitCode = 0;
+									info.ExitTime = DateTime.Now;
+								}
+								else
+									onError?.Invoke(ex);
+							}
 							catch (Exception ex)
 							{
 								onError?.Invoke(ex);
 							}
 							try
 							{
-								info.Process.Dispose();
+								info.Process?.Dispose();
 							}
 							catch (Exception ex)
 							{
@@ -256,6 +266,16 @@ namespace net.vieapps.Components.Utility
 						onKilled?.Invoke(process);
 						return;
 					}
+				}
+				catch (InvalidOperationException ex)
+				{
+					if (ex.Message.IsContains("No process is associated with this object"))
+					{
+						onKilled?.Invoke(process);
+						return;
+					}
+					else
+						onError?.Invoke(ex);
 				}
 				catch (Exception ex)
 				{

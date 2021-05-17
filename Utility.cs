@@ -218,7 +218,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Execute an action and return a task
+		#region Task extensions
 		/// <summary>
 		/// Executes an action in the thread pool with cancellation supported
 		/// </summary>
@@ -241,6 +241,56 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An awaitable task</returns>
 		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default, TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
 			=> Task.Factory.StartNew(func, cancellationToken, creationOptions, scheduler ?? TaskScheduler.Default);
+
+		/// <summary>
+		/// Runs a task and just forget it (or wait for completion)
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="onError">The error handler</param>
+		/// <param name="waitForCompletion">true to wait for completion of the task</param>
+		public static void Run(this Task task, Action<Exception> onError = null, bool waitForCompletion = false)
+		{
+			var instance = Task.Run(async () =>
+			{
+				try
+				{
+					await task.ConfigureAwait(false);
+				}
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
+			});
+			if (waitForCompletion)
+				instance.Wait();
+			else
+				instance.ConfigureAwait(false);
+		}
+
+		/// <summary>
+		/// Runs a task and just forget it (or wait for completion)
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="waitForCompletion">true to wait for completion of the task</param>
+		public static void Run(this Task task, bool waitForCompletion)
+			=> task.Run(null, waitForCompletion);
+
+		/// <summary>
+		/// Runs a task and just forget it (or wait for completion)
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="onError">The error handler</param>
+		/// <param name="waitForCompletion">true to wait for completion of the task</param>
+		public static void Run(this ValueTask task, Action<Exception> onError = null, bool waitForCompletion = false)
+			=> task.AsTask().Run(onError, waitForCompletion);
+
+		/// <summary>
+		/// Runs a task and just forget it (or wait for completion)
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="waitForCompletion">true to wait for completion of the task</param>
+		public static void Run(this ValueTask task, bool waitForCompletion)
+			=> task.Run(null, waitForCompletion);
 		#endregion
 
 		#region Async extensions to support cancellation token
