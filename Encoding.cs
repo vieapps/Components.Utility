@@ -183,7 +183,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] ToBytes(this decimal @decimal)
 		{
-			var bytes = new byte[0];
+			var bytes = Array.Empty<byte>();
 			Decimal.GetBits(@decimal).ForEach(@int => bytes = bytes.Concat(@int.ToBytes()));
 			return bytes;
 		}

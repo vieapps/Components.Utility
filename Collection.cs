@@ -723,7 +723,7 @@ namespace net.vieapps.Components.Utility
 		{
 			var result = new List<T>().Select(o => o);
 			if (@object != null)
-				while (@object.Count > 0)
+				while (!@object.IsEmpty)
 					if (@object.TryDequeue(out var array))
 						result = result.Concat(array);
 			return result;
@@ -1097,7 +1097,7 @@ namespace net.vieapps.Components.Utility
 			if (@object is HashSet<T>)
 				return @object as HashSet<T>;
 
-			var set = new HashSet<T>(checkDuplicated ? new T[] { } : @object);
+			var set = new HashSet<T>(checkDuplicated ? Array.Empty<T>() : @object);
 			if (checkDuplicated)
 				set.Append(@object);
 
