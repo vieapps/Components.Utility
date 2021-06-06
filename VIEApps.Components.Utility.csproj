@@ -32,7 +32,7 @@
 		<PackageIcon>Icon.png</PackageIcon>
 		<PackageOutputPath>../</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Cancellation tokens</PackageReleaseNotes>
+		<PackageReleaseNotes>Send HTTP requests</PackageReleaseNotes>
 		<PackageProjectUrl>https://vieapps.net</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
@@ -52,7 +52,7 @@
 		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.0.0" />
+		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.1.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
 		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" Condition="'$(TargetFramework)' == 'netstandard2.0'" />

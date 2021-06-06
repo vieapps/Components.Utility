@@ -746,9 +746,11 @@ namespace net.vieapps.Components.Utility
 				// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using) - not available on macOS
 				webRequest.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
+#if NETSTANDARD2_0
 				// service point - only available on Windows with .NET Framework
-				if (RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
 					webRequest.ServicePoint.Expect100Continue = false;
+#endif
 			}
 
 			if (isDebugEnabled)
