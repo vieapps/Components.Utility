@@ -19,6 +19,7 @@ using System.Reflection;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IO;
 #endregion
 
 #if !SIGN
@@ -108,11 +109,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onlyHex">true to only allow hexa characters</param>
 		/// <returns>true if it is valid; otherwise false.</returns>
 		public static bool IsValidUUID(this string uuid, bool onlyHex = true)
-			=> string.IsNullOrWhiteSpace(uuid) || !uuid.Length.Equals(32)
-				? false
-				: onlyHex
-					? UtilityService.HexRegex.Replace(uuid, "").Equals(uuid)
-					: !uuid.Contains(" ") && !uuid.Contains(";");
+			=> !string.IsNullOrWhiteSpace(uuid) && uuid.Length.Equals(32) && (onlyHex ? UtilityService.HexRegex.Replace(uuid, "").Equals(uuid) : !uuid.Contains(" ") && !uuid.Contains(";"));
 		#endregion
 
 		#region Random number & code
@@ -656,14 +653,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
 		/// <param name="credential">The credential for marking request</param>
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, List<Cookie> cookies, string body, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
+		public static async Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, string body, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			// prepare
 			var logger = Logger.CreateLogger<HttpWebRequest>();
@@ -675,6 +671,7 @@ namespace net.vieapps.Components.Utility
 			var webRequest = WebRequest.Create(uri) as HttpWebRequest;
 			webRequest.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
 			webRequest.Timeout = timeout * 1000;
+			webRequest.AllowAutoRedirect = false;
 
 			// headers
 			headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host")).ForEach(kvp =>
@@ -694,23 +691,6 @@ namespace net.vieapps.Components.Utility
 
 			if (!headers.ContainsKey("User-Agent"))
 				webRequest.UserAgent = UtilityService.DesktopUserAgent;
-
-			// cookies
-			if (webRequest.SupportsCookieContainer && cookies != null && cookies.Any())
-			{
-				webRequest.CookieContainer = new CookieContainer();
-				cookies.ForEach(cookie =>
-				{
-					try
-					{
-						webRequest.CookieContainer.Add(cookie);
-					}
-					catch (Exception ex)
-					{
-						logger.LogError($"Error occurred while updating cookies => {ex.Message}", ex);
-					}
-				});
-			}
 
 			// compression
 #if NETSTANDARD2_0
@@ -809,13 +789,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, List<Cookie> cookies, string body, int timeout, CancellationToken cancellationToken = default)
-			=> uri.SendHttpRequestAsync(method, headers, cookies, body, timeout, null, null, cancellationToken);
+		public static Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, string body, int timeout, CancellationToken cancellationToken = default)
+			=> uri.SendHttpRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point
@@ -823,7 +802,6 @@ namespace net.vieapps.Components.Utility
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="contentType">The content-type of the requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
@@ -833,7 +811,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 		{
 			headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			if (!string.IsNullOrWhiteSpace(contentType))
@@ -842,7 +820,7 @@ namespace net.vieapps.Components.Utility
 				headers["User-Agent"] = userAgent;
 			if (!string.IsNullOrWhiteSpace(referer))
 				headers["Referer"] = referer;
-			return new Uri(uri).SendHttpRequestAsync(method, headers, cookies, body, timeout, credential, proxy, cancellationToken);
+			return new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken);
 		}
 
 		/// <summary>
@@ -851,13 +829,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, int timeout, CancellationToken cancellationToken)
-			=> new Uri(uri).SendHttpRequestAsync(method, headers, cookies, body, timeout, null, null, cancellationToken);
+		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, string body, int timeout, CancellationToken cancellationToken)
+			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote  end-point
@@ -873,7 +850,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> SendHttpRequestAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> UtilityService.SendHttpRequestAsync(method, uri, headers, null, body, contentType, timeout, userAgent, null, null, proxy, cancellationToken);
+			=> UtilityService.SendHttpRequestAsync(method, uri, headers, body, contentType, timeout, userAgent, null, null, proxy, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point and gets the response
@@ -881,7 +858,6 @@ namespace net.vieapps.Components.Utility
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="contentType">The content-type of the requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
@@ -891,8 +867,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> UtilityService.SendHttpRequestAsync(method, uri, headers, cookies, body, contentType, timeout, userAgent, referer, credential, proxy, cancellationToken);
+		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> UtilityService.SendHttpRequestAsync(method, uri, headers, body, contentType, timeout, userAgent, referer, credential, proxy, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point and gets the response
@@ -908,7 +884,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> GetWebResponseAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> UtilityService.GetWebResponseAsync(method, uri, headers, null, body, contentType, timeout, userAgent, null, null, proxy, cancellationToken);
+			=> UtilityService.GetWebResponseAsync(method, uri, headers, body, contentType, timeout, userAgent, null, null, proxy, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point and gets the response stream
@@ -916,7 +892,6 @@ namespace net.vieapps.Components.Utility
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="contentType">The content-type of the requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
@@ -926,8 +901,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> (await UtilityService.SendHttpRequestAsync(method, uri, headers, cookies, body, contentType, timeout, userAgent, referer, credential, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
+		public static async Task<Stream> GetWebResourceAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+			=> (await UtilityService.SendHttpRequestAsync(method, uri, headers, body, contentType, timeout, userAgent, referer, credential, proxy, cancellationToken).ConfigureAwait(false)).GetResponseStream();
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point and gets the response stream
@@ -937,7 +912,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<Stream> GetWebResourceAsync(string uri, string referer = null, CancellationToken cancellationToken = default)
-			=> UtilityService.GetWebResourceAsync("GET", uri, null, null, null, null, 90, UtilityService.SpiderUserAgent, referer, null, null, cancellationToken);
+			=> UtilityService.GetWebResourceAsync("GET", uri, null, null, null, 90, UtilityService.SpiderUserAgent, referer, null, null, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point and gets the response HTML code of the web page
@@ -945,7 +920,6 @@ namespace net.vieapps.Components.Utility
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="cookies">The requesting cookies</param>
 		/// <param name="body">The requesting body</param>
 		/// <param name="contentType">The content-type of the requesting body</param>
 		/// <param name="timeout">The requesting time-out</param>
@@ -955,9 +929,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<string> GetWebPageAsync(string method, string uri, Dictionary<string, string> headers, List<Cookie> cookies, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+		public static async Task<string> GetWebPageAsync(string method, string uri, Dictionary<string, string> headers, string body, string contentType, int timeout = 90, string userAgent = null, string referer = null, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
 		{
-			using (var stream = await UtilityService.GetWebResourceAsync(method ?? "GET", uri, headers, cookies, body, contentType, timeout, userAgent, referer, credential, proxy, cancellationToken).ConfigureAwait(false))
+			using (var stream = await UtilityService.GetWebResourceAsync(method ?? "GET", uri, headers, body, contentType, timeout, userAgent, referer, credential, proxy, cancellationToken).ConfigureAwait(false))
 			{
 				var html = await stream.ReadAllAsync(cancellationToken).ConfigureAwait(false) ?? "";
 				return html.HtmlDecode();
@@ -973,7 +947,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<string> GetWebPageAsync(string uri, string referer = null, string userAgent = null, CancellationToken cancellationToken = default)
-			=> UtilityService.GetWebPageAsync("GET", uri, null, null, null, null, 90, userAgent, referer, null, null, cancellationToken);
+			=> UtilityService.GetWebPageAsync("GET", uri, null, null, null, 90, userAgent, referer, null, null, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point and gets the response HTML code of the web page
@@ -1166,14 +1140,16 @@ namespace net.vieapps.Components.Utility
 		#region Remove/Normalize whitespaces & breaks
 		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksRegexs { get; } = new List<Tuple<Regex, string>>
 		{
-			// remove line-breaks
+			// line-breaks
 			new Tuple<Regex, string>(new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <"),
 			new Tuple<Regex, string>(new Regex(@">\n<", RegexOptions.IgnoreCase), "><"),
 
-			// white-spaces between tags
+			// white-spaces
 			new Tuple<Regex, string>(new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>"),
 			new Tuple<Regex, string>(new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><"),
-			new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <")
+			new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <"),
+			new Tuple<Regex, string>(new Regex(@"""\s+>", RegexOptions.IgnoreCase), ">"),
+			new Tuple<Regex, string>(new Regex(@"\s+"">", RegexOptions.IgnoreCase), "\">")
 		};
 
 		internal static List<Tuple<Regex, string>> _WhitespacesAndBreaksExtendedRegexs = null;
@@ -1428,24 +1404,24 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Working with stream & recyclable memory stream
-		static Microsoft.IO.RecyclableMemoryStreamManager RecyclableMemoryStreamManager { get; } = new Microsoft.IO.RecyclableMemoryStreamManager();
+		static RecyclableMemoryStreamManager RecyclableMemoryStreamManager { get; } = new RecyclableMemoryStreamManager();
 
 		/// <summary>
-		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
+		/// Gets the recyclable memory stream manager (with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance)
 		/// </summary>
 		/// <returns></returns>
-		public static Func<MemoryStream> GetRecyclableMemoryStreamFactory()
-			=> UtilityService.RecyclableMemoryStreamManager.GetStream;
+		public static RecyclableMemoryStreamManager GetRecyclableMemoryStreamManager()
+			=> UtilityService.RecyclableMemoryStreamManager;
 
 		/// <summary>
-		/// Gets a factory to get recyclable memory stream with RecyclableMemoryStreamManager class to limit LOH fragmentation and improve performance
+		/// Gets the recyclable memory stream manager
 		/// </summary>
 		/// <param name="blockSize"></param>
 		/// <param name="largeBufferMultiple"></param>
 		/// <param name="maximumBufferSize"></param>
 		/// <returns></returns>
-		public static Func<MemoryStream> GetRecyclableMemoryStreamFactory(int blockSize, int largeBufferMultiple, int maximumBufferSize)
-			=> new Microsoft.IO.RecyclableMemoryStreamManager(blockSize, largeBufferMultiple, maximumBufferSize).GetStream;
+		public static RecyclableMemoryStreamManager GetRecyclableMemoryStreamManager(int blockSize, int largeBufferMultiple, int maximumBufferSize)
+			=> new RecyclableMemoryStreamManager(blockSize, largeBufferMultiple, maximumBufferSize);
 
 		/// <summary>
 		/// Creates an instance of <see cref="MemoryStream">MemoryStream</see> using RecyclableMemoryStream to limit LOH fragmentation and improve performance
@@ -1456,15 +1432,22 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static MemoryStream CreateMemoryStream(byte[] buffer = null, int index = 0, int count = 0)
 		{
-			var factory = UtilityService.GetRecyclableMemoryStreamFactory();
-			if (buffer == null || buffer.Length < 1)
-				return factory();
-
-			index = index > -1 && index < buffer.Length ? index : 0;
-			count = count > 0 && count < buffer.Length - index ? count : buffer.Length - index;
-			var stream = factory();
-			stream.Write(buffer, index, count);
-			stream.Seek(0, SeekOrigin.Begin);
+			MemoryStream stream;
+			try
+			{
+				stream = UtilityService.RecyclableMemoryStreamManager.GetStream();
+			}
+			catch
+			{
+				stream = new MemoryStream();
+			}
+			if (buffer != null && buffer.Any())
+			{
+				index = index > -1 && index < buffer.Length ? index : 0;
+				count = count > 0 && count < buffer.Length - index ? count : buffer.Length - index;
+				stream.Write(buffer, index, count);
+				stream.Seek(0, SeekOrigin.Begin);
+			}
 			return stream;
 		}
 
@@ -1485,6 +1468,58 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static MemoryStream ToMemoryStream(this ArraySegment<byte> buffer)
 			=> UtilityService.CreateMemoryStream(buffer.Array, buffer.Offset, buffer.Count);
+
+		/// <summary>
+		/// Reads this stream and converts to memory stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static MemoryStream ToMemoryStream(this Stream stream, Action<MemoryStream> onCompleted = null)
+		{
+			var memoryStream = UtilityService.CreateMemoryStream();
+			var buffer = new byte[4096];
+			var read = stream.Read(buffer, 0, buffer.Length);
+			while (read > 0)
+			{
+				memoryStream.Write(buffer, 0, read);
+				read = stream.Read(buffer, 0, buffer.Length);
+			}
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			onCompleted?.Invoke(memoryStream);
+			return memoryStream;
+		}
+
+		/// <summary>
+		/// Reads this stream and converts to memory stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static async Task<MemoryStream> ToMemoryStreamAsync(this Stream stream, CancellationToken cancellationToken = default, Action<MemoryStream> onCompleted = null)
+		{
+			var memoryStream = UtilityService.CreateMemoryStream();
+			var buffer = new byte[4096];
+#if NETSTANDARD2_0
+			var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+			var read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+#endif
+			while (read > 0)
+			{
+#if NETSTANDARD2_0
+				await memoryStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+				read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+				await memoryStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+				read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+#endif
+			}
+			memoryStream.Seek(0, SeekOrigin.Begin);
+			onCompleted?.Invoke(memoryStream);
+			return memoryStream;
+		}
 
 		/// <summary>
 		/// Converts this memory stream to array segment of byte
@@ -1533,57 +1568,6 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
-
-		/// <summary>
-		/// Reads this stream and converts to memory stream
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <param name="onCompleted"></param>
-		/// <returns></returns>
-		public static MemoryStream ToMemoryStream(this Stream stream, Action<MemoryStream> onCompleted = null)
-		{
-			var memoryStream = UtilityService.CreateMemoryStream();
-			var buffer = new byte[4096];
-			var read = stream.Read(buffer, 0, buffer.Length);
-			while (read > 0)
-			{
-				memoryStream.Write(buffer, 0, read);
-				read = stream.Read(buffer, 0, buffer.Length);
-			}
-			memoryStream.Seek(0, SeekOrigin.Begin);
-			onCompleted?.Invoke(memoryStream);
-			return memoryStream;
-		}
-
-		/// <summary>
-		/// Reads this stream and converts to memory stream
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <param name="cancellationToken"></param>
-		/// <param name="onCompleted"></param>
-		/// <returns></returns>
-		public static async Task<MemoryStream> ToMemoryStreamAsync(this Stream stream, CancellationToken cancellationToken = default, Action<MemoryStream> onCompleted = null)
-		{
-			var memoryStream = UtilityService.CreateMemoryStream();
-			var buffer = new byte[4096];
-#if NETSTANDARD2_0
-			var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-#else
-			var read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
-#endif
-			while (read > 0)
-			{
-				memoryStream.Write(buffer, 0, read);
-#if NETSTANDARD2_0
-				read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-#else
-				read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
-#endif
-			}
-			memoryStream.Seek(0, SeekOrigin.Begin);
-			onCompleted?.Invoke(memoryStream);
-			return memoryStream;
-		}
 		#endregion
 
 		#region Read/Write text files
@@ -1839,7 +1823,7 @@ namespace net.vieapps.Components.Utility
 				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 				{
 					var data = new byte[fileInfo.Length];
-					stream.Read(data, 0, fileInfo.Length.CastAs<int>());
+					stream.Read(data, 0, data.Length);
 					return data;
 				}
 			throw new ArgumentException("File info is invalid", nameof(fileInfo));
@@ -1867,7 +1851,11 @@ namespace net.vieapps.Components.Utility
 				using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 				{
 					var data = new byte[fileInfo.Length];
-					await stream.ReadAsync(data, 0, fileInfo.Length.CastAs<int>(), cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD2_0
+					await stream.ReadAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+#else
+					await stream.ReadAsync(data.AsMemory(0, data.Length), cancellationToken).ConfigureAwait(false);
+#endif
 					return data;
 				}
 			throw new ArgumentException("File info is invalid", nameof(fileInfo));
@@ -1918,7 +1906,11 @@ namespace net.vieapps.Components.Utility
 
 			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
-				await stream.WriteAsync(content ?? Array.Empty<byte>(), 0, content?.Length ?? 0, cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD2_0
+				await stream.WriteAsync(content ?? Array.Empty<byte>(), 0, content != null ? content.Length : 0, cancellationToken).ConfigureAwait(false);
+#else
+				await stream.WriteAsync((content ?? Array.Empty<byte>()).AsMemory(0, content != null ? content.Length : 0), cancellationToken).ConfigureAwait(false);
+#endif
 				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 			}
 		}
@@ -1970,12 +1962,24 @@ namespace net.vieapps.Components.Utility
 			using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
+#if NETSTANDARD2_0
 				var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+				var read = await content.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+#endif
 				while (read > 0)
 				{
+#if NETSTANDARD2_0
 					await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+#else
+					await stream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#endif
 					await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD2_0
 					read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+					read = await content.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+#endif
 				}
 			}
 		}
@@ -2903,18 +2907,19 @@ namespace net.vieapps.Components.Utility
 			this._reader = new StreamReader(this._stream, true);
 		}
 
-		~TextFileReader() => this.Dispose();
+		~TextFileReader()
+			=> this.Dispose();
 
 		/// <summary>
 		/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 		/// </summary>
 		public void Dispose()
 		{
+			GC.SuppressFinalize(this);
 			this._reader.Close();
 			this._reader.Dispose();
 			this._stream.Close();
 			this._stream.Dispose();
-			GC.SuppressFinalize(this);
 		}
 
 		/// <summary>
@@ -2936,15 +2941,17 @@ namespace net.vieapps.Components.Utility
 			{
 				try
 				{
+					var readerType = this._reader.GetType();
+
 					// shift position back from BaseStream.Position by the number of bytes read into internal buffer
-					var charLen = (int)this._reader.GetType().InvokeMember("_charLen", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+					var charLen = (int)readerType.InvokeMember("_charLen", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
 					var position = this._reader.BaseStream.Position - charLen;
 
 					// if we have consumed chars from the buffer we need to calculate how many bytes they represent in the current encoding and add that to the position
-					var charPos = (int)this._reader.GetType().InvokeMember("_charPos", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+					var charPos = (int)readerType.InvokeMember("_charPos", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
 					if (charPos > 0)
 					{
-						var charBuffer = (char[])this._reader.GetType().InvokeMember("_charBuffer", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
+						var charBuffer = (char[])readerType.InvokeMember("_charBuffer", BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.GetField, null, this._reader, null);
 						var bytesConsumed = this.Encoding.GetBytes(charBuffer, 0, charPos).Length;
 						position += bytesConsumed;
 					}

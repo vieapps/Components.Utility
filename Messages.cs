@@ -604,9 +604,11 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(password))
 				smtp.Credentials = new NetworkCredential(user, password);
 
+#if NETSTANDARD2_0
 			// service point - only available on Windows with .NET Framework
-			if (RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
 				smtp.ServicePoint.Expect100Continue = false;
+#endif
 
 			return smtp;
 		}
