@@ -487,9 +487,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string[] ToArray(this string @string, string separator = ",", bool removeEmptyElements = false, bool trim = true)
 			=> @string == null
-				? new string[] { }
+				? Array.Empty<string>()
 				: (trim ? @string.Trim() : @string).Split(new[] { separator ?? "," }, removeEmptyElements ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None)
-					.Where(e => removeEmptyElements ? !string.IsNullOrWhiteSpace(e) : true)
+					.Where(e => !removeEmptyElements || !string.IsNullOrWhiteSpace(e))
 					.Select(e => trim ? e.Trim() : e)
 					.ToArray();
 

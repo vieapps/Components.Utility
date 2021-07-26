@@ -671,10 +671,10 @@ namespace net.vieapps.Components.Utility
 			var webRequest = WebRequest.Create(uri) as HttpWebRequest;
 			webRequest.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
 			webRequest.Timeout = timeout * 1000;
-			webRequest.AllowAutoRedirect = false;
+			webRequest.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
 
 			// headers
-			headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host")).ForEach(kvp =>
+			headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("AllowAutoRedirect")).ForEach(kvp =>
 			{
 				try
 				{
@@ -1148,8 +1148,10 @@ namespace net.vieapps.Components.Utility
 			new Tuple<Regex, string>(new Regex(@"\s+/>", RegexOptions.IgnoreCase), "/>"),
 			new Tuple<Regex, string>(new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><"),
 			new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <"),
-			new Tuple<Regex, string>(new Regex(@"""\s+>", RegexOptions.IgnoreCase), ">"),
-			new Tuple<Regex, string>(new Regex(@"\s+"">", RegexOptions.IgnoreCase), "\">")
+			new Tuple<Regex, string>(new Regex(@"""\s+>", RegexOptions.IgnoreCase), "\">"),
+			new Tuple<Regex, string>(new Regex(@"\s+"">", RegexOptions.IgnoreCase), "\">"),
+			new Tuple<Regex, string>(new Regex(@"""\s+/>", RegexOptions.IgnoreCase), "\"/>"),
+			new Tuple<Regex, string>(new Regex(@"\s+""/>", RegexOptions.IgnoreCase), "\"/>")
 		};
 
 		internal static List<Tuple<Regex, string>> _WhitespacesAndBreaksExtendedRegexs = null;
@@ -1179,19 +1181,25 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Removes whitespaces and breaks
+		/// Removes whitespaces and breaks from HTML code
 		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="input">The HTML code</param>
 		/// <returns></returns>
 		public static string RemoveWhitespaces(string input)
 		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
-
-			var output = input.Replace("&nbsp;", " ").Trim();
-			UtilityService.WhitespacesAndBreaksRegexs.Concat(UtilityService.WhitespacesAndBreaksExtendedRegexs).ForEach(regex => output = regex.Item1.Replace(output, regex.Item2));
-			return output;
+			var output = (input ?? "").Replace("&nbsp;", " ").Trim();
+			if (!string.IsNullOrWhiteSpace(output))
+				UtilityService.WhitespacesAndBreaksRegexs.Concat(UtilityService.WhitespacesAndBreaksExtendedRegexs).ForEach(regex => output = regex.Item1.Replace(output, regex.Item2));
+			return output.Replace("\r", "").Replace("\n\t", "").Replace("\t", "").Replace("> <", "><");
 		}
+
+		/// <summary>
+		/// Removes whitespaces and breaks from HTML code
+		/// </summary>
+		/// <param name="input">The HTML code</param>
+		/// <returns></returns>
+		public static string RemoveHTMLWhitespaces(string input)
+			=> UtilityService.RemoveWhitespaces(input);
 
 		/// <summary>
 		/// Normalizes breaks (BR) of HTML code
