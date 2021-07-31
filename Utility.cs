@@ -661,6 +661,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, string body, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
 		{
+			// check
+			if (uri == null)
+				throw new InformationRequiredException("The URI to send the request to is required");
+
 			// prepare
 			var logger = Logger.CreateLogger<HttpWebRequest>();
 			var isDebugEnabled = logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug);
