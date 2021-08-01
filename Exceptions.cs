@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Runtime.Serialization;
 
 namespace net.vieapps.Components.Utility
@@ -165,9 +166,13 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class RemoteServerErrorException : AppException
 	{
-		public string ResponseBody { get; internal set; }
+		public HttpStatusCode ResponseCode { get; internal set; } = HttpStatusCode.InternalServerError;
 
-		public string ResponseUri { get; internal set; }
+		public WebExceptionStatus ResponseStatus { get; internal set; } = WebExceptionStatus.Success;
+
+		public string ResponseURL { get; internal set; }
+
+		public string ResponseBody { get; internal set; }
 
 		public RemoteServerErrorException() : base("Error occured while operating with remote server") { }
 
@@ -175,12 +180,14 @@ namespace net.vieapps.Components.Utility
 
 		public RemoteServerErrorException(string message, Exception innerException) : base(message, innerException) { }
 
-		public RemoteServerErrorException(string message, string responseBody, Exception innerException) : this(message, responseBody, "", innerException) { }
+		public RemoteServerErrorException(string message, string responseBody, Exception innerException) : this(message, HttpStatusCode.InternalServerError, WebExceptionStatus.Success, null, responseBody, innerException) { }
 
-		public RemoteServerErrorException(string message, string responseBody, string responseUri, Exception innerException) : base(message, innerException)
+		public RemoteServerErrorException(string message, HttpStatusCode responseCode, WebExceptionStatus responseStatus, string responseURL, string responseBody, Exception innerException) : base(message, innerException)
 		{
+			this.ResponseCode = responseCode;
+			this.ResponseStatus = responseStatus;
+			this.ResponseURL = responseURL;
 			this.ResponseBody = responseBody;
-			this.ResponseUri = responseUri;
 		}
 
 		public RemoteServerErrorException(SerializationInfo info, StreamingContext context) : base(info, context) { }

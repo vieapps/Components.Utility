@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+#if NETSTANDARD2_0
 using System.Runtime.InteropServices;
+#endif
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
@@ -21,7 +23,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Presents an email message
 	/// </summary>
-	[Serializable, DebuggerDisplay("Subject = {Subject}")]
+	[DebuggerDisplay("Subject = {Subject}")]
 	public class EmailMessage
 	{
 		/// <summary>
@@ -169,7 +171,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Presents a web-hook message
 	/// </summary>
-	[Serializable, DebuggerDisplay("Endpoint = {EndpointURL}")]
+	[DebuggerDisplay("Endpoint = {EndpointURL}")]
 	public class WebHookMessage
 	{
 		/// <summary>
@@ -661,7 +663,11 @@ namespace net.vieapps.Components.Utility
 				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
 				: message == null
 					? Task.FromException(new InformationInvalidException("The message is invalid"))
+#if NETSTANDARD2_0
 					: smtp.SendMailAsync(message.Normalize()).WithCancellationToken(cancellationToken);
+#else
+					: smtp.SendMailAsync(message.Normalize(), cancellationToken);
+#endif
 
 		/// <summary>
 		/// Sends an email message using a SMTP client
@@ -975,23 +981,29 @@ namespace net.vieapps.Components.Utility
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The well-formed webhook message to send</param>
-		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
 		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> !string.IsNullOrWhiteSpace(message?.EndpointURL) && !string.IsNullOrWhiteSpace(message?.Body)
-				? UtilityService.SendHttpRequestAsync(
-					"POST",
-					$"{message.EndpointURL}{(message.Query.Count < 1 ? "" : message.EndpointURL.IndexOf("?") > 0 ? "&" : "?")}{message.Query.Select(kvp => $"{kvp.Key}={kvp.Value.UrlEncode()}").Join("&")}",
-					message.Header,
-					message.Body,
-					"application/json",
-					120,
-					$"{UtilityService.DesktopUserAgent} {agent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
-					proxy,
-					cancellationToken)
-				: Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
+		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string userAgent, WebProxy proxy, CancellationToken cancellationToken)
+		{
+			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
+				return Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
+
+			var endpointURL = $"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}";
+			userAgent = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}";
+			return UtilityService.SendHttpRequestAsync(endpointURL, "POST", message.Header, message.Body, "application/json", userAgent, null, 120, null, proxy, cancellationToken);
+		}
+
+		/// <summary>
+		/// Sends a web-hook message (means post a JSON document to a specified URL)
+		/// </summary>
+		/// <param name="message">The well-formed webhook message to send</param>
+		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken = default)
+			=> message.SendMessageAsync(userAgent, null, cancellationToken);
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
@@ -999,30 +1011,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken)
-			=> !string.IsNullOrWhiteSpace(message?.EndpointURL) && !string.IsNullOrWhiteSpace(message?.Body)
-				? message.SendMessageAsync(null, null, cancellationToken)
-				: Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
-
-		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
-		/// </summary>
-		/// <param name="message">The well-formed webhook message to send</param>
-		/// <param name="agent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
-		/// <param name="proxy">The proxy to use</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static void SendMessage(this WebHookMessage message, string agent = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> message.SendMessageAsync(agent, proxy, cancellationToken).Wait(13000, cancellationToken);
-
-		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
-		/// </summary>
-		/// <param name="message">The well-formed webhook message to send</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static void SendMessage(this WebHookMessage message, CancellationToken cancellationToken)
-			=> message.SendMessageAsync(cancellationToken).Wait(13000, cancellationToken);
+		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
+			=> message.SendMessageAsync(null, cancellationToken);
 		#endregion
 
 	}
