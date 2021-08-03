@@ -1154,15 +1154,15 @@ namespace net.vieapps.Components.Utility
 		/// Creates a dictionary from this collection with all keys in lower case
 		/// </summary>
 		/// <param name="nvCollection"></param>
-		/// <param name="onPreCompleted"></param>
+		/// <param name="onCompleted"></param>
 		/// <param name="stringComparer"></param>
 		/// <returns></returns>
-		public static Dictionary<string, string> ToDictionary(this NameValueCollection nvCollection, Action<Dictionary<string, string>> onPreCompleted = null, StringComparer stringComparer = null)
+		public static Dictionary<string, string> ToDictionary(this NameValueCollection nvCollection, Action<Dictionary<string, string>> onCompleted = null, StringComparer stringComparer = null)
 		{
 			var dictionary = new Dictionary<string, string>(stringComparer ?? StringComparer.OrdinalIgnoreCase);
 			foreach (string key in nvCollection)
 				dictionary[key.ToLower()] = nvCollection[key];
-			onPreCompleted?.Invoke(dictionary);
+			onCompleted?.Invoke(dictionary);
 			return dictionary;
 		}
 

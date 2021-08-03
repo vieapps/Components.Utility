@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace net.vieapps.Components.Utility
@@ -172,6 +173,8 @@ namespace net.vieapps.Components.Utility
 
 		public string ResponseURL { get; internal set; }
 
+		public Dictionary<string, string> ResponseHeaders { get; internal set; }
+
 		public string ResponseBody { get; internal set; }
 
 		public RemoteServerErrorException() : base("Error occured while operating with remote server") { }
@@ -180,13 +183,12 @@ namespace net.vieapps.Components.Utility
 
 		public RemoteServerErrorException(string message, Exception innerException) : base(message, innerException) { }
 
-		public RemoteServerErrorException(string message, string responseBody, Exception innerException) : this(message, HttpStatusCode.InternalServerError, WebExceptionStatus.Success, null, responseBody, innerException) { }
-
-		public RemoteServerErrorException(string message, HttpStatusCode responseCode, WebExceptionStatus responseStatus, string responseURL, string responseBody, Exception innerException) : base(message, innerException)
+		public RemoteServerErrorException(string message, HttpStatusCode responseCode, WebExceptionStatus responseStatus, string responseURL, Dictionary<string, string> responseHeaders, string responseBody, Exception innerException) : base(message, innerException)
 		{
 			this.ResponseCode = responseCode;
 			this.ResponseStatus = responseStatus;
 			this.ResponseURL = responseURL;
+			this.ResponseHeaders = responseHeaders;
 			this.ResponseBody = responseBody;
 		}
 

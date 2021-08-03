@@ -678,7 +678,7 @@ namespace net.vieapps.Components.Utility
 			webRequest.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
 
 			// headers
-			headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("AllowAutoRedirect")).ForEach(kvp =>
+			headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("Connection") && !kvp.Key.IsEquals("AllowAutoRedirect")).ForEach(kvp =>
 			{
 				try
 				{
@@ -762,14 +762,15 @@ namespace net.vieapps.Components.Utility
 						var responseCode = response.StatusCode;
 						var responseStatus = ex.Status;
 						var responseURL = response.ResponseUri?.AbsoluteUri ?? uri.AbsoluteUri;
+						var responseHeaders = response.Headers.ToDictionary();
 						var responseBody = await stream.ReadAllAsync(cancellationToken).ConfigureAwait(false);
 
 						if (ex.Status == WebExceptionStatus.ProtocolError)
 						{
-							if (responseCode == HttpStatusCode.Moved || responseCode == HttpStatusCode.MovedPermanently || responseCode == HttpStatusCode.Redirect || responseCode == HttpStatusCode.NotFound)
+							if (responseCode == HttpStatusCode.Moved || responseCode == HttpStatusCode.MovedPermanently || responseCode == HttpStatusCode.Redirect || responseCode == HttpStatusCode.NotModified)
 							{
 								if (isDebugEnabled)
-									logger.LogDebug($"Got a special HTTP status code: {response.StatusCode}");
+									logger.LogDebug($"Got a special HTTP status code: {responseCode}");
 							}
 							else
 								logger.LogError($"Protocol error => {ex.Message}", ex);
@@ -777,7 +778,7 @@ namespace net.vieapps.Components.Utility
 						else
 							logger.LogError($"Web error => {ex.Message}", ex);
 
-						throw new RemoteServerErrorException($"Error occurred at remote server => {ex.Message}", responseCode, responseStatus, responseURL, responseBody, ex);
+						throw new RemoteServerErrorException(ex.Message, responseCode, responseStatus, responseURL, responseHeaders, responseBody, ex);
 					}
 				}
 			}
@@ -807,7 +808,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, string body, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
-			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken);
+			=> string.IsNullOrWhiteSpace(uri)
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException("The URI is invalid"))
+				: new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point
@@ -833,7 +836,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, string body, int timeout, CancellationToken cancellationToken = default)
-			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, cancellationToken);
+			=> string.IsNullOrWhiteSpace(uri)
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException("The URI is invalid"))
+				: new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, cancellationToken);
 
 		/// <summary>
 		/// Sends the HTTP request to a remote end-point
@@ -878,10 +883,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static Task<HttpWebResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, string body, string contentType, string userAgent = null, string refererURL = null, int timeout = 90, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, contentType, userAgent, refererURL, timeout, credential, proxy, cancellationToken);
+			=> string.IsNullOrWhiteSpace(uri)
+				? Task.FromException<HttpWebResponse>(new InformationInvalidException("The URI is invalid"))
+				: new Uri(uri).SendHttpRequestAsync(method, headers, body, contentType, userAgent, refererURL, timeout, credential, proxy, cancellationToken);
 
 		/// <summary>
-		/// Sends the HTTP request to a remote end-point and gets the response HTML code of the web page
+		/// Fetchs a HTTP resource as text/string
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
@@ -892,20 +899,20 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<string> FetchWebPageAsync(this Uri uri, Dictionary<string, string> headers = null, string userAgent = null, string refererURL = null, int timeout = 90, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
+		public static async Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, string userAgent, string refererURL, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken = default)
 		{
-			using (var webResponse = await UtilityService.SendHttpRequestAsync(uri, "GET", headers, null, null, userAgent, refererURL, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
+			using (var webResponse = await uri.SendHttpRequestAsync("GET", headers, null, null, userAgent, refererURL, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
 			{
-				using (var stream = webResponse.GetResponseStream())
+				using (var webStream = webResponse.GetResponseStream())
 				{
-					var html = await stream.ReadAllAsync(cancellationToken).ConfigureAwait(false) ?? "";
-					return html.HtmlDecode();
+					var text = await webStream.ReadAllAsync(cancellationToken).ConfigureAwait(false) ?? "";
+					return !text.StartsWith("[") && !text.StartsWith("{") ? text.HtmlDecode() : text;
 				}
 			}
 		}
 
 		/// <summary>
-		/// Sends the HTTP request to a remote end-point and gets the response HTML code of the web page
+		/// Fetchs a HTTP resource as text/string
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="headers">The requesting headers</param>
@@ -916,26 +923,54 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<string> FetchWebPageAsync(string uri, Dictionary<string, string> headers = null, string userAgent = null, string refererURL = null, int timeout = 90, CredentialCache credential = null, WebProxy proxy = null, CancellationToken cancellationToken = default)
-			=> new Uri(uri).FetchWebPageAsync(headers, userAgent, refererURL, timeout, credential, proxy, cancellationToken);
+		public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers, string userAgent, string refererURL, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken = default)
+			=> string.IsNullOrWhiteSpace(uri)
+				? Task.FromException<string>(new InformationInvalidException("The URI is invalid"))
+				: new Uri(uri).FetchHttpAsync(headers, userAgent, refererURL, timeout, credential, proxy, cancellationToken);
 
 		/// <summary>
-		/// Sends the HTTP request to a remote end-point and gets the response HTML code of the web page
+		/// Fetchs a HTTP resource as text/string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="userAgent">The string that presents the 'User-Agent' header</param>
+		/// <param name="refererURL">The string that presents the 'Referer' header</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(this Uri uri, string userAgent, string refererURL, CancellationToken cancellationToken = default)
+			=> uri.FetchHttpAsync(null, userAgent, refererURL, 90, null, null, cancellationToken);
+
+		/// <summary>
+		/// Fetchs a HTTP resource as text/string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="userAgent">The string that presents the 'User-Agent' header</param>
+		/// <param name="refererURL">The string that presents the 'Referer' header</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(string uri, string userAgent, string refererURL, CancellationToken cancellationToken = default)
+			=> string.IsNullOrWhiteSpace(uri)
+				? Task.FromException<string>(new InformationInvalidException("The URI is invalid"))
+				: new Uri(uri).FetchHttpAsync(userAgent, refererURL, cancellationToken);
+
+		/// <summary>
+		/// Fetchs a HTTP resource as text/string
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<string> FetchWebPageAsync(this Uri uri, CancellationToken cancellationToken)
-			=> uri.FetchWebPageAsync(null, null, null, 90, null, null, cancellationToken);
+		public static Task<string> FetchHttpAsync(this Uri uri, CancellationToken cancellationToken = default)
+			=> uri.FetchHttpAsync(null, null, cancellationToken);
 
 		/// <summary>
-		/// Sends the HTTP request to a remote end-point and gets the response HTML code of the web page
+		/// Fetchs a HTTP resource as text/string
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<string> FetchWebPageAsync(string uri, CancellationToken cancellationToken)
-			=> new Uri(uri).FetchWebPageAsync(cancellationToken);
+		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken = default)
+			=> string.IsNullOrWhiteSpace(uri)
+				? Task.FromException<string>(new InformationInvalidException("The URI is invalid"))
+				: new Uri(uri).FetchHttpAsync(cancellationToken);
 		#endregion
 
 		#region Remove/Clear tags

@@ -32,7 +32,7 @@
 		<PackageIcon>Icon.png</PackageIcon>
 		<PackageOutputPath>../</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Improv: remove HTML white spaces, send web-hook messages, send HTTP request, fetch HTTP web pages</PackageReleaseNotes>
+		<PackageReleaseNotes>Improv: send HTTP request, fetch HTTP web pages</PackageReleaseNotes>
 		<PackageProjectUrl>https://vieapps.net</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
