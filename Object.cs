@@ -1084,6 +1084,36 @@ namespace net.vieapps.Components.Utility
 						@object.SetAttributeValue(attribute, value.Trim());
 				});
 		}
+
+		/// <summary>
+		/// Calls a method of this object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="info"></param>
+		/// <param name="parameters"></param>
+		/// <returns></returns>
+		public static object CallMethod(this object @object, MethodInfo info, object[] parameters = null)
+			=> info?.Invoke(info.IsStatic ? null : @object, parameters);
+
+		/// <summary>
+		/// Calls a method of this object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="info"></param>
+		/// <param name="parameters"></param>
+		/// <returns></returns>
+		public static object CallMethod(this object @object, MetaInfo info, object[] parameters = null)
+			=> @object?.CallMethod(info?.MethodInfo, parameters);
+
+		/// <summary>
+		/// Calls a method of this object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name"></param>
+		/// <param name="parameters"></param>
+		/// <returns></returns>
+		public static object CallMethod(this object @object, string name, object[] parameters = null)
+			=> @object?.CallMethod(@object?.GetMethods().FirstOrDefault(info => info.Name == name && info.IsMethod)?.MethodInfo, parameters);
 		#endregion
 
 		#region Copy objects' properties to/from other object
@@ -1768,7 +1798,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static XElement ToXml(this JObject @object, string rootElementName = null, Action<XElement> onCompleted = null)
 		{
-			var xml = JsonConvert.DeserializeXNode(@object?.ToString(), rootElementName)?.Root;
+			var xml = @object == null ? null : JsonConvert.DeserializeXNode(@object.ToString(), rootElementName)?.Root;
 			onCompleted?.Invoke(xml);
 			return xml;
 		}
