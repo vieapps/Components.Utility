@@ -51,41 +51,64 @@ namespace net.vieapps.Components.Utility
 
 		#region UUID
 		/// <summary>
-		/// Gets the UUID (unique universal identity - in 128 bits)
+		/// Gets an UUID (128 bits unique universal identity)
 		/// </summary>
+		/// <param name="asBase64Url">Set to true to encoded as base64-url string</param>
 		/// <param name="uuid">The string that presents an UUID</param>
-		/// <returns>The string that presents UUID with hyphens (128 bits)</returns>
-		public static string GetUUID(string uuid = null)
+		/// <param name="format">The string that presents the format</param>
+		/// <returns>The string that presents an 128 bits UUID</returns>
+		public static string GetUUID(bool asBase64Url = false, string uuid = null, string format = null)
 		{
-			if (string.IsNullOrWhiteSpace(uuid))
-				return Guid.NewGuid().ToString("N").ToLower();
-
-			uuid = uuid.Trim();
-			if (uuid.IndexOf("-") > -1)
-				return uuid;
-
-			var pos = 8;
-			uuid = uuid.Insert(pos, "-");
-			for (var index = 0; index < 3; index++)
-			{
-				pos += 5;
-				uuid = uuid.Insert(pos, "-");
-			}
-			return uuid;
+			var guid = string.IsNullOrWhiteSpace(uuid) ? Guid.NewGuid() : new Guid(uuid.Trim());
+			return asBase64Url ? guid.ToByteArray().ToBase64Url() : guid.ToString(format ?? "N");
 		}
 
 		/// <summary>
-		/// Generate an UUID from this string
+		/// Gets an UUID (128 bits unique universal identity)
+		/// </summary>
+		/// <param name="uuid">The array of bytes that presents an UUID</param>
+		/// <param name="format">The string that presents the format</param>
+		/// <param name="asBase64Url">Set to true to encoded as base64-url string</param>
+		/// <returns>The string that presents an 128 bits UUID</returns>
+		public static string GetUUID(string uuid, string format = null, bool asBase64Url = false)
+			=> UtilityService.GetUUID(asBase64Url, uuid, format);
+
+		/// <summary>
+		/// Gets an UUID (128 bits unique universal identity)
+		/// </summary>
+		/// <param name="uuid">The array of bytes that presents an UUID</param>
+		/// <param name="format">The string that presents the format</param>
+		/// <param name="asBase64Url">Set to true to encoded as base64-url string</param>
+		/// <returns>The string that presents an 128 bits UUID</returns>
+		public static string GetUUID(byte[] uuid, string format = null, bool asBase64Url = false)
+		{
+			var guid = uuid == null || !uuid.Any() ? Guid.NewGuid() : new Guid(uuid.Take(16));
+			return asBase64Url ? guid.ToByteArray().ToBase64Url() : guid.ToString(format ?? "N");
+		}
+
+		/// <summary>
+		/// Generate an identity as UUID-format from this string
 		/// </summary>
 		/// <param name="string"></param>
+		/// <param name="format">The string that presents the format</param>
 		/// <param name="mode">BLAKE or MD5</param>
-		/// <returns></returns>
-		public static string GenerateUUID(this string @string, string mode = "MD5")
+		/// <param name="asBase64Url">Set to true to encoded as base64-url string</param>
+		/// <returns>The string that presents an 128 bits UUID</returns>
+		public static string GenerateUUID(this string @string, string format = null, string mode = null, bool asBase64Url = false)
 			=> string.IsNullOrWhiteSpace(@string)
-				? Guid.NewGuid().ToString("N").ToLower()
-				: !string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake")
-					? @string.GetBLAKE128()
-					: @string.GetMD5();
+				? UtilityService.GetUUID(asBase64Url, null, format)
+				: UtilityService.GetUUID(@string.GetHash(!string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake") ? "blake128" : "md5"), format, asBase64Url);
+
+		/// <summary>
+		/// Generate an identity as UUID-format from this array of bytes
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="format">The string that presents the format</param>
+		/// <param name="mode">BLAKE or MD5</param>
+		/// <param name="asBase64Url">Set to true to encoded as base64-url string</param>
+		/// <returns>The string that presents an 128 bits UUID</returns>
+		public static string GenerateUUID(this byte[] bytes, string format = null, string mode = null, bool asBase64Url = false)
+			=> UtilityService.GetUUID(bytes?.GetHash(!string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake") ? "BLAKE128" : "MD5"), format, asBase64Url);
 
 		/// <summary>
 		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
