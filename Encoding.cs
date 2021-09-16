@@ -538,7 +538,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Encode/Decode Base64
 		/// <summary>
-		/// Encodes this array of bytes to Base64 string
+		/// Encodes this array of bytes to base64 string
 		/// </summary>
 		/// <param name="bytes">The array of bytes to encode</param>
 		/// <param name="addChecksum">true to add checksum</param>
@@ -557,7 +557,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Decodes this Base64 string to array of bytes
+		/// Decodes this base64 string to array of bytes
 		/// </summary>
 		/// <param name="string">The string to decode</param>
 		/// <param name="verifyChecksum">true to verify checksum</param>
@@ -658,7 +658,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false, string hashAlgorithm = "SHA256")
-			=> (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum)?.GetString();
+			=> (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum, hashAlgorithm)?.GetString();
 
 		/// <summary>
 		/// Converts this Base64Url string to plain string
