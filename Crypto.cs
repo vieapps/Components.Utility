@@ -162,7 +162,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHash(this string @string, string hashAlgorithm = "SHA256")
 			=> string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
+				? Array.Empty<byte>()
 				: @string.ToBytes().GetHash(hashAlgorithm);
 
 		/// <summary>
@@ -423,7 +423,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetDoubleHash(this string @string, string firstAlgorithm = "SHA256", string secondAlgorithm = null)
 			=> string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
+				? Array.Empty<byte>()
 				: @string.ToBytes().GetDoubleHash(firstAlgorithm, secondAlgorithm);
 
 		/// <summary>
@@ -443,7 +443,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHash160(this string @string)
 			=> string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
+				? Array.Empty<byte>()
 				: @string.ToBytes().GetHash160();
 		#endregion
 
@@ -518,7 +518,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetHMACHash(this string @string, byte[] key, string hashAlgorithm = "SHA256")
 			=> string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
+				? Array.Empty<byte>()
 				: @string.ToBytes().GetHMACHash(key, hashAlgorithm);
 
 		/// <summary>
@@ -903,7 +903,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this string @string, string hashAlgorithm = "SHA256", int length = 4)
 			=> string.IsNullOrWhiteSpace(@string)
-				? new byte[0]
+				? Array.Empty<byte>()
 				: @string.ToBytes().GetCheckSum(hashAlgorithm, length);
 
 		/// <summary>
@@ -915,7 +915,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetCheckSum(this FileInfo fileInfo, string hashAlgorithm = "SHA256")
 		{
 			if (fileInfo == null || !fileInfo.Exists)
-				return new byte[0];
+				return Array.Empty<byte>();
 
 			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
 			{
@@ -1026,7 +1026,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] Encrypt(this RSA rsa, byte[] data)
 			=> data == null || data.Length < 1
-				? new byte[0]
+				? Array.Empty<byte>()
 				: rsa.Encrypt(data, RSAEncryptionPadding.Pkcs1);
 
 		/// <summary>
@@ -1051,7 +1051,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] Decrypt(this RSA rsa, byte[] data)
 			=> data == null || data.Length < 1
-				? new byte[0]
+				? Array.Empty<byte>()
 				: rsa.Decrypt(data, RSAEncryptionPadding.Pkcs1);
 
 		/// <summary>
@@ -2776,7 +2776,7 @@ namespace net.vieapps.Components.Utility
 		protected override byte[] HashFinal()
 		{
 			// finalize the original hash
-			var hashValue = this._hashProvider.ComputeHash(new byte[0]);
+			var hashValue = this._hashProvider.ComputeHash(Array.Empty<byte>());
 
 			// write the outer padding
 			this._hashProvider.TransformBlock(this._outerPadding, 0, this.BlockSizeValue, _outerPadding, 0);
@@ -2854,8 +2854,8 @@ namespace net.vieapps.Components.Utility
 		public static readonly Point G = Point.Decode("0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8".HexToBytes());
 		public static readonly BigInteger N = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141".ToBigInteger();
 
-		public static DSA ECCDSA = new DSA();
-		public static Encryption ECCEncryption = new Encryption();
+		public static DSA ECCDSA { get; } = new DSA();
+		public static Encryption ECCEncryption { get; } = new Encryption();
 
 		#region Point
 		public class Point : ICloneable
