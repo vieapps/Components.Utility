@@ -27,245 +27,346 @@ namespace net.vieapps.Components.Utility
 	public static partial class ObjectService
 	{
 
-		#region Attribute info
+		#region Object meta info
 		/// <summary>
-		/// Presents information of an attribute of an objects
+		/// Presents meta information of object's field/property/method
 		/// </summary>
-		[Serializable, DebuggerDisplay("Name = {Name}, IsPublic = {IsPublic}, CanRead = {CanRead}, CanWrite = {CanWrite}")]
-		public class AttributeInfo
+		[Serializable, DebuggerDisplay("Name = {Name}, IsPublic = {IsPublic}, IsStatic = {IsStatic}")]
+		public class MetaInfo
 		{
-			/// <summary>
-			/// Initializes information of an objects' attribute
-			/// </summary>
-			public AttributeInfo() : this(null) { }
+			internal readonly bool? _isPublic, _isStatic;
 
 			/// <summary>
-			/// Initializes information of an objects' attribute
+			/// Initializes information of an object' meta data
 			/// </summary>
-			/// <param name="info"></param>
-			public AttributeInfo(MemberInfo info) : this(info?.Name, info) { }
+			public MetaInfo() : this(null) { }
 
 			/// <summary>
-			/// Initializes information of an objects' attribute
+			/// Initializes information of an object' meta data
 			/// </summary>
-			/// <param name="name"></param>
 			/// <param name="info"></param>
-			public AttributeInfo(string name, MemberInfo info)
+			/// <param name="isPublic"></param>
+			/// <param name="isStatic"></param>
+			public MetaInfo(MemberInfo info, bool? isPublic = null, bool? isStatic = null)
 			{
-				this.Name = name ?? info?.Name;
 				this.Info = info;
+				if (isPublic != null && isPublic.Value)
+					this._isPublic = true;
+				if (isStatic != null && isStatic.Value)
+					this._isStatic = true;
 			}
 
 			/// <summary>
-			/// Gets the name
-			/// </summary>
-			public string Name { get; }
-
-			/// <summary>
-			/// Gets the information
+			/// Gets the detail information
 			/// </summary>
 			public MemberInfo Info { get; }
 
 			/// <summary>
-			/// Specifies this attribute is public (everyone can access)
+			/// Gets the name
 			/// </summary>
-			public bool IsPublic => this.Info != null && this.Info is PropertyInfo;
+			public string Name => this.Info?.Name;
 
 			/// <summary>
-			/// Specifies this attribute can be read
+			/// Gets the detail information (when this is meta information of a field)
 			/// </summary>
-			public bool CanRead => !this.IsPublic || (this.Info as PropertyInfo).CanRead;
+			public FieldInfo FieldInfo => this.Info != null && this.Info is FieldInfo fieldInfo ? fieldInfo : null;
 
 			/// <summary>
-			/// Specifies this attribute can be written
+			/// Specifies this meta is information of a field
 			/// </summary>
-			public bool CanWrite => !this.IsPublic || (this.Info as PropertyInfo).CanWrite;
+			public bool IsField => this.FieldInfo != null;
 
 			/// <summary>
-			/// Gets the type of the attribute
+			/// Gets the detail information (when this is meta information of a property)
 			/// </summary>
-			public Type Type => this.IsPublic ? (this.Info as PropertyInfo)?.PropertyType : (this.Info as FieldInfo)?.FieldType;
+			public PropertyInfo PropertyInfo => this.Info != null && this.Info is PropertyInfo propertyInfo ? propertyInfo : null;
+
+			/// <summary>
+			/// Specifies this meta is information of a property
+			/// </summary>
+			public bool IsProperty => this.PropertyInfo != null;
+
+			/// <summary>
+			/// Gets the detail information (when this is meta information of a method)
+			/// </summary>
+			public MethodInfo MethodInfo => this.Info != null && this.Info is MethodInfo methodInfo ? methodInfo : null;
+
+			/// <summary>
+			/// Specifies this meta is information of a method
+			/// </summary>
+			public bool IsMethod => this.MethodInfo != null;
+
+			/// <summary>
+			/// Specifies is public or not
+			/// </summary>
+			public bool IsPublic => (this.IsField && this.FieldInfo.IsPublic) || (this.IsMethod && this.MethodInfo.IsPublic) || (this._isPublic != null && this._isPublic.Value);
+
+			/// <summary>
+			/// Specifies is static or not
+			/// </summary>
+			public bool IsStatic => (this.IsField && this.FieldInfo.IsStatic) || (this.IsMethod && this.MethodInfo.IsStatic) || (this._isStatic != null && this._isStatic.Value);
+
+			/// <summary>
+			/// Gets the type of the member
+			/// </summary>
+			public Type Type => this.FieldInfo?.FieldType ?? this.PropertyInfo?.PropertyType ?? this.MethodInfo?.ReturnType;
 		}
-		#endregion
-
-		#region Object meta data
-		static ConcurrentDictionary<Type, List<AttributeInfo>> ObjectProperties { get; } = new ConcurrentDictionary<Type, List<AttributeInfo>>();
-
-		static ConcurrentDictionary<Type, List<AttributeInfo>> ObjectFields { get; } = new ConcurrentDictionary<Type, List<AttributeInfo>>();
 
 		/// <summary>
-		/// Gets the collection of public properties of the type
+		/// Presents information of an object's attribute (field or property)
 		/// </summary>
-		/// <param name="type">The type for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
-		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties(Type type, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
+		[Serializable, DebuggerDisplay("Name = {Name}, IsPublic = {IsPublic}, CanRead = {CanRead}, CanWrite = {CanWrite}")]
+		public class AttributeInfo : MetaInfo
+		{
+			/// <summary>
+			/// Initializes information of an objects' attribute
+			/// </summary>
+			public AttributeInfo() : base(null) { }
+
+			/// <summary>
+			/// Initializes information of an objects' attribute
+			/// </summary>
+			/// <param name="info"></param>
+			/// <param name="isPublic"></param>
+			/// <param name="isStatic"></param>
+			public AttributeInfo(MemberInfo info, bool? isPublic = null, bool? isStatic = null) : base(info, isPublic, isStatic) { }
+
+			/// <summary>
+			/// Specifies this attribute can be read or not
+			/// </summary>
+			public bool CanRead => !this.IsMethod && (this.IsField || (this.IsPublic && this.PropertyInfo.CanRead));
+
+			/// <summary>
+			/// Specifies this attribute can be written or not
+			/// </summary>
+			public bool CanWrite => !this.IsMethod && (this.IsField || (this.IsPublic && this.PropertyInfo.CanWrite));
+		}
+
+		static ConcurrentDictionary<Type, List<MetaInfo>> TypeMeta { get; } = new ConcurrentDictionary<Type, List<MetaInfo>>();
+
+		/// <summary>
+		/// Gets the meta information of a specified type
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetMetaInfo(this Type type, Func<MetaInfo, bool> predicate = null)
 		{
 			if (type == null || !type.IsClassType())
-				return new List<AttributeInfo>();
+				return new List<MetaInfo>();
 
-			if (!ObjectService.ObjectProperties.TryGetValue(type, out var properties))
-				lock (ObjectService.ObjectProperties)
+			if (!ObjectService.TypeMeta.TryGetValue(type, out var metaInfo) || metaInfo == null)
+				lock (ObjectService.TypeMeta)
 				{
-					if (!ObjectService.ObjectProperties.TryGetValue(type, out properties))
+					if (!ObjectService.TypeMeta.TryGetValue(type, out metaInfo) || metaInfo == null)
 					{
-						var defaultMember = type.GetCustomAttributes(typeof(DefaultMemberAttribute))?.FirstOrDefault() as DefaultMemberAttribute;
-						if (allowDuplicatedName)
-							ObjectService.ObjectProperties[type] = properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-								.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-								.Select(info => new AttributeInfo(info))
-								.ToList();
-						else
-						{
-							properties = new List<AttributeInfo>();
-							var names = new HashSet<string>();
-							type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-								.Where(info => defaultMember == null || !defaultMember.MemberName.Equals(info.Name))
-								.Select(info => new AttributeInfo(info))
-								.ForEach(attribute =>
-								{
-									if (!names.Contains(attribute.Name))
-									{
-										properties.Add(attribute);
-										names.Add(attribute.Name);
-									}
-								});
-							ObjectService.ObjectProperties[type] = properties;
-						}
+						metaInfo = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(field => !field.Name.StartsWith("<")).Select(field => new MetaInfo(field))
+							.Concat(type.GetProperties(BindingFlags.Instance | BindingFlags.Public).Select(property => new MetaInfo(property, true)))
+							.Concat(type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic).Select(property => new MetaInfo(property, false)))
+							.Concat(type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(method => !method.Name.StartsWith("get_") && !method.Name.StartsWith("set_") && !method.Name.StartsWith("add_") && !method.Name.StartsWith("remove_")).Select(method => new MetaInfo(method)))
+							.ToList();
+						metaInfo = metaInfo
+							.Concat(type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static).Where(property => metaInfo.FirstOrDefault(info => info.Name == property.Name) == null).Select(property => new MetaInfo(property, true, true)))
+							.Concat(type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Static).Where(property => metaInfo.FirstOrDefault(info => info.Name == property.Name) == null).Select(property => new MetaInfo(property, false, true)))
+							.ToList();
+						ObjectService.TypeMeta.TryAdd(type, metaInfo);
 					}
 				}
 
 			return predicate != null
-				? properties.Where(info => predicate(info)).ToList()
-				: properties;
+				? metaInfo.Where(info => predicate(info)).ToList()
+				: metaInfo;
 		}
 
 		/// <summary>
-		/// Gets the collection of public properties of the object's type
+		/// Gets the meta information of a specified type
 		/// </summary>
-		/// <param name="predicate">The predicate</param>
-		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
-		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties<T>(Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false) where T : class
-			=> ObjectService.GetProperties(typeof(T), predicate, allowDuplicatedName);
+		/// <typeparam name="T"></typeparam>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetMetaInfo<T>(Func<MetaInfo, bool> predicate = null) where T : class
+			=> ObjectService.GetMetaInfo(typeof(T), predicate);
 
 		/// <summary>
-		/// Gets the collection of public properties of the object's type
+		/// Gets the meta information of this object
 		/// </summary>
-		/// <param name="object">The object for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
-		/// <returns>Collection of public properties</returns>
-		public static List<AttributeInfo> GetProperties(this object @object, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
-			=> @object != null ? ObjectService.GetProperties(@object.GetType(), predicate, allowDuplicatedName) : new List<AttributeInfo>();
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		/// <returns></returns>
+		public static List<MetaInfo> GetMetaInfo(this object @object, Func<MetaInfo, bool> predicate = null)
+			=> ObjectService.GetMetaInfo(@object?.GetType(), predicate);
 
 		/// <summary>
-		/// Gets the collection of public attributes of this type
-		/// </summary>
-		/// <param name="type">The type for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
-		/// <returns>Collection of public attributes</returns>
-		public static List<AttributeInfo> GetPublicAttributes(this Type type, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
-			=> type != null ? ObjectService.GetProperties(type, predicate, allowDuplicatedName) : new List<AttributeInfo>();
-
-		/// <summary>
-		/// Gets the collection of public attributes of the object's type
-		/// </summary>
-		/// <param name="object">The object for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <param name="allowDuplicatedName">true to allow duplicated name</param>
-		/// <returns>Collection of public attributes</returns>
-		public static List<AttributeInfo> GetPublicAttributes(this object @object, Func<AttributeInfo, bool> predicate = null, bool allowDuplicatedName = false)
-			=> @object?.GetType().GetPublicAttributes(predicate, allowDuplicatedName) ?? new List<AttributeInfo>();
-
-		/// <summary>
-		/// Gets the collection of fields (private attributes) of the type
+		/// Gets the collection of fields
 		/// </summary>
 		/// <param name="type">The type for processing</param>
 		/// <param name="predicate">The predicate</param>
 		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields(Type type, Func<AttributeInfo, bool> predicate = null)
-		{
-			if (type == null || !type.IsClassType())
-				return new List<AttributeInfo>();
-
-			if (!ObjectService.ObjectFields.TryGetValue(type, out var fields))
-				lock (ObjectService.ObjectFields)
-				{
-					if (!ObjectService.ObjectFields.TryGetValue(type, out fields))
-						ObjectService.ObjectFields[type] = fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-							.Where(info => !info.Name.StartsWith("<"))
-							.Select(info => new AttributeInfo(info))
-							.ToList();
-				}
-
-			return predicate != null
-				? fields.Where(info => predicate(info)).ToList()
-				: fields;
-		}
+		public static List<MetaInfo> GetFields(Type type, Func<MetaInfo, bool> predicate = null)
+			=> type != null && type.IsClassType()
+				? predicate != null
+					? type.GetMetaInfo(info => info.IsField).Where(info => predicate(info)).ToList()
+					: type.GetMetaInfo(info => info.IsField).ToList()
+				: new List<MetaInfo>();
 
 		/// <summary>
-		/// Gets the collection of fields (private attributes) of the object's type
+		/// Gets the collection of fields
 		/// </summary>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields<T>(Func<AttributeInfo, bool> predicate = null) where T : class
+		/// <typeparam name="T"></typeparam>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetFields<T>(Func<MetaInfo, bool> predicate = null) where T : class
 			=> ObjectService.GetFields(typeof(T), predicate);
 
 		/// <summary>
-		/// Gets the collection of fields (private attributes) of the object's type
+		/// Gets the collection of fields
 		/// </summary>
-		/// <param name="object">The object for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of private fields/attributes</returns>
-		public static List<AttributeInfo> GetFields(this object @object, Func<AttributeInfo, bool> predicate = null)
-			=> @object != null ? ObjectService.GetFields(@object.GetType(), predicate) : new List<AttributeInfo>();
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		/// <returns></returns>
+		public static List<MetaInfo> GetFields(this object @object, Func<MetaInfo, bool> predicate = null)
+			=> ObjectService.GetFields(@object?.GetType(), predicate);
 
 		/// <summary>
-		/// Gets the collection of private attributes of this type
+		/// Gets the collection of properties
 		/// </summary>
-		/// <param name="type">The type for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of private attributes</returns>
-		public static List<AttributeInfo> GetPrivateAttributes(this Type type, Func<AttributeInfo, bool> predicate = null)
-			=> type != null ? ObjectService.GetFields(type, predicate) : new List<AttributeInfo>();
+		/// <param name="type"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetProperties(this Type type, Func<MetaInfo, bool> predicate = null)
+			=> type != null && type.IsClassType()
+				? predicate != null
+					? type.GetMetaInfo(info => info.IsProperty).Where(info => predicate(info)).ToList()
+					: type.GetMetaInfo(info => info.IsProperty).ToList()
+				: new List<MetaInfo>();
 
 		/// <summary>
-		/// Gets the collection of private attributes of this object type
+		/// Gets the collection of properties
 		/// </summary>
-		/// <param name="object">The object for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of private attributes</returns>
-		public static List<AttributeInfo> GetPrivateAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
-			=> @object?.GetType().GetPrivateAttributes(predicate) ?? new List<AttributeInfo>();
+		/// <typeparam name="T"></typeparam>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetProperties<T>(Func<MetaInfo, bool> predicate = null) where T : class
+			=> ObjectService.GetProperties(typeof(T), predicate);
 
 		/// <summary>
-		/// Gets the collection of attributes of the type (means contains all public and private attributes)
+		/// Gets the collection of properties
 		/// </summary>
-		/// <param name="type">The type for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of all attributes</returns>
-		public static List<AttributeInfo> GetAttributes(Type type, Func<AttributeInfo, bool> predicate = null)
-			=> type != null ? type.GetPublicAttributes(predicate).Concat(type.GetPrivateAttributes(predicate)).ToList() : new List<AttributeInfo>();
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetProperties(this object @object, Func<MetaInfo, bool> predicate = null)
+			=> ObjectService.GetProperties(@object?.GetType(), predicate);
 
 		/// <summary>
-		/// Gets the collection of attributes of the object's type (means contains all public and private attributes)
+		/// Gets the collection of methods
 		/// </summary>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of attributes</returns>
-		public static List<AttributeInfo> GetAttributes<T>(Func<AttributeInfo, bool> predicate = null) where T : class
-			=> ObjectService.GetAttributes(typeof(T), predicate);
+		/// <param name="type"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetMethods(this Type type, Func<MetaInfo, bool> predicate = null)
+			=> type != null && type.IsClassType()
+				? predicate != null
+					? type.GetMetaInfo().Where(info => info.IsMethod).Where(info => predicate(info)).ToList()
+					: type.GetMetaInfo().Where(info => info.IsMethod).ToList()
+				: new List<MetaInfo>();
 
 		/// <summary>
-		/// Gets the collection of attributes of the object's type (means contains all public and private attributes)
+		/// Gets the collection of methods
 		/// </summary>
-		/// <param name="object">The object for processing</param>
-		/// <param name="predicate">The predicate</param>
-		/// <returns>Collection of attributes</returns>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetMethods<T>(Func<MetaInfo, bool> predicate = null) where T : class
+			=> ObjectService.GetMethods(typeof(T), predicate);
+
+		/// <summary>
+		/// Gets the collection of methods
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<MetaInfo> GetMethods(this object @object, Func<MetaInfo, bool> predicate = null)
+			=> ObjectService.GetMethods(@object?.GetType(), predicate);
+
+		/// <summary>
+		/// Gets the collection of all attributes (means all fields and all properties)
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<AttributeInfo> GetAttributes(this Type type, Func<AttributeInfo, bool> predicate = null)
+			=> type != null && type.IsClassType()
+				? predicate != null
+					? type.GetMetaInfo(info => info.IsField || info.IsProperty).Select(info => new AttributeInfo(info.Info, info._isPublic, info._isStatic)).Where(info => predicate(info)).ToList()
+					: type.GetMetaInfo(info => info.IsField || info.IsProperty).Select(info => new AttributeInfo(info.Info, info._isPublic, info._isStatic)).ToList()
+				: new List<AttributeInfo>();
+
+		/// <summary>
+		/// Gets the collection of all attributes (means all fields and all properties)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
 		public static List<AttributeInfo> GetAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
 			=> ObjectService.GetAttributes(@object?.GetType(), predicate);
+
+		/// <summary>
+		/// Gets the collection of public attributes (means public fields and public properties)
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<AttributeInfo> GetPublicAttributes(this Type type, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetAttributes(type, predicate).Where(info => info.IsPublic).ToList();
+
+		/// <summary>
+		/// Gets the collection of public attributes (means public fields and public properties)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<AttributeInfo> GetPublicAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetPublicAttributes(@object?.GetType(), predicate);
+
+		/// <summary>
+		/// Gets the collection of private attributes (means private fields and private properties)
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<AttributeInfo> GetPrivateAttributes(this Type type, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetAttributes(type, predicate).Where(info => !info.IsPublic).ToList();
+
+		/// <summary>
+		/// Gets the collection of private attributes (means private fields and private properties)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static List<AttributeInfo> GetPrivateAttributes(this object @object, Func<AttributeInfo, bool> predicate = null)
+			=> ObjectService.GetPrivateAttributes(@object?.GetType(), predicate);
+
+		/// <summary>
+		/// Gets a static attribute (means static field or static property) of the type that specified by name
+		/// </summary>
+		/// <param name="type">The type of the static class that contains the static object</param>
+		/// <param name="name">The name of the static attribute</param>
+		/// <returns></returns>
+		public static object GetStaticObject(this Type type, string name)
+		{
+			try
+			{
+				var attribute = type != null && !string.IsNullOrWhiteSpace(name) ? type.GetAttributes(attr => attr.IsStatic && attr.CanRead).FirstOrDefault(attr => attr.Name.IsEquals(name)) : null;
+				return attribute?.FieldInfo?.GetValue(null) ?? attribute?.PropertyInfo?.GetValue(null);
+			}
+			catch
+			{
+				return null;
+			}
+		}
 
 		/// <summary>
 		/// Get the full type name (type name with assembly name) of this type
@@ -303,24 +404,6 @@ namespace net.vieapps.Components.Utility
 			=> @object?.GetType().GetTypeName(justName);
 
 		/// <summary>
-		/// Gets the state that indicates the custom attribute is defined or not
-		/// </summary>
-		/// <param name="type">The type for working with</param>
-		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
-		/// <returns>The first custom attribute</returns>
-		public static bool IsDefined<T>(this Type type, bool inherit) where T : class
-			=> type != null && type.IsDefined(typeof(T), inherit);
-
-		/// <summary>
-		/// Gets the state that indicates the custom attribute is defined or not
-		/// </summary>
-		/// <param name="attribute">The attribute for working with</param>
-		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
-		/// <returns>The first custom attribute</returns>
-		public static bool IsDefined<T>(this AttributeInfo attribute, bool inherit) where T : class
-			=> attribute != null && attribute.Type != null && attribute.Type.IsDefined<T>(inherit);
-
-		/// <summary>
 		/// Gets the collection of custom attributes
 		/// </summary>
 		/// <param name="type">The type for working with</param>
@@ -355,6 +438,24 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The first custom attribute</returns>
 		public static T GetCustomAttribute<T>(this AttributeInfo attribute, bool inherit = true) where T : class
 			=> attribute?.GetCustomAttributes<T>(inherit).FirstOrDefault();
+
+		/// <summary>
+		/// Gets the state that indicates the custom attribute is defined or not
+		/// </summary>
+		/// <param name="type">The type for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The first custom attribute</returns>
+		public static bool IsDefined<T>(this Type type, bool inherit) where T : class
+			=> type != null && type.IsDefined(typeof(T), inherit);
+
+		/// <summary>
+		/// Gets the state that indicates the custom attribute is defined or not
+		/// </summary>
+		/// <param name="attribute">The attribute for working with</param>
+		/// <param name="inherit">true to search this member's inheritance chain to find the attributes</param>
+		/// <returns>The first custom attribute</returns>
+		public static bool IsDefined<T>(this AttributeInfo attribute, bool inherit) where T : class
+			=> attribute != null && attribute.Type != null && attribute.Type.IsDefined<T>(inherit);
 
 		/// <summary>
 		/// Gets the state to determines the type is primitive or not
@@ -557,7 +658,7 @@ namespace net.vieapps.Components.Utility
 			=> @object != null && ObjectService.IsNullable<T>();
 		#endregion
 
-		#region Collection meta data
+		#region Collection meta info
 		/// <summary>
 		/// Gets the state to determines this type is sub-class of a generic type
 		/// </summary>
@@ -820,7 +921,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Create new instance & Cast
-		static Dictionary<Type, Func<object>> TypeFactories { get; } = new Dictionary<Type, Func<object>>();
+		static ConcurrentDictionary<Type, Func<object>> TypeFactories { get; } = new ConcurrentDictionary<Type, Func<object>>();
 
 		/// <summary>
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
@@ -829,11 +930,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The newly created instance</returns>
 		public static object CreateInstance(this Type type)
 		{
-			if (!ObjectService.TypeFactories.TryGetValue(type, out var func))
+			if (!ObjectService.TypeFactories.TryGetValue(type, out var func) || func == null)
 				lock (ObjectService.TypeFactories)
 				{
-					if (!ObjectService.TypeFactories.TryGetValue(type, out func))
-						ObjectService.TypeFactories[type] = func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
+					if (!ObjectService.TypeFactories.TryGetValue(type, out func) || func == null)
+					{
+						func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
+						ObjectService.TypeFactories.TryAdd(type, func);
+					}
 				}
 			return func();
 		}
@@ -871,9 +975,9 @@ namespace net.vieapps.Components.Utility
 				: default;
 		#endregion
 
-		#region Manipulations
+		#region Object manipulations
 		/// <summary>
-		/// Sets value of an attribute (public/private/static) of an object.
+		/// Sets value of an attribute of an object.
 		/// </summary>
 		/// <param name="object">The object need to get data from.</param>
 		/// <param name="name">The string that presents the name of the attribute need to get.</param>
@@ -884,25 +988,17 @@ namespace net.vieapps.Components.Utility
 			if (@object == null || string.IsNullOrWhiteSpace(name))
 				throw new ArgumentNullException(nameof(name));
 
-			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-			if (fieldInfo != null)
+			var attribute = @object.GetAttributes(attr => !attr.IsStatic && attr.CanWrite).FirstOrDefault(attr => attr.Name.IsEquals(name));
+			if (attribute != null)
 			{
-				fieldInfo.SetValue(@object, value);
+				if (attribute.IsField)
+					attribute.FieldInfo.SetValue(@object, value);
+				else
+					attribute.PropertyInfo.SetValue(@object, value);
 				if (@object is IPropertyChangedNotifier)
 					(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
-				return true;
 			}
-
-			var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-			if (propertyInfo != null && propertyInfo.CanWrite)
-			{
-				propertyInfo.SetValue(@object, value);
-				if (@object is IPropertyChangedNotifier)
-					(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
-				return true;
-			}
-
-			return false;
+			return attribute != null;
 		}
 
 		/// <summary>
@@ -913,7 +1009,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="value">The object that presents the value of the attribute need to set.</param>
 		/// <param name="cast">true to cast the type of attribute</param>
 		public static bool SetAttributeValue(this object @object, AttributeInfo attribute, object value, bool cast = false)
-			=> @object != null && attribute != null ? @object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value) : throw new ArgumentNullException(nameof(attribute));
+			=> @object != null && attribute != null
+				? @object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value)
+				: throw new ArgumentNullException(nameof(attribute));
 
 		/// <summary>
 		/// Gets value of an attribute of an object.
@@ -926,14 +1024,8 @@ namespace net.vieapps.Components.Utility
 			if (@object == null || string.IsNullOrWhiteSpace(name))
 				throw new ArgumentException(nameof(name));
 
-			var fieldInfo = @object.GetType().GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-			if (fieldInfo != null)
-				return fieldInfo.GetValue(@object);
-
-			var propertyInfo = @object.GetType().GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-			return propertyInfo != null && propertyInfo.CanRead
-				? propertyInfo.GetValue(@object)
-				: null;
+			var attribute = @object.GetAttributes(attr => !attr.IsStatic && attr.CanRead).FirstOrDefault(attr => attr.Name.IsEquals(name));
+			return attribute?.FieldInfo?.GetValue(@object) ?? attribute?.PropertyInfo?.GetValue(@object) ?? null;
 		}
 
 		/// <summary>
@@ -947,8 +1039,8 @@ namespace net.vieapps.Components.Utility
 		public static T GetAttributeValue<T>(this object @object, string name, T @default = default)
 		{
 			var value = @object?.GetAttributeValue(name);
-			return value != null && value is T
-				? (T)value
+			return value != null && value is T valueIsT
+				? valueIsT
 				: @default;
 		}
 
@@ -974,65 +1066,23 @@ namespace net.vieapps.Components.Utility
 		public static T GetAttributeValue<T>(this object @object, AttributeInfo attribute, T @default = default)
 		{
 			var value = @object?.GetAttributeValue(attribute);
-			return value != null && value is T
-				? (T)value
+			return value != null && value is T valueIsT
+				? valueIsT
 				: @default;
 		}
 
 		/// <summary>
-		/// Gets a static object that specified by name
-		/// </summary>
-		/// <param name="type">The type of the static class that contains the static object</param>
-		/// <param name="name">The name of the static object</param>
-		/// <returns></returns>
-		public static object GetStaticObject(this Type type, string name)
-		{
-			if (type == null || string.IsNullOrEmpty(name))
-				return null;
-
-			var fieldInfo = type.GetField(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-			if (fieldInfo != null)
-				return fieldInfo.GetValue(null);
-
-			var propertyInfo = type.GetProperty(name.Trim(), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-			return propertyInfo != null && propertyInfo.CanRead
-				? propertyInfo.GetValue(null, null)
-				: null;
-		}
-
-		/// <summary>
-		/// Gets a static object that specified by name
-		/// </summary>
-		/// <param name="class">The string that present the type of the static class that contains the static object</param>
-		/// <param name="name">The name of the static object</param>
-		/// <returns></returns>
-		public static object GetStaticObject(string @class, string name)
-			=> string.IsNullOrWhiteSpace(@class) ? null : Type.GetType(@class)?.GetStaticObject(name);
-
-		/// <summary>
-		/// Trims all string properties
+		/// Trims all string attributes
 		/// </summary>
 		/// <param name="object"></param>
 		public static void TrimAll(this object @object)
 		{
 			if (@object != null && @object.GetType().IsClassType())
-				@object.GetPublicAttributes(attribute => attribute.IsStringType()).ForEach(attribute =>
+				@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.IsStringType() && attribute.CanWrite).ForEach(attribute =>
 				{
 					if (@object.GetAttributeValue(attribute) is string value && value != null)
 						@object.SetAttributeValue(attribute, value.Trim());
 				});
-		}
-
-		/// <summary>
-		/// Trims all string properties
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <returns></returns>
-		public static T TrimAll<T>(this T @object) where T : class
-		{
-			(@object as object)?.TrimAll();
-			return @object;
 		}
 		#endregion
 
