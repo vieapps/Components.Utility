@@ -380,6 +380,49 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
+		#region Validations (Email/Phone)
+		/// <summary>
+		/// Validates an email address
+		/// </summary>
+		/// <param name="input"></param>
+		/// <param name="output"></param>
+		/// <returns></returns>
+		public static bool IsValidEmail(this string input, out string output)
+		{
+			output = (input ?? "").Replace(" ", "").Replace("#", "").Trim().ToLower();
+			var regex = new Regex("^(([^<>()[\\]\\.,;:\\s@\\\"]+(\\.[^<>()[\\]\\.,;:\\s@\\\"]+)*)|(\\\".+\\\"))@(([^<>()[\\]\\.,;:\\s@\\\"]+\\.)+[^<>()[\\]\\.,;:\\s@\\\"]{2,})$", RegexOptions.IgnoreCase);
+			if (string.IsNullOrWhiteSpace(output) || !regex.IsMatch(output))
+			{
+				output = null;
+				return false;
+			}
+			return true;
+		}
+
+		/// <summary>
+		/// Validates a phone number
+		/// </summary>
+		/// <param name="input"></param>
+		/// <param name="output"></param>
+		/// <param name="phoneCountryCode"></param>
+		/// <returns></returns>
+		public static bool IsValidPhone(this string input, out string output, string phoneCountryCode = "84")
+		{
+			output = (input ?? "").Replace(" ", "").Replace("-", "").Replace(".", "").Trim();
+			var regex = new Regex("^\\s*(?:\\+?(\\d{1,3}))?[-. (]*(\\d{3})[-. )]*(\\d{3})[-. ]*(\\d{4})(?: *x(\\d+))?\\s*$", RegexOptions.IgnoreCase);
+			if (string.IsNullOrWhiteSpace(output) || !regex.IsMatch(output))
+			{
+				output = null;
+				return false;
+			}
+			if (output.StartsWith("00"))
+				output = $"+{output.Right(output.Length - 2)}";
+			if (output.StartsWith("0"))
+				output = $"+{phoneCountryCode ?? "84"}{output.Right(output.Length - 1)}";
+			return true;
+		}
+		#endregion
+
 		#region Conversions (Vietnamese)
 		internal static string ConvertVietnamese(this string @string, int mode)
 		{
