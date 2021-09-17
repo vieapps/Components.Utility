@@ -69,7 +69,7 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Gets the detail information (when this is meta information of a field)
 			/// </summary>
-			public FieldInfo FieldInfo => this.Info != null && this.Info is FieldInfo fieldInfo ? fieldInfo : null;
+			public FieldInfo FieldInfo => this.Info is FieldInfo fieldInfo ? fieldInfo : null;
 
 			/// <summary>
 			/// Specifies this meta is information of a field
@@ -79,7 +79,7 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Gets the detail information (when this is meta information of a property)
 			/// </summary>
-			public PropertyInfo PropertyInfo => this.Info != null && this.Info is PropertyInfo propertyInfo ? propertyInfo : null;
+			public PropertyInfo PropertyInfo => this.Info is PropertyInfo propertyInfo ? propertyInfo : null;
 
 			/// <summary>
 			/// Specifies this meta is information of a property
@@ -89,7 +89,7 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Gets the detail information (when this is meta information of a method)
 			/// </summary>
-			public MethodInfo MethodInfo => this.Info != null && this.Info is MethodInfo methodInfo ? methodInfo : null;
+			public MethodInfo MethodInfo => this.Info is MethodInfo methodInfo ? methodInfo : null;
 
 			/// <summary>
 			/// Specifies this meta is information of a method
@@ -134,12 +134,12 @@ namespace net.vieapps.Components.Utility
 			/// <summary>
 			/// Specifies this attribute can be read or not
 			/// </summary>
-			public bool CanRead => !this.IsMethod && (this.IsField || (this.IsPublic && this.PropertyInfo.CanRead));
+			public bool CanRead => !this.IsMethod && (this.IsField || this.PropertyInfo.CanRead);
 
 			/// <summary>
 			/// Specifies this attribute can be written or not
 			/// </summary>
-			public bool CanWrite => !this.IsMethod && (this.IsField || (this.IsPublic && this.PropertyInfo.CanWrite));
+			public bool CanWrite => !this.IsMethod && (this.IsField || this.PropertyInfo.CanWrite);
 		}
 
 		static ConcurrentDictionary<Type, List<MetaInfo>> TypeMeta { get; } = new ConcurrentDictionary<Type, List<MetaInfo>>();
