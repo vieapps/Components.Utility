@@ -583,6 +583,14 @@ namespace net.vieapps.Components.Utility
 			=> attribute != null && attribute.Type != null && attribute.Type.IsEnum;
 
 		/// <summary>
+		/// Gets the state that determines this attribute is Json.NET string enum or not
+		/// </summary>
+		/// <param name="attribute"></param>
+		/// <returns></returns>
+		public static bool IsStringEnum(this AttributeInfo attribute)
+			=> attribute != null && attribute.IsEnum() && typeof(StringEnumConverter).Equals(attribute.GetCustomAttribute<JsonConverterAttribute>()?.ConverterType);
+
+		/// <summary>
 		/// Gets the state to determines the attribute type is serializable (got 'Serializable' attribute) or not
 		/// </summary>
 		/// <param name="attribute"></param>
@@ -964,6 +972,15 @@ namespace net.vieapps.Components.Utility
 				: null;
 
 		/// <summary>
+		/// Casts the object to other type
+		/// </summary>
+		/// <param name="object">The object to cast to other type</param>
+		/// <param name="type">The type to cast to</param>
+		/// <returns></returns>
+		public static object As(this object @object, Type type)
+			=> @object?.CastAs(type);
+
+		/// <summary>
 		/// Casts the value to other type
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -973,6 +990,15 @@ namespace net.vieapps.Components.Utility
 			=> @object != null
 				? (T)@object.CastAs(typeof(T))
 				: default;
+
+		/// <summary>
+		/// Casts the value to other type
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object">The object to cast to other type</param>
+		/// <returns></returns>
+		public static T As<T>(this object @object)
+			=> @object.CastAs<T>();
 		#endregion
 
 		#region Object manipulations
@@ -1024,8 +1050,15 @@ namespace net.vieapps.Components.Utility
 			if (@object == null || string.IsNullOrWhiteSpace(name))
 				throw new ArgumentException(nameof(name));
 
-			var attribute = @object.GetAttributes(attr => !attr.IsStatic && attr.CanRead).FirstOrDefault(attr => attr.Name.IsEquals(name));
-			return attribute?.FieldInfo?.GetValue(@object) ?? attribute?.PropertyInfo?.GetValue(@object) ?? null;
+			try
+			{
+				var attribute = @object.GetAttributes(attr => !attr.IsStatic && attr.CanRead).FirstOrDefault(attr => attr.Name.IsEquals(name));
+				return attribute?.FieldInfo?.GetValue(@object) ?? attribute?.PropertyInfo?.GetValue(@object);
+			}
+			catch
+			{
+				return null;
+			}
 		}
 
 		/// <summary>
@@ -1132,7 +1165,7 @@ namespace net.vieapps.Components.Utility
 
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
 
-			@object.GetPublicAttributes(attribute => attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
+			@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -1144,7 +1177,7 @@ namespace net.vieapps.Components.Utility
 				}
 			});
 
-			@object.GetPrivateAttributes(attribute => !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
+			@object.GetPrivateAttributes(attribute => !attribute.IsStatic && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -1174,7 +1207,7 @@ namespace net.vieapps.Components.Utility
 
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
 
-			@object.GetPublicAttributes(attribute => attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
+			@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -1186,7 +1219,7 @@ namespace net.vieapps.Components.Utility
 				}
 			});
 
-			@object.GetPrivateAttributes(attribute => !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
+			@object.GetPrivateAttributes(attribute => !attribute.IsStatic && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
 				try
 				{
@@ -1219,7 +1252,7 @@ namespace net.vieapps.Components.Utility
 			var serializer = new JsonSerializer();
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
 
-			foreach (var attribute in @object.GetPublicAttributes())
+			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic))
 			{
 				// check
 				if (!attribute.CanWrite || excludedAttributes.Contains(attribute.Name))
@@ -1394,7 +1427,7 @@ namespace net.vieapps.Components.Utility
 				return;
 
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
-			foreach (var attribute in @object.GetPublicAttributes())
+			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic))
 			{
 				// check
 				if (!attribute.CanWrite || excludedAttributes.Contains(attribute.Name))
@@ -1535,7 +1568,7 @@ namespace net.vieapps.Components.Utility
 
 		#region JSON conversions
 		internal static List<AttributeInfo> GetSpecialSerializeAttributes(this Type type)
-			=> type?.GetPublicAttributes()
+			=> type?.GetPublicAttributes(attribute => !attribute.IsStatic)
 				.Where(attribute => (attribute.IsGenericDictionaryOrCollection() && attribute.GetAsArrayAttribute() != null) || (attribute.IsGenericListOrHashSet() && attribute.GetAsObjectAttribute() != null))
 				.ToList() ?? new List<AttributeInfo>();
 
@@ -1685,7 +1718,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
+		public static T FromJson<T>(this JToken json, bool copy = true, Action<T, JToken> onCompleted = null)
 		{
 			// initialize the object
 			T @object;
@@ -1705,10 +1738,21 @@ namespace net.vieapps.Components.Utility
 
 			// run the handler
 			onCompleted?.Invoke(@object, json);
-
+			
 			// return object
 			return @object;
 		}
+
+		/// <summary>
+		/// Creates (Deserializes) an object from this JSON object
+		/// </summary>
+		/// <typeparam name="T">Type of the object</typeparam>
+		/// <param name="json">The JSON object that contains information for deserializing</param>
+		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns></returns>
+		public static T As<T>(this JToken json, bool copy = true, Action<T, JToken> onCompleted = null)
+			=> json.FromJson(copy, onCompleted);
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this JSON object
@@ -1718,8 +1762,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
-			=> (json ?? "").ToJson().FromJson(copy, onCompleted);
+		public static T FromJson<T>(this string json, bool copy = true, Action<T, JToken> onCompleted = null)
+			=> (json ?? "").ToJson().As(copy, onCompleted);
 
 		/// <summary>
 		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
@@ -1737,7 +1781,7 @@ namespace net.vieapps.Components.Utility
 				{
 					var jvalue = json.Value<object>(key);
 					value = jvalue != null
-						? jvalue is T tvalue ? tvalue : jvalue.CastAs<T>()
+						? jvalue is T valueIsT ? valueIsT : jvalue.CastAs<T>()
 						: @default;
 				}
 				catch
@@ -1821,6 +1865,16 @@ namespace net.vieapps.Components.Utility
 			// return the object
 			return @object;
 		}
+
+		/// <summary>
+		/// Creates (Deserializes) an object from this XML object
+		/// </summary>
+		/// <typeparam name="T">Type of the object</typeparam>
+		/// <param name="xml">The XML object that contains information for deserializing</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns></returns>
+		public static T As<T>(this XContainer xml, Action<T, XContainer> onCompleted = null) where T : class
+			=> xml.FromXml(onCompleted);
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this XML string
@@ -1939,7 +1993,7 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region ExpandoObject conversions & manipulations
+		#region ExpandoObject conversions
 		/// <summary>
 		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON string
 		/// </summary>
@@ -1970,10 +2024,16 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this IDictionary<string, object> @object, Action<ExpandoObject> onCompleted = null)
+		public static ExpandoObject ToExpandoObject(this IDictionary @object, Action<ExpandoObject> onCompleted = null)
 		{
 			var expando = new ExpandoObject();
-			@object.ForEach(kvp => (expando as IDictionary<string, object>)[kvp.Key] = kvp.Value is IDictionary<string, object> dictionary ? dictionary.ToExpandoObject() : kvp.Value);
+			var enumerator = @object.GetEnumerator();
+			while (enumerator.MoveNext())
+			{
+				var key = enumerator.Key.ToString();
+				var value = enumerator.Value;
+				expando.Set(key, value == null || value is JToken || value is IDictionary dictionary && dictionary.GetGenericTypeArguments().First().Equals(typeof(string)) ? value?.ToExpandoObject() : value);
+			}
 			onCompleted?.Invoke(expando);
 			return expando;
 		}
@@ -1985,7 +2045,33 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object"></param>
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject<T>(this T @object, Action<ExpandoObject> onCompleted = null) where T : class
-			=> (@object is JToken ? @object as JToken : @object?.ToJson())?.ToExpandoObject(onCompleted);
+		{
+			if (@object is ExpandoObject expandoObject)
+			{
+				onCompleted?.Invoke(expandoObject);
+				return expandoObject;
+			}
+
+			if (@object is JToken json)
+				return json.ToExpandoObject(onCompleted);
+
+			if (@object is IDictionary dictionary && dictionary.GetGenericTypeArguments().First().Equals(typeof(string)))
+				return dictionary.ToExpandoObject(onCompleted);
+
+			var expando = new ExpandoObject();
+			@object.GetPublicAttributes(attribute => !attribute.IsStatic).ForEach(attribute =>
+			{
+				var value = @object.GetAttributeValue(attribute);
+				value = value == null || value is JToken || (value is IDictionary dict && dict.GetGenericTypeArguments().First().Equals(typeof(string)))
+					? value?.ToExpandoObject()
+					: attribute.IsStringEnum()
+						? value.ToString()
+						: value;
+				expando.Set(attribute.Name, value);
+			});
+			onCompleted?.Invoke(expando);
+			return expando;
+		}
 
 		/// <summary>
 		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
@@ -1996,11 +2082,23 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T FromExpandoObject<T>(this ExpandoObject @object, Action<T, ExpandoObject> onCompleted = null) where T : class
 		{
-			var instance = JObject.FromObject(@object).FromJson<T>();
+			var instance = JObject.FromObject(@object).As<T>();
 			onCompleted?.Invoke(instance, @object);
 			return instance;
 		}
 
+		/// <summary>
+		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns></returns>
+		public static T As<T>(this ExpandoObject @object, Action<T, ExpandoObject> onCompleted = null) where T : class
+			=> @object.FromExpandoObject(onCompleted);
+		#endregion
+
+		#region ExpandoObject manipulations
 		/// <summary>
 		/// Merges this <see cref="ExpandoObject">ExpandoObject</see> object with other
 		/// </summary>
