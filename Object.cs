@@ -1253,9 +1253,7 @@ namespace net.vieapps.Components.Utility
 		public static T GetAttributeValue<T>(this object @object, string name, T @default = default)
 		{
 			var value = @object?.GetAttributeValue(name);
-			return value != null && value is T valueIsT
-				? valueIsT
-				: @default;
+			return value != null && value is T valueIsT ? valueIsT : @default;
 		}
 
 		/// <summary>
@@ -1280,9 +1278,7 @@ namespace net.vieapps.Components.Utility
 		public static T GetAttributeValue<T>(this object @object, AttributeInfo attribute, T @default = default)
 		{
 			var value = @object?.GetAttributeValue(attribute);
-			return value != null && value is T valueIsT
-				? valueIsT
-				: @default;
+			return value != null && value is T valueIsT ? valueIsT : @default;
 		}
 
 		/// <summary>
@@ -1434,12 +1430,8 @@ namespace net.vieapps.Components.Utility
 			var serializer = new JsonSerializer();
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
 
-			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic))
+			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)))
 			{
-				// check
-				if (!attribute.CanWrite || excludedAttributes.Contains(attribute.Name))
-					continue;
-
 				// check token
 				JToken token = null;
 				try
@@ -1473,11 +1465,7 @@ namespace net.vieapps.Components.Utility
 								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
 								foreach (var item in token as JObject)
 									if (gotSpecialAttributes)
-									{
-										var child = dataType.CreateInstance();
-										child.CopyFrom(item.Value);
-										data.Add(JObject.FromObject(child));
-									}
+										data.Add(JObject.FromObject(dataType.CreateInstance().CopyFrom(item.Value)));
 									else
 										data.Add(item.Value);
 							}
@@ -1517,8 +1505,7 @@ namespace net.vieapps.Components.Utility
 								foreach (JObject item in token as JArray)
 									if (gotSpecialAttributes)
 									{
-										object child = dataType.CreateInstance();
-										child.CopyFrom(item);
+										var child = dataType.CreateInstance().CopyFrom(item);
 										var keyValue = child.GetAttributeValue(keyAttribute);
 										if (keyValue != null)
 											data.Add(keyValue.ToString(), JObject.FromObject(child));
@@ -1610,12 +1597,8 @@ namespace net.vieapps.Components.Utility
 				return @object;
 
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
-			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic))
+			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)))
 			{
-				// check
-				if (!attribute.CanWrite || excludedAttributes.Contains(attribute.Name))
-					continue;
-
 				if (!expandoObject.TryGet(attribute.Name, out object value))
 					continue;
 
@@ -1636,11 +1619,7 @@ namespace net.vieapps.Components.Utility
 
 					// class/array
 					else if (value is ExpandoObject expandoObj && attribute.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
-					{
-						var obj = attribute.Type.CreateInstance();
-						obj.CopyFrom(expandoObj);
-						value = obj;
-					}
+						value = attribute.Type.CreateInstance().CopyFrom(expandoObj);
 
 					// enum
 					else if (attribute.Type.IsEnum)
@@ -1771,10 +1750,10 @@ namespace net.vieapps.Components.Utility
 				return null;
 
 			// by-pass on JSON Token
-			if (@object is JToken)
+			if (@object is JToken jsonObj)
 			{
-				onCompleted?.Invoke(@object as JToken);
-				return @object as JToken;
+				onCompleted?.Invoke(jsonObj);
+				return jsonObj;
 			}
 
 			// generate
@@ -1783,10 +1762,7 @@ namespace net.vieapps.Components.Utility
 			// array or generict list/hash-set
 			if (@object.IsArray() || @object.IsGenericListOrHashSet())
 			{
-				var type = @object.IsArray()
-					? @object.GetType().GetElementType()
-					: @object.GetFirstGenericTypeArgument();
-
+				var type = @object.IsArray() ? @object.GetType().GetElementType() : @object.GetFirstGenericTypeArgument();
 				if (type.IsClassType())
 				{
 					json = new JArray();
@@ -1820,14 +1796,10 @@ namespace net.vieapps.Components.Utility
 					if (attribute.IsGenericListOrHashSet() && attribute.GetFirstGenericTypeArgument().IsClassType() && attribute.GetAsObjectAttribute() != null)
 					{
 						var jsonObject = new JObject();
-
 						if (@object.GetAttributeValue(attribute.Name) is IEnumerable items)
 						{
 							var asObject = attribute.GetAsObjectAttribute();
-							var keyAttribute = !string.IsNullOrWhiteSpace(asObject.KeyAttribute)
-								? asObject.KeyAttribute
-								: "ID";
-
+							var keyAttribute = !string.IsNullOrWhiteSpace(asObject.KeyAttribute) ? asObject.KeyAttribute : "ID";
 							foreach (var item in items)
 								if (item != null)
 								{
@@ -1836,7 +1808,6 @@ namespace net.vieapps.Components.Utility
 										jsonObject[key.ToString()] = item?.ToJson();
 								}
 						}
-
 						json[attribute.Name] = jsonObject;
 					}
 					else if (attribute.IsGenericDictionaryOrCollection() && attribute.GetLastGenericTypeArgument().IsClassType() && attribute.GetAsArrayAttribute() != null)
@@ -1845,7 +1816,6 @@ namespace net.vieapps.Components.Utility
 						if (@object.GetAttributeValue(attribute.Name) is IEnumerable items)
 							foreach (var item in items)
 								jsonArray.Add(item?.ToJson());
-
 						json[attribute.Name] = jsonArray;
 					}
 				});
@@ -2294,11 +2264,7 @@ namespace net.vieapps.Components.Utility
 							: tempExpando.ToCollection<T>();
 
 					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
-					{
-						var tempObject = type.CreateInstance();
-						tempObject.CopyFrom(tempExpando);
-						tempValue = tempObject;
-					}
+						tempValue = type.CreateInstance().CopyFrom(tempExpando);
 				}
 
 				// other (primitive or other)
@@ -2321,9 +2287,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static object Get(this ExpandoObject @object, string name)
-			=> @object != null && @object.TryGet(name, out object value)
-				? value
-				: null;
+			=> @object != null && @object.TryGet(name, out object value) ? value : null;
 
 		/// <summary>
 		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
@@ -2333,9 +2297,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="default">Default value when the attribute is not found</param>
 		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
 		public static T Get<T>(this ExpandoObject @object, string name, T @default = default)
-			=> @object != null && @object.TryGet(name, out T value)
-				? value
-				: @default;
+			=> @object != null && @object.TryGet(name, out T value) ? value : @default;
 
 		/// <summary>
 		/// Checks to see the <see cref="ExpandoObject">ExpandoObject</see> object is got an attribute by specified name (accept the dot (.) to get check of child object)
