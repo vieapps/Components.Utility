@@ -671,6 +671,26 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Gets the collection of cookies
+		/// </summary>
+		/// <param name="httpResponse"></param>
+		/// <returns>The collection of a tuple that presents cookies (first item is cookie's name, second item is cookie's value)</returns>
+		public static List<Tuple<string, string>> GetCookies(this HttpWebResponse httpResponse)
+		{
+			var cookies = new List<Tuple<string, string>>();
+			if (httpResponse.Cookies == null || httpResponse.Cookies.Count < 1)
+				httpResponse.Headers["Set-Cookie"].ToList(", ").Where(data => data.Contains("=")).Select(data => data.ToList("=")).Where(data => data.Count > 1 && !data.First().Contains(" ")).Select(data => new Tuple<string, string>(data[0], data[1].ToList(";")[0])).ForEach(data =>
+				{
+					if (cookies.FirstOrDefault(info => info.Item1 == data.Item1) == null)
+						cookies.Add(data);
+				});
+			else
+				foreach (Cookie cookie in httpResponse.Cookies)
+					cookies.Add(new Tuple<string, string>(cookie.Name, cookie.Value));
+			return cookies;
+		}
+
+		/// <summary>
 		/// Sends the HTTP request to a remote end-point
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
@@ -2759,7 +2779,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Get version information
 		/// <summary>
-		/// Gets the string that presents the version number of this assembly
+		/// Gets the string that presents the version number
 		/// </summary>
 		/// <param name="assembly"></param>
 		/// <param name="getInfoVersion"></param>
@@ -2767,17 +2787,9 @@ namespace net.vieapps.Components.Utility
 		public static string GetVersion(this Assembly assembly, bool getInfoVersion = true)
 		{
 			var asmVersion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
-			var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-			var version = $"{asmVersion?.Version ?? fileVersion?.Version}";
-			if (string.IsNullOrWhiteSpace(version))
-				version = "1.0";
-			else if (getInfoVersion)
-			{
-				var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-				if (!string.IsNullOrWhiteSpace(infoVersion?.InformationalVersion))
-					version += $" ({infoVersion?.InformationalVersion})";
-			}
-			return version;
+			var asmFileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+			var asmInfoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+			return (getInfoVersion ? asmInfoVersion?.InformationalVersion : asmVersion?.Version ?? asmFileVersion?.Version) ?? assembly.GetName().Version?.ToString() ?? "1.0";
 		}
 		#endregion
 
