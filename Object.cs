@@ -1193,17 +1193,17 @@ namespace net.vieapps.Components.Utility
 		public static bool SetAttributeValue(this object @object, string name, object value)
 		{
 			if (@object == null || string.IsNullOrWhiteSpace(name))
-				throw new ArgumentNullException(nameof(name));
+				throw new ArgumentException(nameof(name));
 
 			var attribute = @object.GetAttributes(attr => !attr.IsStatic && attr.CanWrite).FirstOrDefault(attr => attr.Name.IsEquals(name));
 			if (attribute != null)
 			{
-				if (attribute.IsField)
-					attribute.FieldInfo.SetValue(@object, value);
-				else
+				if (attribute.IsProperty)
 					attribute.PropertyInfo.SetValue(@object, value);
-				if (@object is IPropertyChangedNotifier)
-					(@object as IPropertyChangedNotifier).NotifyPropertyChanged(name, @object);
+				else
+					attribute.FieldInfo.SetValue(@object, value);
+				if (@object is IPropertyChangedNotifier notifier)
+					notifier.NotifyPropertyChanged(name, @object);
 			}
 			return attribute != null;
 		}
@@ -1218,7 +1218,7 @@ namespace net.vieapps.Components.Utility
 		public static bool SetAttributeValue(this object @object, AttributeInfo attribute, object value, bool cast = false)
 			=> @object != null && attribute != null
 				? @object.SetAttributeValue(attribute.Name, cast && value != null ? value.CastAs(attribute.Type) : value)
-				: throw new ArgumentNullException(nameof(attribute));
+				: throw new ArgumentException(nameof(attribute));
 
 		/// <summary>
 		/// Gets value of an attribute of an object.
@@ -1284,15 +1284,20 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Trims all string attributes
 		/// </summary>
+		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
-		public static void TrimAll(this object @object)
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static T TrimAll<T>(this T @object, Action<T> onCompleted = null) where T : class
 		{
 			if (@object != null && @object.GetType().IsClassType())
-				@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.IsStringType() && attribute.CanWrite).ForEach(attribute =>
+				@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && attribute.IsStringType()).ForEach(attribute =>
 				{
-					if (@object.GetAttributeValue(attribute) is string value && value != null)
+					if (@object.GetAttributeValue(attribute) is string value)
 						@object.SetAttributeValue(attribute, value.Trim());
 				});
+			onCompleted?.Invoke(@object);
+			return @object;
 		}
 
 		/// <summary>
@@ -1457,13 +1462,13 @@ namespace net.vieapps.Components.Utility
 						JArray data = null;
 						var dataType = attribute.GetFirstGenericTypeArgument();
 
-						if (dataType.IsClassType() && attribute.GetAsObjectAttribute() != null && token is JObject)
+						if (dataType.IsClassType() && attribute.GetAsObjectAttribute() != null && token is JObject jobject)
 						{
 							data = new JArray();
-							if ((token as JObject).Count > 0)
+							if (jobject.Count > 0)
 							{
 								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
-								foreach (var item in token as JObject)
+								foreach (var item in jobject)
 									if (gotSpecialAttributes)
 										data.Add(JObject.FromObject(dataType.CreateInstance().CopyFrom(item.Value)));
 									else
@@ -1492,17 +1497,17 @@ namespace net.vieapps.Components.Utility
 						JObject data = null;
 						var dataType = attribute.GetLastGenericTypeArgument();
 
-						if (dataType.IsClassType() && attribute.GetAsArrayAttribute() != null && token is JArray)
+						if (dataType.IsClassType() && attribute.GetAsArrayAttribute() != null && token is JArray jarray)
 						{
 							data = new JObject();
-							if ((token as JArray).Count > 0)
+							if (jarray.Count > 0)
 							{
 								var asArray = attribute.GetAsArrayAttribute();
 								var keyAttribute = !string.IsNullOrWhiteSpace(asArray.KeyAttribute)
 									? asArray.KeyAttribute
 									: "ID";
 								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
-								foreach (JObject item in token as JArray)
+								foreach (JObject item in jarray)
 									if (gotSpecialAttributes)
 									{
 										var child = dataType.CreateInstance().CopyFrom(item);
@@ -1513,8 +1518,8 @@ namespace net.vieapps.Components.Utility
 									else
 									{
 										var keyValue = item[keyAttribute];
-										if (keyValue != null && keyValue is JValue && (keyValue as JValue).Value != null)
-											data.Add((keyValue as JValue).Value.ToString(), item);
+										if (keyValue != null && keyValue is JValue jvalue && jvalue.Value != null)
+											data.Add(jvalue.Value.ToString(), item);
 									}
 							}
 						}
@@ -1536,7 +1541,7 @@ namespace net.vieapps.Components.Utility
 				else if (attribute.IsCollection())
 					try
 					{
-						@object.SetAttributeValue(attribute, token is JObject && (token as JObject).Count > 0 ? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection)) : typeof(System.Collections.Specialized.Collection).CreateInstance());
+						@object.SetAttributeValue(attribute, token is JObject jobject && jobject.Count > 0 ? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection)) : typeof(System.Collections.Specialized.Collection).CreateInstance());
 					}
 					catch (Exception ex)
 					{
@@ -1544,10 +1549,10 @@ namespace net.vieapps.Components.Utility
 					}
 
 				// enum
-				else if (attribute.Type.IsEnum && token is JValue && (token as JValue).Value != null)
+				else if (attribute.Type.IsEnum && token is JValue jvalue && jvalue.Value != null)
 					try
 					{
-						@object.SetAttributeValue(attribute, (token as JValue).Value.ToString().ToEnum(attribute.Type));
+						@object.SetAttributeValue(attribute, jvalue.Value.ToString().ToEnum(attribute.Type));
 					}
 					catch { }
 
@@ -1556,7 +1561,7 @@ namespace net.vieapps.Components.Utility
 					try
 					{
 						var instance = attribute.Type.CreateInstance();
-						if (token is JObject && (token as JObject).Count > 0)
+						if (token is JObject jobject && jobject.Count > 0)
 							instance.CopyFrom(token);
 						@object.SetAttributeValue(attribute, instance);
 					}
@@ -1593,23 +1598,20 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The action to run when got any error</param>
 		public static T CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
-			if (@object == null)
-				return @object;
-
-			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
-			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)))
+			@object?.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && (excluded == null || !excluded.Contains(attribute.Name))).ForEach(attribute =>
 			{
-				if (!expandoObject.TryGet(attribute.Name, out object value))
-					continue;
+				// by-pass
+				if (!expandoObject.TryGet(attribute.Name, out var value))
+					return;
 
 				// normalize the value
 				if (value != null)
 				{
 					// generic list/hash-set
-					if (value is List<object> list && attribute.IsGenericListOrHashSet())
+					if (value is List<object> values && attribute.IsGenericListOrHashSet())
 						value = attribute.IsGenericList()
-							? list.ToList(attribute.GetFirstGenericTypeArgument())
-							: list.ToHashSet(attribute.GetFirstGenericTypeArgument());
+							? values.ToList(attribute.GetFirstGenericTypeArgument())
+							: values.ToHashSet(attribute.GetFirstGenericTypeArgument());
 
 					// generic dictionary/collection
 					else if (value is ExpandoObject expando && attribute.IsGenericDictionaryOrCollection())
@@ -1633,7 +1635,7 @@ namespace net.vieapps.Components.Utility
 						}
 						catch (Exception ex)
 						{
-							var exception = new InvalidCastException($"Cannot cast type of \"{attribute.Name}\" ({value.GetType().GetTypeName(true)} => {attribute.Type.GetTypeName(true)}): {ex.Message}", ex);
+							var exception = new InvalidCastException($"Cannot cast type of \"{attribute.Name}\" ({value.GetTypeName(true)} => {attribute.GetTypeName(true)}): {ex.Message}", ex);
 							if (onError != null)
 								onError(exception);
 							else
@@ -1650,8 +1652,7 @@ namespace net.vieapps.Components.Utility
 				{
 					onError?.Invoke(ex);
 				}
-			}
-
+			});
 			onCompleted?.Invoke(@object);
 			return @object;
 		}
@@ -1838,12 +1839,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this JToken json, bool copy = true, Action<T, JToken> onCompleted = null)
+		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
 		{
 			var type = typeof(T);
 			var @object = type.IsPrimitiveType() && json is JValue jsonvalue
-				? jsonvalue.Value.CastAs<T>()
-				: copy || type.GotSpecialSerializeAttributes()
+				? jsonvalue.Value != null ? jsonvalue.Value.CastAs<T>() : default
+				: (copy || type.GotSpecialSerializeAttributes()) && type.IsClassType() && !type.IsGenericListOrHashSet() && !type.IsGenericDictionaryOrCollection()
 					? type.CreateInstance<T>().CopyFrom(json)
 					: new JsonSerializer().Deserialize<T>(new JTokenReader(json));
 			onCompleted?.Invoke(@object, json);
@@ -1858,7 +1859,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = true, Action<T, JToken> onCompleted = null)
+		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
 			=> string.IsNullOrWhiteSpace(json) ? default : json.ToJson().As(copy, onCompleted);
 
 		/// <summary>
@@ -1869,7 +1870,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
-		public static T As<T>(this JToken json, bool copy = true, Action<T, JToken> onCompleted = null)
+		public static T As<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
 			=> json != null ? json.FromJson(copy, onCompleted) : default;
 
 		/// <summary>

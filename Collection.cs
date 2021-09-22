@@ -1504,11 +1504,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static IEnumerable ToList(this List<object> @object, Type type)
 		{
-			var list = typeof(List<>).MakeGenericType(type).CreateInstance() as IList;
+			var list = typeof(List<>).MakeGenericType(type).CreateInstance<IList>();
 			@object.ForEach(element =>
 			{
 				// assign value
-				object value = element;
+				var value = element;
 				if (value != null)
 				{
 					// value is list/hash-set
