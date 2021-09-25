@@ -27,7 +27,7 @@ namespace net.vieapps.Components.Utility
 	public static partial class ObjectService
 	{
 
-		#region Object meta info
+		#region Meta of objects
 		/// <summary>
 		/// Presents meta information of object's field/property/method
 		/// </summary>
@@ -781,7 +781,7 @@ namespace net.vieapps.Components.Utility
 			=> @object != null && @object.GetType().IsNullable();
 		#endregion
 
-		#region Collection meta info
+		#region Meta of collections
 		/// <summary>
 		/// Gets the state to determines this type is sub-class of a generic type
 		/// </summary>
@@ -1091,7 +1091,7 @@ namespace net.vieapps.Components.Utility
 			=> @object != null && @object.GetType().IsArray;
 		#endregion
 
-		#region Create new instance & Cast
+		#region Create new instance
 		static ConcurrentDictionary<Type, Func<object>> TypeFactories { get; } = new ConcurrentDictionary<Type, Func<object>>();
 
 		/// <summary>
@@ -1116,15 +1116,6 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="type"></param>
-		/// <returns>The newly created instance</returns>
-		public static T CreateInstance<T>(this Type type)
-			=> (T)type.CreateInstance();
-
-		/// <summary>
-		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
-		/// </summary>
 		/// <typeparam name="T">The type to be created</typeparam>
 		/// <returns>The newly created instance</returns>
 		public static T CreateInstance<T>()
@@ -1134,11 +1125,13 @@ namespace net.vieapps.Components.Utility
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <typeparam name="TCastAs"></typeparam>
+		/// <param name="type"></param>
 		/// <returns>The newly created instance</returns>
-		public static TCastAs CreateInstance<T, TCastAs>()
-			=> typeof(T).CreateInstance<TCastAs>();
+		public static T CreateInstance<T>(this Type type)
+			=> (T)type.CreateInstance();
+		#endregion
 
+		#region Object casts/conversions
 		/// <summary>
 		/// Casts the object to other type
 		/// </summary>
@@ -1290,7 +1283,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T TrimAll<T>(this T @object, Action<T> onCompleted = null) where T : class
 		{
-			if (@object != null && @object.GetType().IsClassType())
+			if (@object != null && @object.IsClassType())
 				@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && attribute.IsStringType()).ForEach(attribute =>
 				{
 					if (@object.GetAttributeValue(attribute) is string value)
@@ -1329,9 +1322,234 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static object CallMethod(this object @object, string name, object[] parameters = null)
 			=> @object?.CallMethod(@object?.GetMethods().FirstOrDefault(info => info.Name == name && info.IsMethod)?.MethodInfo, parameters);
+
+		/// <summary>
+		/// Merges this <see cref="ExpandoObject">ExpandoObject</see> object with other
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="other"></param>
+		/// <param name="onCompleted">The action to run when the merging process is completed</param>
+		/// <returns></returns>
+		public static ExpandoObject Merge(this ExpandoObject @object, ExpandoObject other, Action<ExpandoObject> onCompleted = null)
+		{
+			other?.ForEach(kvp =>
+			{
+				if (@object.TryGet(kvp.Key, out var current))
+				{
+					if (current == null)
+						@object.Set(kvp.Key, kvp.Value);
+					else if (current is ExpandoObject currentAsExpandoObject)
+					{
+						if (kvp.Value is ExpandoObject valueAsExpandoObject)
+							currentAsExpandoObject.Merge(valueAsExpandoObject);
+						else
+							currentAsExpandoObject.Set(kvp.Key, kvp.Value);
+					}
+				}
+				else
+					@object.Set(kvp.Key, kvp.Value);
+			});
+			onCompleted?.Invoke(@object);
+			return @object;
+		}
+
+		/// <summary>
+		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="value">The value (if got); otherwise null.</param>
+		/// <returns>true if the object has an attribute; otherwise false.</returns>
+		public static bool TryGet(this ExpandoObject @object, string name, out object value)
+		{
+			// assign & check
+			value = null;
+			if (@object == null || string.IsNullOrWhiteSpace(name))
+				return false;
+
+			// prepare
+			var dictionary = @object as IDictionary<string, object>;
+			var names = name.IndexOf(".") > 0
+				? name.ToArray('.', true, true)
+				: new[] { name };
+
+			// no multiple
+			if (names.Length < 2)
+				return dictionary.TryGetValue(name, out value);
+
+			// got multiple
+			var index = 0;
+			while (index < names.Length - 1 && dictionary != null)
+			{
+				dictionary = dictionary.ContainsKey(names[index])
+					? dictionary[names[index]] as IDictionary<string, object>
+					: null;
+				index++;
+			}
+
+			return dictionary != null && dictionary.TryGetValue(names[names.Length - 1], out value);
+		}
+
+		/// <summary>
+		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="value">The value (if got); otherwise default of T.</param>
+		/// <returns>true if the object has an attribute; otherwise false.</returns>
+		public static bool TryGet<T>(this ExpandoObject @object, string name, out T value)
+		{
+			// assign default
+			value = default;
+			if (@object == null)
+				return false;
+
+			// get value & normalize
+			if (@object.TryGet(name, out var tempValue))
+			{
+				// get type
+				var type = typeof(T);
+
+				// generic list/hash-set
+				if (tempValue is List<object> tempList && type.IsGenericListOrHashSet())
+					tempValue = type.IsGenericList()
+						? tempList.ToList<T>()
+						: tempList.ToHashSet<T>();
+
+				// generic dictionary/collection or object
+				else if (tempValue is ExpandoObject tempExpando)
+				{
+					if (type.IsGenericDictionaryOrCollection())
+						tempValue = type.IsGenericDictionary()
+							? tempExpando.ToDictionary<T>()
+							: tempExpando.ToCollection<T>();
+
+					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
+						tempValue = type.CreateInstance().CopyFrom(tempExpando);
+				}
+
+				// other (primitive or other)
+				else
+					tempValue = tempValue.CastAs(type);
+
+				// cast the value & return state
+				value = (T)tempValue;
+				return true;
+			}
+
+			// return the default state
+			return false;
+		}
+
+		/// <summary>
+		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
+		public static object Get(this ExpandoObject @object, string name)
+			=> @object != null && @object.TryGet(name, out object value) ? value : null;
+
+		/// <summary>
+		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="default">Default value when the attribute is not found</param>
+		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
+		public static T Get<T>(this ExpandoObject @object, string name, T @default = default)
+			=> @object != null && @object.TryGet(name, out T value) ? value : @default;
+
+		/// <summary>
+		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <param name="value">The value to set</param>
+		/// <returns>true if the attribute has been setted; otherwise false.</returns>
+		public static bool Set(this ExpandoObject @object, string name, object value)
+		{
+			// check
+			if (string.IsNullOrWhiteSpace(name))
+				return false;
+
+			// prepare
+			var dictionary = @object as IDictionary<string, object>;
+			var names = name.IndexOf(".") > 0
+				? name.ToArray('.', true, true)
+				: new[] { name };
+
+			// no multiple
+			if (names.Length < 2)
+			{
+				dictionary[name] = value;
+				return true;
+			}
+
+			// got multiple
+			var index = 0;
+			while (index < names.Length - 1 && dictionary != null)
+			{
+				dictionary = dictionary.ContainsKey(names[index])
+					? dictionary[names[index]] as IDictionary<string, object>
+					: null;
+				index++;
+			}
+
+			if (dictionary == null)
+				return false;
+
+			dictionary[names[names.Length - 1]] = value;
+			return true;
+		}
+
+		/// <summary>
+		/// Removes an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
+		/// <returns>true if the attribute has been removed from the object; otherwise false.</returns>
+		public static bool Remove(this ExpandoObject @object, string name)
+		{
+			// check
+			if (string.IsNullOrWhiteSpace(name))
+				return false;
+
+			// prepare
+			var dictionary = @object as IDictionary<string, object>;
+			var names = name.IndexOf(".") > 0
+				? name.ToArray('.', true, true)
+				: new[] { name };
+
+			// no multiple
+			if (names.Length < 2)
+				return dictionary.ContainsKey(name) && dictionary.Remove(name);
+
+			// got multiple
+			var index = 0;
+			while (index < names.Length - 1 && dictionary != null)
+			{
+				dictionary = dictionary.ContainsKey(names[index])
+					? dictionary[names[index]] as IDictionary<string, object>
+					: null;
+				index++;
+			}
+
+			return dictionary != null && dictionary.Remove(names[names.Length - 1], out var value);
+		}
+
+		/// <summary>
+		/// Checks to see the <see cref="ExpandoObject">ExpandoObject</see> object is got an attribute by specified name (accept the dot (.) to get check of child object)
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="name">The string that presents the name of the attribute for checking, accept the dot (.) to get check of child object</param>
+		/// <returns>true if the object got an attribute with the name</returns>
+		public static bool Has(this ExpandoObject @object, string name)
+			=> @object != null && (name.IndexOf(".") < 0 ? (@object as IDictionary<string, object>).ContainsKey(name) : @object.TryGet(name, out var value));
 		#endregion
 
-		#region Copy objects' properties to/from other object
+		#region Copy objects' properties from other object
 		/// <summary>
 		/// Copies data of the object to other object
 		/// </summary>
@@ -1416,6 +1634,29 @@ namespace net.vieapps.Components.Utility
 			onCompleted?.Invoke(@object);
 			return @object;
 		}
+
+		/// <summary>
+		/// Creates new an instance of the object and copies data (from this current object)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns></returns>
+		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> typeof(T).CreateInstance<T>().CopyFrom(@object, excluded, onCompleted, onError);
+
+		/// <summary>
+		/// Clones the object (perform a deep copy of the object)
+		/// </summary>
+		/// <typeparam name="T">The type of object being copied</typeparam>
+		/// <param name="object">The object instance to copy</param>
+		/// <param name="onCompleted">The action to run before completing the clone process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns>The copied object.</returns>
+		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> @object == null ? default : @object.Copy(null, onCompleted, onError);
 		#endregion
 
 		#region Copy objects' properties from JSON
@@ -1585,6 +1826,18 @@ namespace net.vieapps.Components.Utility
 			onCompleted?.Invoke(@object);
 			return @object;
 		}
+
+		/// <summary>
+		/// Creates new an instance of the object and copies data (from a JSON object)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="json">The JSON object to copy data</param>
+		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns></returns>
+		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> typeof(T).CreateInstance<T>().CopyFrom(json, excluded, onCompleted, onError);
 		#endregion
 
 		#region Copy objects' properties from ExpandoObject
@@ -1656,32 +1909,6 @@ namespace net.vieapps.Components.Utility
 			onCompleted?.Invoke(@object);
 			return @object;
 		}
-		#endregion
-
-		#region Copy & Clone objects
-		/// <summary>
-		/// Creates new an instance of the object and copies data (from this current object)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onCompleted">The action to run before completing the copy process</param>
-		/// <param name="onError">The action to run when got any error</param>
-		/// <returns></returns>
-		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> typeof(T).CreateInstance<T>().CopyFrom(@object, excluded, onCompleted, onError);
-
-		/// <summary>
-		/// Creates new an instance of the object and copies data (from a JSON object)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="json">The JSON object to copy data</param>
-		/// <param name="excluded">The hash-set of excluded attributes</param>
-		/// <param name="onCompleted">The action to run before completing the copy process</param>
-		/// <param name="onError">The action to run when got any error</param>
-		/// <returns></returns>
-		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> typeof(T).CreateInstance<T>().CopyFrom(json, excluded, onCompleted, onError);
 
 		/// <summary>
 		/// Creates new an instance of the object and copies data (from an ExpandoObject object)
@@ -1694,17 +1921,6 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
 			=> typeof(T).CreateInstance<T>().CopyFrom(expandoObject, excluded, onCompleted, onError);
-
-		/// <summary>
-		/// Clones the object (perform a deep copy of the object)
-		/// </summary>
-		/// <typeparam name="T">The type of object being copied</typeparam>
-		/// <param name="object">The object instance to copy</param>
-		/// <param name="onCompleted">The action to run before completing the clone process</param>
-		/// <param name="onError">The action to run when got any error</param>
-		/// <returns>The copied object.</returns>
-		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> @object != null ? typeof(T).CreateInstance<T>().Copy(null, onCompleted, onError) : default;
 		#endregion
 
 		#region JSON conversions
@@ -1842,8 +2058,8 @@ namespace net.vieapps.Components.Utility
 		public static T FromJson<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
 		{
 			var type = typeof(T);
-			var @object = type.IsPrimitiveType() && json is JValue jsonvalue
-				? jsonvalue.Value != null ? jsonvalue.Value.CastAs<T>() : default
+			var @object = type.IsPrimitiveType() && json is JValue value
+				? value.Value != null ? value.Value.CastAs<T>() : default
 				: (copy || type.GotSpecialSerializeAttributes()) && type.IsClassType() && !type.IsGenericListOrHashSet() && !type.IsGenericDictionaryOrCollection()
 					? type.CreateInstance<T>().CopyFrom(json)
 					: new JsonSerializer().Deserialize<T>(new JTokenReader(json));
@@ -1855,23 +2071,23 @@ namespace net.vieapps.Components.Utility
 		/// Creates (Deserializes) an object from this JSON object
 		/// </summary>
 		/// <typeparam name="T">Type of the object</typeparam>
-		/// <param name="json">The JSON string that contains information for deserializing</param>
-		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
-		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
-		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
-			=> string.IsNullOrWhiteSpace(json) ? default : json.ToJson().As(copy, onCompleted);
-
-		/// <summary>
-		/// Creates (Deserializes) an object from this JSON object
-		/// </summary>
-		/// <typeparam name="T">Type of the object</typeparam>
 		/// <param name="json">The JSON object that contains information for deserializing</param>
 		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
 		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
 		/// <returns></returns>
 		public static T As<T>(this JToken json, bool copy = false, Action<T, JToken> onCompleted = null)
 			=> json != null ? json.FromJson(copy, onCompleted) : default;
+
+		/// <summary>
+		/// Creates (Deserializes) an object from this JSON object
+		/// </summary>
+		/// <typeparam name="T">Type of the object</typeparam>
+		/// <param name="json">The JSON string that contains information for deserializing</param>
+		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns></returns>
+		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
+			=> string.IsNullOrWhiteSpace(json) ? default : json.ToJson().As(copy, onCompleted);
 
 		/// <summary>
 		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
@@ -1898,6 +2114,66 @@ namespace net.vieapps.Components.Utility
 				}
 			return value;
 		}
+		#endregion
+
+		#region ExpandoObject conversions
+		/// <summary>
+		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON string
+		/// </summary>
+		/// <param name="json">The string that presents serialized data to create object</param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
+		public static ExpandoObject ToExpandoObject(this string json, Action<ExpandoObject> onCompleted = null)
+		{
+			var expando = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
+			onCompleted?.Invoke(expando);
+			return expando;
+		}
+
+		/// <summary>
+		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON
+		/// </summary>
+		/// <param name="json">The string that presents serialized data to create object</param>
+		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
+		public static ExpandoObject ToExpandoObject(this JToken json, Action<ExpandoObject> onCompleted = null)
+		{
+			var expando = new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
+			onCompleted?.Invoke(expando);
+			return expando;
+		}
+
+		/// <summary>
+		/// Creates an <see cref="ExpandoObject">ExpandoObject</see> object from this object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
+		public static ExpandoObject ToExpandoObject<T>(this T @object, Action<ExpandoObject> onCompleted = null)
+			=> (@object is JToken json ? json : @object?.ToJson())?.ToExpandoObject(onCompleted);
+
+		/// <summary>
+		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="expando"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns></returns>
+		public static T FromExpandoObject<T>(this ExpandoObject expando, Action<T, ExpandoObject> onCompleted = null)
+		{
+			var @object = JObject.FromObject(expando).As<T>();
+			onCompleted?.Invoke(@object, expando);
+			return @object;
+		}
+
+		/// <summary>
+		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="expando"></param>
+		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
+		/// <returns></returns>
+		public static T As<T>(this ExpandoObject expando, Action<T, ExpandoObject> onCompleted = null)
+			=> expando != null ? expando.FromExpandoObject(onCompleted) : default;
 		#endregion
 
 		#region XML conversions
@@ -2098,293 +2374,6 @@ namespace net.vieapps.Components.Utility
 				onCompleted?.Invoke(doc);
 				return doc;
 			}
-		}
-		#endregion
-
-		#region ExpandoObject conversions
-		/// <summary>
-		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON string
-		/// </summary>
-		/// <param name="json">The string that presents serialized data to create object</param>
-		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
-		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this string json, Action<ExpandoObject> onCompleted = null)
-		{
-			var expando = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
-			onCompleted?.Invoke(expando);
-			return expando;
-		}
-
-		/// <summary>
-		/// Creates (Deserializes) an <see cref="ExpandoObject">ExpandoObject</see> object from this JSON
-		/// </summary>
-		/// <param name="json">The string that presents serialized data to create object</param>
-		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject(this JToken json, Action<ExpandoObject> onCompleted = null)
-		{
-			var expando = new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
-			onCompleted?.Invoke(expando);
-			return expando;
-		}
-
-		/// <summary>
-		/// Creates an <see cref="ExpandoObject">ExpandoObject</see> object from this object
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
-		public static ExpandoObject ToExpandoObject<T>(this T @object, Action<ExpandoObject> onCompleted = null)
-			=> (@object is JToken json ? json : @object?.ToJson())?.ToExpandoObject(onCompleted);
-
-		/// <summary>
-		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="expando"></param>
-		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
-		/// <returns></returns>
-		public static T FromExpandoObject<T>(this ExpandoObject expando, Action<T, ExpandoObject> onCompleted = null)
-		{
-			var @object = JObject.FromObject(expando).As<T>();
-			onCompleted?.Invoke(@object, expando);
-			return @object;
-		}
-
-		/// <summary>
-		/// Creates (Deserializes) an object from this <see cref="ExpandoObject">ExpandoObject</see> object
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="expando"></param>
-		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
-		/// <returns></returns>
-		public static T As<T>(this ExpandoObject expando, Action<T, ExpandoObject> onCompleted = null)
-			=> expando != null ? expando.FromExpandoObject(onCompleted) : default;
-		#endregion
-
-		#region ExpandoObject manipulations
-		/// <summary>
-		/// Merges this <see cref="ExpandoObject">ExpandoObject</see> object with other
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="other"></param>
-		/// <param name="onCompleted">The action to run when the merging process is completed</param>
-		/// <returns></returns>
-		public static ExpandoObject Merge(this ExpandoObject @object, ExpandoObject other, Action<ExpandoObject> onCompleted = null)
-		{
-			other?.ForEach(kvp =>
-			{
-				if (@object.TryGet(kvp.Key, out var current))
-				{
-					if (current == null)
-						@object.Set(kvp.Key, kvp.Value);
-					else if (current is ExpandoObject currentAsExpandoObject)
-					{
-						if (kvp.Value is ExpandoObject valueAsExpandoObject)
-							currentAsExpandoObject.Merge(valueAsExpandoObject);
-						else
-							currentAsExpandoObject.Set(kvp.Key, kvp.Value);
-					}
-				}
-				else
-					@object.Set(kvp.Key, kvp.Value);
-			});
-			onCompleted?.Invoke(@object);
-			return @object;
-		}
-
-		/// <summary>
-		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="value">The value (if got); otherwise null.</param>
-		/// <returns>true if the object has an attribute; otherwise false.</returns>
-		public static bool TryGet(this ExpandoObject @object, string name, out object value)
-		{
-			// assign & check
-			value = null;
-			if (@object == null || string.IsNullOrWhiteSpace(name))
-				return false;
-
-			// prepare
-			var dictionary = @object as IDictionary<string, object>;
-			var names = name.IndexOf(".") > 0
-				? name.ToArray('.', true, true)
-				: new[] { name };
-
-			// no multiple
-			if (names.Length < 2)
-				return dictionary.TryGetValue(name, out value);
-
-			// got multiple
-			var index = 0;
-			while (index < names.Length - 1 && dictionary != null)
-			{
-				dictionary = dictionary.ContainsKey(names[index])
-					? dictionary[names[index]] as IDictionary<string, object>
-					: null;
-				index++;
-			}
-
-			return dictionary != null && dictionary.TryGetValue(names[names.Length - 1], out value);
-		}
-
-		/// <summary>
-		/// Tries to get value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="value">The value (if got); otherwise default of T.</param>
-		/// <returns>true if the object has an attribute; otherwise false.</returns>
-		public static bool TryGet<T>(this ExpandoObject @object, string name, out T value)
-		{
-			// assign default
-			value = default;
-			if (@object == null)
-				return false;
-
-			// get value & normalize
-			if (@object.TryGet(name, out var tempValue))
-			{
-				// get type
-				var type = typeof(T);
-
-				// generic list/hash-set
-				if (tempValue is List<object> tempList && type.IsGenericListOrHashSet())
-					tempValue = type.IsGenericList()
-						? tempList.ToList<T>()
-						: tempList.ToHashSet<T>();
-
-				// generic dictionary/collection or object
-				else if (tempValue is ExpandoObject tempExpando)
-				{
-					if (type.IsGenericDictionaryOrCollection())
-						tempValue = type.IsGenericDictionary()
-							? tempExpando.ToDictionary<T>()
-							: tempExpando.ToCollection<T>();
-
-					else if (type.IsClassType() && !type.Equals(typeof(ExpandoObject)))
-						tempValue = type.CreateInstance().CopyFrom(tempExpando);
-				}
-
-				// other (primitive or other)
-				else
-					tempValue = tempValue.CastAs(type);
-
-				// cast the value & return state
-				value = (T)tempValue;
-				return true;
-			}
-
-			// return the default state
-			return false;
-		}
-
-		/// <summary>
-		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static object Get(this ExpandoObject @object, string name)
-			=> @object != null && @object.TryGet(name, out object value) ? value : null;
-
-		/// <summary>
-		/// Gets the value of an attribute of this <see cref="ExpandoObject">ExpandoObject</see> object (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="default">Default value when the attribute is not found</param>
-		/// <returns>The value of an attribute (if the object got it); otherwise null.</returns>
-		public static T Get<T>(this ExpandoObject @object, string name, T @default = default)
-			=> @object != null && @object.TryGet(name, out T value) ? value : @default;
-
-		/// <summary>
-		/// Checks to see the <see cref="ExpandoObject">ExpandoObject</see> object is got an attribute by specified name (accept the dot (.) to get check of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute for checking, accept the dot (.) to get check of child object</param>
-		/// <returns>true if the object got an attribute with the name</returns>
-		public static bool Has(this ExpandoObject @object, string name)
-			=> @object != null && (name.IndexOf(".") < 0 ? (@object as IDictionary<string, object>).ContainsKey(name) : @object.TryGet(name, out var value));
-
-		/// <summary>
-		/// Sets the value of an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <param name="value">The value to set</param>
-		/// <returns>true if the attribute has been setted; otherwise false.</returns>
-		public static bool Set(this ExpandoObject @object, string name, object value)
-		{
-			// check
-			if (string.IsNullOrWhiteSpace(name))
-				return false;
-
-			// prepare
-			var dictionary = @object as IDictionary<string, object>;
-			var names = name.IndexOf(".") > 0
-				? name.ToArray('.', true, true)
-				: new[] { name };
-
-			// no multiple
-			if (names.Length < 2)
-			{
-				dictionary[name] = value;
-				return true;
-			}
-
-			// got multiple
-			var index = 0;
-			while (index < names.Length - 1 && dictionary != null)
-			{
-				dictionary = dictionary.ContainsKey(names[index])
-					? dictionary[names[index]] as IDictionary<string, object>
-					: null;
-				index++;
-			}
-
-			if (dictionary == null)
-				return false;
-
-			dictionary[names[names.Length - 1]] = value;
-			return true;
-		}
-
-		/// <summary>
-		/// Removes an attribute of the <see cref="ExpandoObject">ExpandoObject</see> object by specified name (accept the dot (.) to get attribute of child object)
-		/// </summary>
-		/// <param name="object"></param>
-		/// <param name="name">The string that presents the name of the attribute, accept the dot (.) to get attribute of child object</param>
-		/// <returns>true if the attribute has been removed from the object; otherwise false.</returns>
-		public static bool Remove(this ExpandoObject @object, string name)
-		{
-			// check
-			if (string.IsNullOrWhiteSpace(name))
-				return false;
-
-			// prepare
-			var dictionary = @object as IDictionary<string, object>;
-			var names = name.IndexOf(".") > 0
-				? name.ToArray('.', true, true)
-				: new[] { name };
-
-			// no multiple
-			if (names.Length < 2)
-				return dictionary.ContainsKey(name) && dictionary.Remove(name);
-
-			// got multiple
-			var index = 0;
-			while (index < names.Length - 1 && dictionary != null)
-			{
-				dictionary = dictionary.ContainsKey(names[index])
-					? dictionary[names[index]] as IDictionary<string, object>
-					: null;
-				index++;
-			}
-
-			return dictionary != null && dictionary.Remove(names[names.Length - 1], out var value);
 		}
 		#endregion
 
