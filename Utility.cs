@@ -108,7 +108,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="asBase64Url">Set to true to encoded as base64-url string</param>
 		/// <returns>The string that presents an 128 bits UUID</returns>
 		public static string GenerateUUID(this byte[] bytes, string format = null, string mode = null, bool asBase64Url = false)
-			=> UtilityService.GetUUID(bytes?.GetHash(!string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake") ? "BLAKE128" : "MD5"), format, asBase64Url);
+			=> UtilityService.GetUUID(bytes?.GetHash(!string.IsNullOrWhiteSpace(mode) && mode.IsStartsWith("blake") ? "blake128" : "md5"), format, asBase64Url);
 
 		/// <summary>
 		/// Gets a new UUID (universal unique identity - 128 bits or 32 hexa-characters)
@@ -691,18 +691,39 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Gets the collection of cookies
+		/// </summary>
+		/// <param name="exception"></param>
+		/// <returns>The collection of a tuple that presents cookies (first item is cookie's name, second item is cookie's value)</returns>
+		public static List<Tuple<string, string>> GetCookies(this WebException exception)
+		{
+			using (var httpResponse = exception?.Response as HttpWebResponse)
+			{
+				return httpResponse?.GetCookies() ?? new List<Tuple<string, string>>();
+			}
+		}
+
+		/// <summary>
+		/// Gets the collection of cookies
+		/// </summary>
+		/// <param name="exception"></param>
+		/// <returns>The collection of a tuple that presents cookies (first item is cookie's name, second item is cookie's value)</returns>
+		public static List<Tuple<string, string>> GetCookies(this RemoteServerErrorException exception)
+			=> (exception?.InnerException as WebException)?.GetCookies() ?? new List<Tuple<string, string>>();
+
+		/// <summary>
 		/// Sends the HTTP request to a remote end-point
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body</param>
+		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
 		/// <param name="timeout">The requesting time-out</param>
 		/// <param name="credential">The credential for marking request</param>
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, string body, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
+		public static async Task<HttpWebResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, CredentialCache credential, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			// check
 			if (uri == null)
@@ -759,12 +780,37 @@ namespace net.vieapps.Components.Utility
 			}
 
 			// body
-			if (!string.IsNullOrWhiteSpace(body) && (webRequest.Method.Equals("POST") || webRequest.Method.Equals("PUT") || webRequest.Method.Equals("PATCH")))
+			if (body != null && (webRequest.Method.Equals("POST") || webRequest.Method.Equals("PUT") || webRequest.Method.Equals("PATCH")))
 			{
-				if (!headers.ContainsKey("Content-Type"))
-					webRequest.ContentType = "application/json";
-				using (var writer = new StreamWriter(await webRequest.GetRequestStreamAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false)))
-					await writer.WriteAsync(body, cancellationToken).ConfigureAwait(false);
+				if (body is string @string)
+				{
+					if (!headers.ContainsKey("Content-Type"))
+						webRequest.ContentType = "application/json";
+					using (var writer = new StreamWriter(await webRequest.GetRequestStreamAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false)))
+					{
+						await writer.WriteAsync(@string, cancellationToken).ConfigureAwait(false);
+					}
+				}
+				else if (body is byte[] bytes)
+					using (var stream = await webRequest.GetRequestStreamAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false))
+					{
+#if NETSTANDARD2_0
+						await stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+#else
+						await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+#endif
+					}
+				else if (body is ArraySegment<byte> arraySegmentOfBytes)
+					using (var stream = await webRequest.GetRequestStreamAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false))
+					{
+#if NETSTANDARD2_0
+						await stream.WriteAsync(arraySegmentOfBytes, cancellationToken).ConfigureAwait(false);
+#else
+						await stream.WriteAsync(arraySegmentOfBytes.AsMemory(), cancellationToken).ConfigureAwait(false);
+#endif
+					}
+				else
+					throw new InvalidRequestException("Body is invalid");
 			}
 
 			// special settings
@@ -1567,7 +1613,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 			var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
-			var read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+			var read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 			while (read > 0)
 			{
@@ -1576,7 +1622,7 @@ namespace net.vieapps.Components.Utility
 				read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
 				await memoryStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
-				read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+				read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 			}
 			memoryStream.Seek(0, SeekOrigin.Begin);
@@ -1630,7 +1676,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
+#if NETSTANDARD2_0
 			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
+#else
+			=> stream.WriteAsync(buffer.AsMemory(), cancellationToken).AsTask();
+#endif
 		#endregion
 
 		#region Read/Write text files
@@ -1917,7 +1967,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 					await stream.ReadAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
 #else
-					await stream.ReadAsync(data.AsMemory(0, data.Length), cancellationToken).ConfigureAwait(false);
+					await stream.ReadAsync(data.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 					return data;
 				}
@@ -1972,7 +2022,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 				await stream.WriteAsync(content ?? Array.Empty<byte>(), 0, content != null ? content.Length : 0, cancellationToken).ConfigureAwait(false);
 #else
-				await stream.WriteAsync((content ?? Array.Empty<byte>()).AsMemory(0, content != null ? content.Length : 0), cancellationToken).ConfigureAwait(false);
+				await stream.WriteAsync((content ?? Array.Empty<byte>()).AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 				await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 			}
@@ -2028,7 +2078,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 				var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
-				var read = await content.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+				var read = await content.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 				while (read > 0)
 				{
@@ -2041,7 +2091,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 					read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
-					read = await content.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+					read = await content.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 				}
 			}
@@ -2331,7 +2381,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 						: await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
-						: await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+						: await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 					while (read > 0)
 					{
@@ -2340,7 +2390,7 @@ namespace net.vieapps.Components.Utility
 						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
 						await compressor.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
-						read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+						read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 					}
 					await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -2429,7 +2479,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 					: await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
-					: await decompressor.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+					: await decompressor.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 				while (read > 0)
 				{
@@ -2437,7 +2487,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 					read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
-					read = await decompressor.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+					read = await decompressor.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
 				}
 				return output;
@@ -2789,7 +2839,7 @@ namespace net.vieapps.Components.Utility
 			var asmVersion = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
 			var asmFileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
 			var asmInfoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-			return (getInfoVersion ? asmInfoVersion?.InformationalVersion : asmVersion?.Version ?? asmFileVersion?.Version) ?? assembly.GetName().Version?.ToString() ?? "1.0";
+			return (getInfoVersion ? asmInfoVersion?.InformationalVersion : asmVersion?.Version ?? asmFileVersion?.Version) ?? assembly.GetName()?.Version?.ToString() ?? "1.0";
 		}
 		#endregion
 
