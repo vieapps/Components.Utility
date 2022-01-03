@@ -14,7 +14,6 @@ using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using System.Configuration;
 using System.Reflection;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -735,9 +734,11 @@ namespace net.vieapps.Components.Utility
 			var stopwatch = isDebugEnabled ? Stopwatch.StartNew() : null;
 			headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 
-			// web request
-			var webRequest = WebRequest.Create(uri) as HttpWebRequest;
-			webRequest.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
+            // web request
+#pragma warning disable SYSLIB0014 // Type or member is obsolete
+            var webRequest = WebRequest.Create(uri) as HttpWebRequest;
+#pragma warning restore SYSLIB0014 // Type or member is obsolete
+            webRequest.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
 			webRequest.Timeout = timeout * 1000;
 			webRequest.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
 
@@ -1062,184 +1063,284 @@ namespace net.vieapps.Components.Utility
 				: new Uri(uri).FetchHttpAsync(cancellationToken);
 		#endregion
 
-		#region Remove/Clear tags
+		#region Normalize HTML/XML tags & Remove whitespaces/breaks
+		/// <summary>
+		/// Gets the collection of none-close tags
+		/// </summary>
+		public static List<string> NoneCloseTags { get; } = new List<string> { "img", "br", "hr", "input", "embed", "source" };
+
+		static Regex AllTagsRegex { get; } = new Regex(@"<[^<>]+>", RegexOptions.IgnoreCase);
+
+		static Regex AllAttributesRegex { get; } = new Regex(@"(\S+)=[""]?((?:.(?![""]?\s+(?:\S+)=|[>""]))+.)[""]?", RegexOptions.IgnoreCase);
+
+		/// <summary>
+		/// Finds all available tags of XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static List<XTag> FindTags(this string @string)
+		{
+			// extract all tags
+			var tags = new List<XTag>();
+			foreach (Match tagMatch in UtilityService.AllTagsRegex.Matches(@string ?? ""))
+			{
+				var full = tagMatch.Value;
+				var isOpen = tagMatch.Value[1] != '/';
+				var isClose = tagMatch.Value[1] == '/' || tagMatch.Value[tagMatch.Value.Length - 2] == '/';
+				var spacePos = tagMatch.Value.IndexOf(" ");
+				var name = isClose
+					? isOpen ? spacePos > 0 ? tagMatch.Value.Substring(1, spacePos - 1) : tagMatch.Value.Substring(1, tagMatch.Value.Length - 3) : tagMatch.Value.Substring(2, tagMatch.Value.Length - 3)
+					: spacePos > 0 ? tagMatch.Value.Substring(1, spacePos - 1) : tagMatch.Value.Substring(1, tagMatch.Value.Length - 2);
+
+				var attributes = new List<XTagAttribute>();
+				foreach (Match attributeMatch in UtilityService.AllAttributesRegex.Matches(tagMatch.Value))
+				{
+					var start = attributeMatch.Value.IndexOf("=");
+					var end = attributeMatch.Value.IndexOf(attributeMatch.Value[start + 1], start + 2);
+					attributes.Add(new XTagAttribute
+					{
+						Full = attributeMatch.Value.Substring(0, end + 1),
+						Name = attributeMatch.Value.Substring(0, start),
+						Value = start > 0 && end > 0 ? attributeMatch.Value.Substring(start + 2, (end > 0 ? end : attributeMatch.Value.Length) - start - 2).Trim() : ""
+					});
+				}
+
+				tags.Add(new XTag
+				{
+					Full = tagMatch.Value,
+					Name = name,
+					IsOpen = isOpen,
+					IsClose = isClose,
+					Attributes = attributes
+				});
+			}
+
+			// prepare positions
+			var position = -1;
+			tags.ForEach(tag =>
+			{
+				position = @string.IndexOf(tag.Full, position + 1);
+				tag.StartPosition = position;
+				tag.EndPosition = position + tag.Full.Length;
+			});
+
+			// normalize non-close tags
+			tags.Where(tag => !tag.IsClose && UtilityService.NoneCloseTags.IndexOf(tag.Name) > -1).ForEach(tag => tag.IsClose = true);
+
+			// prepare reelevant tags
+			tags.ForEach((current, index) =>
+			{
+				if (current.RelevantIndex > -1)
+					return;
+
+				if (current.IsClose)
+				{
+					if (current.IsOpen)
+						current.RelevantIndex = index;
+					return;
+				}
+
+				var next = index + 1 < tags.Count ? tags[index + 1] : null;
+				if (next == null)
+					return;
+
+				if (next.IsOpen)
+				{
+					var nextOfNext = index + 2 < tags.Count ? tags[index + 2] : null;
+					if (nextOfNext != null && nextOfNext.IsClose && nextOfNext.RelevantIndex < 0 && nextOfNext.Name == next.Name)
+					{
+						next.RelevantIndex = index + 2;
+						nextOfNext.RelevantIndex = index + 1;
+					}
+				}
+				else if (next.RelevantIndex < 0 && next.Name == current.Name)
+				{
+					current.RelevantIndex = index + 1;
+					next.RelevantIndex = index;
+				}
+
+				if (current.RelevantIndex < 0)
+				{
+					var idx = tags.FindIndex(index + 1, tag => current.Name == tag.Name && tag.IsClose && tag.RelevantIndex < 0);
+					if (idx > 0)
+					{
+						current.RelevantIndex = idx;
+						tags[idx].RelevantIndex = index;
+					}
+				}
+			});
+
+			// prepare outer/inner & next/children
+			tags.Where(tag => tag.IsOpen).ForEach(tag =>
+			{
+				tag.Outer = tag.IsClose ? tag.Full : @string.Substring(tag.StartPosition, tag.RelevantIndex > 0 && tags[tag.RelevantIndex].EndPosition > 0 ? tags[tag.RelevantIndex].EndPosition - tag.StartPosition : @string.Length - tag.StartPosition);
+				tag.Inner = tag.IsClose ? null : tag.Outer?.Substring(tag.Full.Length, tag.Outer.Length - tag.Full.Length - tag.Name.Length - 3);
+				tag.Next = tag.RelevantIndex > 0 && tag.RelevantIndex + 1 < tags.Count && tags[tag.RelevantIndex + 1].IsOpen ? tags[tag.RelevantIndex + 1] : null;
+				tag.Children = tag.RelevantIndex > 0  ? tags.Skip(tags[tag.RelevantIndex].RelevantIndex + 1).Take(tag.RelevantIndex - tags[tag.RelevantIndex].RelevantIndex - 1).Where(xtag => xtag.IsOpen).ToList() : null;
+			});
+
+			return tags;
+		}
+
+		/// <summary>
+		/// Removes tags from XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="beRemovedTags"></param>
+		/// <param name="removeInners"></param>
+		/// <param name="predicate"></param>
+		/// <returns></returns>
+		public static string RemoveTags(this string @string, IEnumerable<string> beRemovedTags = null, bool removeInners = false, Func<XTag, bool> predicate = null)
+		{
+			if (!string.IsNullOrWhiteSpace(@string))
+			{
+				@string.FindTags()
+					.Where(tag => (beRemovedTags == null || beRemovedTags.FirstOrDefault(stag => tag.Name.IsEquals(stag)) != null) && (!removeInners || tag.IsOpen && (predicate == null || predicate(tag))))
+					.ForEach(tag => @string = @string.Replace(StringComparison.OrdinalIgnoreCase, removeInners ? tag.Outer : tag.Full, ""));
+				@string = @string.Trim();
+			}
+			return @string;
+		}
+
 		/// <summary>
 		/// Removes HTML/XML tags
 		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="string"></param>
 		/// <param name="tag"></param>
-		/// <param name="attributeValueToClean"></param>
+		/// <param name="removeInner"></param>
 		/// <returns></returns>
-		public static string RemoveTag(string input, string tag, string attributeValueToClean = null)
-		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
-			else if (string.IsNullOrWhiteSpace(tag))
-				return input;
-
-			var output = input.Trim();
-			var start = output.PositionOf("<" + tag);
-			while (start > -1)
-			{
-				var end = output.PositionOf(">", start);
-				if (!string.IsNullOrWhiteSpace(attributeValueToClean))
-				{
-					var tagAttributes = output.Substring(start, end - start);
-					if (tagAttributes.PositionOf(attributeValueToClean) > 0)
-					{
-						end = output.PositionOf("</" + tag, start);
-						output = output.Remove(start, end - start + tag.Length + 3);
-						start = output.PositionOf("<" + tag);
-					}
-					else
-					{
-						output = output.Remove(start, end - start + 1);
-						start = output.PositionOf("<" + tag);
-					}
-				}
-				else
-				{
-					output = output.Remove(start, end - start + 1);
-					start = output.PositionOf("<" + tag);
-				}
-			}
-
-			start = output.PositionOf("</" + tag);
-			while (start > -1)
-			{
-				int end = output.PositionOf(">", start);
-				output = output.Remove(start, end - start + 1);
-				start = output.PositionOf("</" + tag);
-			}
-
-			return output;
-		}
+		public static string RemoveTag(this string @string, string tag, bool removeInner = false)
+			=> UtilityService.RemoveTags(@string, string.IsNullOrWhiteSpace(tag) ? null : new[] { tag }, removeInner);
 
 		/// <summary>
-		/// Removes all HTML/XML tags
+		/// Removes tags of Microsoft Office from XHTML/XML
 		/// </summary>
-		/// <param name="input"></param>
-		/// <returns></returns>
-		public static string RemoveTags(string input)
-		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
-
-			var output = input.Trim();
-			var start = output.PositionOf("<");
-			while (start > -1)
-			{
-				var end = output.PositionOf(">", start);
-				output = output.Remove(start, end - start + 1);
-				start = output.PositionOf("<");
-			}
-
-			return output;
-		}
-
-		/// <summary>
-		/// Removes  Microsoft Office tags
-		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="string"></param>
 		/// <param name="tags"></param>
 		/// <returns></returns>
-		public static string RemoveMsOfficeTags(string input, string[] tags = null)
+		public static string RemoveMsOfficeTags(this string @string, IEnumerable<string> tags = null)
+			=> UtilityService.RemoveTags(@string, tags ?? "w:|o:|v:|m:|st1:|st2:|st3:|st4:|st5:".Split('|'));
+
+		/// <summary>
+		/// Gets the default predicate function for removing tag attributes
+		/// </summary>
+		public static Func<XTag, XTagAttribute, bool> RemoveTagAttributesPredicate { get; } = (tag, attribute) =>
 		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
+			if (tag.Name.IsEquals("a"))
+				return !attribute.Name.IsEquals("href") && !attribute.Name.IsEquals("target") && !attribute.Name.IsEquals("rel");
+			if (tag.Name.IsEquals("img") || tag.Name.IsEquals("source"))
+				return !attribute.Name.IsEquals("src") && !attribute.Name.IsEquals("srcset") && !attribute.Name.IsEquals("alt") && !attribute.Name.IsEquals("type");
+			if (tag.Name.IsEquals("video") || tag.Name.IsEquals("audio"))
+				return !attribute.Name.IsEquals("controls") && !attribute.Name.IsEquals("poster") && !attribute.Name.IsEquals("autoplay") && !attribute.Name.IsEquals("muted");
+			if (tag.Name.IsEquals("iframe"))
+				return !attribute.Name.IsEquals("src") && !attribute.Name.IsEquals("width") && !attribute.Name.IsEquals("height") && !attribute.Name.IsEquals("allowfullscreen") && !attribute.Name.IsContains("-id");
+			return attribute.Name.ToLower() != "id";
+		};
 
-			var output = input.Trim();
-			var msoTags = tags == null || tags.Length < 1
-				? "w:|o:|v:|m:|st1:|st2:|st3:|st4:|st5:".Split('|')
-				: tags;
-
-			msoTags.ForEach(tag => output = UtilityService.RemoveTag(output, tag));
-			return output;
+		/// <summary>
+		/// Removes attributes from XHTML/XML tags
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="firstPredicate"></param>
+		/// <param name="secondPredicate"></param>
+		/// <param name="tags"></param>
+		/// <returns></returns>
+		public static string RemoveTagAttributes(this string @string, Func<XTag, XTagAttribute, bool> firstPredicate = null, Func<XTag, XTagAttribute, bool> secondPredicate = null, IEnumerable<string> tags = null)
+		{
+			if (!string.IsNullOrWhiteSpace(@string))
+			{
+				@string = @string.HtmlDecode();
+				@string.FindTags().Where(tag => tag.IsOpen && tag.Attributes.Any() && (tags == null || tags.FirstOrDefault(stag => tag.Name.IsEquals(stag)) != null)).ForEach(tag =>
+				{
+					var attributes = tag.Attributes.Select(attribute => new XTagAttribute { Name = attribute.Name, Value = attribute.Value }).ToList();
+					var beRemoved = new List<string>();
+					tag.Attributes.Where(attribute => firstPredicate != null ? firstPredicate(tag, attribute) : UtilityService.RemoveTagAttributesPredicate(tag, attribute))
+						.Where(attribute => secondPredicate == null || secondPredicate(tag, attribute))
+						.ForEach(attribute => beRemoved.Add(attribute.Name));
+					beRemoved.ForEach(name => tag.Attributes.RemoveAt(tag.Attributes.FindIndex(attribute => attribute.Name.IsEquals(name))));
+					if (tag.Attributes.Count != attributes.Count || tag.Attributes.Any(attribute => attribute.Value != attributes.First(attr => attr.Name.IsEquals(attribute.Name)).Value))
+						@string = @string.Replace(StringComparison.OrdinalIgnoreCase, tag.Full, tag.ToString());
+				});
+				@string = @string.Replace(StringComparison.OrdinalIgnoreCase, "allowfullscreen=\"\"", "allowfullscreen");
+				@string = @string.Replace(StringComparison.OrdinalIgnoreCase, "autoplay=\"\"", "autoplay");
+				@string = @string.Replace(StringComparison.OrdinalIgnoreCase, "muted=\"\"", "muted");
+				@string = @string.Trim();
+			}
+			return @string;
 		}
 
 		/// <summary>
-		/// Removes attributes of a HTML/XML tags
+		/// Removes attributes from a tag of HTML/XML
 		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="string"></param>
+		/// <param name="tags"></param>
+		/// <returns></returns>
+		public static string RemoveTagAttributes(this string @string, IEnumerable<string> tags)
+			=> UtilityService.RemoveTagAttributes(@string, null, null, tags);
+
+		/// <summary>
+		/// Removes attributes from a tag of HTML/XML
+		/// </summary>
+		/// <param name="string"></param>
 		/// <param name="tag"></param>
 		/// <returns></returns>
-		public static string RemoveTagAttributes(string input, string tag)
-		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
-			else if (string.IsNullOrWhiteSpace(tag))
-				return input;
+		public static string RemoveTagAttributes(this string @string, string tag)
+			=> UtilityService.RemoveTagAttributes(@string, string.IsNullOrWhiteSpace(tag) ? null : new[] { tag });
 
-			var output = input.Trim();
-			var start = output.PositionOf("<" + tag + " ");
-			while (start > -1)
+		/// <summary>
+		/// Removes comments form XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string RemoveComments(this string @string)
+		{
+			if (!string.IsNullOrWhiteSpace(@string))
 			{
-				var end = output.PositionOf(">", start + 1);
-				if (end > 0)
+				var start = @string.PositionOf("<!--");
+				while (start > -1)
 				{
-					output = output.Remove(start, end - start + 1);
-					output = output.Insert(start, "<" + tag + ">");
+					var end = @string.PositionOf("-->", start);
+					if (end > 0)
+						@string = @string.Remove(start, end - start + 3);
+					start = @string.PositionOf("<!--", start + 1);
 				}
-				start = output.PositionOf("<" + tag + " ", start + 1);
+				@string = @string.Trim();
 			}
-			return output;
+			return @string;
 		}
+
+		/// <summary>
+		/// Removes comments from XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string ClearComments(this string @string)
+			=> UtilityService.RemoveComments(@string);
 
 		/// <summary>
 		/// Clears HTML/XML tags (with inner)
 		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="string"></param>
 		/// <param name="tag"></param>
 		/// <returns></returns>
-		public static string ClearTag(string input, string tag)
-		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
-			else if (string.IsNullOrWhiteSpace(tag))
-				return input;
-
-			var output = input.Trim();
-			var start = output.PositionOf("<" + tag);
-			while (start > -1)
-			{
-				var end = output.PositionOf("</" + tag + ">", start);
-				if (end > 0)
-					output = output.Remove(start, end - start + 3 + tag.Length);
-				else
-				{
-					end = output.PositionOf(">", start);
-					output = output.Remove(start, end - start + 1);
-				}
-				start = output.PositionOf("<" + tag);
-			}
-			return output;
-		}
+		public static string ClearTag(this string @string, string tag)
+			=> UtilityService.RemoveTags(@string, string.IsNullOrWhiteSpace(tag) ? null : new[] { tag }, true);
 
 		/// <summary>
-		/// Clears comments tags
+		/// Cleans format from XHTML/XML
 		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="string"></param>
+		/// <param name="firstPredicate"></param>
+		/// <param name="secondPredicate"></param>
+		/// <param name="tags"></param>
 		/// <returns></returns>
-		public static string ClearComments(string input)
-		{
-			if (string.IsNullOrWhiteSpace(input))
-				return "";
+		public static string ClearFormat(this string @string, Func<XTag, XTagAttribute, bool> firstPredicate = null, Func<XTag, XTagAttribute, bool> secondPredicate = null, IEnumerable<string> tags = null)
+			=> UtilityService.RemoveTagAttributes(@string, firstPredicate, secondPredicate, tags);
 
-			var output = input.Trim();
-			var start = output.PositionOf("<!--");
-			while (start > -1)
-			{
-				var end = output.PositionOf("-->", start);
-				if (end > 0)
-					output = output.Remove(start, end - start + 3);
-				start = output.PositionOf("<!--", start + 1);
-			}
-			return output;
-		}
-		#endregion
-
-		#region Remove/Normalize whitespaces & breaks
-		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksRegexs { get; } = new List<Tuple<Regex, string>>
+		/// <summary>
+		/// Gets regular expressions for cleaning whitespace and breaks
+		/// </summary>
+		public static List<Tuple<Regex, string>> WhitespacesAndBreaksRegexs { get; } = new List<Tuple<Regex, string>>
 		{
 			// line-breaks
 			new Tuple<Regex, string>(new Regex(@">\s+\n<", RegexOptions.IgnoreCase), "> <"),
@@ -1250,14 +1351,21 @@ namespace net.vieapps.Components.Utility
 			new Tuple<Regex, string>(new Regex(@"/>\s+<", RegexOptions.IgnoreCase), "/><"),
 			new Tuple<Regex, string>(new Regex(@">\s+<", RegexOptions.IgnoreCase), "> <"),
 			new Tuple<Regex, string>(new Regex(@"""\s+>", RegexOptions.IgnoreCase), "\">"),
+			new Tuple<Regex, string>(new Regex(@"'\s+>", RegexOptions.IgnoreCase), "'>"),
 			new Tuple<Regex, string>(new Regex(@"\s+"">", RegexOptions.IgnoreCase), "\">"),
+			new Tuple<Regex, string>(new Regex(@"\s+'>", RegexOptions.IgnoreCase), "'>"),
 			new Tuple<Regex, string>(new Regex(@"""\s+/>", RegexOptions.IgnoreCase), "\"/>"),
-			new Tuple<Regex, string>(new Regex(@"\s+""/>", RegexOptions.IgnoreCase), "\"/>")
+			new Tuple<Regex, string>(new Regex(@"'\s+/>", RegexOptions.IgnoreCase), "'/>"),
+			new Tuple<Regex, string>(new Regex(@"\s+""/>", RegexOptions.IgnoreCase), "\"/>"),
+			new Tuple<Regex, string>(new Regex(@"\s+'/>", RegexOptions.IgnoreCase), "'/>")
 		};
 
 		internal static List<Tuple<Regex, string>> _WhitespacesAndBreaksExtendedRegexs = null;
 
-		internal static List<Tuple<Regex, string>> WhitespacesAndBreaksExtendedRegexs
+		/// <summary>
+		/// Gets extended regular expressions for cleaning whitespace and breaks
+		/// </summary>
+		public static List<Tuple<Regex, string>> WhitespacesAndBreaksExtendedRegexs
 		{
 			get
 			{
@@ -1284,38 +1392,83 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Removes whitespaces and breaks from HTML code
 		/// </summary>
-		/// <param name="input">The HTML code</param>
+		/// <param name="string">The HTML code</param>
 		/// <returns></returns>
-		public static string RemoveWhitespaces(string input)
+		public static string RemoveWhitespaces(this string @string)
 		{
-			var output = (input ?? "").Replace("&nbsp;", " ").Trim();
-			if (!string.IsNullOrWhiteSpace(output))
-				UtilityService.WhitespacesAndBreaksRegexs.Concat(UtilityService.WhitespacesAndBreaksExtendedRegexs).ForEach(regex => output = regex.Item1.Replace(output, regex.Item2));
-			return output.Replace("\r", "").Replace("\n\t", "").Replace("\t", "").Replace("> <", "><");
+			if (!string.IsNullOrWhiteSpace(@string))
+			{
+				@string = @string.Replace("\r", "").Replace(">\n\t", ">").Replace("\n\t", " ").Replace("\n", "").Replace("\t", "").Trim();
+				UtilityService.WhitespacesAndBreaksRegexs.Concat(UtilityService.WhitespacesAndBreaksExtendedRegexs).ForEach(regex => @string = regex.Item1.Replace(@string, regex.Item2));
+				@string = @string.Replace("> <", "><").Replace("  </", "</").Replace(" </", "</").Replace("\"> ", "\">").Replace("'> ", "'>");
+			}
+			return @string;
 		}
 
 		/// <summary>
 		/// Removes whitespaces and breaks from HTML code
 		/// </summary>
-		/// <param name="input">The HTML code</param>
+		/// <param name="string">The HTML code</param>
 		/// <returns></returns>
-		public static string RemoveHTMLWhitespaces(string input)
-			=> UtilityService.RemoveWhitespaces(input);
+		public static string RemoveHTMLWhitespaces(this string @string)
+			=> UtilityService.RemoveWhitespaces(@string);
 
 		/// <summary>
-		/// Normalizes breaks (BR) of HTML code
+		/// Normalizes breaks (BR) of XHTML/XML
 		/// </summary>
-		/// <param name="html"></param>
+		/// <param name="string"></param>
 		/// <param name="noBreakBetweenTags"></param>
 		/// <returns></returns>
-		public static string NormalizeHTMLBreaks(this string html, bool noBreakBetweenTags = true)
+		public static string NormalizeBreaks(this string @string, bool noBreakBetweenTags = true)
 		{
-			html = html?.Replace("\t", "").Replace("\r", "").Replace("\n", "<br/>") ?? "";
-			UtilityService.WhitespacesAndBreaksRegexs.ForEach(regex => html = regex.Item1.Replace(html, regex.Item2));
-			if (noBreakBetweenTags)
-				html = html.Replace("><br/><", "><");
-			return html;
+			if (!string.IsNullOrWhiteSpace(@string))
+			{
+				@string = @string.Replace("\t", "").Replace("\r", "").Replace("\n", "<br/>");
+				UtilityService.WhitespacesAndBreaksRegexs.ForEach(regex => @string = regex.Item1.Replace(@string, regex.Item2));
+				if (noBreakBetweenTags)
+					@string = @string.Replace("><br/><", "><");
+			}
+			return @string;
 		}
+
+		/// <summary>
+		/// Normalizes breaks (BR) of XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="noBreakBetweenTags"></param>
+		/// <returns></returns>
+		public static string NormalizeHTMLBreaks(this string @string, bool noBreakBetweenTags = true)
+			=> UtilityService.NormalizeBreaks(@string, noBreakBetweenTags);
+
+		/// <summary>
+		/// Normalizes all none-close tags (change to self-close) of XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string NormalizeNoneCloseTags(this string @string)
+		{
+			if (!string.IsNullOrWhiteSpace(@string))
+				UtilityService.NoneCloseTags.ForEach(tag =>
+				{
+					var start = @string.PositionOf($"<{tag}");
+					while (start > -1)
+					{
+						var end = @string.IndexOf(">", start);
+						if (end > start && @string[end - 1] != '/')
+							@string = @string.Substring(0, end) + "/" + @string.Substring(end);
+						start = @string.PositionOf($"<{tag}", start + 1);
+					}
+				});
+			return @string;
+		}
+
+		/// <summary>
+		/// Normalizes all none-close tags (change to self-close) of XHTML/XML
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string NormalizeHTMLNoneCloseTags(this string @string)
+			=> UtilityService.NormalizeNoneCloseTags(@string);
 		#endregion
 
 		#region Working with files & folders
@@ -2220,8 +2373,10 @@ namespace net.vieapps.Components.Utility
 				var stopwatch = Stopwatch.StartNew();
 
 				byte[] data = null;
-				using (var webclient = new WebClient())
-				{
+#pragma warning disable SYSLIB0014 // Type or member is obsolete
+                using (var webclient = new WebClient())
+#pragma warning restore SYSLIB0014 // Type or member is obsolete
+                {
 					data = webclient.DownloadData(url);
 				}
 
@@ -2255,7 +2410,9 @@ namespace net.vieapps.Components.Utility
 				var stopwatch = Stopwatch.StartNew();
 
 				byte[] data = null;
+#pragma warning disable SYSLIB0014 // Type or member is obsolete
 				using (var webclient = new WebClient())
+#pragma warning restore SYSLIB0014 // Type or member is obsolete
 				{
 					data = await webclient.DownloadDataTaskAsync(url, cancellationToken).ConfigureAwait(false);
 				}
@@ -2759,7 +2916,7 @@ namespace net.vieapps.Components.Utility
 		public static string GetAppSetting(string name, string @default = null, string prefix = "vieapps")
 		{
 			var value = !string.IsNullOrWhiteSpace(name)
-				? ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()]
+				? System.Configuration.ConfigurationManager.AppSettings[(string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ":") + name.Trim()]
 				: null;
 
 			return string.IsNullOrWhiteSpace(value)
@@ -2844,6 +3001,121 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 	}
+
+	// -----------------------------------------------------------
+
+	#region Tag information of XHTML/XML
+	public class XTag
+	{
+		public XTag() { }
+
+		/// <summary>
+		/// Gets or Sets the full tag with attributes
+		/// </summary>
+		public string Full { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the tag name
+		/// </summary>
+		public string Name { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the open state
+		/// </summary>
+		public bool IsOpen { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the close state
+		/// </summary>
+		public bool IsClose { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the collection of attributes
+		/// </summary>
+		public List<XTagAttribute> Attributes { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the relevant index
+		/// </summary>
+		public int RelevantIndex { get; set; } = -1;
+
+		/// <summary>
+		/// Gets or Sets the start position
+		/// </summary>
+		public int StartPosition { get; set; } = -1;
+
+		/// <summary>
+		/// Gets or Sets the end position
+		/// </summary>
+		public int EndPosition { get; set; } = -1;
+
+		/// <summary>
+		/// Gets or Sets the outer (means tag with full attribute, inner content and close mark)
+		/// </summary>
+		public string Outer { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the inner content
+		/// </summary>
+		public string Inner { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the next tag
+		/// </summary>
+		public XTag Next { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the collection of children tags
+		/// </summary>
+		public List<XTag> Children { get; set; }
+
+		/// <summary>
+		/// Converts this tag to string
+		/// </summary>
+		/// <param name="full"></param>
+		/// <returns></returns>
+		public string ToString(bool full)
+		{
+			var tag = "<";
+			tag += this.IsOpen ? this.Name : "";
+			tag += this.IsOpen && this.Attributes != null && this.Attributes.Any() ? " " + this.Attributes.ToString(" ", attribute => attribute.ToString()) : "";
+			tag += this.IsClose ? $"/{(this.IsOpen ? "" : this.Name)}" : "";
+			tag += ">";
+			tag += full && this.IsOpen && !this.IsClose ? this.Inner + $"</{this.Name}>" : "";
+			return tag;
+		}
+
+		public override string ToString()
+			=> this.ToString(false);
+	}
+
+	public class XTagAttribute
+	{
+		public XTagAttribute() { }
+
+		/// <summary>
+		/// Gets or Sets the full attribute with name and value
+		/// </summary>
+		public string Full { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the attribute name
+		/// </summary>
+		public string Name { get; set; }
+
+		/// <summary>
+		/// Gets or Sets the attribute value
+		/// </summary>
+		public string Value { get; set; }
+
+		/// <summary>
+		/// Converts this attribute to string
+		/// </summary>
+		/// <returns></returns>
+		public override string ToString()
+			=> $"{this.Name}=\"{this.Value}\"";
+	}
+	#endregion
 
 	// -----------------------------------------------------------
 
@@ -2970,7 +3242,7 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// The handler for processing a custom configuration section of the app
 	/// </summary>
-	public class AppConfigurationSectionHandler : IConfigurationSectionHandler
+	public class AppConfigurationSectionHandler : System.Configuration.IConfigurationSectionHandler
 	{
 		public object Create(object parent, object configContext, XmlNode section)
 		{

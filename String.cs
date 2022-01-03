@@ -292,6 +292,26 @@ namespace net.vieapps.Components.Utility
 			=> CultureInfo.CurrentCulture.TextInfo.ToTitleCase(@string);
 
 		/// <summary>
+		/// Converts this integer to enum type value
+		/// </summary>
+		/// <param name="int"></param>
+		/// <param name="type">The type of enum</param>
+		/// <returns></returns>
+		public static object ToEnum(this int @int, Type type)
+			=> type != null && type.IsEnum
+				? Enum.ToObject(type, @int)
+				: throw new ArgumentException($"The type '{nameof(type)}' is not enum");
+
+		/// <summary>
+		/// Converts this integer to enum type value
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="int"></param>
+		/// <returns></returns>
+		public static T ToEnum<T>(this int @int)
+			=> (T)@int.ToEnum(typeof(T));
+
+		/// <summary>
 		/// Converts this enum-string to enum type value
 		/// </summary>
 		/// <param name="string"></param>

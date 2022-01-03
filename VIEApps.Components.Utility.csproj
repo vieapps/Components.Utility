@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net5.0;netstandard2.0</TargetFrameworks>
+		<TargetFrameworks>net6.0;net5.0;netstandard2.0</TargetFrameworks>
 		<WarningLevel>3</WarningLevel>
-		<NoWarn>IDE0003,IDE0054,IDE0056,IDE0057,IDE0063,IDE0074,IDE0090,CA1068,CA2208,1573,1591</NoWarn>
+		<NoWarn>IDE0003,IDE0054,IDE0056,IDE0057,IDE0063,IDE0074,IDE0090,CA1068,CA1822,CA2208,1573,1591</NoWarn>
 		<DocumentationFile>bin/$(Configuration)/$(TargetFramework)/VIEApps.Components.Utility.xml</DocumentationFile>
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.4$(ReleaseVersion)</AssemblyVersion>
-		<FileVersion>10.4$(ReleaseVersion)</FileVersion>
-		<InformationalVersion>10.4.$([System.DateTime]::Now.Year).$([System.DateTime]::Now.Month).$([System.DateTime]::Now.Day)@$(TargetFramework)#sn:$(Sign)#$(ReleaseRevision)</InformationalVersion>
-		<Version>10.4$(ReleaseVersion)$(ReleaseSuffix)</Version>
+		<AssemblyVersion>10.5$(ReleaseVersion)</AssemblyVersion>
+		<FileVersion>10.5$(ReleaseVersion)</FileVersion>
+		<InformationalVersion>10.5.$([System.DateTime]::Now.Year).$([System.DateTime]::Now.Month).$([System.DateTime]::Now.Day)@$(TargetFramework)#sn:$(Sign)#$(ReleaseRevision)</InformationalVersion>
+		<Version>10.5$(ReleaseVersion)$(ReleaseSuffix)</Version>
 		<Product>VIEApps NGX</Product>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose component for developing apps with .NET</Description>
@@ -32,7 +32,7 @@
 		<PackageIcon>Icon.png</PackageIcon>
 		<PackageOutputPath>../</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Fix bugs: json/expando objects</PackageReleaseNotes>
+		<PackageReleaseNotes>.NTE 6.0</PackageReleaseNotes>
 		<PackageProjectUrl>https://vieapps.net</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
@@ -50,11 +50,11 @@
 	<ItemGroup>
 		<PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.2.1" />
 		<PackageReference Include="Konscious.Security.Cryptography.Blake2" Version="1.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.1.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="2.2.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
 		<PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" Condition="'$(TargetFramework)' == 'netstandard2.0'" />
 	</ItemGroup>
 
