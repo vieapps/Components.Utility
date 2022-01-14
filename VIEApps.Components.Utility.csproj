@@ -15,7 +15,7 @@
 		<Product>VIEApps NGX</Product>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose component for developing apps with .NET</Description>
-		<Copyright>© 2021 VIEApps.net</Copyright>
+		<Copyright>© $([System.DateTime]::Now.Year) VIEApps.net</Copyright>
 		<Authors>VIEApps.net</Authors>
 		<Company>VIEApps.net</Company>
 	</PropertyGroup>
