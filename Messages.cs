@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Mail;
 using System.Text;
 using System.Linq;
@@ -985,10 +986,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string userAgent, WebProxy proxy, CancellationToken cancellationToken)
+		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, string userAgent, WebProxy proxy, CancellationToken cancellationToken)
 		{
 			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
-				return Task.FromException<HttpWebResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
+				return Task.FromException<HttpResponseMessage>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
 
 			var endpointURL = $"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}";
 			userAgent = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}";
@@ -1002,7 +1003,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken = default)
+		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken = default)
 			=> message.SendMessageAsync(userAgent, null, cancellationToken);
 
 		/// <summary>
@@ -1011,7 +1012,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpWebResponse> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
+		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
 			=> message.SendMessageAsync(null, cancellationToken);
 		#endregion
 

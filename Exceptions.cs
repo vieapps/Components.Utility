@@ -165,34 +165,36 @@ namespace net.vieapps.Components.Utility
 	}
 
 	[Serializable]
-	public class RemoteServerErrorException : AppException
+	public class RemoteServerException : AppException
 	{
-		public HttpStatusCode ResponseCode { get; internal set; } = HttpStatusCode.InternalServerError;
+		public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.InternalServerError;
 
-		public WebExceptionStatus ResponseStatus { get; internal set; } = WebExceptionStatus.Success;
+		public bool IsSuccessStatusCode { get; internal set; } = false;
 
-		public string ResponseURL { get; internal set; }
+		public Uri URI { get; internal set; }
 
-		public Dictionary<string, string> ResponseHeaders { get; internal set; }
+		public Dictionary<string, string> Headers { get; internal set; }
 
-		public string ResponseBody { get; internal set; }
+		public string Body { get; internal set; }
 
-		public RemoteServerErrorException() : base("Error occured while operating with remote server") { }
+		public RemoteServerException() : base("Error occured while operating with remote server") { }
 
-		public RemoteServerErrorException(Exception innerException) : base($"Error occurred while operating with the remote server: {innerException?.Message}", innerException) { }
-
-		public RemoteServerErrorException(string message, Exception innerException) : base(message, innerException) { }
-
-		public RemoteServerErrorException(string message, HttpStatusCode responseCode, WebExceptionStatus responseStatus, string responseURL, Dictionary<string, string> responseHeaders, string responseBody, Exception innerException) : base(message, innerException)
+		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, Uri uri, Dictionary<string, string> headers, string body, string message = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with the remote server")
 		{
-			this.ResponseCode = responseCode;
-			this.ResponseStatus = responseStatus;
-			this.ResponseURL = responseURL;
-			this.ResponseHeaders = responseHeaders;
-			this.ResponseBody = responseBody;
+			this.StatusCode = statusCode;
+			this.IsSuccessStatusCode = isSuccessStatusCode;
+			this.URI = uri;
+			this.Headers = headers;
+			this.Body = body;
 		}
 
-		public RemoteServerErrorException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+		public RemoteServerException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+	}
+
+	[Serializable]
+	public class RemoteServerMovedException : RemoteServerException
+	{
+		public RemoteServerMovedException(HttpStatusCode statusCode, Uri uri, string message = null) : base(statusCode, true, uri, null, null, message ?? $"Remote server was moved [{uri}]") { }
 	}
 
 	[Serializable]
