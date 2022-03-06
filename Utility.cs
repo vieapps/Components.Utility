@@ -8,6 +8,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -236,7 +237,7 @@ namespace net.vieapps.Components.Utility
         }
         #endregion
 
-        #region Task/Cancellation token extensions
+        #region Task/Cancellation Token extensions
         /// <summary>
         /// Executes an action in the thread pool with cancellation supported
         /// </summary>
@@ -406,7 +407,9 @@ namespace net.vieapps.Components.Utility
             using (var reader = new StreamReader(stream, true))
                 return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
         }
+        #endregion
 
+        #region Web/Http request extensions
 #if NETSTANDARD2_0
         public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
             => httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
@@ -420,9 +423,78 @@ namespace net.vieapps.Components.Utility
         public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
             => httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
 #endif
-        #endregion
 
-        #region Get external resource/webpage
+        /// <summary>
+        /// Gets the request stream
+        /// </summary>
+        /// <param name="httpWebRequest"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<Stream> GetRequestStreamAsync(this HttpWebRequest httpWebRequest, CancellationToken cancellationToken)
+            => httpWebRequest.GetRequestStreamAsync().WithCancellationToken(cancellationToken);
+
+        /// <summary>
+        /// Performs a web request and get response
+        /// </summary>
+        /// <param name="httpWebRequest"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<HttpWebResponse> GetResponseAsync(this HttpWebRequest httpWebRequest, CancellationToken cancellationToken)
+        {
+            using (cancellationToken.Register(() => httpWebRequest.Abort(), false))
+            {
+                try
+                {
+                    return await httpWebRequest.GetResponseAsync().ConfigureAwait(false) as HttpWebResponse;
+                }
+                catch (Exception ex)
+                {
+                    throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reads all characters from the response stream asynchronously and returns them as one string
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<string> ReadAsStringAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
+        {
+            using (var stream = response.GetResponseStream())
+            {
+                return await stream.ReadAllAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Reads all characters from the response stream asynchronously and returns them as one string
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<string> ReadAsStringAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
+            => response.Content.ReadAsStringAsync(cancellationToken);
+
+        /// <summary>
+        /// Reads the response stream asynchronously
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<Stream> ReadAsStreamAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
+            => Task.FromResult(response.GetResponseStream());
+
+        /// <summary>
+        /// Reads the response stream asynchronously
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<Stream> ReadAsStreamAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
+            => response.Content.ReadAsStreamAsync(cancellationToken);
+
         internal static string[] UserAgents { get; } = new[]
         {
             "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
@@ -510,23 +582,293 @@ namespace net.vieapps.Components.Utility
         /// <summary>
         /// Gets the collection of cookies
         /// </summary>
-        /// <param name="httpResponse"></param>
-        /// <returns>The collection of a tuple that presents cookies (first item is cookie's name, second item is cookie's value)</returns>
-        public static List<Tuple<string, string>> GetCookies(this HttpResponseMessage httpResponse)
+        /// <param name="httpCookies"></param>
+        /// <param name="domain"></param>
+        /// <returns></returns>
+        public static CookieCollection GetHttpCookies(this IEnumerable<string> httpCookies, string domain)
         {
-            var cookies = new List<Tuple<string, string>>();
-            if (httpResponse.Headers.TryGetValues("Set-Cookie", out var scookies) && cookies != null)
-                scookies.Where(data => data.Contains("="))
-                .Select(data => data.ToList("="))
-                .Where(data => data.Count > 1 && !data.First().Contains(" "))
-                .Select(data => new Tuple<string, string>(data[0], data[1].ToList(";")[0]))
-                .ForEach(data =>
+            var index = 0;
+            var wellCookies = (httpCookies ?? new List<string>()).ToList();
+            while (index < wellCookies.Count)
+            {
+                if (wellCookies[index].IsContains("expires=") && !wellCookies[index].IsContains(","))
                 {
-                    if (cookies.FirstOrDefault(info => info.Item1 == data.Item1) == null)
-                        cookies.Add(data);
-                });
+                    wellCookies[index] = wellCookies[index] + ", " + wellCookies[index + 1];
+                    wellCookies.RemoveAt(index + 1);
+                }
+                index++;
+            }
+            var cookies = new CookieCollection();
+            wellCookies.ForEach(value =>
+            {
+                var cookie = new Cookie();
+                var parts = value.Split(';');
+                for (index = 0; index < parts.Length; index++)
+                {
+                    if (index == 0)
+                    {
+                        if (parts[index] != string.Empty)
+                        {
+                            var pos = parts[index].IndexOf("=");
+                            cookie.Name = parts[index].Substring(0, pos);
+                            cookie.Value = parts[index].Substring(pos + 1, parts[index].Length - (pos + 1));
+                        }
+                        continue;
+                    }
+
+                    if (parts[index].IsContains("domain="))
+                    {
+                        var values = parts[index].ToList('=');
+                        cookie.Domain = string.IsNullOrWhiteSpace(values[1]) ? domain : values[1];
+                        continue;
+                    }
+
+                    if (parts[index].IsContains("path="))
+                    {
+                        var values = parts[index].ToList('=');
+                        cookie.Path = string.IsNullOrWhiteSpace(values[1]) ? "/" : values[1];
+                        continue;
+                    }
+
+                    if (parts[index].IsContains("expires="))
+                    {
+                        var values = parts[index].ToList('=');
+                        if (!string.IsNullOrWhiteSpace(values[1]))
+                            cookie.Expires = values[1].FromHttpDateTime(true);
+                        continue;
+                    }
+
+                    if (parts[index].IsContains("secure"))
+                    {
+                        cookie.Secure = true;
+                        continue;
+                    }
+
+                    if (parts[index].IsContains("httponly"))
+                    {
+                        cookie.HttpOnly = true;
+                        continue;
+                    }
+                }
+                cookies.Add(cookie);
+            });
             return cookies;
         }
+
+        /// <summary>
+        /// Gets the collection of cookies
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="domain"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static CookieCollection GetHttpCookies(this HttpHeaders headers, string domain, string name = "Set-Cookie")
+            => (headers.TryGetValues(name, out var cookieValues) && cookieValues != null ? cookieValues.ToList() : new List<string>()).GetHttpCookies(domain);
+
+        /// <summary>
+        /// Gets the collection of cookies
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static CookieCollection GetHttpCookies(this HttpRequestMessage message)
+            => message.Headers.GetHttpCookies(message.RequestUri.Host, "Cookie");
+
+        /// <summary>
+        /// Gets the collection of cookies
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="useContentHeaders"></param>
+        /// <returns></returns>
+        public static CookieCollection GetHttpCookies(this HttpResponseMessage message, bool useContentHeaders = false)
+            => (useContentHeaders ? message.Content.Headers : message.Headers as HttpHeaders).GetHttpCookies(message.RequestMessage.RequestUri.Host);
+
+        /// <summary>
+        /// Gets the collection of cookies
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public static CookieCollection GetHttpCookies(this HttpContent content, string domain)
+            => content.Headers.GetHttpCookies(domain);
+
+        /// <summary>
+        /// Gets the collection of cookies
+        /// </summary>
+        /// <param name="httpResponse"></param>
+        /// <returns></returns>
+        public static CookieCollection GetHttpCookies(this HttpWebResponse httpResponse)
+            => httpResponse.Cookies != null && httpResponse.Cookies.Count > 0
+                ? httpResponse.Cookies
+                : httpResponse.Headers["Set-Cookie"].ToList(",").GetHttpCookies(httpResponse.ResponseUri.Host);
+        #endregion
+
+        #region Send Web/Http requests
+        /// <summary>
+		/// Sends a request to a remote end-point via HttpWebRequest
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
+		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="credential">The credential for marking request</param>
+		/// <param name="proxy">The proxy for marking request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<HttpWebResponse> SendWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
+        {
+            if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
+                throw new InformationRequiredException("The URI to send the request to is required");
+
+            headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+#pragma warning disable SYSLIB0014
+            var request = WebRequest.Create(uri) as HttpWebRequest;
+#pragma warning restore SYSLIB0014
+            request.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
+            request.Timeout = timeout * 1000;
+            request.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
+
+            headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("Connection") && !kvp.Key.IsEquals("AllowAutoRedirect") && !kvp.Key.IsEquals("Cookie")).ForEach(kvp =>
+            {
+                try
+                {
+                    request.Headers.Add(kvp.Key, kvp.Value);
+                }
+                catch { }
+            });
+
+            if (headers.ContainsKey("Cookie"))
+                request.Headers.Add("Cookie", headers["Cookie"].ToList().Join("; "));
+
+            if (!headers.ContainsKey("Accept"))
+                request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
+            if (!headers.ContainsKey("User-Agent"))
+                request.UserAgent = UtilityService.DesktopUserAgent;
+
+#if NETSTANDARD2_0
+			request.Headers.Add("Accept-Encoding", "deflate, gzip");
+			request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+#else
+            request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
+            request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
+#endif
+
+            request.Proxy = proxy ?? UtilityService.Proxy;
+
+            if (credential != null)
+            {
+                request.Credentials = credential;
+                request.UseDefaultCredentials = false;
+                request.PreAuthenticate = true;
+            }
+
+            if (body != null && (request.Method.Equals("POST") || request.Method.Equals("PUT") || request.Method.Equals("PATCH")))
+            {
+                if (body is string @string)
+                {
+                    using (var writer = new StreamWriter(await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false)))
+                    {
+                        await writer.WriteAsync(@string, cancellationToken).ConfigureAwait(false);
+                    }
+                    if (!headers.ContainsKey("Content-Type"))
+                        request.ContentType = "application/json; charset=utf-8";
+                }
+                else if (body is byte[] bytes)
+                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
+                    {
+#if NETSTANDARD2_0
+						await stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+#else
+                        await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+#endif
+                    }
+                else if (body is ArraySegment<byte> array)
+                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
+                    {
+#if NETSTANDARD2_0
+						await stream.WriteAsync(array, cancellationToken).ConfigureAwait(false);
+#else
+                        await stream.WriteAsync(array.AsMemory(), cancellationToken).ConfigureAwait(false);
+#endif
+                    }
+                else
+                    throw new InvalidRequestException("Body is invalid");
+            }
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                // switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using) - not available on macOS
+                request.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+
+#if NETSTANDARD2_0
+				// service point - only available on Windows with .NET Framework
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
+					request.ServicePoint.Expect100Continue = false;
+#endif
+            }
+
+            try
+            {
+                return await request.GetResponseAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (System.Net.Sockets.SocketException ex)
+            {
+                if (ex.Message.Contains("did not properly respond after a period of time"))
+                    throw new ConnectionTimeoutException(ex.InnerException);
+                else
+                    throw;
+            }
+            catch (WebException ex)
+            {
+                using (var response = ex.Response as HttpWebResponse)
+                {
+                    var heads = response.Headers.ToDictionary();
+                    var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
+                    var exception = isMoved
+                        ? new RemoteServerMovedException(response.StatusCode, heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri, heads)
+                        : new RemoteServerException(response.StatusCode, response.StatusCode == HttpStatusCode.NotModified, uri, heads);
+                    if (!isMoved && response.StatusCode != HttpStatusCode.NotModified)
+                        try
+                        {
+                            exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                        }
+                        catch { }
+                    throw exception;
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+		/// Sends a request to a remote end-point via HttpWebRequest
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
+		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpWebResponse> SendWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers = null, object body = null, int timeout = 90, CancellationToken cancellationToken = default)
+            => uri.SendWebRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
+
+        /// <summary>
+		/// Sends a request to a remote end-point via HttpWebRequest
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
+		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpWebResponse> SendWebRequestAsync(string uri, string method, Dictionary<string, string> headers = null, object body = null, int timeout = 90, CancellationToken cancellationToken = default)
+            => string.IsNullOrWhiteSpace(uri)
+                ? Task.FromException<HttpWebResponse>(new InformationInvalidException("The URI is invalid"))
+                : new Uri(uri).SendWebRequestAsync(method, headers, body, timeout, cancellationToken);
 
         /// <summary>
         /// Sends a request to a remote end-point via HttpClient
@@ -542,11 +884,10 @@ namespace net.vieapps.Components.Utility
         /// <returns></returns>
         public static async Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
         {
-            if (uri == null || string.IsNullOrWhiteSpace($"{uri}"))
+            if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
                 throw new InformationRequiredException("The URI is invalid");
 
             headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-
             using (var request = new HttpRequestMessage(new HttpMethod(string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper()), uri))
             {
 #if NETSTANDARD2_0
@@ -558,7 +899,7 @@ namespace net.vieapps.Components.Utility
                 {
                     try
                     {
-                        request.Headers.Add(kvp.Key, kvp.Value);
+                        request.Headers.Add(kvp.Key, kvp.Value.ToList());
                     }
                     catch { }
                 });
@@ -576,11 +917,7 @@ namespace net.vieapps.Components.Utility
 #endif
                 {
                     if (body is string @string)
-                    {
                         request.Content = new StringContent(@string);
-                        if (!headers.ContainsKey("Content-Type"))
-                            request.Headers.Add("Content-Type", "application/json");
-                    }
                     else if (body is byte[] bytes)
                         request.Content = new ByteArrayContent(bytes);
                     else if (body is ArraySegment<byte> array)
@@ -589,9 +926,12 @@ namespace net.vieapps.Components.Utility
                         request.Content = new StreamContent(stream);
                     else
                         throw new InvalidRequestException("Body is invalid");
+                    if (!headers.TryGetValue("Content-Type", out var contenType) || string.IsNullOrWhiteSpace(contenType))
+                        contenType = "application/octet-stream; charset=utf-8";
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contenType);
                 }
 
-                using (var handler = new HttpClientHandler())
+                using (var handler = new HttpClientHandler { UseCookies = false })
                 {
                     if (credential != null)
                     {
@@ -621,11 +961,17 @@ namespace net.vieapps.Components.Utility
                             var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
                             if (!response.IsSuccessStatusCode)
                             {
+                                var heads = response.Headers.ToDictionary();
                                 var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
-                                var headerS = new Dictionary<string, string>(response.Headers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Join(", ")), StringComparer.OrdinalIgnoreCase);
                                 var exception = isMoved
-                                    ? new RemoteServerMovedException(response.StatusCode, headerS.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri(url) : uri)
-                                    : new RemoteServerException(response.StatusCode, response.StatusCode == HttpStatusCode.NotModified, uri, headerS, response.StatusCode != HttpStatusCode.NotModified ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false) : null);
+                                    ? new RemoteServerMovedException(response.StatusCode, heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri, heads)
+                                    : new RemoteServerException(response.StatusCode, response.StatusCode == HttpStatusCode.NotModified, uri, heads);
+                                if (!isMoved && response.StatusCode != HttpStatusCode.NotModified)
+                                    try
+                                    {
+                                        exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                                    }
+                                    catch { }
                                 response.Dispose();
                                 throw exception;
                             }
@@ -754,7 +1100,7 @@ namespace net.vieapps.Components.Utility
         {
             using (var response = await uri.SendHttpRequestAsync("GET", headers, null, null, userAgent, refererURL, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
             {
-                var @string = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var @string = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                 return !@string.StartsWith("[") && !@string.StartsWith("{") ? @string.HtmlDecode() : @string;
             }
         }

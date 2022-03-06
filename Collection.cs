@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Xml;
+using System.Net;
+using System.Net.Http.Headers;
 using Newtonsoft.Json.Linq;
 using net.vieapps.Components.Utility;
 #endregion
@@ -1255,6 +1257,19 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this header to a dictionary of string
+		/// </summary>
+		/// <param name="headers"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static Dictionary<string, string> ToDictionary(this HttpHeaders headers, Action<Dictionary<string, string>> onCompleted = null)
+		{
+			var dictionary = headers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Join(","), StringComparer.OrdinalIgnoreCase);
+			onCompleted?.Invoke(dictionary);
+			return dictionary;
+		}
+
+		/// <summary>
 		/// Converts this dictionary to the name and value collection
 		/// </summary>
 		/// <param name="dictionary"></param>
@@ -1568,6 +1583,21 @@ namespace net.vieapps.Components.Utility
 			=> typeof(T).IsGenericList()
 				? (T)@object.ToList(typeof(T).GenericTypeArguments[0])
 				: default;
+
+#if NETSTANDARD2_0
+		/// <summary>
+		/// Converts the collection of cookies to a list
+		/// </summary>
+		/// <param name="cookies"></param>
+		/// <returns></returns>
+		public static List<Cookie> ToList(this CookieCollection cookies)
+		{
+			var list = new List<Cookie>();
+			foreach (Cookie cookie in cookies)
+				list.Add(cookie);
+			return list;
+		}
+#endif
 
 		/// <summary>
 		/// Converts the collection of objects to the generic hash-set of strong-typed objects

@@ -179,7 +179,7 @@ namespace net.vieapps.Components.Utility
 
 		public RemoteServerException() : base("Error occured while operating with remote server") { }
 
-		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, Uri uri, Dictionary<string, string> headers, string body, string message = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with the remote server")
+		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, Uri uri, Dictionary<string, string> headers, string body = null, string message = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with the remote server")
 		{
 			this.StatusCode = statusCode;
 			this.IsSuccessStatusCode = isSuccessStatusCode;
@@ -194,7 +194,7 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class RemoteServerMovedException : RemoteServerException
 	{
-		public RemoteServerMovedException(HttpStatusCode statusCode, Uri uri, string message = null) : base(statusCode, true, uri, null, null, message ?? $"Remote server was moved [{uri}]") { }
+		public RemoteServerMovedException(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers, string message = null) : base(statusCode, true, uri, headers, null, message ?? $"Remote server was moved [{uri}]") { }
 	}
 
 	[Serializable]
