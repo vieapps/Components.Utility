@@ -399,18 +399,66 @@ namespace net.vieapps.Components.Utility
         /// </summary>
         /// <param name="stream"></param>
         /// <param name="cancellationToken"></param>
+        /// <param name="leaveOpen"></param>
         /// <returns></returns>
-        public static async Task<string> ReadAllAsync(this Stream stream, CancellationToken cancellationToken = default)
+        public static async Task<string> ReadAllAsync(this Stream stream, CancellationToken cancellationToken = default, bool leaveOpen = false)
         {
             if (stream.CanSeek)
                 stream.Seek(0, SeekOrigin.Begin);
-            using (var reader = new StreamReader(stream, true))
+            using (var reader = leaveOpen ? new StreamReader(stream, null, true, -1, true) : new StreamReader(stream, true))
+            {
                 return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+            }
         }
         #endregion
 
         #region Web/Http request extensions
+        internal static string[] UserAgents { get; } = new[]
+        {
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "SAMSUNG-SGH-E250/1.0 Profile/MIDP-2.0 Configuration/CLDC-1.1 UP.Browser/6.2.3.3.c.1.101 (GUI) MMP/2.0 (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Google (+https://developers.google.com/+/web/snippet/)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; Yahoo! Slurp; +http://help.yahoo.com/help/us/ysearch/slurp)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "Mozilla/5.0 (compatible; Exabot/3.0; +http://www.exabot.com/go/robot)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)",
+            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        };
+
+        /// <summary>
+        /// Gets an user-agent as spider-bot
+        /// </summary>
+        public static string SpiderUserAgent => UtilityService.UserAgents[UtilityService.GetRandomNumber(0, UtilityService.UserAgents.Length - 1)];
+
+        /// <summary>
+        /// Gets an user-agent as mobile browser
+        /// </summary>
+        public static string MobileUserAgent => "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1";
+
+        /// <summary>
+        /// Gets an user-agent as desktop browser
+        /// </summary>
+        public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36";
+
 #if NETSTANDARD2_0
+        public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
+            => source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
+
         public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
             => httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
 
@@ -455,6 +503,31 @@ namespace net.vieapps.Components.Utility
         }
 
         /// <summary>
+        /// Copies the response stream asynchronously
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="stream"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task CopyToAsync(this HttpWebResponse response, Stream stream, CancellationToken cancellationToken = default)
+        {
+            using (var source = response.GetResponseStream())
+            {
+                await source.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Copies the response stream asynchronously
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="stream"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task CopyToAsync(this HttpResponseMessage response, Stream stream, CancellationToken cancellationToken = default)
+            => response.Content.CopyToAsync(stream, cancellationToken);
+
+        /// <summary>
         /// Reads all characters from the response stream asynchronously and returns them as one string
         /// </summary>
         /// <param name="response"></param>
@@ -495,47 +568,191 @@ namespace net.vieapps.Components.Utility
         public static Task<Stream> ReadAsStreamAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
             => response.Content.ReadAsStreamAsync(cancellationToken);
 
-        internal static string[] UserAgents { get; } = new[]
+        /// <summary>
+        /// Reads the response stream asynchronously
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task<byte[]> ReadAsByteArrayAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
         {
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "SAMSUNG-SGH-E250/1.0 Profile/MIDP-2.0 Configuration/CLDC-1.1 UP.Browser/6.2.3.3.c.1.101 (GUI) MMP/2.0 (compatible; Googlebot-Mobile/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Google (+https://developers.google.com/+/web/snippet/)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; Yahoo! Slurp; +http://help.yahoo.com/help/us/ysearch/slurp)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "Mozilla/5.0 (compatible; Exabot/3.0; +http://www.exabot.com/go/robot)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-            "ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)",
-            "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-        };
+            using (var stream = response.GetResponseStream())
+            {
+                var buffer = new byte[stream.Length];
+#if NETSTANDARD2_0
+                await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+                await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+#endif
+                return buffer;
+            }
+        }
 
         /// <summary>
-        /// Gets an user-agent as spider-bot
+        /// Reads the response stream asynchronously
         /// </summary>
-        public static string SpiderUserAgent => UtilityService.UserAgents[UtilityService.GetRandomNumber(0, UtilityService.UserAgents.Length - 1)];
+        /// <param name="response"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static Task<byte[]> ReadAsByteArrayAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
+            => response.Content.ReadAsByteArrayAsync(cancellationToken);
 
         /// <summary>
-        /// Gets an user-agent as mobile browser
+        /// Gets the HTTP headers
         /// </summary>
-        public static string MobileUserAgent => "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1";
+        /// <param name="response"></param>
+        /// <param name="excluded"></param>
+        /// <param name="onCompleted"></param>
+        /// <returns></returns>
+        public static Dictionary<string, string> GetHeaders(this HttpWebResponse response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+            => response.Headers?.ToDictionary(headers =>
+            {
+                excluded?.ForEach(name => headers.Remove(name));
+                onCompleted?.Invoke(headers);
+            }) ?? new Dictionary<string, string>();
 
         /// <summary>
-        /// Gets an user-agent as desktop browser
+        /// Gets the HTTP headers
         /// </summary>
-        public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36";
+        /// <param name="response"></param>
+        /// <param name="excluded"></param>
+        /// <param name="onCompleted"></param>
+        /// <returns></returns>
+        public static Dictionary<string, string> GetHeaders(this HttpResponseMessage response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+            => response.Headers?.ToDictionary(headers =>
+            {
+                excluded?.ForEach(name => headers.Remove(name));
+                onCompleted?.Invoke(headers);
+            }) ?? new Dictionary<string, string>();
+
+        /// <summary>
+        /// Gets the HTTP headers
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="excluded"></param>
+        /// <param name="onCompleted"></param>
+        /// <returns></returns>
+        public static Dictionary<string, string> GetHeaders(this HttpContent response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+            => response.Headers?.ToDictionary(headers =>
+            {
+                excluded?.ForEach(name => headers.Remove(name));
+                onCompleted?.Invoke(headers);
+            }) ?? new Dictionary<string, string>();
+
+        /// <summary>
+        /// Gets the HTTP cookies
+        /// </summary>
+        /// <param name="httpCookies"></param>
+        /// <param name="domain"></param>
+        /// <returns></returns>
+        public static CookieCollection GetCookies(this IEnumerable<string> httpCookies, string domain)
+        {
+            var index = 0;
+            var strCookies = (httpCookies ?? new List<string>()).ToList();
+            while (index < strCookies.Count)
+            {
+                if (strCookies[index].IsContains("expires=") && !strCookies[index].IsContains(","))
+                {
+                    strCookies[index] = strCookies[index] + ", " + strCookies[index + 1];
+                    strCookies.RemoveAt(index + 1);
+                }
+                index++;
+            }
+            var cookies = new CookieCollection();
+            strCookies.ForEach(value =>
+            {
+                try
+                {
+                    var cookie = new Cookie();
+                    var parts = value.Split(';');
+                    for (index = 0; index < parts.Length; index++)
+                    {
+                        if (index == 0)
+                        {
+                            if (parts[index] != string.Empty)
+                            {
+                                var pos = parts[index].IndexOf("=");
+                                cookie.Name = parts[index].Substring(0, pos);
+                                cookie.Value = parts[index].Substring(pos + 1, parts[index].Length - (pos + 1));
+                            }
+                        }
+
+                        else if (parts[index].IsContains("domain="))
+                        {
+                            var values = parts[index].ToList('=');
+                            cookie.Domain = string.IsNullOrWhiteSpace(values[1]) ? domain : values[1];
+                        }
+
+                        else if (parts[index].IsContains("path="))
+                        {
+                            var values = parts[index].ToList('=');
+                            cookie.Path = string.IsNullOrWhiteSpace(values[1]) ? "/" : values[1];
+                        }
+
+                        else if (parts[index].IsContains("expires="))
+                        {
+                            var values = parts[index].ToList('=');
+                            if (!string.IsNullOrWhiteSpace(values[1]))
+                                cookie.Expires = values[1].FromHttpDateTime(true);
+                        }
+
+                        else if (parts[index].IsContains("secure"))
+                            cookie.Secure = true;
+
+                        else if (parts[index].IsContains("httponly"))
+                            cookie.HttpOnly = true;
+                    }
+                    cookies.Add(cookie);
+                }
+                catch { }
+            });
+            return cookies;
+        }
+
+        /// <summary>
+        /// Gets the HTTP cookies
+        /// </summary>
+        /// <param name="response"></param>
+        /// <returns></returns>
+        public static CookieCollection GetCookies(this HttpWebResponse response)
+            => response.Cookies != null && response.Cookies.Count > 0
+                ? response.Cookies
+                : response.Headers["Set-Cookie"].ToList(",").GetCookies(response.ResponseUri.Host);
+
+        /// <summary>
+        /// Gets the HTTP cookies
+        /// </summary>
+        /// <param name="headers"></param>
+        /// <param name="domain"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static CookieCollection GetCookies(this HttpHeaders headers, string domain, string name = "Set-Cookie")
+            => (headers.TryGetValues(name, out var cookieValues) && cookieValues != null ? cookieValues.ToList() : new List<string>()).GetCookies(domain);
+
+        /// <summary>
+        /// Gets the HTTP cookies
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static CookieCollection GetCookies(this HttpRequestMessage message)
+            => message.Headers.GetCookies(message.RequestUri.Host, "Cookie");
+
+        /// <summary>
+        /// Gets the HTTP cookies
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="useContentHeaders"></param>
+        /// <returns></returns>
+        public static CookieCollection GetCookies(this HttpResponseMessage message, bool useContentHeaders = false)
+            => (useContentHeaders ? message.Content.Headers : message.Headers as HttpHeaders).GetCookies(message.RequestMessage.RequestUri.Host);
+
+        /// <summary>
+        /// Gets the HTTP cookies
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public static CookieCollection GetCookies(this HttpContent content, string domain)
+            => content.Headers.GetCookies(domain);
 
         /// <summary>
         /// Gets the web proxy
@@ -578,130 +795,9 @@ namespace net.vieapps.Components.Utility
         /// <returns></returns>
         public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
             => UtilityService.Proxy ?? (UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass));
-
-        /// <summary>
-        /// Gets the collection of cookies
-        /// </summary>
-        /// <param name="httpCookies"></param>
-        /// <param name="domain"></param>
-        /// <returns></returns>
-        public static CookieCollection GetHttpCookies(this IEnumerable<string> httpCookies, string domain)
-        {
-            var index = 0;
-            var wellCookies = (httpCookies ?? new List<string>()).ToList();
-            while (index < wellCookies.Count)
-            {
-                if (wellCookies[index].IsContains("expires=") && !wellCookies[index].IsContains(","))
-                {
-                    wellCookies[index] = wellCookies[index] + ", " + wellCookies[index + 1];
-                    wellCookies.RemoveAt(index + 1);
-                }
-                index++;
-            }
-            var cookies = new CookieCollection();
-            wellCookies.ForEach(value =>
-            {
-                var cookie = new Cookie();
-                var parts = value.Split(';');
-                for (index = 0; index < parts.Length; index++)
-                {
-                    if (index == 0)
-                    {
-                        if (parts[index] != string.Empty)
-                        {
-                            var pos = parts[index].IndexOf("=");
-                            cookie.Name = parts[index].Substring(0, pos);
-                            cookie.Value = parts[index].Substring(pos + 1, parts[index].Length - (pos + 1));
-                        }
-                        continue;
-                    }
-
-                    if (parts[index].IsContains("domain="))
-                    {
-                        var values = parts[index].ToList('=');
-                        cookie.Domain = string.IsNullOrWhiteSpace(values[1]) ? domain : values[1];
-                        continue;
-                    }
-
-                    if (parts[index].IsContains("path="))
-                    {
-                        var values = parts[index].ToList('=');
-                        cookie.Path = string.IsNullOrWhiteSpace(values[1]) ? "/" : values[1];
-                        continue;
-                    }
-
-                    if (parts[index].IsContains("expires="))
-                    {
-                        var values = parts[index].ToList('=');
-                        if (!string.IsNullOrWhiteSpace(values[1]))
-                            cookie.Expires = values[1].FromHttpDateTime(true);
-                        continue;
-                    }
-
-                    if (parts[index].IsContains("secure"))
-                    {
-                        cookie.Secure = true;
-                        continue;
-                    }
-
-                    if (parts[index].IsContains("httponly"))
-                    {
-                        cookie.HttpOnly = true;
-                        continue;
-                    }
-                }
-                cookies.Add(cookie);
-            });
-            return cookies;
-        }
-
-        /// <summary>
-        /// Gets the collection of cookies
-        /// </summary>
-        /// <param name="headers"></param>
-        /// <param name="domain"></param>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static CookieCollection GetHttpCookies(this HttpHeaders headers, string domain, string name = "Set-Cookie")
-            => (headers.TryGetValues(name, out var cookieValues) && cookieValues != null ? cookieValues.ToList() : new List<string>()).GetHttpCookies(domain);
-
-        /// <summary>
-        /// Gets the collection of cookies
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        public static CookieCollection GetHttpCookies(this HttpRequestMessage message)
-            => message.Headers.GetHttpCookies(message.RequestUri.Host, "Cookie");
-
-        /// <summary>
-        /// Gets the collection of cookies
-        /// </summary>
-        /// <param name="message"></param>
-        /// <param name="useContentHeaders"></param>
-        /// <returns></returns>
-        public static CookieCollection GetHttpCookies(this HttpResponseMessage message, bool useContentHeaders = false)
-            => (useContentHeaders ? message.Content.Headers : message.Headers as HttpHeaders).GetHttpCookies(message.RequestMessage.RequestUri.Host);
-
-        /// <summary>
-        /// Gets the collection of cookies
-        /// </summary>
-        /// <param name="content"></param>
-        /// <returns></returns>
-        public static CookieCollection GetHttpCookies(this HttpContent content, string domain)
-            => content.Headers.GetHttpCookies(domain);
-
-        /// <summary>
-        /// Gets the collection of cookies
-        /// </summary>
-        /// <param name="httpResponse"></param>
-        /// <returns></returns>
-        public static CookieCollection GetHttpCookies(this HttpWebResponse httpResponse)
-            => httpResponse.Cookies != null && httpResponse.Cookies.Count > 0
-                ? httpResponse.Cookies
-                : httpResponse.Headers["Set-Cookie"].ToList(",").GetHttpCookies(httpResponse.ResponseUri.Host);
         #endregion
 
-        #region Send Web/Http requests
+        #region Send requests via Web/Http
         /// <summary>
 		/// Sends a request to a remote end-point via HttpWebRequest
 		/// </summary>
@@ -714,7 +810,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="proxy">The proxy for marking request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> SendWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
+		public static async Task<HttpWebResponse> SendHttpWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
         {
             if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
                 throw new InformationRequiredException("The URI to send the request to is required");
@@ -746,8 +842,8 @@ namespace net.vieapps.Components.Utility
                 request.UserAgent = UtilityService.DesktopUserAgent;
 
 #if NETSTANDARD2_0
-			request.Headers.Add("Accept-Encoding", "deflate, gzip");
-			request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+            request.Headers.Add("Accept-Encoding", "deflate, gzip");
+            request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 #else
             request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
             request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
@@ -777,7 +873,7 @@ namespace net.vieapps.Components.Utility
                     using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
                     {
 #if NETSTANDARD2_0
-						await stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+                        await stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
 #else
                         await stream.WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
 #endif
@@ -786,7 +882,7 @@ namespace net.vieapps.Components.Utility
                     using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
                     {
 #if NETSTANDARD2_0
-						await stream.WriteAsync(array, cancellationToken).ConfigureAwait(false);
+                        await stream.WriteAsync(array, cancellationToken).ConfigureAwait(false);
 #else
                         await stream.WriteAsync(array.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
@@ -801,9 +897,9 @@ namespace net.vieapps.Components.Utility
                 request.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
 #if NETSTANDARD2_0
-				// service point - only available on Windows with .NET Framework
-				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
-					request.ServicePoint.Expect100Continue = false;
+                // service point - only available on Windows with .NET Framework
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
+                    request.ServicePoint.Expect100Continue = false;
 #endif
             }
 
@@ -820,55 +916,33 @@ namespace net.vieapps.Components.Utility
             }
             catch (WebException ex)
             {
-                using (var response = ex.Response as HttpWebResponse)
+                if (ex.Response is HttpWebResponse response)
                 {
-                    var heads = response.Headers.ToDictionary();
+                    var heads = response.GetHeaders();
                     var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
+                    var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
                     var exception = isMoved
                         ? new RemoteServerMovedException(response.StatusCode, heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri, heads)
-                        : new RemoteServerException(response.StatusCode, response.StatusCode == HttpStatusCode.NotModified, uri, heads);
-                    if (!isMoved && response.StatusCode != HttpStatusCode.NotModified)
+                        : new RemoteServerException(response.StatusCode, isNotModified, uri, heads);
+                    if (!isMoved && !isNotModified)
                         try
                         {
                             exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                         }
                         catch { }
+                    response.Dispose();
                     throw exception;
                 }
+                else if (ex.Status == WebExceptionStatus.Timeout)
+                    throw new ConnectionTimeoutException(ex);
+                else
+                    throw;
             }
             catch (Exception)
             {
                 throw;
             }
         }
-
-        /// <summary>
-		/// Sends a request to a remote end-point via HttpWebRequest
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<HttpWebResponse> SendWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers = null, object body = null, int timeout = 90, CancellationToken cancellationToken = default)
-            => uri.SendWebRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
-
-        /// <summary>
-		/// Sends a request to a remote end-point via HttpWebRequest
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<HttpWebResponse> SendWebRequestAsync(string uri, string method, Dictionary<string, string> headers = null, object body = null, int timeout = 90, CancellationToken cancellationToken = default)
-            => string.IsNullOrWhiteSpace(uri)
-                ? Task.FromException<HttpWebResponse>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).SendWebRequestAsync(method, headers, body, timeout, cancellationToken);
 
         /// <summary>
         /// Sends a request to a remote end-point via HttpClient
@@ -882,7 +956,7 @@ namespace net.vieapps.Components.Utility
         /// <param name="proxy">The proxy for marking request</param>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns></returns>
-        public static async Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
+        public static async Task<HttpResponseMessage> SendHttpClientRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
         {
             if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
                 throw new InformationRequiredException("The URI is invalid");
@@ -891,11 +965,11 @@ namespace net.vieapps.Components.Utility
             using (var request = new HttpRequestMessage(new HttpMethod(string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper()), uri))
             {
 #if NETSTANDARD2_0
-				request.Headers.Add("Accept-Encoding", "deflate, gzip");
+                request.Headers.Add("Accept-Encoding", "deflate, gzip");
 #else
                 request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
 #endif
-                headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("Connection") && !kvp.Key.IsEquals("AllowAutoRedirect")).ForEach(kvp =>
+                headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("Connection") && !kvp.Key.IsEquals("AllowAutoRedirect") && !kvp.Key.IsEquals("Cookie")).ForEach(kvp =>
                 {
                     try
                     {
@@ -903,6 +977,9 @@ namespace net.vieapps.Components.Utility
                     }
                     catch { }
                 });
+
+                if (headers.ContainsKey("Cookie"))
+                    request.Headers.Add("Cookie", headers["Cookie"].ToList());
 
                 if (!headers.ContainsKey("Accept"))
                     request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -950,7 +1027,7 @@ namespace net.vieapps.Components.Utility
                     handler.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
                     handler.ServerCertificateCustomValidationCallback = (requestMsg, certificate, chain, sslPolicyErrors) => true;
 #if NETSTANDARD2_0
-					handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                    handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 #else
                     handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
 #endif
@@ -961,12 +1038,13 @@ namespace net.vieapps.Components.Utility
                             var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
                             if (!response.IsSuccessStatusCode)
                             {
-                                var heads = response.Headers.ToDictionary();
+                                var heads = response.GetHeaders();
                                 var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
+                                var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
                                 var exception = isMoved
                                     ? new RemoteServerMovedException(response.StatusCode, heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri, heads)
-                                    : new RemoteServerException(response.StatusCode, response.StatusCode == HttpStatusCode.NotModified, uri, heads);
-                                if (!isMoved && response.StatusCode != HttpStatusCode.NotModified)
+                                    : new RemoteServerException(response.StatusCode, isNotModified, uri, heads);
+                                if (!isMoved && !isNotModified)
                                     try
                                     {
                                         exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -991,180 +1069,212 @@ namespace net.vieapps.Components.Utility
                 }
             }
         }
+        #endregion
 
+        #region Send requests to remote end-point
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient
+        /// Sends a request to a remote end-point
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
         /// <param name="method">The HTTP verb to perform request</param>
         /// <param name="headers">The requesting headers</param>
-        /// <param name="body">The requesting body</param>
+        /// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
         /// <param name="timeout">The requesting time-out</param>
         /// <param name="credential">The credential for marking request</param>
         /// <param name="proxy">The proxy for marking request</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, string body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
-            => string.IsNullOrWhiteSpace(uri)
-                ? Task.FromException<HttpResponseMessage>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken);
-
-        /// <summary>
-        /// Sends a request to a remote end-point via HttpClient
-        /// </summary>
-        /// <param name="uri">The URI to perform request to</param>
-        /// <param name="method">The HTTP verb to perform request</param>
-        /// <param name="headers">The requesting headers</param>
-        /// <param name="body">The requesting body</param>
-        /// <param name="timeout">The requesting time-out</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns></returns>
-        public static Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, string body, int timeout, CancellationToken cancellationToken = default)
-            => uri.SendHttpRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
-
-        /// <summary>
-        /// Sends a request to a remote end-point via HttpClient
-        /// </summary>
-        /// <param name="uri">The URI to perform request to</param>
-        /// <param name="method">The HTTP verb to perform request</param>
-        /// <param name="headers">The requesting headers</param>
-        /// <param name="body">The requesting body</param>
-        /// <param name="timeout">The requesting time-out</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns></returns>
-        public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, string body, int timeout, CancellationToken cancellationToken = default)
-            => string.IsNullOrWhiteSpace(uri)
-                ? Task.FromException<HttpResponseMessage>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, cancellationToken);
-
-        /// <summary>
-        /// Sends a request to a remote end-point via HttpClient
-        /// </summary>
-        /// <param name="uri">The URI to perform request to</param>
-        /// <param name="method">The HTTP verb to perform request</param>
-        /// <param name="headers">The requesting headers</param>
-        /// <param name="body">The requesting body</param>
-        /// <param name="contentType">The content-type of the requesting body</param>
-        /// <param name="timeout">The requesting time-out</param>
-        /// <param name="userAgent">The string that presents the 'User-Agent' header</param>
-        /// <param name="refererURL">The string that presents the 'Referer' header</param>
-        /// <param name="credential">The credential for marking request</param>
-        /// <param name="proxy">The proxy for marking request</param>
-        /// <param name="cancellationToken">The cancellation token</param>
-        /// <returns></returns>
-        public static Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method = null, Dictionary<string, string> headers = null, string body = null, string contentType = null, string userAgent = null, string refererURL = null, int timeout = 90, NetworkCredential credential = null, IWebProxy proxy = null, CancellationToken cancellationToken = default)
+        public static async Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = false)
         {
-            headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrWhiteSpace(contentType))
-                headers["Content-Type"] = contentType;
-            if (!string.IsNullOrWhiteSpace(userAgent))
-                headers["User-Agent"] = userAgent;
-            if (!string.IsNullOrWhiteSpace(refererURL))
-                headers["Referer"] = refererURL;
-            return uri.SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken);
+            if (useHttpClient)
+                using (var response = await uri.SendHttpClientRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
+                using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+                    return await RemoteServerResponse.CreateAsync(response.StatusCode, uri, response.GetHeaders(), stream).ConfigureAwait(false);
+            else
+                using (var response = await uri.SendHttpWebRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
+                using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+                    return await RemoteServerResponse.CreateAsync(response.StatusCode, uri, response.GetHeaders(), stream).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient
+        /// Sends a request to a remote end-point
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
         /// <param name="method">The HTTP verb to perform request</param>
         /// <param name="headers">The requesting headers</param>
-        /// <param name="body">The requesting body</param>
-        /// <param name="contentType">The content-type of the requesting body</param>
+        /// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
         /// <param name="timeout">The requesting time-out</param>
-        /// <param name="userAgent">The string that presents the 'User-Agent' header</param>
-        /// <param name="refererURL">The string that presents the 'Referer' header</param>
         /// <param name="credential">The credential for marking request</param>
         /// <param name="proxy">The proxy for marking request</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, string method = null, Dictionary<string, string> headers = null, string body = null, string contentType = null, string userAgent = null, string refererURL = null, int timeout = 90, NetworkCredential credential = null, IWebProxy proxy = null, CancellationToken cancellationToken = default)
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = false)
             => string.IsNullOrWhiteSpace(uri)
-                ? Task.FromException<HttpResponseMessage>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).SendHttpRequestAsync(method, headers, body, contentType, userAgent, refererURL, timeout, credential, proxy, cancellationToken);
+                ? Task.FromException<RemoteServerResponse>(new InformationInvalidException("The URI is invalid"))
+                : new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken, useHttpClient);
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient to fetch a string
+        /// Sends a request to a remote end-point
+        /// </summary>
+        /// <param name="uri">The URI to perform request to</param>
+        /// <param name="method">The HTTP verb to perform request</param>
+        /// <param name="headers">The requesting headers</param>
+        /// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
+        /// <param name="timeout">The requesting time-out</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
+        /// <returns></returns>
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => uri.SendHttpRequestAsync(method, headers, body, timeout, null, null, cancellationToken, useHttpClient);
+
+        /// <summary>
+        /// Sends a request to a remote end-point
+        /// </summary>
+        /// <param name="uri">The URI to perform request to</param>
+        /// <param name="method">The HTTP verb to perform request</param>
+        /// <param name="headers">The requesting headers</param>
+        /// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
+        /// <param name="timeout">The requesting time-out</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
+        /// <returns></returns>
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, object body, int timeout, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => string.IsNullOrWhiteSpace(uri)
+                ? Task.FromException<RemoteServerResponse>(new InformationInvalidException("The URI is invalid"))
+                : new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, cancellationToken, useHttpClient);
+
+        /// <summary>
+        /// Sends a request to a remote end-point
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
         /// <param name="headers">The requesting headers</param>
-        /// <param name="userAgent">The string that presents the 'User-Agent' header</param>
-        /// <param name="refererURL">The string that presents the 'Referer' header</param>
+        /// <param name="timeout">The requesting time-out</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
+        /// <returns></returns>
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, Dictionary<string, string> headers, int timeout, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => uri.SendHttpRequestAsync("GET", headers, null, timeout, cancellationToken, useHttpClient);
+
+        /// <summary>
+        /// Sends a request to a remote end-point
+        /// </summary>
+        /// <param name="uri">The URI to perform request to</param>
+        /// <param name="headers">The requesting headers</param>
+        /// <param name="timeout">The requesting time-out</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
+        /// <returns></returns>
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, Dictionary<string, string> headers, int timeout, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => string.IsNullOrWhiteSpace(uri)
+                ? Task.FromException<RemoteServerResponse>(new InformationInvalidException("The URI is invalid"))
+                : new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken, useHttpClient);
+
+        /// <summary>
+        /// Sends a request to a remote end-point
+        /// </summary>
+        /// <param name="uri">The URI to perform request to</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
+        /// <returns></returns>
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => uri.SendHttpRequestAsync(null, 90, cancellationToken, useHttpClient);
+
+        /// <summary>
+        /// Sends a request to a remote end-point
+        /// </summary>
+        /// <param name="uri">The URI to perform request to</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
+        /// <returns></returns>
+        public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => string.IsNullOrWhiteSpace(uri)
+                ? Task.FromException<RemoteServerResponse>(new InformationInvalidException("The URI is invalid"))
+                : new Uri(uri).SendHttpRequestAsync(cancellationToken, useHttpClient);
+
+        /// <summary>
+        /// Sends a request to a remote end-point to fetch and return as a string
+        /// </summary>
+        /// <param name="uri">The URI to perform request to</param>
+        /// <param name="headers">The requesting headers</param>
         /// <param name="timeout">The requesting time-out</param>
         /// <param name="credential">The credential for marking request</param>
         /// <param name="proxy">The proxy for marking request</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static async Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, string userAgent, string refererURL, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default)
+        public static async Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = false)
         {
-            using (var response = await uri.SendHttpRequestAsync("GET", headers, null, null, userAgent, refererURL, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
+            using (var response = await uri.SendHttpRequestAsync("GET", headers, null, timeout, credential, proxy, cancellationToken, useHttpClient).ConfigureAwait(false))
             {
-                var @string = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                return !@string.StartsWith("[") && !@string.StartsWith("{") ? @string.HtmlDecode() : @string;
+                return await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient to fetch a string
+        /// Sends a request to a remote end-point to fetch and return as a string
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
         /// <param name="headers">The requesting headers</param>
-        /// <param name="userAgent">The string that presents the 'User-Agent' header</param>
-        /// <param name="refererURL">The string that presents the 'Referer' header</param>
         /// <param name="timeout">The requesting time-out</param>
         /// <param name="credential">The credential for marking request</param>
         /// <param name="proxy">The proxy for marking request</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers, string userAgent, string refererURL, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default)
+        public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = false)
             => string.IsNullOrWhiteSpace(uri)
                 ? Task.FromException<string>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).FetchHttpAsync(headers, userAgent, refererURL, timeout, credential, proxy, cancellationToken);
+                : new Uri(uri).FetchHttpAsync(headers, timeout, credential, proxy, cancellationToken, useHttpClient);
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient to fetch a string
+        /// Sends a request to a remote end-point to fetch and return as a string
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
-        /// <param name="userAgent">The string that presents the 'User-Agent' header</param>
-        /// <param name="refererURL">The string that presents the 'Referer' header</param>
+        /// <param name="headers">The requesting headers</param>
+        /// <param name="timeout">The requesting time-out</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<string> FetchHttpAsync(this Uri uri, string userAgent, string refererURL, CancellationToken cancellationToken = default)
-            => uri.FetchHttpAsync(null, userAgent, refererURL, 90, null, null, cancellationToken);
+        public static Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, int timeout, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => uri.FetchHttpAsync(headers, timeout, null, null, cancellationToken, useHttpClient);
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient to fetch a string
+        /// Sends a request to a remote end-point to fetch and return as a string
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
-        /// <param name="userAgent">The string that presents the 'User-Agent' header</param>
-        /// <param name="refererURL">The string that presents the 'Referer' header</param>
+        /// <param name="headers">The requesting headers</param>
+        /// <param name="timeout">The requesting time-out</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<string> FetchHttpAsync(string uri, string userAgent, string refererURL, CancellationToken cancellationToken = default)
+        public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers, int timeout, CancellationToken cancellationToken = default, bool useHttpClient = false)
             => string.IsNullOrWhiteSpace(uri)
                 ? Task.FromException<string>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).FetchHttpAsync(userAgent, refererURL, cancellationToken);
+                : new Uri(uri).FetchHttpAsync(headers, timeout, cancellationToken, useHttpClient);
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient to fetch a string
+        /// Sends a request to a remote end-point to fetch a string
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<string> FetchHttpAsync(this Uri uri, CancellationToken cancellationToken = default)
-            => uri.FetchHttpAsync(null, null, cancellationToken);
+        public static Task<string> FetchHttpAsync(this Uri uri, CancellationToken cancellationToken = default, bool useHttpClient = false)
+            => uri.FetchHttpAsync(null, 90, cancellationToken, useHttpClient);
 
         /// <summary>
-        /// Sends a request to a remote end-point via HttpClient to fetch a string
+        /// Sends a request to a remote end-point to fetch a string
         /// </summary>
         /// <param name="uri">The URI to perform request to</param>
         /// <param name="cancellationToken">The cancellation token</param>
+        /// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
         /// <returns></returns>
-        public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken = default)
+        public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken = default, bool useHttpClient = false)
             => string.IsNullOrWhiteSpace(uri)
                 ? Task.FromException<string>(new InformationInvalidException("The URI is invalid"))
-                : new Uri(uri).FetchHttpAsync(cancellationToken);
+                : new Uri(uri).FetchHttpAsync(cancellationToken, useHttpClient);
         #endregion
 
         #region Normalize HTML/XML tags & Remove whitespaces/breaks
@@ -1868,15 +1978,15 @@ namespace net.vieapps.Components.Utility
             var memoryStream = UtilityService.CreateMemoryStream();
             var buffer = new byte[4096];
 #if NETSTANDARD2_0
-			var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+            var read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
             var read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
             while (read > 0)
             {
 #if NETSTANDARD2_0
-				await memoryStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-				read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                await memoryStream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+                read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                 await memoryStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                 read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
@@ -1934,7 +2044,7 @@ namespace net.vieapps.Components.Utility
         /// <returns></returns>
         public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
 #if NETSTANDARD2_0
-			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
+            => stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 #else
             => stream.WriteAsync(buffer.AsMemory(), cancellationToken).AsTask();
 #endif
@@ -2222,7 +2332,7 @@ namespace net.vieapps.Components.Utility
                 {
                     var data = new byte[fileInfo.Length];
 #if NETSTANDARD2_0
-					await stream.ReadAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+                    await stream.ReadAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
 #else
                     await stream.ReadAsync(data.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
@@ -2277,7 +2387,7 @@ namespace net.vieapps.Components.Utility
             using (var stream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
             {
 #if NETSTANDARD2_0
-				await stream.WriteAsync(content ?? Array.Empty<byte>(), 0, content != null ? content.Length : 0, cancellationToken).ConfigureAwait(false);
+                await stream.WriteAsync(content ?? Array.Empty<byte>(), 0, content != null ? content.Length : 0, cancellationToken).ConfigureAwait(false);
 #else
                 await stream.WriteAsync((content ?? Array.Empty<byte>()).AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
@@ -2333,20 +2443,20 @@ namespace net.vieapps.Components.Utility
             {
                 var buffer = new byte[TextFileReader.BufferSize];
 #if NETSTANDARD2_0
-				var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                var read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                 var read = await content.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
                 while (read > 0)
                 {
 #if NETSTANDARD2_0
-					await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+                    await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
 #else
                     await stream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
 #endif
                     await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 #if NETSTANDARD2_0
-					read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    read = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                     read = await content.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
@@ -2473,7 +2583,7 @@ namespace net.vieapps.Components.Utility
             {
                 var stopwatch = Stopwatch.StartNew();
                 byte[] data = null;
-                using (var webResponse = await UtilityService.SendHttpRequestAsync(url, "GET", null, null, null, null, null, 90, null, null, cancellationToken).ConfigureAwait(false))
+                using (var webResponse = await new Uri(url).SendHttpClientRequestAsync("GET", null, null, 90, null, null, cancellationToken).ConfigureAwait(false))
                 {
                     data = await webResponse.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -2504,7 +2614,7 @@ namespace net.vieapps.Components.Utility
                 try
                 {
                     var stopwatch = Stopwatch.StartNew();
-                    using (var webResponse = await UtilityService.SendHttpRequestAsync(url, "GET", null, null, null, null, refererURL, 90, null, null, cancellationToken).ConfigureAwait(false))
+                    using (var webResponse = await new Uri(url).SendHttpClientRequestAsync("GET", null, null, 90, null, null, cancellationToken).ConfigureAwait(false))
                     {
                         using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
                         {
@@ -2548,7 +2658,7 @@ namespace net.vieapps.Components.Utility
             using (var output = UtilityService.CreateMemoryStream())
             {
 #if NETSTANDARD2_0
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+                using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
                 using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
@@ -2580,7 +2690,7 @@ namespace net.vieapps.Components.Utility
             using (var output = UtilityService.CreateMemoryStream())
             {
 #if NETSTANDARD2_0
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+                using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
                 using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
@@ -2591,15 +2701,15 @@ namespace net.vieapps.Components.Utility
                     var read = stream is MemoryStream
                         ? stream.Read(buffer, 0, buffer.Length)
 #if NETSTANDARD2_0
-						: await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                        : await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                         : await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
                     while (read > 0)
                     {
 #if NETSTANDARD2_0
-						await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-						read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                        await compressor.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+                        read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                         await compressor.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                         read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
@@ -2622,7 +2732,7 @@ namespace net.vieapps.Components.Utility
             using (var output = UtilityService.CreateMemoryStream())
             {
 #if NETSTANDARD2_0
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+                using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
                 using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) as Stream : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) as Stream : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
@@ -2652,7 +2762,7 @@ namespace net.vieapps.Components.Utility
         public static byte[] Decompress(this Stream stream, string mode = "deflate")
         {
 #if NETSTANDARD2_0
-			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+            using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
             using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) as Stream : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif
@@ -2679,7 +2789,7 @@ namespace net.vieapps.Components.Utility
         public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
         {
 #if NETSTANDARD2_0
-			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+            using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
             using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) as Stream : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) as Stream : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif
@@ -2689,7 +2799,7 @@ namespace net.vieapps.Components.Utility
                 var read = stream is MemoryStream
                     ? decompressor.Read(buffer, 0, buffer.Length)
 #if NETSTANDARD2_0
-					: await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    : await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                     : await decompressor.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
@@ -2697,7 +2807,7 @@ namespace net.vieapps.Components.Utility
                 {
                     output = output.Concat(buffer.Take(0, read));
 #if NETSTANDARD2_0
-					read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+                    read = await decompressor.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
 #else
                     read = await decompressor.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
 #endif
@@ -3620,6 +3730,147 @@ namespace net.vieapps.Components.Utility
             // finally add start back on to shift back to the desired range and return.
             return ((this.Next(bits + 1) * bigInt) / BigInteger.Pow(2, bits + 1)) + minValue;
         }
+    }
+    #endregion
+
+    //  --------------------------------------------------------------------------------------------
+
+    #region Remote server response
+    public class RemoteServerResponse : IDisposable
+    {
+        internal static async Task<RemoteServerResponse> CreateAsync(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers, Stream stream, CancellationToken cancellationToken = default)
+        {
+            var type = $"{stream.GetType()}";
+            var response = new RemoteServerResponse(statusCode, uri, headers)
+            {
+                Body = UtilityService.CreateMemoryStream(),
+#if NETSTANDARD2_0
+                BodyIsDecompressedStream = stream is GZipStream || stream is DeflateStream || type.IsEndsWith("EncodingReadStream") || type.IsEndsWith("DecompressedContent")
+#else
+                BodyIsDecompressedStream = stream is BrotliStream || stream is GZipStream || stream is DeflateStream || type.IsEndsWith("EncodingReadStream") || type.IsEndsWith("DecompressedContent")
+#endif
+            };
+            await stream.CopyToAsync(response.Body, cancellationToken).ConfigureAwait(false);
+            return response;
+        }
+
+        public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.OK;
+
+        public Uri URI { get; internal set; }
+
+        public Dictionary<string, string> Headers { get; internal set; } = new Dictionary<string, string>();
+
+        public MemoryStream Body { get; internal set; }
+
+        public bool BodyIsDecompressedStream { get; internal set; } = false;
+
+        public RemoteServerResponse(HttpStatusCode statusCode = HttpStatusCode.OK, Uri uri = null, Dictionary<string, string> headers = null)
+        {
+            this.StatusCode = statusCode;
+            this.URI = uri;
+            this.Headers = headers;
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            this.Body?.Dispose();
+        }
+
+        public Task<MemoryStream> ReadAsStreamAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(this.Body);
+
+        public async Task<byte[]> ReadAsByteArrayAsync(CancellationToken cancellationToken = default)
+        {
+            var buffer = Array.Empty<byte>();
+            if (this.Body != null)
+            {
+                this.Body.Seek(0, SeekOrigin.Begin);
+                buffer = new byte[this.Body.Length];
+#if NETSTANDARD2_0
+                await this.Body.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+                await this.Body.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+#endif
+            }
+            return buffer;
+        }
+
+        public async Task<string> ReadAsStringAsync(CancellationToken cancellationToken = default)
+        {
+            var @string = this.Body != null ? await this.Body.ReadAllAsync(cancellationToken, true).ConfigureAwait(false) : null;
+            return "text/html".IsStartsWith(this.ContentType) ? @string?.HtmlDecode() : @string;
+        }
+
+        public async Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
+        {
+            if (this.Body != null)
+            {
+                this.Body.Seek(0, SeekOrigin.Begin);
+                await this.Body.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        public async Task WriteToAsync(Stream stream, CancellationToken cancellationToken = default)
+        {
+            if (this.Body != null)
+            {
+                this.Body.Seek(0, SeekOrigin.Begin);
+                if (this.BodyIsDecompressedStream)
+                {
+                    var buffer = await this.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD2_0
+                    await stream.WriteAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+                    await stream.WriteAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
+#endif
+                }
+                else
+                {
+                    var buffer = new byte[TextFileReader.BufferSize];
+#if NETSTANDARD2_0
+                    var read = await this.Body.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+                    var read = await this.Body.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+#endif
+                    while (read > 0)
+                    {
+#if NETSTANDARD2_0
+                        await stream.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+#else
+                        await stream.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+#endif
+                        await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+#if NETSTANDARD2_0
+                        read = await this.Body.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#else
+                        read = await this.Body.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
+#endif
+                    }
+                }
+            }
+        }
+
+        public Dictionary<string, string> GetHeaders(IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+        {
+            var headers = new Dictionary<string, string>(this.Headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+            excluded?.ForEach(name => headers.Remove(name));
+            onCompleted?.Invoke(headers);
+            return headers;
+        }
+
+        CookieCollection _cookies = null;
+
+        public CookieCollection Cookies
+            => this._cookies ?? (this._cookies = this.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(this.URI?.Host ?? "") : new CookieCollection());
+
+        public List<Cookie> GetCookies()
+            => this.Cookies.ToList();
+
+        public string ContentType
+            => this.GetHeaders().TryGetValue("Content-Type", out var contentType) && !string.IsNullOrWhiteSpace(contentType)
+                ? contentType
+                : null;
     }
     #endregion
 

@@ -12,8 +12,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Xml;
+#if NETSTANDARD2_0
 using System.Net;
-using System.Net.Http.Headers;
+#endif
 using Newtonsoft.Json.Linq;
 using net.vieapps.Components.Utility;
 #endregion
@@ -1182,6 +1183,20 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this header to a dictionary of string
+		/// </summary>
+		/// <param name="headers"></param>
+		/// <param name="onCompleted"></param>
+		/// <param name="stringComparer"></param>
+		/// <returns></returns>
+		public static Dictionary<string, string> ToDictionary(this System.Net.Http.Headers.HttpHeaders headers, Action<Dictionary<string, string>> onCompleted = null, StringComparer stringComparer = null)
+		{
+			var dictionary = headers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Join(","), stringComparer ?? StringComparer.OrdinalIgnoreCase);
+			onCompleted?.Invoke(dictionary);
+			return dictionary;
+		}
+
+		/// <summary>
 		/// Creates a dictionary from from this JSON
 		/// </summary>
 		/// <typeparam name="TKey"></typeparam>
@@ -1253,19 +1268,6 @@ namespace net.vieapps.Components.Utility
 				if (key != null)
 					dictionary.TryAdd(key, @object);
 			});
-			return dictionary;
-		}
-
-		/// <summary>
-		/// Converts this header to a dictionary of string
-		/// </summary>
-		/// <param name="headers"></param>
-		/// <param name="onCompleted"></param>
-		/// <returns></returns>
-		public static Dictionary<string, string> ToDictionary(this HttpHeaders headers, Action<Dictionary<string, string>> onCompleted = null)
-		{
-			var dictionary = headers.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Join(","), StringComparer.OrdinalIgnoreCase);
-			onCompleted?.Invoke(dictionary);
 			return dictionary;
 		}
 
