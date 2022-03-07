@@ -177,9 +177,9 @@ namespace net.vieapps.Components.Utility
 
 		public string Body { get; internal set; }
 
-		public RemoteServerException() : base("Error occured while operating with remote server") { }
+		public RemoteServerException() : base("Error occured while operating with a remote server") { }
 
-		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, Uri uri, Dictionary<string, string> headers, string body = null, string message = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with the remote server")
+		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, Uri uri, Dictionary<string, string> headers, string body = null, string message = null, Exception innerException = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with a remote server", innerException)
 		{
 			this.StatusCode = statusCode;
 			this.IsSuccessStatusCode = isSuccessStatusCode;
