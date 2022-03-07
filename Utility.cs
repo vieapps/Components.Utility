@@ -237,7 +237,7 @@ namespace net.vieapps.Components.Utility
         }
         #endregion
 
-        #region Task/Cancellation Token extensions
+        #region Task/CancellationToken extensions
         /// <summary>
         /// Executes an action in the thread pool with cancellation supported
         /// </summary>
@@ -393,9 +393,26 @@ namespace net.vieapps.Components.Utility
         /// <returns></returns>
         public static Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
             => reader.ReadLineAsync().WithCancellationToken(cancellationToken);
+
+#if NETSTANDARD2_0
+        public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
+            => source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
+
+        public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
+            => httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
+
+        public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+            => httpContent.ReadAsStreamAsync().WithCancellationToken(cancellationToken);
+
+        public static Task<byte[]> ReadAsByteArrayAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+            => httpContent.ReadAsByteArrayAsync().WithCancellationToken(cancellationToken);
+
+        public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+            => httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
+#endif
         #endregion
 
-        #region Web/Http request extensions
+        #region HttpWebRequest/HttpClient request extensions
         internal static string[] UserAgents { get; } = new[]
         {
             "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
@@ -478,9 +495,7 @@ namespace net.vieapps.Components.Utility
         public static async Task CopyToAsync(this HttpWebResponse response, Stream stream, CancellationToken cancellationToken = default)
         {
             using (var source = response.GetResponseStream())
-            {
                 await source.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-            }
         }
 
         /// <summary>
@@ -502,9 +517,7 @@ namespace net.vieapps.Components.Utility
         public static async Task<string> ReadAsStringAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
         {
             using (var stream = response.GetResponseStream())
-            {
                 return await stream.ReadAllAsync(cancellationToken).ConfigureAwait(false);
-            }
         }
 
         /// <summary>
@@ -618,7 +631,7 @@ namespace net.vieapps.Components.Utility
             {
                 if (strCookies[index].IsContains("expires=") && !strCookies[index].IsContains(","))
                 {
-                    strCookies[index] = strCookies[index] + ", " + strCookies[index + 1];
+                    strCookies[index] = $"{strCookies[index]}, {strCookies[index + 1]}";
                     strCookies.RemoveAt(index + 1);
                 }
                 index++;
@@ -626,55 +639,45 @@ namespace net.vieapps.Components.Utility
             var cookies = new CookieCollection();
             strCookies.ForEach(value =>
             {
-                try
+                var cookie = new Cookie();
+                var parts = value.ToList(";");
+                for (index = 0; index < parts.Count; index++)
                 {
-                    var cookie = new Cookie();
-                    var parts = value.Split(';');
-                    for (index = 0; index < parts.Length; index++)
+                    if (index == 0 && parts[index] != string.Empty)
                     {
-                        if (index == 0)
-                        {
-                            if (parts[index] != string.Empty)
-                            {
-                                var pos = parts[index].IndexOf("=");
-                                cookie.Name = parts[index].Substring(0, pos);
-                                cookie.Value = parts[index].Substring(pos + 1, parts[index].Length - (pos + 1));
-                            }
-                        }
-
-                        else if (parts[index].IsContains("domain="))
-                        {
-                            var values = parts[index].ToList('=');
-                            cookie.Domain = string.IsNullOrWhiteSpace(values[1]) ? domain : values[1];
-                        }
-
-                        else if (parts[index].IsContains("path="))
-                        {
-                            var values = parts[index].ToList('=');
-                            cookie.Path = string.IsNullOrWhiteSpace(values[1]) ? "/" : values[1];
-                        }
-
-                        else if (parts[index].IsContains("expires="))
-                            try
-                            {
-                                var values = parts[index].ToList('=');
-                                if (!string.IsNullOrWhiteSpace(values[1]))
-                                    cookie.Expires = values[1].FromHttpDateTime(true);
-                            }
-                            catch { }
-
-                        else if (parts[index].IsContains("secure"))
-                            cookie.Secure = true;
-
-                        else if (parts[index].IsContains("httponly"))
-                            cookie.HttpOnly = true;
+                        var pos = parts[index].IndexOf("=");
+                        cookie.Name = parts[index].Left(pos);
+                        cookie.Value = parts[index].Right(parts[index].Length - pos - 1);
                     }
-                    cookie.Domain = string.IsNullOrWhiteSpace(cookie.Domain) ? domain : cookie.Domain;
-                    cookie.Path = string.IsNullOrWhiteSpace(cookie.Path) ? "/" : cookie.Path;
-                    onAdd?.Invoke(cookie);
-                    cookies.Add(cookie);
+                    else if (parts[index].IsContains("domain="))
+                    {
+                        var values = parts[index].ToList("=");
+                        if (!string.IsNullOrWhiteSpace(values[1]))
+                            cookie.Domain = values[1];
+                    }
+                    else if (parts[index].IsContains("path="))
+                    {
+                        var values = parts[index].ToList("=");
+                        if (!string.IsNullOrWhiteSpace(values[1]))
+                            cookie.Path = values[1];
+                    }
+                    else if (parts[index].IsContains("expires="))
+                        try
+                        {
+                            var values = parts[index].ToList("=");
+                            if (!string.IsNullOrWhiteSpace(values[1]))
+                                cookie.Expires = values[1].FromHttpDateTime(true);
+                        }
+                        catch { }
+                    else if (parts[index].IsContains("secure"))
+                        cookie.Secure = true;
+                    else if (parts[index].IsContains("httponly"))
+                        cookie.HttpOnly = true;
                 }
-                catch { }
+                cookie.Domain = string.IsNullOrWhiteSpace(cookie.Domain) ? domain : cookie.Domain;
+                cookie.Path = string.IsNullOrWhiteSpace(cookie.Path) ? "/" : cookie.Path;
+                onAdd?.Invoke(cookie);
+                cookies.Add(cookie);
             });
             return cookies;
         }
@@ -772,7 +775,7 @@ namespace net.vieapps.Components.Utility
             => UtilityService.Proxy ?? (UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass));
         #endregion
 
-        #region Send requests via Web/Http
+        #region Send requests via HttpWebRequest/HttpClient
         /// <summary>
         /// Sends a request to a remote end-point via HttpWebRequest
         /// </summary>
@@ -807,17 +810,14 @@ namespace net.vieapps.Components.Utility
                 catch { }
             });
 
-            if (headers.ContainsKey("Cookie"))
-                request.Headers.Add("Cookie", headers["Cookie"].ToList().Join("; "));
+            if (!headers.ContainsKey("User-Agent"))
+                request.Headers.Add("User-Agent", UtilityService.DesktopUserAgent);
 
             if (!headers.ContainsKey("Accept"))
-                request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+                request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 
             if (!headers.ContainsKey("Accept-Language"))
                 request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
-
-            if (!headers.ContainsKey("User-Agent"))
-                request.UserAgent = UtilityService.DesktopUserAgent;
 
 #if NETSTANDARD2_0
             request.Headers.Add("Accept-Encoding", "deflate, gzip");
@@ -827,6 +827,12 @@ namespace net.vieapps.Components.Utility
             request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
 #endif
 
+            if (headers.ContainsKey("Cookie"))
+            {
+                request.CookieContainer = new CookieContainer();
+                request.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), headers["Cookie"].ToList(";").Join(",").ToList().GetCookies(uri.Host));
+            }
+
             request.Proxy = proxy ?? UtilityService.Proxy;
 
             if (credential != null)
@@ -834,25 +840,6 @@ namespace net.vieapps.Components.Utility
                 request.Credentials = credential;
                 request.UseDefaultCredentials = false;
                 request.PreAuthenticate = true;
-            }
-
-            if (body != null && (request.Method.Equals("POST") || request.Method.Equals("PUT") || request.Method.Equals("PATCH")))
-            {
-                if (body is string @string)
-                {
-                    if (!headers.ContainsKey("Content-Type"))
-                        request.ContentType = "application/json; charset=utf-8";
-                    using (var writer = new StreamWriter(await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false)))
-                        await writer.WriteAsync(@string, cancellationToken).ConfigureAwait(false);
-                }
-                else if (body is byte[] bytes)
-                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
-                        await stream.WriteAsync(bytes, 0, cancellationToken).ConfigureAwait(false);
-                else if (body is ArraySegment<byte> array)
-                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
-                        await stream.WriteAsync(array, cancellationToken).ConfigureAwait(false);
-                else
-                    throw new InvalidRequestException("Body is invalid");
             }
 
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -865,6 +852,26 @@ namespace net.vieapps.Components.Utility
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
                     request.ServicePoint.Expect100Continue = false;
 #endif
+            }
+
+            if (body != null && (request.Method.Equals("POST") || request.Method.Equals("PUT") || request.Method.Equals("PATCH")))
+            {
+                if (body is string @string)
+                    using (var writer = new StreamWriter(await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false)))
+                        await writer.WriteAsync(@string, cancellationToken).ConfigureAwait(false);
+                else if (body is byte[] bytes)
+                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
+                        await stream.WriteAsync(bytes, 0, cancellationToken).ConfigureAwait(false);
+                else if (body is ArraySegment<byte> array)
+                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
+                        await stream.WriteAsync(array, cancellationToken).ConfigureAwait(false);
+                else if (body is Stream source)
+                    using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
+                        await source.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
+                else
+                    throw new InvalidRequestException("Body is invalid");
+                if (!headers.ContainsKey("Content-Type"))
+                    request.ContentType = "application/octet-stream; charset=utf-8";
             }
 
             try
@@ -892,7 +899,7 @@ namespace net.vieapps.Components.Utility
                         try
                         {
                             exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                            exception.Body = String.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
+                            exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
                         }
                         catch { }
                     response.Dispose();
@@ -929,11 +936,6 @@ namespace net.vieapps.Components.Utility
             headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
             using (var request = new HttpRequestMessage(new HttpMethod(string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper()), uri))
             {
-#if NETSTANDARD2_0
-                request.Headers.Add("Accept-Encoding", "deflate, gzip");
-#else
-                request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
-#endif
                 headers.Where(kvp => !kvp.Key.IsEquals("Accept-Encoding") && !kvp.Key.IsEquals("Host") && !kvp.Key.IsEquals("Connection") && !kvp.Key.IsEquals("AllowAutoRedirect") && !kvp.Key.IsEquals("Cookie")).ForEach(kvp =>
                 {
                     try
@@ -943,18 +945,22 @@ namespace net.vieapps.Components.Utility
                     catch { }
                 });
 
+                if (!headers.ContainsKey("User-Agent"))
+                    request.Headers.Add("User-Agent", UtilityService.DesktopUserAgent);
+
                 if (!headers.ContainsKey("Accept"))
                     request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
 
                 if (!headers.ContainsKey("Accept-Language"))
                     request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
 
-                if (!headers.ContainsKey("User-Agent"))
-                    request.Headers.Add("User-Agent", UtilityService.DesktopUserAgent);
-
 #if NETSTANDARD2_0
+                request.Headers.Add("Accept-Encoding", "deflate, gzip");
+
                 if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put)))
 #else
+                request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
+
                 if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put) || request.Method.Equals(HttpMethod.Patch)))
 #endif
                 {
@@ -1018,7 +1024,7 @@ namespace net.vieapps.Components.Utility
                                     try
                                     {
                                         exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                                        exception.Body = String.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
+                                        exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
                                     }
                                     catch { }
                                 response.Dispose();
@@ -1042,7 +1048,7 @@ namespace net.vieapps.Components.Utility
         }
         #endregion
 
-        #region Send requests to remote end-point
+        #region Send requests over HTTP to a remote end-point
         /// <summary>
         /// Sends a request to a remote end-point
         /// </summary>
@@ -1178,9 +1184,7 @@ namespace net.vieapps.Components.Utility
         public static async Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = true)
         {
             using (var response = await uri.SendHttpRequestAsync("GET", headers, null, timeout, credential, proxy, cancellationToken, useHttpClient).ConfigureAwait(false))
-            {
                 return await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            }
         }
 
         /// <summary>
@@ -2029,21 +2033,6 @@ namespace net.vieapps.Components.Utility
         }
 
 #if NETSTANDARD2_0
-        public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
-            => source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
-
-        public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
-            => httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
-
-        public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-            => httpContent.ReadAsStreamAsync().WithCancellationToken(cancellationToken);
-
-        public static Task<byte[]> ReadAsByteArrayAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-            => httpContent.ReadAsByteArrayAsync().WithCancellationToken(cancellationToken);
-
-        public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-            => httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
-
         public static Task<int> ReadAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken)
             => stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
@@ -3677,10 +3666,10 @@ namespace net.vieapps.Components.Utility
     #region Remote server response
     public class RemoteServerResponse : IDisposable
     {
-        internal static async Task<RemoteServerResponse> CreateAsync(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers, Stream stream, CancellationToken cancellationToken = default)
+        internal static async Task<RemoteServerResponse> CreateAsync(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers, Stream body, CancellationToken cancellationToken = default)
         {
             var response = new RemoteServerResponse(statusCode, uri, headers) { Body = UtilityService.CreateMemoryStream() };
-            await stream.CopyToAsync(response.Body, cancellationToken).ConfigureAwait(false);
+            await body.CopyToAsync(response.Body, cancellationToken).ConfigureAwait(false);
             return response;
         }
 
@@ -3701,7 +3690,7 @@ namespace net.vieapps.Components.Utility
                 ? contentType
                 : null;
 
-        public RemoteServerResponse(HttpStatusCode statusCode = HttpStatusCode.OK, Uri uri = null, Dictionary<string, string> headers = null)
+        public RemoteServerResponse(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers)
         {
             this.StatusCode = statusCode;
             this.URI = uri;
@@ -3713,6 +3702,17 @@ namespace net.vieapps.Components.Utility
             GC.SuppressFinalize(this);
             this.Body?.Dispose();
         }
+
+        public Dictionary<string, string> GetHeaders(IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+        {
+            var headers = new Dictionary<string, string>(this.Headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+            excluded?.ForEach(name => headers.Remove(name));
+            onCompleted?.Invoke(headers);
+            return headers;
+        }
+
+        public CookieCollection GetCookies(Action<Cookie> onAdd = null)
+            => this._cookies ?? (this._cookies = this.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(this.URI?.Host, onAdd) : new CookieCollection());
 
         public Task<MemoryStream> ReadAsStreamAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(this.Body);
@@ -3759,17 +3759,6 @@ namespace net.vieapps.Components.Utility
                 }
             }
         }
-
-        public Dictionary<string, string> GetHeaders(IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
-        {
-            var headers = new Dictionary<string, string>(this.Headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-            excluded?.ForEach(name => headers.Remove(name));
-            onCompleted?.Invoke(headers);
-            return headers;
-        }
-
-        public CookieCollection GetCookies(Action<Cookie> onAdd = null)
-            => this._cookies ?? (this._cookies = this.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(this.URI?.Host ?? "vieapps.net", onAdd) : new CookieCollection());
     }
     #endregion
 
