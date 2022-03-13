@@ -110,37 +110,12 @@ namespace net.vieapps.Components.Utility
 		/// Loads message from file and deserialize as object
 		/// </summary>
 		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
-		/// <returns></returns>
-		public static EmailMessage Load(string filePath)
-			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new EmailMessage(UtilityService.ReadTextFile(filePath))
-				: null;
-
-		/// <summary>
-		/// Loads message from file and deserialize as object
-		/// </summary>
-		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static async Task<EmailMessage> LoadAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new EmailMessage(await UtilityService.ReadTextFileAsync(filePath, null, cancellationToken).ConfigureAwait(false))
+				? new EmailMessage(await new FileInfo(filePath).ReadAsTextAsync(cancellationToken).ConfigureAwait(false))
 				: null;
-
-		/// <summary>
-		/// Serializes and saves message into file
-		/// </summary>
-		/// <param name="message">The message</param>
-		/// <param name="directory">The path to a directory that stores the queue of messages</param>
-		public static void Save(EmailMessage message, string directory)
-		{
-			if (message != null && Directory.Exists(directory))
-				try
-				{
-					UtilityService.WriteTextFile(Path.Combine(directory, message.ID + ".msg"), message.Encrypted);
-				}
-				catch { }
-		}
 
 		/// <summary>
 		/// Serializes and saves message into file
@@ -153,7 +128,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await UtilityService.WriteTextFileAsync(Path.Combine(directory, message.ID + ".msg"), message.Encrypted, false, null, cancellationToken).ConfigureAwait(false);
+					await message.Encrypted.ToBytes().SaveAsTextAsync(Path.Combine(directory, message.ID + ".msg"), cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 		}
@@ -242,37 +217,12 @@ namespace net.vieapps.Components.Utility
 		/// Loads message from file and deserialize as object
 		/// </summary>
 		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
-		/// <returns></returns>
-		public static WebHookMessage Load(string filePath)
-			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new WebHookMessage(UtilityService.ReadTextFile(filePath))
-				: null;
-
-		/// <summary>
-		/// Loads message from file and deserialize as object
-		/// </summary>
-		/// <param name="filePath">The full path to a file that contains the encrypted message</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
 		public static async Task<WebHookMessage> LoadAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new WebHookMessage(await UtilityService.ReadTextFileAsync(filePath, null, cancellationToken).ConfigureAwait(false))
+				? new WebHookMessage(await new FileInfo(filePath).ReadAsTextAsync(cancellationToken).ConfigureAwait(false))
 				: null;
-
-		/// <summary>
-		/// Serializes and saves message into file
-		/// </summary>
-		/// <param name="message">The message</param>
-		/// <param name="directory">The path to a directory that stores the queue of messages</param>
-		public static void Save(WebHookMessage message, string directory)
-		{
-			if (message != null && Directory.Exists(directory))
-				try
-				{
-					UtilityService.WriteTextFile(Path.Combine(directory, message.ID + ".msg"), message.Encrypted);
-				}
-				catch { }
-		}
 
 		/// <summary>
 		/// Serializes and saves message into file
@@ -285,7 +235,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await UtilityService.WriteTextFileAsync(Path.Combine(directory, message.ID + ".msg"), message.Encrypted, false, null, cancellationToken).ConfigureAwait(false);
+					await message.Encrypted.ToBytes().SaveAsTextAsync(Path.Combine(directory, message.ID + ".msg"), cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 		}
@@ -983,32 +933,20 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
-		/// <param name="proxy">The proxy to use</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendMessageAsync(this WebHookMessage message, string userAgent, WebProxy proxy, CancellationToken cancellationToken)
+		public static Task<RemoteServerResponse> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken)
 		{
 			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
 				return Task.FromException<RemoteServerResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
-
-			var endpointURL = $"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}";
+			var uri = new Uri($"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}");
 			var headers = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase)
 			{
 				["User-Agent"] = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
 				["Content-Type"] = "application/json; charset=utf-8"
 			};
-			return UtilityService.SendHttpRequestAsync(endpointURL, "POST", headers, message.Body, 120, null, proxy, cancellationToken);
+			return uri.SendHttpRequestAsync("POST", headers, message.Body, 120, cancellationToken);
 		}
-
-		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
-		/// </summary>
-		/// <param name="message">The well-formed webhook message to send</param>
-		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken = default)
-			=> message.SendMessageAsync(userAgent, null, cancellationToken);
 
 		/// <summary>
 		/// Sends a web-hook message (means post a JSON document to a specified URL)

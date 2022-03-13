@@ -1586,21 +1586,6 @@ namespace net.vieapps.Components.Utility
 				? (T)@object.ToList(typeof(T).GenericTypeArguments[0])
 				: default;
 
-#if NETSTANDARD2_0
-		/// <summary>
-		/// Converts the collection of cookies to a list
-		/// </summary>
-		/// <param name="cookies"></param>
-		/// <returns></returns>
-		public static List<Cookie> ToList(this CookieCollection cookies)
-		{
-			var list = new List<Cookie>();
-			foreach (Cookie cookie in cookies)
-				list.Add(cookie);
-			return list;
-		}
-#endif
-
 		/// <summary>
 		/// Converts the collection of objects to the generic hash-set of strong-typed objects
 		/// </summary>

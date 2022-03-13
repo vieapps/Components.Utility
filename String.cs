@@ -133,9 +133,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsContains(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring)
-				? @string.IndexOf(substring, 0, comparisonType) > -1
-				: false;
+			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring) && @string.IndexOf(substring, 0, comparisonType) > -1;
 
 		/// <summary>
 		/// Check to see its starts with
@@ -145,9 +143,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsStartsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring)
-				? @string.StartsWith(substring, comparisonType)
-				: false;
+			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring) && @string.StartsWith(substring, comparisonType);
 
 		/// <summary>
 		/// Check to see its starts with
@@ -167,9 +163,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="comparisonType"></param>
 		/// <returns></returns>
 		public static bool IsEndsWith(this string @string, string substring, StringComparison comparisonType = StringComparison.OrdinalIgnoreCase)
-			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring)
-				? @string.EndsWith(substring, comparisonType)
-				: false;
+			=> !string.IsNullOrWhiteSpace(@string) && !string.IsNullOrWhiteSpace(substring) && @string.EndsWith(substring, comparisonType);
 
 		/// <summary>
 		/// Check to see its ends with
@@ -252,7 +246,6 @@ namespace net.vieapps.Components.Utility
 		{
 			if (@string.Equals("") || @string.Length < 2)
 				return @string;
-
 			var chars = @string.ToCharArray();
 			Array.Reverse(chars);
 			return new string(chars);
@@ -273,8 +266,7 @@ namespace net.vieapps.Components.Utility
 					var chars = str.ToLower().ToCharArray();
 					chars[0] = char.ToUpper(chars[0]);
 					return new string(chars);
-				})
-				.Join(".");
+				}).Join(".");
 			else
 			{
 				var chars = @string.ToLower().ToCharArray();
@@ -669,9 +661,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static bool IsNumeric(this string @string)
-			=> string.IsNullOrWhiteSpace(@string)
-				? false
-				: double.TryParse(@string, out var number);
+			=> !string.IsNullOrWhiteSpace(@string) && double.TryParse(@string, out var number);
 
 		static Regex URICharacters { get; } = new Regex("[^a-zA-Z0-9_-]+");
 
@@ -728,9 +718,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="allowDotSymbols">true to allow dot symbols (.)</param>
 		/// <returns>true if valid; otherwise false.</returns>
 		public static bool IsValidANSIUri(this string ansiUri, bool allowDotSymbols = false)
-			=> string.IsNullOrWhiteSpace(ansiUri)
-				? false
-				: ansiUri.IsEquals(allowDotSymbols ? StringService.URICharactersWithDot.Replace(ansiUri, "") : StringService.URICharacters.Replace(ansiUri, ""));
+			=> !string.IsNullOrWhiteSpace(ansiUri) && ansiUri.IsEquals(allowDotSymbols ? StringService.URICharactersWithDot.Replace(ansiUri, "") : StringService.URICharacters.Replace(ansiUri, ""));
 		#endregion
 
 	}
