@@ -81,7 +81,7 @@ namespace net.vieapps.Components.Utility
 			if (hours > 0)
 				times = hours.ToString() + (addString ? $" {strHours?.Trim() ?? "hour(s)"}" + (!times.Equals("") ? ", " : "") : "") + times;
 
-			if (days  > 0)
+			if (days > 0)
 				times = days.ToString() + (addString ? $" {strDays?.Trim() ?? "day(s)"}" + (!times.Equals("") ? ", " : "") : "") + times;
 
 			return times;

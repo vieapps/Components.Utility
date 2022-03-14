@@ -386,20 +386,20 @@ namespace net.vieapps.Components.Utility
 			=> reader.ReadLineAsync().WithCancellationToken(cancellationToken);
 
 #if NETSTANDARD2_0
-    public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
-      => source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
+		public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
+			=> source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
 
-    public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
-      => httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
+		public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
+			=> httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
 
-    public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-      => httpContent.ReadAsStreamAsync().WithCancellationToken(cancellationToken);
+		public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+			=> httpContent.ReadAsStreamAsync().WithCancellationToken(cancellationToken);
 
-    public static Task<byte[]> ReadAsByteArrayAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-      => httpContent.ReadAsByteArrayAsync().WithCancellationToken(cancellationToken);
+		public static Task<byte[]> ReadAsByteArrayAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+			=> httpContent.ReadAsByteArrayAsync().WithCancellationToken(cancellationToken);
 
-    public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-      => httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
+		public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+			=> httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
 #endif
 		#endregion
 
@@ -576,14 +576,14 @@ namespace net.vieapps.Components.Utility
 		}
 
 #if NETSTANDARD2_0
-    public static Task<int> ReadAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken)
-      => stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
+		public static Task<int> ReadAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken)
+			=> stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
-    public static Task WriteAsync(this Stream stream, byte[] buffer, int count = 0, CancellationToken cancellationToken = default)
-      => stream.WriteAsync(buffer, 0, count > 0 ? count : buffer.Length, cancellationToken);
+		public static Task WriteAsync(this Stream stream, byte[] buffer, int count = 0, CancellationToken cancellationToken = default)
+			=> stream.WriteAsync(buffer, 0, count > 0 ? count : buffer.Length, cancellationToken);
 
-    public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
-      => stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
+		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
+			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 #else
 		public static Task WriteAsync(this Stream stream, byte[] buffer, int count = 0, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.AsMemory(0, count > 0 ? count : buffer.Length), cancellationToken).AsTask();
@@ -711,13 +711,13 @@ namespace net.vieapps.Components.Utility
 			=> cookies.Select(cookie => $"{cookie.Name}={cookie.Value?.UrlEncode()}; path={cookie.Path ?? "/"}; domain={cookie.Domain ?? "*"}; expires={(cookie.Expired ? "-1" : cookie.Expires.ToHttpString())};{(cookie.Secure ? " secure;" : "")}{(cookie.HttpOnly ? " httponly;" : "")}").Join(",");
 
 #if NETSTANDARD2_0
-      public static List<Cookie> ToList(this CookieCollection cookies)
-      {
-        var list = new List<Cookie>();
-        foreach (Cookie cookie in cookies)
-          list.Add(cookie);
-        return list;
-      }
+		public static List<Cookie> ToList(this CookieCollection cookies)
+		{
+			var list = new List<Cookie>();
+			foreach (Cookie cookie in cookies)
+				list.Add(cookie);
+			return list;
+		}
 #endif
 
 		/// <summary>
@@ -990,8 +990,8 @@ namespace net.vieapps.Components.Utility
 				request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
 
 #if NETSTANDARD2_0
-      request.Headers.Add("Accept-Encoding", "deflate, gzip");
-      request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+			request.Headers.Add("Accept-Encoding", "deflate, gzip");
+			request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 #else
 			request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
 			request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
@@ -1018,9 +1018,9 @@ namespace net.vieapps.Components.Utility
 				request.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
 
 #if NETSTANDARD2_0
-        // service point - only available on Windows with .NET Framework
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
-            request.ServicePoint.Expect100Continue = false;
+				// service point - only available on Windows with .NET Framework
+				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
+					request.ServicePoint.Expect100Continue = false;
 #endif
 			}
 
@@ -1140,9 +1140,9 @@ namespace net.vieapps.Components.Utility
 					request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
 
 #if NETSTANDARD2_0
-        request.Headers.Add("Accept-Encoding", "deflate, gzip");
+				request.Headers.Add("Accept-Encoding", "deflate, gzip");
 
-        if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put)))
+				if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put)))
 #else
 				request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
 
@@ -1197,7 +1197,7 @@ namespace net.vieapps.Components.Utility
 					handler.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
 					handler.ServerCertificateCustomValidationCallback = (requestMsg, certificate, chain, sslPolicyErrors) => true;
 #if NETSTANDARD2_0
-          handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+					handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
 #else
 					handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
 #endif
@@ -2190,7 +2190,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var buffer = new byte[fileInfo.Length];
 #if NETSTANDARD2_0
-        fileStream.Read(buffer, 0, buffer.Length);
+				fileStream.Read(buffer, 0, buffer.Length);
 #else
 				fileStream.Read(buffer);
 #endif
@@ -2322,7 +2322,7 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-        using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
 				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
@@ -2354,7 +2354,7 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-        using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
 				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
@@ -2387,7 +2387,7 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-        using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
 				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
@@ -2417,7 +2417,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] Decompress(this Stream stream, string mode = "deflate")
 		{
 #if NETSTANDARD2_0
-      using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
 			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif
@@ -2444,7 +2444,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
 #if NETSTANDARD2_0
-      using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
 			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif

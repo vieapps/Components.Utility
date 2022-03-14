@@ -33,19 +33,19 @@ namespace net.vieapps.Components.Utility
 		/// The default initialization vector (128 bits - hash key from DEFAULT_PASS_PHRASE) for encrypting/decrypting with AES
 		/// </summary>
 		public static byte[] DEFAULT_ENCRYPTION_IV => DEFAULT_PASS_PHRASE.GenerateHashKey(128);
-        #endregion
+		#endregion
 
-        #region Generate keys & passwords
+		#region Generate keys & passwords
 #pragma warning disable SYSLIB0023 // Type or member is obsolete
-        static RNGCryptoServiceProvider RNGcsp { get; } = new RNGCryptoServiceProvider();
+		static RNGCryptoServiceProvider RNGcsp { get; } = new RNGCryptoServiceProvider();
 #pragma warning restore SYSLIB0023 // Type or member is obsolete
 
-        /// <summary>
-        /// Generates a random key with cryptographically strong sequence of random values
-        /// </summary>
-        /// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
-        /// <returns>An array of bytes that presents the key</returns>
-        public static byte[] GenerateRandomKey(int length = 256)
+		/// <summary>
+		/// Generates a random key with cryptographically strong sequence of random values
+		/// </summary>
+		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
+		/// <returns>An array of bytes that presents the key</returns>
+		public static byte[] GenerateRandomKey(int length = 256)
 		{
 			var key = new byte[length > 0 ? length : 256];
 			CryptoService.RNGcsp.GetBytes(key);
@@ -927,21 +927,21 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 		}
-        #endregion
+		#endregion
 
-        #region Encrypt/Decrypt (using AES)
+		#region Encrypt/Decrypt (using AES)
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
-        static AesCryptoServiceProvider AEScsp { get; } = new AesCryptoServiceProvider();
+		static AesCryptoServiceProvider AEScsp { get; } = new AesCryptoServiceProvider();
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
 
-        /// <summary>
-        /// Encrypts by specific key and initialization vector using AES
-        /// </summary>
-        /// <param name="data"></param>
-        /// <param name="key"></param>
-        /// <param name="iv"></param>
-        /// <returns></returns>
-        public static byte[] Encrypt(this byte[] data, byte[] key = null, byte[] iv = null)
+		/// <summary>
+		/// Encrypts by specific key and initialization vector using AES
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="key"></param>
+		/// <param name="iv"></param>
+		/// <returns></returns>
+		public static byte[] Encrypt(this byte[] data, byte[] key = null, byte[] iv = null)
 		{
 			if (data == null || data.Length < 1)
 				return null;
@@ -2933,7 +2933,7 @@ namespace net.vieapps.Components.Utility
 					// solve y
 					y = ((x * x * x + 7) % ECCsecp256k1.P).ShanksSqrt(ECCsecp256k1.P);
 
-					if (y.IsEven ^ prefix == 0x02)	// negate y for prefix (0x02 indicates y is even, 0x03 indicates y is odd)
+					if (y.IsEven ^ prefix == 0x02)  // negate y for prefix (0x02 indicates y is even, 0x03 indicates y is odd)
 						y = -y + ECCsecp256k1.P;      // TODO:  DRY replace this and body of Negate() with call to static method
 				}
 				return new Point(x, y);
@@ -3054,12 +3054,12 @@ namespace net.vieapps.Components.Utility
 		#region Encryption
 		public class Encryption
 		{
-			Elgamal Elgamal { get; set; }  = new Elgamal();
+			Elgamal Elgamal { get; set; } = new Elgamal();
 #pragma warning disable SYSLIB0022 // Type or member is obsolete
-            RijndaelManaged Rijndael { get; set; } = new RijndaelManaged();
+			RijndaelManaged Rijndael { get; set; } = new RijndaelManaged();
 #pragma warning restore SYSLIB0022 // Type or member is obsolete
 
-            public Encryption()
+			public Encryption()
 			{
 				this.Rijndael.KeySize = 256;
 				this.Rijndael.BlockSize = 128;

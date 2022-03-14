@@ -685,15 +685,15 @@ namespace net.vieapps.Components.Utility
 				var result = new T[@object.Length + data.Sum(array => array.Length)];
 				if (@object.Length > 0)
 #pragma warning disable CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-                    Buffer.BlockCopy(@object, 0, result, 0, @object.Length);
+					Buffer.BlockCopy(@object, 0, result, 0, @object.Length);
 #pragma warning restore CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-                var offset = @object.Length;
+				var offset = @object.Length;
 				data.ForEach(array =>
 				{
 #pragma warning disable CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-                    Buffer.BlockCopy(array, 0, result, offset, array.Length);
+					Buffer.BlockCopy(array, 0, result, offset, array.Length);
 #pragma warning restore CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-                    offset += array.Length;
+					offset += array.Length;
 				});
 				return result;
 			}

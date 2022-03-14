@@ -10,9 +10,9 @@ namespace net.vieapps.Components.Utility
 	{
 		public AppException() : base() { }
 
-		public AppException(string message) : base (message) { }
+		public AppException(string message) : base(message) { }
 
-		public AppException(string message, Exception innerException) : base (message, innerException) { }
+		public AppException(string message, Exception innerException) : base(message, innerException) { }
 
 		public AppException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
@@ -48,15 +48,15 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class InformationRequiredException : AppException
 	{
-		public InformationRequiredException () : base("Information is required") { }
+		public InformationRequiredException() : base("Information is required") { }
 
-		public InformationRequiredException (string message) : base(message) { }
+		public InformationRequiredException(string message) : base(message) { }
 
 		public InformationRequiredException(Exception innerException) : base("Information is required", innerException) { }
 
-		public InformationRequiredException (string message, Exception innerException) : base(message, innerException) { }
+		public InformationRequiredException(string message, Exception innerException) : base(message, innerException) { }
 
-		public InformationRequiredException (SerializationInfo info, StreamingContext context) : base(info, context) { }
+		public InformationRequiredException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
 
 	[Serializable]
@@ -82,7 +82,7 @@ namespace net.vieapps.Components.Utility
 
 		public InformationExistedException(Exception innerException) : base("Information is existed", innerException) { }
 
-		public InformationExistedException (string message, Exception innerException) : base(message, innerException) { }
+		public InformationExistedException(string message, Exception innerException) : base(message, innerException) { }
 
 		public InformationExistedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 	}
@@ -91,7 +91,7 @@ namespace net.vieapps.Components.Utility
 	public class InformationNotFoundException : AppException
 	{
 		public InformationNotFoundException() : base("Information is not found") { }
-		
+
 		public InformationNotFoundException(string message) : base(message) { }
 
 		public InformationNotFoundException(Exception innerException) : base("Information is not found", innerException) { }
