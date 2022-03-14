@@ -1412,6 +1412,24 @@ namespace net.vieapps.Components.Utility
 			=> new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken);
 
 		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, CancellationToken cancellationToken)
+			=> uri.SendHttpRequestAsync(null, 90, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, CancellationToken cancellationToken)
+			=> new Uri(uri).SendHttpRequestAsync(cancellationToken);
+
+		/// <summary>
 		/// Sends a request to a remote end-point to fetch and return as a string
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
@@ -1461,6 +1479,24 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
 			=> new Uri(uri).FetchHttpAsync(headers, timeout, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(this Uri uri, CancellationToken cancellationToken)
+			=> uri.FetchHttpAsync(null, 90, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken)
+			=> new Uri(uri).FetchHttpAsync(cancellationToken);
 		#endregion
 
 		#region Normalize HTML/XML tags & Remove whitespaces/breaks
