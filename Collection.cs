@@ -679,30 +679,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T[] Concat<T>(this T[] @object, params T[][] arrays)
 		{
-			if (typeof(T).IsPrimitive)
-			{
-				var data = arrays.Where(array => array != null);
-				var result = new T[@object.Length + data.Sum(array => array.Length)];
-				if (@object.Length > 0)
-#pragma warning disable CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-					Buffer.BlockCopy(@object, 0, result, 0, @object.Length);
-#pragma warning restore CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-				var offset = @object.Length;
-				data.ForEach(array =>
-				{
-#pragma warning disable CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-					Buffer.BlockCopy(array, 0, result, offset, array.Length);
-#pragma warning restore CA2018 // 'Buffer.BlockCopy' expects the number of bytes to be copied for the 'count' argument
-					offset += array.Length;
-				});
-				return result;
-			}
-			else
-			{
-				var result = @object.Select(array => array);
-				arrays.ForEach(array => result = result.Concat(array));
-				return result.ToArray();
-			}
+			var result = @object.Select(array => array);
+			arrays.ForEach(array => result = result.Concat(array));
+			return result.ToArray();
 		}
 
 		/// <summary>
