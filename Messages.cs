@@ -935,10 +935,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken)
+		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken)
 		{
 			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
-				return Task.FromException<RemoteServerResponse>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
+				return Task.FromException<HttpResponseMessage>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
 			var uri = new Uri($"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}");
 			var headers = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase)
 			{
@@ -954,7 +954,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
+		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
 			=> message.SendMessageAsync(null, cancellationToken);
 		#endregion
 

@@ -11,7 +11,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Numerics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -32,21 +31,6 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static partial class UtilityService
 	{
-
-		#region Constructor
-		static UtilityService()
-		{
-			// global settings of service point - not available on macOS
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-			{
-				// default security protocol is TLS 1.2
-				ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-				// switch off certificate validation - http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using
-				ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-			}
-		}
-		#endregion
 
 		#region UUID
 		/// <summary>
@@ -593,7 +577,7 @@ namespace net.vieapps.Components.Utility
 #endif
 		#endregion
 
-		#region HttpWebRequest/HttpClient extensions
+		#region Send HTTP requests
 		internal static string[] UserAgents { get; } = new[]
 		{
 			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
@@ -635,6 +619,79 @@ namespace net.vieapps.Components.Utility
 		/// Gets an user-agent as desktop browser
 		/// </summary>
 		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36";
+
+		/// <summary>
+		/// Gets the web proxy
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy GetWebProxy(Uri uri, string username, string password, IEnumerable<string> bypass = null)
+			=> uri != null
+				? new WebProxy(uri, true, bypass?.ToArray(), !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password) ? new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } } : null)
+				: null;
+
+		/// <summary>
+		/// Gets the web proxy
+		/// </summary>
+		/// <param name="host"></param>
+		/// <param name="port"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy GetWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
+			=> UtilityService.GetWebProxy(string.IsNullOrWhiteSpace(host) ? null : new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "http://" : "")}{host}:{port}"), username, password, bypass);
+
+		/// <summary>
+		/// Gets the pre-configurated web proxy
+		/// </summary>
+		public static WebProxy Proxy { get; private set; }
+
+		/// <summary>
+		/// Assigns the web-proxy
+		/// </summary>
+		/// <param name="host"></param>
+		/// <param name="port"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
+			=> UtilityService.Proxy ?? (UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass));
+
+		/// <summary>
+		/// Converts the collection of cookies to a string for using in HTTP headers
+		/// </summary>
+		/// <param name="cookies"></param>
+		/// <returns></returns>
+		public static string GetHttpCookies(this IEnumerable<Cookie> cookies)
+			=> cookies.Select(cookie => $"{cookie.Name}={cookie.Value?.UrlEncode()}; path={cookie.Path ?? "/"}; domain={cookie.Domain ?? "*"}; expires={(cookie.Expired ? "-1" : cookie.Expires.ToHttpString())};{(cookie.Secure ? " secure;" : "")}{(cookie.HttpOnly ? " httponly;" : "")}").Join(",");
+
+#if NETSTANDARD2_0
+		/// <summary>
+		/// Converts this collection of cookies to list of cookies
+		/// </summary>
+		/// <param name="cookies"></param>
+		/// <returns></returns>
+		public static List<Cookie> ToList(this CookieCollection cookies)
+		{
+			var list = new List<Cookie>();
+			foreach (Cookie cookie in cookies)
+				list.Add(cookie);
+			return list;
+		}
+#endif
+
+		/// <summary>
+		/// Converts the collection of cookies to a string for using in HTTP headers
+		/// </summary>
+		/// <param name="cookies"></param>
+		/// <returns></returns>
+		public static string GetHttpCookies(this CookieCollection cookies)
+			=> cookies.ToList().GetHttpCookies();
 
 		/// <summary>
 		/// Converts the HTTP cookies string to a collection of cookies
@@ -703,30 +760,27 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts the collection of cookies to a string for using in HTTP headers
+		/// Gets the HTTP cookies
 		/// </summary>
-		/// <param name="cookies"></param>
+		/// <param name="response"></param>
+		/// <param name="onAdd"></param>
 		/// <returns></returns>
-		public static string GetHttpCookies(this IEnumerable<Cookie> cookies)
-			=> cookies.Select(cookie => $"{cookie.Name}={cookie.Value?.UrlEncode()}; path={cookie.Path ?? "/"}; domain={cookie.Domain ?? "*"}; expires={(cookie.Expired ? "-1" : cookie.Expires.ToHttpString())};{(cookie.Secure ? " secure;" : "")}{(cookie.HttpOnly ? " httponly;" : "")}").Join(",");
-
-#if NETSTANDARD2_0
-		public static List<Cookie> ToList(this CookieCollection cookies)
-		{
-			var list = new List<Cookie>();
-			foreach (Cookie cookie in cookies)
-				list.Add(cookie);
-			return list;
-		}
-#endif
+		public static CookieCollection GetCookies(this HttpResponseMessage response, Action<Cookie> onAdd = null)
+			=> response.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(response.RequestMessage.RequestUri.Host, onAdd) : new CookieCollection();
 
 		/// <summary>
-		/// Converts the collection of cookies to a string for using in HTTP headers
+		/// Gets the HTTP headers
 		/// </summary>
-		/// <param name="cookies"></param>
+		/// <param name="response"></param>
+		/// <param name="excluded"></param>
+		/// <param name="onCompleted"></param>
 		/// <returns></returns>
-		public static string GetHttpCookies(this CookieCollection cookies)
-			=> cookies.ToList().GetHttpCookies();
+		public static Dictionary<string, string> GetHeaders(this HttpResponseMessage response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+		{
+			var headers = response.Content.Headers?.ToDictionary() ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+			response.Headers?.ToDictionary()?.ForEach(kvp => headers[kvp.Key] = kvp.Value);
+			return headers.Copy(excluded, onCompleted);
+		}
 
 		/// <summary>
 		/// Copies this HTTP headers (dictionary)
@@ -742,147 +796,6 @@ namespace net.vieapps.Components.Utility
 			onCompleted?.Invoke(dictionary);
 			return dictionary;
 		}
-
-		/// <summary>
-		/// Gets the web proxy
-		/// </summary>
-		/// <param name="uri"></param>
-		/// <param name="username"></param>
-		/// <param name="password"></param>
-		/// <param name="bypass"></param>
-		/// <returns></returns>
-		public static WebProxy GetWebProxy(Uri uri, string username, string password, IEnumerable<string> bypass = null)
-			=> uri != null
-				? new WebProxy(uri, true, bypass?.ToArray(), !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password) ? new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } } : null)
-				: null;
-
-		/// <summary>
-		/// Gets the web proxy
-		/// </summary>
-		/// <param name="host"></param>
-		/// <param name="port"></param>
-		/// <param name="username"></param>
-		/// <param name="password"></param>
-		/// <param name="bypass"></param>
-		/// <returns></returns>
-		public static WebProxy GetWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
-			=> UtilityService.GetWebProxy(string.IsNullOrWhiteSpace(host) ? null : new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "http://" : "")}{host}:{port}"), username, password, bypass);
-
-		/// <summary>
-		/// Gets the pre-configurated web proxy
-		/// </summary>
-		public static WebProxy Proxy { get; private set; }
-
-		/// <summary>
-		/// Assigns the web-proxy
-		/// </summary>
-		/// <param name="host"></param>
-		/// <param name="port"></param>
-		/// <param name="username"></param>
-		/// <param name="password"></param>
-		/// <param name="bypass"></param>
-		/// <returns></returns>
-		public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
-			=> UtilityService.Proxy ?? (UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass));
-
-		/// <summary>
-		/// Gets the request stream
-		/// </summary>
-		/// <param name="request"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task<Stream> GetRequestStreamAsync(this HttpWebRequest request, CancellationToken cancellationToken)
-			=> request.GetRequestStreamAsync().WithCancellationToken(cancellationToken);
-
-		/// <summary>
-		/// Performs a web request and get response
-		/// </summary>
-		/// <param name="request"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task<HttpWebResponse> GetResponseAsync(this HttpWebRequest request, CancellationToken cancellationToken)
-		{
-			using (cancellationToken.Register(() => request.Abort(), false))
-				try
-				{
-					return await request.GetResponseAsync().ConfigureAwait(false) as HttpWebResponse;
-				}
-				catch (Exception ex)
-				{
-					throw cancellationToken.IsCancellationRequested ? new OperationCanceledException(ex.Message, ex, cancellationToken) : ex;
-				}
-		}
-
-		/// <summary>
-		/// Copies the response stream asynchronously
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="stream"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task CopyToAsync(this HttpWebResponse response, Stream stream, CancellationToken cancellationToken = default)
-		{
-			using (var source = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-				await source.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Reads the response stream asynchronously
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task<Stream> ReadAsStreamAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
-			=> Task.FromResult(response.GetResponseStream());
-
-		/// <summary>
-		/// Reads the response stream asynchronously
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task<byte[]> ReadAsByteArrayAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
-		{
-			using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-			{
-				var buffer = new byte[stream.Length];
-				await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-				return buffer;
-			}
-		}
-
-		/// <summary>
-		/// Reads all characters from the response stream asynchronously and returns them as one string
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task<string> ReadAsStringAsync(this HttpWebResponse response, CancellationToken cancellationToken = default)
-		{
-			using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-				return await stream.ReadAllAsync(cancellationToken, true).ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Gets the HTTP headers
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="excluded"></param>
-		/// <param name="onCompleted"></param>
-		/// <returns></returns>
-		public static Dictionary<string, string> GetHeaders(this HttpWebResponse response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
-			=> response.Headers?.ToDictionary().Copy(excluded, onCompleted) ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-		/// <summary>
-		/// Gets the HTTP cookies
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="onAdd"></param>
-		/// <returns></returns>
-		public static CookieCollection GetCookies(this HttpWebResponse response, Action<Cookie> onAdd = null)
-			=> response.Cookies != null && response.Cookies.Count > 0
-				? response.Cookies
-				: response.Headers["Set-Cookie"].ToList().GetCookies(response.ResponseUri.Host, onAdd);
 
 		/// <summary>
 		/// Copies the response stream asynchronously
@@ -918,202 +831,26 @@ namespace net.vieapps.Components.Utility
 		/// <param name="response"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<string> ReadAsStringAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
-			=> response.Content.ReadAsStringAsync(cancellationToken);
-
-		/// <summary>
-		/// Gets the HTTP headers
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="excluded"></param>
-		/// <param name="onCompleted"></param>
-		/// <returns></returns>
-		public static Dictionary<string, string> GetHeaders(this HttpResponseMessage response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
+		public static async Task<string> ReadAsStringAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
 		{
-			var headers = response.Content?.Headers?.ToDictionary() ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-			response.Headers?.ToDictionary()?.ForEach(kvp => headers[kvp.Key] = kvp.Value);
-			return headers.Copy(excluded, onCompleted);
+			var @string = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+			return response.GetHeaders().TryGetValue("Content-Type", out var contentType) && !string.IsNullOrWhiteSpace(contentType) && contentType.IsStartsWith("text/html") ? @string?.HtmlDecode() : @string;
 		}
 
 		/// <summary>
-		/// Gets the HTTP cookies
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="onAdd"></param>
-		/// <returns></returns>
-		public static CookieCollection GetCookies(this HttpResponseMessage response, Action<Cookie> onAdd = null)
-			=> response.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(response.RequestMessage.RequestUri.Host, onAdd) : new CookieCollection();
-		#endregion
-
-		#region Send requests via HttpWebRequest/HttpClient
-		/// <summary>
-		/// Sends a request to a remote end-point via HttpWebRequest
+		/// Sends a request to a remote end-point
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="credential">The credential for marking request</param>
-		/// <param name="proxy">The proxy for marking request</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="credential">The credential for sending the request</param>
+		/// <param name="proxy">The proxy for sending the request</param>
 		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="multipartFilename">The name of the file that presents by the body stream</param>
 		/// <returns></returns>
-		public static async Task<HttpWebResponse> SendHttpWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
-		{
-			if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
-				throw new InformationRequiredException("The URI to send the request to is required");
-
-			headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-#pragma warning disable SYSLIB0014
-			var request = WebRequest.Create(uri) as HttpWebRequest;
-#pragma warning restore SYSLIB0014
-			request.Method = string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper();
-			request.Timeout = timeout * 1000;
-			request.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
-
-			headers.Copy(new[] { "Accept-Encoding", "Host", "Connection", "AllowAutoRedirect", "Cookie", "Content-Type" }).ForEach(kvp =>
-			{
-				try
-				{
-					request.Headers.Add(kvp.Key, kvp.Value);
-				}
-				catch { }
-			});
-
-			if (!headers.ContainsKey("User-Agent"))
-				request.Headers.Add("User-Agent", UtilityService.DesktopUserAgent);
-
-			if (!headers.ContainsKey("Accept"))
-				request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-
-			if (!headers.ContainsKey("Accept-Language"))
-				request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
-
-#if NETSTANDARD2_0
-			request.Headers.Add("Accept-Encoding", "deflate, gzip");
-			request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
-#else
-			request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
-			request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
-#endif
-
-			if (headers.ContainsKey("Cookie"))
-			{
-				request.CookieContainer = new CookieContainer();
-				request.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), headers["Cookie"].ToList(";").Join(",").ToList().GetCookies(uri.Host));
-			}
-
-			request.Proxy = proxy ?? UtilityService.Proxy;
-
-			if (credential != null)
-			{
-				request.Credentials = credential;
-				request.UseDefaultCredentials = false;
-				request.PreAuthenticate = true;
-			}
-
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-			{
-				// switch off certificate validation (http://stackoverflow.com/questions/777607/the-remote-certificate-is-invalid-according-to-the-validation-procedure-using) - not available on macOS
-				request.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-
-#if NETSTANDARD2_0
-				// service point - only available on Windows with .NET Framework
-				if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
-					request.ServicePoint.Expect100Continue = false;
-#endif
-			}
-
-			if (body != null && (request.Method.Equals("POST") || request.Method.Equals("PUT") || request.Method.Equals("PATCH")))
-			{
-				if (body is string @string)
-					using (var writer = new StreamWriter(await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false)))
-						await writer.WriteAsync(@string, cancellationToken).ConfigureAwait(false);
-				else if (body is byte[] bytes)
-					using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
-						await stream.WriteAsync(bytes, 0, cancellationToken).ConfigureAwait(false);
-				else if (body is ArraySegment<byte> array)
-					using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
-						await stream.WriteAsync(array, cancellationToken).ConfigureAwait(false);
-				else if (body is Stream source)
-					using (var stream = await request.GetRequestStreamAsync(cancellationToken).ConfigureAwait(false))
-						await source.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
-				else
-					throw new InvalidRequestException("Body is invalid");
-				if (!headers.TryGetValue("Content-Type", out var contenType) || string.IsNullOrWhiteSpace(contenType))
-					contenType = "application/octet-stream; charset=utf-8";
-				request.ContentType = contenType;
-			}
-
-			try
-			{
-				return await request.GetResponseAsync(cancellationToken).ConfigureAwait(false);
-			}
-			catch (System.Net.Sockets.SocketException ex)
-			{
-				if (ex.Message.Contains("did not properly respond after a period of time"))
-					throw new ConnectionTimeoutException(ex.InnerException);
-				else
-					throw;
-			}
-			catch (WebException ex)
-			{
-				if (ex.Response is HttpWebResponse response)
-				{
-					var heads = response.GetHeaders();
-					var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
-					var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
-					var exception = isMoved
-						? new RemoteServerMovedException(response.StatusCode, uri, heads, $"Resource on the remote server was moved [{(heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri)}]")
-						: new RemoteServerException(response.StatusCode, isNotModified, uri, heads, null, ex.Message, ex);
-					if (!isMoved && !isNotModified)
-						try
-						{
-							exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-							exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
-						}
-						catch { }
-					response.Dispose();
-					throw exception;
-				}
-				else if (ex.Status == WebExceptionStatus.Timeout)
-					throw new ConnectionTimeoutException(ex);
-				else
-					throw;
-			}
-			catch (Exception)
-			{
-				throw;
-			}
-		}
-
-		/// <summary>
-		/// Sends a request to a remote end-point via HttpWebRequest
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary - array/array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<HttpWebResponse> SendHttpWebRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, CancellationToken cancellationToken)
-			=> uri.SendHttpWebRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point via HttpClient
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="credential">The credential for marking request</param>
-		/// <param name="proxy">The proxy for marking request</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="multipartFilename">The name of file that presents by the body stream</param>
-		/// <returns></returns>
-		public static async Task<HttpResponseMessage> SendHttpClientRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken, string multipartFilename = null)
+		public static async Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken, string multipartFilename = null)
 		{
 			if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
 				throw new InformationRequiredException("The URI is invalid");
@@ -1241,21 +978,156 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="credential">The credential for sending the request</param>
+		/// <param name="proxy">The proxy for sending the request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="multipartFilename">The name of the file that presents by the body stream</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken, string multipartFilename = null)
+			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken, multipartFilename);
+
+		/// <summary>
 		/// Sends a request to a remote end-point via HttpClient
 		/// </summary>
 		/// <param name="uri">The URI to perform request to</param>
 		/// <param name="method">The HTTP verb to perform request</param>
 		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="multipartFilename">The cancellation token</param>
 		/// <returns></returns>
-		public static Task<HttpResponseMessage> SendHttpClientRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, CancellationToken cancellationToken, string multipartFilename = null)
-			=> uri.SendHttpClientRequestAsync(method, headers, body, timeout, null, null, cancellationToken, multipartFilename);
-		#endregion
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout = 90, CancellationToken cancellationToken = default)
+			=> uri.SendHttpRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
 
-		#region Send requests over HTTP to upload/download
+		/// <summary>
+		/// Sends a request to a remote end-point via HttpClient
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="method">The HTTP verb to perform request</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="body">The requesting body</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, object body, int timeout = 90, CancellationToken cancellationToken = default)
+			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
+			=> uri.SendHttpRequestAsync("GET", headers, null, timeout, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
+			=> new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, CancellationToken cancellationToken)
+			=> uri.SendHttpRequestAsync(null, 90, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(string uri, CancellationToken cancellationToken)
+			=> new Uri(uri).SendHttpRequestAsync(cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="credential">The credential for sending the request</param>
+		/// <param name="proxy">The proxy for sending the request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
+		{
+			using (var response = await uri.SendHttpRequestAsync("GET", headers, null, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
+				return await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+		}
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="credential">The credential for sending the request</param>
+		/// <param name="proxy">The proxy for sending the request</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken)
+			=> new Uri(uri).FetchHttpAsync(headers, timeout, credential, proxy, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
+			=> uri.FetchHttpAsync(headers, timeout, null, null, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="headers">The requesting headers</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
+			=> new Uri(uri).FetchHttpAsync(headers, timeout, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(this Uri uri, CancellationToken cancellationToken)
+			=> uri.FetchHttpAsync(null, 90, cancellationToken);
+
+		/// <summary>
+		/// Sends a request to a remote end-point to fetch and return as a string
+		/// </summary>
+		/// <param name="uri">The URI to perform request to</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken)
+			=> new Uri(uri).FetchHttpAsync(cancellationToken);
+
 		/// <summary>
 		/// Uploads a stream as a file to a remote end-point
 		/// </summary>
@@ -1273,7 +1145,7 @@ namespace net.vieapps.Components.Utility
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var response = await new Uri(url).SendHttpClientRequestAsync("POST", headers, stream, timeout, cancellationToken, filename).ConfigureAwait(false))
+				using (var response = await new Uri(url).SendHttpRequestAsync("POST", headers, stream, timeout, null, null, cancellationToken, filename).ConfigureAwait(false))
 				{
 					var results = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 					stopwatch.Stop();
@@ -1304,7 +1176,7 @@ namespace net.vieapps.Components.Utility
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var response = await new Uri(url).SendHttpClientRequestAsync("GET", headers, null, timeout, cancellationToken).ConfigureAwait(false))
+				using (var response = await new Uri(url).SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
 				using (var results = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
 				{
 					stopwatch.Stop();
@@ -1319,184 +1191,6 @@ namespace net.vieapps.Components.Utility
 					throw;
 			}
 		}
-		#endregion
-
-		#region Send requests over HTTP to a remote end-point
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="credential">The credential for marking request</param>
-		/// <param name="proxy">The proxy for marking request</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
-		/// <returns></returns>
-		public static async Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = true)
-		{
-			if (useHttpClient)
-				using (var response = await uri.SendHttpClientRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
-				using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-					return await RemoteServerResponse.CreateAsync(response.StatusCode, uri, response.GetHeaders(), stream).ConfigureAwait(false);
-			else
-				using (var response = await uri.SendHttpWebRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
-				using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
-					return await RemoteServerResponse.CreateAsync(response.StatusCode, uri, response.GetHeaders(), stream).ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="credential">The credential for marking request</param>
-		/// <param name="proxy">The proxy for marking request</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="useHttpClient">true to use HttpClient; false to use HttpWebRequest</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default, bool useHttpClient = true)
-			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, credential, proxy, cancellationToken, useHttpClient);
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout = 90, CancellationToken cancellationToken = default)
-			=> uri.SendHttpRequestAsync(method, headers, body, timeout, null, null, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="method">The HTTP verb to perform request</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="body">The requesting body (text or binary (array of bytes or array segment of bytes)</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, string method, Dictionary<string, string> headers, object body, int timeout = 90, CancellationToken cancellationToken = default)
-			=> new Uri(uri).SendHttpRequestAsync(method, headers, body, timeout, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
-			=> uri.SendHttpRequestAsync("GET", headers, null, timeout, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
-			=> new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(this Uri uri, CancellationToken cancellationToken)
-			=> uri.SendHttpRequestAsync(null, 90, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<RemoteServerResponse> SendHttpRequestAsync(string uri, CancellationToken cancellationToken)
-			=> new Uri(uri).SendHttpRequestAsync(cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point to fetch and return as a string
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="credential">The credential for marking request</param>
-		/// <param name="proxy">The proxy for marking request</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static async Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default)
-		{
-			using (var response = await uri.SendHttpRequestAsync("GET", headers, null, timeout, credential, proxy, cancellationToken).ConfigureAwait(false))
-				return await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Sends a request to a remote end-point to fetch and return as a string
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="credential">The credential for marking request</param>
-		/// <param name="proxy">The proxy for marking request</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken = default)
-			=> new Uri(uri).FetchHttpAsync(headers, timeout, credential, proxy, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point to fetch and return as a string
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<string> FetchHttpAsync(this Uri uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
-			=> uri.FetchHttpAsync(headers, timeout, null, null, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point to fetch and return as a string
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="headers">The requesting headers</param>
-		/// <param name="timeout">The requesting time-out</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<string> FetchHttpAsync(string uri, Dictionary<string, string> headers = null, int timeout = 90, CancellationToken cancellationToken = default)
-			=> new Uri(uri).FetchHttpAsync(headers, timeout, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point to fetch and return as a string
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<string> FetchHttpAsync(this Uri uri, CancellationToken cancellationToken)
-			=> uri.FetchHttpAsync(null, 90, cancellationToken);
-
-		/// <summary>
-		/// Sends a request to a remote end-point to fetch and return as a string
-		/// </summary>
-		/// <param name="uri">The URI to perform request to</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken)
-			=> new Uri(uri).FetchHttpAsync(cancellationToken);
 		#endregion
 
 		#region Normalize HTML/XML tags & Remove whitespaces/breaks
@@ -3380,87 +3074,6 @@ namespace net.vieapps.Components.Utility
 			// finally add start back on to shift back to the desired range and return.
 			return ((this.Next(bits + 1) * bigInt) / BigInteger.Pow(2, bits + 1)) + minValue;
 		}
-	}
-	#endregion
-
-	//  --------------------------------------------------------------------------------------------
-
-	#region Remote server response
-	/// <summary>
-	/// Represents the response from a remote end-point
-	/// </summary>
-	public class RemoteServerResponse : IDisposable
-	{
-		internal static async Task<RemoteServerResponse> CreateAsync(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers, Stream body, CancellationToken cancellationToken = default)
-		{
-			var response = new RemoteServerResponse(statusCode, uri, headers) { Body = UtilityService.CreateMemoryStream() };
-			await body.CopyToAsync(response.Body, cancellationToken).ConfigureAwait(false);
-			return response;
-		}
-
-		CookieCollection _cookies = null;
-
-		public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.OK;
-
-		public Uri URI { get; internal set; }
-
-		public Dictionary<string, string> Headers { get; internal set; } = new Dictionary<string, string>();
-
-		public MemoryStream Body { get; internal set; }
-
-		public CookieCollection Cookies => this.GetCookies();
-
-		public string ContentType
-			=> this.GetHeaders().TryGetValue("Content-Type", out var contentType) && !string.IsNullOrWhiteSpace(contentType) ? contentType : null;
-
-		public RemoteServerResponse(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers)
-		{
-			this.StatusCode = statusCode;
-			this.URI = uri;
-			this.Headers = headers;
-		}
-
-		public void Dispose()
-		{
-			GC.SuppressFinalize(this);
-			this.Body?.Dispose();
-		}
-
-		~RemoteServerResponse()
-			=> this.Dispose();
-
-		public Task CopyToAsync(Stream stream, CancellationToken cancellationToken = default)
-		{
-			this.Body?.Seek(0, SeekOrigin.Begin);
-			return this.Body != null ? this.Body.CopyToAsync(stream, cancellationToken) : Task.CompletedTask;
-		}
-
-		public Task<MemoryStream> ReadAsStreamAsync(CancellationToken cancellationToken = default)
-				=> Task.FromResult(this.Body);
-
-		public async Task<byte[]> ReadAsByteArrayAsync(CancellationToken cancellationToken = default)
-		{
-			var buffer = Array.Empty<byte>();
-			if (this.Body != null)
-			{
-				this.Body.Seek(0, SeekOrigin.Begin);
-				buffer = new byte[this.Body.Length];
-				await this.Body.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-			}
-			return buffer;
-		}
-
-		public async Task<string> ReadAsStringAsync(CancellationToken cancellationToken = default)
-		{
-			var @string = this.Body != null ? await this.Body.ReadAllAsync(cancellationToken, true).ConfigureAwait(false) : null;
-			return (this.ContentType ?? "").IsStartsWith("text/html") ? @string?.HtmlDecode() : @string;
-		}
-
-		public Dictionary<string, string> GetHeaders(IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
-			=> this.Headers?.Copy(excluded, onCompleted) ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-		public CookieCollection GetCookies(Action<Cookie> onAdd = null)
-			=> this._cookies ?? (this._cookies = this.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(this.URI?.Host, onAdd) : new CookieCollection());
 	}
 	#endregion
 
