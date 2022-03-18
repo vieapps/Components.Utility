@@ -670,21 +670,6 @@ namespace net.vieapps.Components.Utility
 		public static string GetHttpCookies(this IEnumerable<Cookie> cookies)
 			=> cookies.Select(cookie => $"{cookie.Name}={cookie.Value?.UrlEncode()}; path={cookie.Path ?? "/"}; domain={cookie.Domain ?? "*"}; expires={(cookie.Expired ? "-1" : cookie.Expires.ToHttpString())};{(cookie.Secure ? " secure;" : "")}{(cookie.HttpOnly ? " httponly;" : "")}").Join(",");
 
-#if NETSTANDARD2_0
-		/// <summary>
-		/// Converts this collection of cookies to list of cookies
-		/// </summary>
-		/// <param name="cookies"></param>
-		/// <returns></returns>
-		public static List<Cookie> ToList(this CookieCollection cookies)
-		{
-			var list = new List<Cookie>();
-			foreach (Cookie cookie in cookies)
-				list.Add(cookie);
-			return list;
-		}
-#endif
-
 		/// <summary>
 		/// Converts the collection of cookies to a string for using in HTTP headers
 		/// </summary>

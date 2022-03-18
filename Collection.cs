@@ -1506,6 +1506,21 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Conversions (Special)
+#if NETSTANDARD2_0
+		/// <summary>
+		/// Converts this collection of cookies to list of cookies
+		/// </summary>
+		/// <param name="cookies"></param>
+		/// <returns></returns>
+		public static List<Cookie> ToList(this CookieCollection cookies)
+		{
+			var list = new List<Cookie>();
+			foreach (Cookie cookie in cookies)
+				list.Add(cookie);
+			return list;
+		}
+#endif
+
 		/// <summary>
 		/// Converts the collection of objects to the generic list of strong-typed objects
 		/// </summary>
