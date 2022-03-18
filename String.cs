@@ -112,7 +112,15 @@ namespace net.vieapps.Components.Utility
 		}
 		#endregion
 
-		#region Comparisions
+		#region Comparisons
+		/// <summary>
+		/// Checks to see the string is numeric string or not
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static bool IsNumeric(this string @string)
+			=> !string.IsNullOrWhiteSpace(@string) && double.TryParse(@string, out var number);
+
 		/// <summary>
 		/// Check to see its equals
 		/// </summary>
@@ -222,7 +230,7 @@ namespace net.vieapps.Components.Utility
 		public static string Compress(this string @string, string mode = "deflate")
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.ToBytes().Compress(mode)?.ToBase64();
+				: @string.ToBytes().Compress(mode).ToBase64();
 
 		/// <summary>
 		/// Decompresses the Base64 string using Deflate compression method
@@ -233,7 +241,7 @@ namespace net.vieapps.Components.Utility
 		public static string Decompress(this string @string, string mode = "deflate")
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
-				: @string.Base64ToBytes().Decompress(mode)?.GetString();
+				: @string.Base64ToBytes().Decompress(mode).GetString();
 		#endregion
 
 		#region Conversions
@@ -655,14 +663,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region  Conversions (Uri)
-		/// <summary>
-		/// Checks to see the string is numeric string or not
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static bool IsNumeric(this string @string)
-			=> !string.IsNullOrWhiteSpace(@string) && double.TryParse(@string, out var number);
-
 		static Regex URICharacters { get; } = new Regex("[^a-zA-Z0-9_-]+");
 
 		static Regex URICharactersWithDot { get; } = new Regex("[^a-zA-Z0-9._-]+");
