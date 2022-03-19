@@ -763,6 +763,9 @@ namespace net.vieapps.Components.Utility
 		public static Dictionary<string, string> GetHeaders(this HttpResponseMessage response, IEnumerable<string> excluded = null, Action<Dictionary<string, string>> onCompleted = null)
 		{
 			var headers = response.Content.Headers?.ToDictionary() ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+#if !NETSTANDARD2_0
+			response.TrailingHeaders?.ToDictionary()?.ForEach(kvp => headers[kvp.Key] = kvp.Value);
+#endif
 			response.Headers?.ToDictionary()?.ForEach(kvp => headers[kvp.Key] = kvp.Value);
 			return headers.Copy(excluded, onCompleted);
 		}
@@ -819,7 +822,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task<string> ReadAsStringAsync(this HttpResponseMessage response, CancellationToken cancellationToken = default)
 		{
 			var @string = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-			return response.GetHeaders().TryGetValue("Content-Type", out var contentType) && !string.IsNullOrWhiteSpace(contentType) && contentType.IsStartsWith("text/html") ? @string?.HtmlDecode() : @string;
+			return response.GetHeaders().TryGetValue("Content-Type", out var contentType) && contentType.IsStartsWith("text/html") ? @string?.HtmlDecode() : @string;
 		}
 
 		/// <summary>
@@ -837,13 +840,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<HttpResponseMessage> SendHttpRequestAsync(this Uri uri, string method, Dictionary<string, string> headers, object body, int timeout, NetworkCredential credential, IWebProxy proxy, CancellationToken cancellationToken, string multipartFilename = null)
 		{
-			if (uri == null || string.IsNullOrWhiteSpace(uri.AbsoluteUri))
+			if (string.IsNullOrWhiteSpace(uri?.AbsoluteUri))
 				throw new InformationRequiredException("The URI is invalid");
 
 			headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			using (var request = new HttpRequestMessage(new HttpMethod(string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper()), uri))
 			{
-				headers.Copy(new[] { "Accept-Encoding", "Host", "Connection", "AllowAutoRedirect", "Cookie", "Content-Type" }).ForEach(kvp =>
+				headers.Copy(new[] { "Accept-Encoding", "Connection", "Content-Type", "Cookie", "Host", "AllowAutoRedirect" }).ForEach(kvp =>
 				{
 					try
 					{
@@ -873,10 +876,13 @@ namespace net.vieapps.Components.Utility
 				{
 					if (body is string @string)
 						request.Content = new StringContent(@string);
+
 					else if (body is byte[] bytes)
 						request.Content = new ByteArrayContent(bytes);
+
 					else if (body is ArraySegment<byte> array)
 						request.Content = new ByteArrayContent(array.ToBytes());
+
 					else if (body is Stream stream)
 					{
 						if (string.IsNullOrWhiteSpace(multipartFilename))
@@ -884,14 +890,20 @@ namespace net.vieapps.Components.Utility
 						else
 						{
 							request.Content = new MultipartFormDataContent($"vieapps---{UtilityService.GetRandomNumber()}-----");
+							request.Content.Headers.ContentType.CharSet = "utf-8";
 							(request.Content as MultipartFormDataContent).Add(new StreamContent(stream), "files", multipartFilename);
 						}
 					}
+
 					else
 						throw new InvalidRequestException("Body is invalid");
-					if (!headers.TryGetValue("Content-Type", out var contenType) || string.IsNullOrWhiteSpace(contenType))
-						contenType = "application/octet-stream; charset=utf-8";
-					request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contenType);
+
+					if (string.IsNullOrWhiteSpace(multipartFilename))
+					{
+						if (!headers.TryGetValue("Content-Type", out var contenType) || string.IsNullOrWhiteSpace(contenType))
+							contenType = "application/octet-stream; charset=utf-8";
+						request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contenType);
+					}
 				}
 
 				using (var handler = new HttpClientHandler { UseCookies = true })

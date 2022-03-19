@@ -1116,19 +1116,19 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
 		/// </summary>
-		/// <typeparam name="T">The type to be created</typeparam>
-		/// <returns>The newly created instance</returns>
-		public static T CreateInstance<T>()
-			=> typeof(T).CreateInstance<T>();
-
-		/// <summary>
-		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
-		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="type"></param>
 		/// <returns>The newly created instance</returns>
 		public static T CreateInstance<T>(this Type type)
 			=> (T)type.CreateInstance();
+
+		/// <summary>
+		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
+		/// </summary>
+		/// <typeparam name="T">The type to be created</typeparam>
+		/// <returns>The newly created instance</returns>
+		public static T CreateInstance<T>()
+			=> typeof(T).CreateInstance<T>();
 		#endregion
 
 		#region Object casts/conversions
