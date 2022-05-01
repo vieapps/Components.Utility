@@ -2125,9 +2125,22 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject(this string json, Action<ExpandoObject> onCompleted = null)
 		{
-			var expando = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
-			onCompleted?.Invoke(expando);
-			return expando;
+			try
+			{
+				var expando = JsonConvert.DeserializeObject<ExpandoObject>(json, new ExpandoObjectConverter());
+				onCompleted?.Invoke(expando);
+				return expando;
+			}
+			catch (JsonReaderException ex)
+			{
+				throw ex.Message.IsContains("Additional text encountered after finished reading JSON content")
+					? new JsonReaderException($"{ex.Message}\r\nJSON => {json}", ex.Path, ex.LineNumber, ex.LinePosition, ex)
+					: ex;
+			}
+			catch (Exception)
+			{
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -2137,9 +2150,22 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An <see cref="ExpandoObject">ExpandoObject</see> object</returns>
 		public static ExpandoObject ToExpandoObject(this JToken json, Action<ExpandoObject> onCompleted = null)
 		{
-			var expando = new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
-			onCompleted?.Invoke(expando);
-			return expando;
+			try
+			{
+				var expando = new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
+				onCompleted?.Invoke(expando);
+				return expando;
+			}
+			catch (JsonReaderException ex)
+			{
+				throw ex.Message.IsContains("Additional text encountered after finished reading JSON content")
+					? new JsonReaderException($"{ex.Message}\r\nJSON => {json}", ex.Path, ex.LineNumber, ex.LinePosition, ex)
+					: ex;
+			}
+			catch (Exception)
+			{
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -2193,14 +2219,12 @@ namespace net.vieapps.Components.Utility
 				return JsonConvert.DeserializeXNode(@object.ToString())?.Root;
 
 			using (var stream = UtilityService.CreateMemoryStream())
+			using (var writer = new StreamWriter(stream))
 			{
-				using (var writer = new StreamWriter(stream))
-				{
-					new XmlSerializer(typeof(T)).Serialize(writer, @object);
-					var xml = XElement.Parse(stream.ToBytes().GetString());
-					onCompleted?.Invoke(xml);
-					return xml;
-				}
+				new XmlSerializer(typeof(T)).Serialize(writer, @object);
+				var xml = XElement.Parse(stream.ToBytes().GetString());
+				onCompleted?.Invoke(xml);
+				return xml;
 			}
 		}
 
@@ -2272,12 +2296,8 @@ namespace net.vieapps.Components.Utility
 			// deserialize
 			T @object;
 			using (var stringReader = new StringReader(xml))
-			{
-				using (var xmlReader = new XmlTextReader(stringReader))
-				{
-					@object = (T)new XmlSerializer(typeof(T)).Deserialize(xmlReader);
-				}
-			}
+			using (var xmlReader = new XmlTextReader(stringReader))
+				@object = (T)new XmlSerializer(typeof(T)).Deserialize(xmlReader);
 
 			// run the handler
 			onCompleted?.Invoke(@object);
@@ -2347,9 +2367,7 @@ namespace net.vieapps.Components.Utility
 		{
 			var doc = new XDocument();
 			using (var writer = doc.CreateWriter())
-			{
 				document.WriteTo(writer);
-			}
 			var declaration = document.ChildNodes.OfType<XmlDeclaration>().FirstOrDefault();
 			if (declaration != null)
 				doc.Declaration = new XDeclaration(declaration.Version, declaration.Encoding, declaration.Standalone);

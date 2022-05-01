@@ -351,9 +351,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static string GetString(this byte[] bytes, int count = 0, Encoding encoding = null)
-			=> bytes == null || bytes.Length < 1
-				? ""
-				: (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
+			=> (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
 
 		/// <summary>
 		/// Gets the string from array of bytes by specified encoding (default is UTF8)
@@ -363,11 +361,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static string GetString(this ArraySegment<byte> bytes, int count = 0, Encoding encoding = null)
-		{
-			var data = new byte[count > 0 ? count : bytes.Count];
-			Buffer.BlockCopy(bytes.Array, bytes.Offset, data, 0, count > 0 ? count : bytes.Count);
-			return data.GetString(0, encoding);
-		}
+			=> bytes.ToBytes(count).GetString(0, encoding);
 
 		/// <summary>
 		/// Gets the double braces (mustache-style - {{  }}) tokens

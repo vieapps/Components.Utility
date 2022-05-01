@@ -67,9 +67,10 @@ namespace net.vieapps.Components.Utility
 		/// Converts this array segment of bytes to array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
+		/// <param name="count"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this ArraySegment<byte> bytes)
-			=> bytes.Take();
+		public static byte[] ToBytes(this ArraySegment<byte> bytes, int count = 0)
+			=> bytes.Take(count);
 
 		/// <summary>
 		/// Converts this string to array of bytes

@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Newtonsoft.Json.Linq;
 using Microsoft.IO;
 using Microsoft.Extensions.Configuration;
 #endregion
@@ -744,6 +745,9 @@ namespace net.vieapps.Components.Utility
 			return cookies;
 		}
 
+		static CookieCollection GetCookies(this Dictionary<string, string> headers, string domain, Action<Cookie> onAdd)
+			=> headers.TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(domain, onAdd) : new CookieCollection();
+
 		/// <summary>
 		/// Gets the HTTP cookies
 		/// </summary>
@@ -751,7 +755,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onAdd"></param>
 		/// <returns></returns>
 		public static CookieCollection GetCookies(this HttpResponseMessage response, Action<Cookie> onAdd = null)
-			=> response.GetHeaders().TryGetValue("Set-Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies) ? cookies.ToList().GetCookies(response.RequestMessage.RequestUri.Host, onAdd) : new CookieCollection();
+			=> response.GetHeaders().GetCookies(response.RequestMessage.RequestUri.Host, onAdd);
+
+		/// <summary>
+		/// Gets the HTTP cookies
+		/// </summary>
+		/// <param name="exception"></param>
+		/// <param name="onAdd"></param>
+		/// <returns></returns>
+		public static CookieCollection GetCookies(this RemoteServerException exception, Action<Cookie> onAdd = null)
+			=> exception.Headers.GetCookies(exception.URI.Host, onAdd);
 
 		/// <summary>
 		/// Gets the HTTP headers
@@ -1128,7 +1141,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Uploads a stream as a file to a remote end-point
 		/// </summary>
-		/// <param name="url"></param>
+		/// <param name="uri"></param>
 		/// <param name="stream"></param>
 		/// <param name="filename"></param>
 		/// <param name="headers"></param>
@@ -1137,22 +1150,22 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onSuccess"></param>
 		/// <param name="onError"></param>
 		/// <returns></returns>
-		public static async Task UploadAsync(string url, Stream stream, string filename, Dictionary<string, string> headers = null, int timeout = 600, CancellationToken cancellationToken = default, Action<string, string, string, long> onSuccess = null, Action<string, string, Exception> onError = null)
+		public static async Task UploadAsync(string uri, Stream stream, string filename, Dictionary<string, string> headers = null, int timeout = 600, CancellationToken cancellationToken = default, Action<string, string, string, long> onSuccess = null, Action<string, string, Exception> onError = null)
 		{
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var response = await new Uri(url).SendHttpRequestAsync("POST", headers, stream, timeout, null, null, cancellationToken, filename).ConfigureAwait(false))
+				using (var response = await new Uri(uri).SendHttpRequestAsync("POST", headers, stream, timeout, null, null, cancellationToken, filename).ConfigureAwait(false))
 				{
 					var results = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 					stopwatch.Stop();
-					onSuccess?.Invoke(url, filename, results, stopwatch.ElapsedMilliseconds);
+					onSuccess?.Invoke(uri, filename, results, stopwatch.ElapsedMilliseconds);
 				}
 			}
 			catch (Exception ex)
 			{
 				if (onError != null)
-					onError(url, filename, ex);
+					onError(uri, filename, ex);
 				else
 					throw;
 			}
@@ -1161,29 +1174,29 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Downloads a file as stream from a remote end-point
 		/// </summary>
-		/// <param name="url"></param>
+		/// <param name="uri"></param>
 		/// <param name="headers"></param>
 		/// <param name="timeout"></param>
 		/// <param name="cancellationToken"></param>
 		/// <param name="onSuccess"></param>
 		/// <param name="onError"></param>
 		/// <returns></returns>
-		public static async Task DownloadAsync(string url, Dictionary<string, string> headers = null, int timeout = 600, CancellationToken cancellationToken = default, Action<string, Stream, long> onSuccess = null, Action<string, Exception> onError = null)
+		public static async Task DownloadAsync(string uri, Dictionary<string, string> headers = null, int timeout = 600, CancellationToken cancellationToken = default, Action<string, Stream, long> onSuccess = null, Action<string, Exception> onError = null)
 		{
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var response = await new Uri(url).SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
-				using (var results = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+				using (var response = await new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
+				using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
 				{
 					stopwatch.Stop();
-					onSuccess?.Invoke(url, results, stopwatch.ElapsedMilliseconds);
+					onSuccess?.Invoke(uri, stream, stopwatch.ElapsedMilliseconds);
 				}
 			}
 			catch (Exception ex)
 			{
 				if (onError != null)
-					onError(url, ex);
+					onError(uri, ex);
 				else
 					throw;
 			}
@@ -1216,8 +1229,8 @@ namespace net.vieapps.Components.Utility
 				var isClose = tagMatch.Value[1] == '/' || tagMatch.Value[tagMatch.Value.Length - 2] == '/';
 				var spacePos = tagMatch.Value.IndexOf(" ");
 				var name = isClose
-						? isOpen ? spacePos > 0 ? tagMatch.Value.Substring(1, spacePos - 1) : tagMatch.Value.Substring(1, tagMatch.Value.Length - 3) : tagMatch.Value.Substring(2, tagMatch.Value.Length - 3)
-						: spacePos > 0 ? tagMatch.Value.Substring(1, spacePos - 1) : tagMatch.Value.Substring(1, tagMatch.Value.Length - 2);
+					? isOpen ? spacePos > 0 ? tagMatch.Value.Substring(1, spacePos - 1) : tagMatch.Value.Substring(1, tagMatch.Value.Length - 3) : tagMatch.Value.Substring(2, tagMatch.Value.Length - 3)
+					: spacePos > 0 ? tagMatch.Value.Substring(1, spacePos - 1) : tagMatch.Value.Substring(1, tagMatch.Value.Length - 2);
 
 				var attributes = new List<XTagAttribute>();
 				foreach (Match attributeMatch in UtilityService.AllAttributesRegex.Matches(tagMatch.Value))
@@ -1527,7 +1540,7 @@ namespace net.vieapps.Components.Utility
 			{
 				@string = @string.Replace("\r", "").Replace(">\n\t", ">").Replace("\n\t", " ").Replace("\n", "").Replace("\t", "").Trim();
 				UtilityService.WhitespacesAndBreaksRegexs.Concat(UtilityService.WhitespacesAndBreaksExtendedRegexs).ForEach(regex => @string = regex.Item1.Replace(@string, regex.Item2));
-				@string = @string.Replace("> <", "><").Replace("  </", "</").Replace(" </", "</").Replace("\"> ", "\">").Replace("'> ", "'>");
+				@string = @string.Replace("> <", "><").Replace("  </", "</").Replace(" </", "</").Replace("\"> ", "\">").Replace("'> ", "'>").Replace(" class=\"\"", "").Replace(" style=\"\"", "");
 			}
 			return @string;
 		}
@@ -1820,6 +1833,52 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Reads this file as XML
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static async Task<XmlDocument> ReadAsXmlAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null)
+		{
+			var xml = new XmlDocument();
+			xml.LoadXml(await fileInfo.ReadAsTextAsync(cancellationToken, encoding).ConfigureAwait(false));
+			return xml;
+		}
+
+		/// <summary>
+		/// Reads this file as XML
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static XmlDocument ReadAsXml(this FileInfo fileInfo, Encoding encoding = null)
+		{
+			var xml = new XmlDocument();
+			xml.LoadXml(fileInfo.ReadAsText(encoding));
+			return xml;
+		}
+
+		/// <summary>
+		/// Reads this file as JSON
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static async Task<JToken> ReadAsJsonAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null)
+			=> JToken.Parse(await fileInfo.ReadAsTextAsync(cancellationToken, encoding).ConfigureAwait(false));
+
+		/// <summary>
+		/// Reads this file as JSON
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static JToken ReadAsJson(this FileInfo fileInfo, Encoding encoding = null)
+			=> JToken.Parse(fileInfo.ReadAsText(encoding));
+
+		/// <summary>
 		/// Reads multiple lines of this file
 		/// </summary>
 		/// <param name="fileInfo"></param>
@@ -2053,9 +2112,7 @@ namespace net.vieapps.Components.Utility
 					if (stream.CanSeek)
 						stream.Seek(0, SeekOrigin.Begin);
 					var buffer = new byte[TextFileReader.BufferSize];
-					var read = stream is MemoryStream
-						? stream.Read(buffer, 0, buffer.Length)
-						: await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+					var read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 					while (read > 0)
 					{
 						await compressor.WriteAsync(buffer, read, cancellationToken).ConfigureAwait(false);
@@ -2142,9 +2199,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var output = Array.Empty<byte>();
 				var buffer = new byte[TextFileReader.BufferSize];
-				var read = stream is MemoryStream
-					? decompressor.Read(buffer, 0, buffer.Length)
-					: await decompressor.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+				var read = await decompressor.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 				while (read > 0)
 				{
 					output = output.Concat(buffer.Take(0, read));

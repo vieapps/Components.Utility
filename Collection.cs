@@ -728,7 +728,7 @@ namespace net.vieapps.Components.Utility
 			if (@object.Length < 1 || (offset == 0 && count == @object.Length))
 				return @object;
 
-			offset = offset > -1 && offset < @object.Length ? offset : 0;
+			offset = offset > 0 && offset < @object.Length ? offset : 0;
 			count = count > 0 && count < @object.Length - offset ? count : @object.Length - offset;
 			if (offset == 0 && count == @object.Length)
 				return @object;
@@ -744,12 +744,13 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Takes the array from this array segment
+		/// Takes a specified number of contiguous elements from the start of this array segment
 		/// </summary>
 		/// <param name="segment"></param>
+		/// <param name="count"></param>
 		/// <returns></returns>
-		public static T[] Take<T>(this ArraySegment<T> segment)
-			=> segment.Array.Take(segment.Offset, segment.Count);
+		public static T[] Take<T>(this ArraySegment<T> segment, int count = 0)
+			=> segment.AsEnumerable().Take(count > 0 ? count : segment.Count).ToArray();
 
 		/// <summary>
 		/// Splits this array to sub-arrays
