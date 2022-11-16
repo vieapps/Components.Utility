@@ -340,7 +340,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
+#if NET7_0
+			=> writer.WriteAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
+#else
 			=> writer.WriteAsync(@string).WithCancellationToken(cancellationToken);
+#endif
 
 		/// <summary>
 		/// Writes a line of string to the stream asynchronously
@@ -350,8 +354,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteLineAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
+#if NET7_0
+			=> writer.WriteLineAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
+#else
 			=> writer.WriteLineAsync(@string).WithCancellationToken(cancellationToken);
+#endif
 
+#if !NET7_0
 		/// <summary>
 		/// Reads all characters from the current position to the end of the stream asynchronously and returns them as one string
 		/// </summary>
@@ -360,6 +369,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> ReadToEndAsync(this StreamReader reader, CancellationToken cancellationToken)
 			=> reader.ReadToEndAsync().WithCancellationToken(cancellationToken);
+#endif
 
 		/// <summary>
 		/// Reads a line of characters asynchronously from the current stream and returns the data as a string
@@ -533,7 +543,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteLinesAsync(this StreamWriter writer, IEnumerable<string> lines, CancellationToken cancellationToken)
-			=> lines == null ? Task.CompletedTask : lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line, cancellationToken).ConfigureAwait(false), true, false);
+			=> lines == null
+				? Task.CompletedTask
+#if NET7_0
+				: lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false), true, false);
+#else
+				: lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line, cancellationToken).ConfigureAwait(false), true, false);
+#endif
 
 		/// <summary>
 		/// Writes the string lines to the stream asynchronously
@@ -2933,7 +2949,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
 		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default)
+#if NET7_0
+			=> this._reader.ReadLineAsync(cancellationToken).AsTask();
+#else
 			=> this._reader.ReadLineAsync(cancellationToken);
+#endif
 
 		/// <summary>
 		/// Reads some lines of characters (from the current position)

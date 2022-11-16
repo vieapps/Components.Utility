@@ -103,7 +103,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="byte"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this byte @byte)
-			=> BitConverter.GetBytes(@byte);
+			=> BitConverter.GetBytes((ushort)@byte);
 
 		/// <summary>
 		/// Converts this sbyte to array of bytes
@@ -111,7 +111,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="sbyte"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this sbyte @sbyte)
-			=> BitConverter.GetBytes(@sbyte);
+			=> BitConverter.GetBytes((short)@sbyte);
 
 		/// <summary>
 		/// Converts this short to array of bytes
