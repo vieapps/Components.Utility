@@ -5,6 +5,8 @@ using System.Text;
 using System.Linq;
 using System.Numerics;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -670,7 +672,7 @@ namespace net.vieapps.Components.Utility
 			=> @string.FromBase64(true);
 		#endregion
 
-		#region Encode/Decode Url
+		#region Encode/Decode Url/Html/Ascii
 		/// <summary>
 		/// Encodes this string to use in url
 		/// </summary>
@@ -710,9 +712,7 @@ namespace net.vieapps.Components.Utility
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.Base64ToBytes(true).GetString();
-		#endregion
 
-		#region Encode/Decode Html
 		/// <summary>
 		/// Encodes this string to HTML string
 		/// </summary>
@@ -732,6 +732,29 @@ namespace net.vieapps.Components.Utility
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: WebUtility.HtmlDecode(@string.Trim());
+
+		/// <summary>
+		/// Encodes this string to ASCII encoded string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string AsciiEncode(this string @string)
+		{
+			var builder = new StringBuilder();
+			foreach (char @char in @string)
+				builder.Append(@char > 127 ? "\\u" + ((int)@char).ToString("x4") : @char.ToString());
+			return builder.ToString();
+		}
+
+		static Regex AsciiDecodeRegex { get; } = new Regex("\\\\u(?<Value>[a-zA-Z0-9]{4})", RegexOptions.Compiled);
+
+		/// <summary>
+		/// Decodes this ASCII encoded string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		public static string AsciiDecode(this string @string)
+			=> EncodingService.AsciiDecodeRegex.Replace(@string, match => ((char)int.Parse(match.Groups["Value"].Value, NumberStyles.HexNumber)).ToString());
 		#endregion
 
 	}

@@ -102,6 +102,20 @@ namespace net.vieapps.Components.Utility
 	}
 
 	[Serializable]
+	public class MessageException : AppException
+	{
+		public MessageException() : base("Invalid") { }
+
+		public MessageException(string message) : base(message) { }
+
+		public MessageException(Exception innerException) : base("Invalid", innerException) { }
+
+		public MessageException(string message, Exception innerException) : base(message, innerException) { }
+
+		public MessageException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+	}
+
+	[Serializable]
 	public class DatabaseOperationException : AppException
 	{
 		public DatabaseOperationException() : base("Error occured while operating with database") { }

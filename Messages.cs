@@ -41,7 +41,7 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try
 				{
-					this.CopyFrom(encryptedMessage.Decrypt(EmailMessage.EncryptionKey).FromJson<EmailMessage>());
+					this.CopyFrom(encryptedMessage.Decrypt(EmailMessage.EncryptionKey).ToJson().As<EmailMessage>());
 				}
 				catch { }
 		}
@@ -132,13 +132,19 @@ namespace net.vieapps.Components.Utility
 				}
 				catch { }
 		}
+		#endregion
+
+		/// <summary>
+		/// Gets the JSON that presents the message
+		/// </summary>
+		[JsonIgnore]
+		public JToken AsJson => this.ToJson();
 
 		/// <summary>
 		/// Gets the string that presents the encrypted messages
 		/// </summary>
 		[JsonIgnore]
-		public string Encrypted => this.ToJson().ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey);
-		#endregion
+		public string Encrypted => this.AsJson.ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey);
 
 	}
 
@@ -164,9 +170,7 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(encryptedMessage))
 				try
 				{
-					this.CopyFrom(encryptedMessage.Decrypt(WebHookMessage.EncryptionKey).FromJson<WebHookMessage>());
-					this.Header.Select(kvp => kvp.Key).ToList().ForEach(key => this.Header[key] = this.Header[key]?.UrlDecode());
-					this.Query.Select(kvp => kvp.Key).ToList().ForEach(key => this.Query[key] = this.Query[key]?.UrlDecode());
+					this.CopyFrom(encryptedMessage.Decrypt(WebHookMessage.EncryptionKey).ToJson().As<WebHookMessage>());
 				}
 				catch { }
 		}
@@ -239,13 +243,32 @@ namespace net.vieapps.Components.Utility
 				}
 				catch { }
 		}
+		#endregion
+
+		/// <summary>
+		/// Gets the JSON that presents the message
+		/// </summary>
+		[JsonIgnore]
+		public JToken AsJson => this.ToJson(json =>
+		{
+			try
+			{
+				json["Body"] = (string.IsNullOrWhiteSpace(this.Body) ? "{}" : this.Body).ToJson();
+			}
+			catch
+			{
+				json["Body"] = new JObject
+				{
+					["_original"] = this.Body
+				};
+			}
+		});
 
 		/// <summary>
 		/// Gets the string that presents the encrypted messages
 		/// </summary>
 		[JsonIgnore]
 		public string Encrypted => this.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey);
-		#endregion
 
 	}
 
@@ -335,15 +358,13 @@ namespace net.vieapps.Components.Utility
 		{
 			// check
 			if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(body))
-				throw new InvalidDataException("The email must have subject and body");
+				throw new MessageException("The email must have subject and body");
 
 			if (fromAddress == null || string.IsNullOrWhiteSpace(fromAddress.Address))
-				throw new InvalidDataException("The email must have sender address");
+				throw new MessageException("The email must have sender address");
 
-			if ((toAddresses == null || toAddresses.Count() < 1)
-				&& (ccAddresses == null || ccAddresses.Count() < 1)
-				&& (bccAddresses == null || bccAddresses.Count() < 1))
-				throw new InvalidDataException("The email must have at least one recipient");
+			if ((toAddresses == null || !toAddresses.Any()) && (ccAddresses == null || !ccAddresses.Any()) && (bccAddresses == null || !bccAddresses.Any()))
+				throw new MessageException("The email must have at least one recipient");
 
 			// create new mail message
 			var message = new MailMessage
@@ -394,7 +415,7 @@ namespace net.vieapps.Components.Utility
 		{
 			// check & validate
 			if (from.Equals(""))
-				throw new InvalidDataException("No sender information for the message");
+				throw new MessageException("No sender information for the message");
 
 			var toEmails = string.IsNullOrWhiteSpace(to)
 				? ""
@@ -409,7 +430,7 @@ namespace net.vieapps.Components.Utility
 				: bcc.Trim();
 
 			if (toEmails.Equals("") && ccEmails.Equals("") && bccEmails.Equals(""))
-				throw new InvalidDataException("No recipient for the message");
+				throw new MessageException("No recipient for the message");
 
 			// prepare
 			MailAddress fromAddress = null;
@@ -484,7 +505,7 @@ namespace net.vieapps.Components.Utility
 		public static MailMessage Normalize(this MailMessage message)
 		{
 			if (message == null)
-				throw new InformationInvalidException("The message is invalid");
+				throw new MessageException();
 
 			if (MessageService.HarmfulDomains.Count > 0)
 			{
@@ -528,7 +549,7 @@ namespace net.vieapps.Components.Utility
 			if ((message.To == null || message.To.Count < 1)
 				&& (message.CC == null || message.CC.Count < 1)
 				&& (message.Bcc == null || message.Bcc.Count < 1))
-				throw new InvalidDataException("The message must have at least one recipient");
+				throw new MessageException("The message must have at least one recipient");
 
 			return message;
 		}
@@ -595,9 +616,9 @@ namespace net.vieapps.Components.Utility
 		{
 			// check
 			if (smtp == null)
-				throw new InformationInvalidException("The SMTP client is invalid");
+				throw new MessageException("The SMTP client is invalid");
 			if (message == null)
-				throw new InformationInvalidException("The message is invalid");
+				throw new MessageException("The message is invalid");
 
 			// send
 			smtp.Send(message.Normalize());
@@ -611,9 +632,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		public static Task SendMailAsync(this SmtpClient smtp, MailMessage message, CancellationToken cancellationToken)
 			=> smtp == null
-				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				? Task.FromException(new MessageException("The SMTP client is invalid"))
 				: message == null
-					? Task.FromException(new InformationInvalidException("The message is invalid"))
+					? Task.FromException(new MessageException("The message is invalid"))
 #if NETSTANDARD2_0
 					: smtp.SendMailAsync(message.Normalize()).WithCancellationToken(cancellationToken);
 #else
@@ -640,7 +661,7 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null)
 		{
 			if (smtp == null)
-				throw new InformationInvalidException("The SMTP client is invalid");
+				throw new MessageException("The SMTP client is invalid");
 			smtp.SendMail(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer));
 		}
 
@@ -664,7 +685,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		public static Task SendMailAsync(this SmtpClient smtp, MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isHtmlFormat = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
 			=> smtp == null
-				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				? Task.FromException(new MessageException("The SMTP client is invalid"))
 				: smtp.SendMailAsync(MessageService.GetMailMessage(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isHtmlFormat, encoding, mailer), cancellationToken);
 
 		/// <summary>
@@ -691,9 +712,7 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
-			{
 				smtp.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer);
-			}
 		}
 
 		/// <summary>
@@ -721,9 +740,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
-			{
 				await smtp.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer, cancellationToken).ConfigureAwait(false);
-			}
 		}
 
 		/// <summary>
@@ -746,7 +763,7 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null)
 		{
 			if (smtp == null)
-				throw new InformationInvalidException("The SMTP client is invalid");
+				throw new MessageException("The SMTP client is invalid");
 			smtp.SendMail(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer));
 		}
 
@@ -770,7 +787,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		public static Task SendMailAsync(this SmtpClient smtp, string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, CancellationToken cancellationToken = default)
 			=> smtp == null
-				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				? Task.FromException(new MessageException("The SMTP client is invalid"))
 				: smtp.SendMailAsync(MessageService.GetMailMessage(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer), cancellationToken);
 
 		/// <summary>
@@ -797,9 +814,7 @@ namespace net.vieapps.Components.Utility
 		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
-			{
 				smtp.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer);
-			}
 		}
 
 		/// <summary>
@@ -827,9 +842,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
 		{
 			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
-			{
 				await smtp.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer, cancellationToken).ConfigureAwait(false);
-			}
 		}
 
 		/// <summary>
@@ -840,7 +853,7 @@ namespace net.vieapps.Components.Utility
 		public static void SendMails(this SmtpClient smtp, IEnumerable<MailMessage> messages)
 		{
 			if (smtp == null)
-				throw new InformationInvalidException("The SMTP client is invalid");
+				throw new MessageException("The SMTP client is invalid");
 			messages?.Where(message => message != null).ForEach(message => smtp.Send(message.Normalize()));
 		}
 
@@ -852,7 +865,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		public static Task SendMailsAsync(this SmtpClient smtp, IEnumerable<MailMessage> messages, CancellationToken cancellationToken = default)
 			=> smtp == null
-				? Task.FromException(new InformationInvalidException("The SMTP client is invalid"))
+				? Task.FromException(new MessageException("The SMTP client is invalid"))
 				: messages == null
 					? Task.CompletedTask
 					: messages.Where(message => message != null).ForEachAsync((message, token) => smtp.SendMailAsync(message, token), cancellationToken);
@@ -864,7 +877,7 @@ namespace net.vieapps.Components.Utility
 		public static void SendMessage(this EmailMessage message)
 		{
 			if (message == null)
-				throw new InformationInvalidException("The message is invalid");
+				throw new MessageException("The message is invalid");
 			MessageService.SendMail(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl);
 		}
 
@@ -875,7 +888,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		public static Task SendMessageAsync(this EmailMessage message, CancellationToken cancellationToken = default)
 			=> message == null
-				? Task.FromException(new InformationInvalidException("The message is invalid"))
+				? Task.FromException(new MessageException("The message is invalid"))
 				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, cancellationToken);
 		#endregion
 
@@ -884,46 +897,133 @@ namespace net.vieapps.Components.Utility
 		/// Normalizes the web-hook message
 		/// </summary>
 		/// <param name="message">The web-hook message</param>
-		/// <param name="signAlgorithm">The HMAC algorithm to sign the body with the specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="signAlgorithm">The HMAC algorithm to sign with the body by a specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signKey">The key that use to sign</param>
+		/// <param name="signKeyIsHex">true to use bytes of hex-string sign-key</param>
 		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
 		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
 		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
 		/// <param name="additionalQuery">The additional query string</param>
 		/// <param name="additionalHeader">The additional header</param>
+		/// <param name="encryptionKey">The AES key (256 bits-length) for encrypting message's body</param>
+		/// <param name="encryptionIV">The AES initialize vector (128 bits-length) for encrypting message's body</param>
 		/// <returns></returns>
-		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, Dictionary<string, string> additionalQuery = null, Dictionary<string, string> additionalHeader = null)
+		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, bool signKeyIsHex = false, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, IDictionary<string, string> additionalQuery = null, IDictionary<string, string> additionalHeader = null, byte[] encryptionKey = null, byte[] encryptionIV = null)
 		{
 			if (message == null)
-				throw new InformationInvalidException("The message is invalid (null)");
-			else if (string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
-				throw new InformationInvalidException("The message is invalid (no end-point or no body)");
+				throw new MessageException();
 
-			if (string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm))
-				signAlgorithm = "SHA256";
+			if (string.IsNullOrWhiteSpace(message.EndpointURL) || string.IsNullOrWhiteSpace(message.Body))
+				throw new MessageException("Invalid (end-point/body)");
 
-			if (string.IsNullOrWhiteSpace(signatureName))
-				signatureName = $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature";
+			message.Query = new Dictionary<string, string>(message.Query ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			additionalQuery?.ForEach(kvp => message.Query[kvp.Key] = kvp.Value);
 
-			var query = new Dictionary<string, string>(additionalQuery ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-			message.Query?.ForEach(kvp => query[kvp.Key] = kvp.Value);
+			message.Header = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+			additionalHeader?.ForEach(kvp => message.Header[kvp.Key] = kvp.Value);
 
-			var header = new Dictionary<string, string>(additionalHeader ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
-			message.Header?.ForEach(kvp => header[kvp.Key] = kvp.Value);
+			signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
+			signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
+			signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
+			signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
+			var body = message.Body.ToBytes();
 
-			using (var hasher = CryptoService.GetHMACHashAlgorithm((signKey ?? CryptoService.DEFAULT_PASS_PHRASE).ToBytes(), signAlgorithm))
+			try
 			{
-				var signature = signatureAsHex
-					? hasher.ComputeHash(message.Body.ToBytes()).ToHex()
-					: hasher.ComputeHash(message.Body.ToBytes()).ToBase64();
-				if (signatureInQuery)
-					query[signatureName] = signature;
-				else
-					header[signatureName] = signature;
+				message.Body = encryptionKey != null && encryptionKey.Any() && encryptionIV != null && encryptionIV.Any()
+					? body.Encrypt(encryptionKey, encryptionIV).ToBase64()
+					: message.Body;
+			}
+			catch (Exception ex)
+			{
+				throw new MessageException("Encryption Key/IV", ex);
 			}
 
-			message.Query = query;
-			message.Header = header;
+			using (var hasher = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
+			{
+				var signature = signatureAsHex ? hasher.ComputeHash(body).ToHex() : hasher.ComputeHash(body).ToBase64();
+				if (signatureInQuery)
+					message.Query[signatureName] = signature;
+				else
+					message.Header[signatureName] = signature;
+			}
+
+			return message;
+		}
+
+		/// <summary>
+		/// Validates the web-hook message
+		/// </summary>
+		/// <param name="message">The web-hook message</param>
+		/// <param name="secretToken">The value of secret token (replacement of signature)</param>
+		/// <param name="secretTokenName">The name of secret token (in header or query string)</param>
+		/// <param name="signAlgorithm">The HMAC algorithm to sign with the body by a specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
+		/// <param name="signKey">The key that use to sign</param>
+		/// <param name="signKeyIsHex">true to use bytes of hex-string sign-key</param>
+		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
+		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
+		/// <param name="requiredQuery">The required query string parameters</param>
+		/// <param name="requiredHeader">The required header parameters</param>
+		/// <param name="decryptionKey">The AES key (256 bits-length) for decrypting message's body</param>
+		/// <param name="decryptionIV">The AES initialize vector (128 bits-length) for decrypting message's body</param>
+		/// <returns></returns>
+		public static WebHookMessage Validate(this WebHookMessage message, string secretToken = null, string secretTokenName = null, string signAlgorithm = "SHA256", string signKey = null, bool signKeyIsHex = false, string signatureName = null, bool signatureAsHex = true, IDictionary<string, string> requiredQuery = null, IDictionary<string, string> requiredHeader = null, byte[] decryptionKey = null, byte[] decryptionIV = null)
+		{
+			if (message == null)
+				throw new MessageException();
+
+			var body = Array.Empty<byte>();
+			if (decryptionKey != null && decryptionKey.Any() && decryptionIV != null && decryptionIV.Any())
+				try
+				{
+					body = message.Body.Base64ToBytes().Decrypt(decryptionKey, decryptionIV);
+					message.Body = body.GetString();
+				}
+				catch (Exception ex)
+				{
+					throw new MessageException("Decryption Key/IV", ex);
+				}
+
+			if (string.IsNullOrWhiteSpace(secretToken))
+			{
+				signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
+				signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
+				signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
+				using (var hasher = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
+				{
+					signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
+					var signatureOfMessage = (message.Header != null && message.Header.TryGetValue(signatureName, out var headerSignature) ? headerSignature : null) ?? (message.Query != null && message.Query.TryGetValue(signatureName, out var querySignature) ? querySignature : null);
+					body = body.Any() ? body : message.Body.ToBytes();
+					var signature = signatureAsHex ? hasher.ComputeHash(body).ToHex() : hasher.ComputeHash(body).ToBase64();
+					if (!signature.IsEquals(signatureOfMessage))
+						throw new MessageException("Invalid (signature)");
+				}
+			}
+			else
+			{
+				secretTokenName = string.IsNullOrWhiteSpace(secretTokenName) ? "x-webhook-secret-token" : secretTokenName;
+				var secretTokenOfMessage = (message.Header != null && message.Header.TryGetValue(secretTokenName, out var headerSecretToken) ? headerSecretToken : null) ?? (message.Query != null && message.Query.TryGetValue(secretTokenName, out var querySecretToken) ? querySecretToken : null);
+				if (!secretToken.IsEquals(secretTokenOfMessage))
+					throw new MessageException("Invalid (secret token)");
+			}
+
+			if (requiredQuery != null && requiredQuery.Any())
+				foreach (var kvp in requiredQuery)
+				{
+					var key = kvp.Key;
+					var value = kvp.Value;
+					if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value) && !value.IsEquals(message.Query != null && message.Query.TryGetValue(key, out var queryValue) ? queryValue : ""))
+						throw new MessageException("Invalid (query)");
+				}
+
+			if (requiredHeader != null && requiredHeader.Any())
+				foreach (var kvp in requiredHeader)
+				{
+					var key = kvp.Key;
+					var value = kvp.Value;
+					if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(value) && !value.IsEquals(message.Header != null && message.Header.TryGetValue(key, out var headerValue) ? headerValue : ""))
+						throw new MessageException("Invalid (header)");
+				}
 
 			return message;
 		}
@@ -932,30 +1032,21 @@ namespace net.vieapps.Components.Utility
 		/// Sends a web-hook message (means post a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The well-formed webhook message to send</param>
-		/// <param name="userAgent">The additional name to add to user agent string, default value is 'VIEApps NGX WebHook Sender'</param>
 		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="userAgent">The additional name to add to 'User-Agent' header string</param>
 		/// <returns></returns>
-		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, string userAgent, CancellationToken cancellationToken)
+		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken, string userAgent = null)
 		{
 			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
-				return Task.FromException<HttpResponseMessage>(new InformationInvalidException(message == null ? "The message is invalid (null)" : "The message is invalid (no end-point or no body)"));
+				return Task.FromException<HttpResponseMessage>(new MessageException($"Invalid ({(message == null ? "null" : "end-point/body")})"));
 			var uri = new Uri($"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}");
-			var headers = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase)
+			var headers = new Dictionary<string, string>(message.Header, StringComparer.OrdinalIgnoreCase)
 			{
-				["User-Agent"] = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"VIEApps NGX WebHook Sender/{Assembly.GetCallingAssembly().GetVersion(false)}"}",
+				["User-Agent"] = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"NGX-Sender/{Assembly.GetExecutingAssembly().GetVersion(false)}"}",
 				["Content-Type"] = "application/json; charset=utf-8"
 			};
 			return uri.SendHttpRequestAsync("POST", headers, message.Body, 120, cancellationToken);
 		}
-
-		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
-		/// </summary>
-		/// <param name="message">The well-formed webhook message to send</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <returns></returns>
-		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken = default)
-			=> message.SendMessageAsync(null, cancellationToken);
 		#endregion
 
 	}

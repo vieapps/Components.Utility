@@ -2079,17 +2079,6 @@ namespace net.vieapps.Components.Utility
 			=> json != null ? json.FromJson(copy, onCompleted) : default;
 
 		/// <summary>
-		/// Creates (Deserializes) an object from this JSON object
-		/// </summary>
-		/// <typeparam name="T">Type of the object</typeparam>
-		/// <param name="json">The JSON string that contains information for deserializing</param>
-		/// <param name="copy">true to create new instance and copy data; false to deserialize object</param>
-		/// <param name="onCompleted">The action to run when the conversion process is completed</param>
-		/// <returns></returns>
-		public static T FromJson<T>(this string json, bool copy = false, Action<T, JToken> onCompleted = null)
-			=> string.IsNullOrWhiteSpace(json) ? default : json.ToJson().As(copy, onCompleted);
-
-		/// <summary>
 		/// Gets the <see cref="JToken">JToken</see> with the specified key converted to the specified type
 		/// </summary>
 		/// <typeparam name="T">The type to convert the token to</typeparam>

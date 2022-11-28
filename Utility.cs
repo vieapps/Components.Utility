@@ -252,12 +252,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="onError">The error handler</param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
-		public static void Run(this Task task, Action<Exception> onError = null, bool waitForCompletion = false)
+		/// <param name="defer">defer in miliseconds</param>
+		public static void Run(this Task task, Action<Exception> onError = null, bool waitForCompletion = false, int defer = 0)
 		{
 			var instance = Task.Run(async () =>
 			{
 				try
 				{
+					if (defer > 0)
+						await Task.Delay(defer).ConfigureAwait(false);
 					await task.ConfigureAwait(false);
 				}
 				catch (Exception ex)
@@ -277,7 +280,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		public static void Run(this Task task, bool waitForCompletion)
-			=> task.Run(null, waitForCompletion);
+			=> task.Run(null, waitForCompletion, 0);
+
+		/// <summary>
+		/// Runs a task and just forget it (or wait for completion)
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="defer">defer in miliseconds</param>
+		public static void Run(this Task task, int defer)
+			=> task.Run(null, false, defer);
 
 		/// <summary>
 		/// Runs a task and just forget it (or wait for completion)
@@ -285,8 +296,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="onError">The error handler</param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
-		public static void Run(this ValueTask task, Action<Exception> onError = null, bool waitForCompletion = false)
-			=> task.AsTask().Run(onError, waitForCompletion);
+		/// <param name="defer">defer in miliseconds</param>
+		public static void Run(this ValueTask task, Action<Exception> onError = null, bool waitForCompletion = false, int defer = 0)
+			=> task.AsTask().Run(onError, waitForCompletion, defer);
 
 		/// <summary>
 		/// Runs a task and just forget it (or wait for completion)
@@ -294,7 +306,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		public static void Run(this ValueTask task, bool waitForCompletion)
-			=> task.Run(null, waitForCompletion);
+			=> task.Run(null, waitForCompletion, 0);
+
+		/// <summary>
+		/// Runs a task and just forget it (or wait for completion)
+		/// </summary>
+		/// <param name="task"></param>
+		/// <param name="defer">defer in miliseconds</param>
+		public static void Run(this ValueTask task, int defer)
+			=> task.Run(null, false, defer);
 
 		/// <summary>
 		/// Performs an awaitable task with cancellation token supported
@@ -369,7 +389,6 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> ReadToEndAsync(this StreamReader reader, CancellationToken cancellationToken)
 			=> reader.ReadToEndAsync().WithCancellationToken(cancellationToken);
-#endif
 
 		/// <summary>
 		/// Reads a line of characters asynchronously from the current stream and returns the data as a string
@@ -379,6 +398,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
 			=> reader.ReadLineAsync().WithCancellationToken(cancellationToken);
+#endif
 
 #if NETSTANDARD2_0
 		public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
@@ -793,9 +813,9 @@ namespace net.vieapps.Components.Utility
 		{
 			var headers = response.Content.Headers?.ToDictionary() ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 #if !NETSTANDARD2_0
-			response.TrailingHeaders?.ToDictionary()?.ForEach(kvp => headers[kvp.Key] = kvp.Value);
+			response.TrailingHeaders?.ToDictionary().ForEach(kvp => headers[kvp.Key] = kvp.Value);
 #endif
-			response.Headers?.ToDictionary()?.ForEach(kvp => headers[kvp.Key] = kvp.Value);
+			response.Headers?.ToDictionary().ForEach(kvp => headers[kvp.Key] = kvp.Value);
 			return headers.Copy(excluded, onCompleted);
 		}
 
@@ -879,7 +899,7 @@ namespace net.vieapps.Components.Utility
 				{
 					try
 					{
-						request.Headers.Add(kvp.Key, kvp.Value);
+						request.Headers.Add(kvp.Key, kvp.Value?.AsciiEncode());
 					}
 					catch { }
 				});
@@ -918,7 +938,7 @@ namespace net.vieapps.Components.Utility
 							request.Content = new StreamContent(stream);
 						else
 						{
-							request.Content = new MultipartFormDataContent($"vieapps---{UtilityService.GetRandomNumber()}-----");
+							request.Content = new MultipartFormDataContent($"vieapps-ngx---{UtilityService.GetRandomNumber()}-----");
 							request.Content.Headers.ContentType.CharSet = "utf-8";
 							(request.Content as MultipartFormDataContent).Add(new StreamContent(stream), "files", multipartFilename);
 						}
@@ -937,10 +957,10 @@ namespace net.vieapps.Components.Utility
 
 				using (var handler = new HttpClientHandler { UseCookies = true })
 				{
-					if (headers.ContainsKey("Cookie"))
+					if (headers.TryGetValue("Cookie", out var cookies))
 					{
 						handler.CookieContainer = new CookieContainer();
-						handler.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), headers["Cookie"].ToList(";").Join(",").ToList().GetCookies(uri.Host));
+						handler.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), cookies.ToList(";").Join(",").ToList().GetCookies(uri.Host));
 					}
 
 					if (credential != null)

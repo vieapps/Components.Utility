@@ -52,7 +52,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="digits">The number of password digits</param>
 		/// <returns></returns>
 		public static string GeneratePassword(byte[] secret, int interval = 30, int digits = 6)
-			=> OTPService.GeneratePassword(secret, DateTime.Now.ToUnixTimestamp() / (interval > 0 ? interval : 30), digits);
+			=> OTPService.GeneratePassword(secret, DateTime.Now.ToUnixTimestamp() / (interval > 1 ? interval : 30), digits);
 
 		/// <summary>
 		/// Generates the time-based password (RFC 6238)
