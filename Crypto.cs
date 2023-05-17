@@ -62,9 +62,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GenerateHashKey(this byte[] bytes, int length = 256, bool doubleHash = true)
 		{
 			using (var hasher = new HMACBlake2B(null, length > 0 && length <= 512 ? length : 256))
-			{
 				return doubleHash ? hasher.ComputeHash(hasher.ComputeHash(bytes)) : hasher.ComputeHash(bytes);
-			}
 		}
 
 		/// <summary>
@@ -93,9 +91,7 @@ namespace net.vieapps.Components.Utility
 				MemorySize = 1024,
 				Salt = (salt ?? DEFAULT_PASS_PHRASE).ToLower().GetBLAKE512Hash()
 			})
-			{
 				return argon2.GetBytes(125).ToHex();
-			}
 		}
 		#endregion
 
@@ -151,9 +147,7 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentException("Invalid", nameof(bytes));
 
 			using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
-			{
 				return hasher.ComputeHash(bytes);
-			}
 		}
 
 		/// <summary>
@@ -408,11 +402,8 @@ namespace net.vieapps.Components.Utility
 				var firstHash = firstHasher.ComputeHash(bytes);
 				if (string.IsNullOrWhiteSpace(secondAlgorithm) || secondAlgorithm.IsEquals(firstAlgorithm))
 					return firstHasher.ComputeHash(firstHash);
-				else
-					using (var secondHasher = CryptoService.GetHashAlgorithm(secondAlgorithm))
-					{
-						return secondHasher.ComputeHash(firstHash);
-					}
+				using (var secondHasher = CryptoService.GetHashAlgorithm(secondAlgorithm))
+					return secondHasher.ComputeHash(firstHash);
 			}
 		}
 
@@ -506,9 +497,7 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentException("Invalid", nameof(key));
 
 			using (var hasher = CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm))
-			{
 				return hasher.ComputeHash(bytes);
-			}
 		}
 
 		/// <summary>
@@ -920,12 +909,8 @@ namespace net.vieapps.Components.Utility
 				return Array.Empty<byte>();
 
 			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
-			{
-				using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
-				{
-					return hasher.ComputeHash(stream);
-				}
-			}
+			using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
+				return hasher.ComputeHash(stream);
 		}
 		#endregion
 
@@ -947,9 +932,7 @@ namespace net.vieapps.Components.Utility
 				return null;
 
 			using (var encryptor = CryptoService.AEScsp.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-			{
 				return encryptor.TransformFinalBlock(data, 0, data.Length);
-			}
 		}
 
 		/// <summary>
@@ -990,9 +973,7 @@ namespace net.vieapps.Components.Utility
 				return null;
 
 			using (var decryptor = CryptoService.AEScsp.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-			{
 				return decryptor.TransformFinalBlock(data, 0, data.Length);
-			}
 		}
 
 		/// <summary>
@@ -1505,14 +1486,14 @@ namespace net.vieapps.Components.Utility
 					{
 						twoBytes = reader.ReadUInt16();
 						if (twoBytes == 0x8130)                      // data read as little endian order (actual data order for Sequence is 30 81)
-							reader.ReadByte();                           // advance 1 byte
+							reader.ReadByte();                         // advance 1 byte
 						else if (twoBytes == 0x8230)
-							reader.ReadInt16();                          // advance 2 bytes
+							reader.ReadInt16();                        // advance 2 bytes
 						else
 							return;
 
 						twoBytes = reader.ReadUInt16();
-						if (twoBytes != 0x0102)                           // version number
+						if (twoBytes != 0x0102)                      // version number
 							return;
 						@byte = reader.ReadByte();
 						if (@byte != 0x00)

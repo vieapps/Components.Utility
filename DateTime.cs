@@ -117,7 +117,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="strNanoseconds">The string that presents the label of nano-second(s)</param>
 		/// <returns>The string that presents elapsed times</returns>
 		public static string GetElapsedTimes(this DateTime startTime, bool computeMinutes = true, bool addString = true, string strDays = "day(s)", string strHours = "hour(s)", string strMinutes = "minute(s)", string strSeconds = "second(s)", string strMiliseconds = "milisecond(s)", string strNanoseconds = "nanosecond(s)")
-			=> (DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).CastAs<long>().GetElapsedTimes(computeMinutes, addString, strDays, strHours, strMinutes, strSeconds, strMiliseconds, strNanoseconds);
+			=> (DateTime.Now > startTime ? (DateTime.Now - startTime).TotalMilliseconds : 0).As<long>().GetElapsedTimes(computeMinutes, addString, strDays, strHours, strMinutes, strSeconds, strMiliseconds, strNanoseconds);
 
 		/// <summary>
 		/// Gets the name of weekday from this date-time
@@ -316,7 +316,7 @@ namespace net.vieapps.Components.Utility
 				var hour = times[0];
 				var minute = times[1];
 				var second = times[2];
-				datetime = new DateTime(year.CastAs<int>(), month.GetMonthFromHttpString(), day.CastAs<int>(), hour.CastAs<int>(), minute.CastAs<int>(), second.CastAs<int>());
+				datetime = new DateTime(year.As<int>(), month.GetMonthFromHttpString(), day.As<int>(), hour.As<int>(), minute.As<int>(), second.As<int>());
 				datetime = useUTC
 					? datetime.ToUniversalTime()
 					: datetime.ToLocalTime();
@@ -393,7 +393,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="useUTC"></param>
 		/// <returns></returns>
 		public static long ToUnixTimestamp(this DateTime datetime, bool useUTC = true)
-			=> ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.CastAs<long>();
+			=> ((useUTC ? datetime.ToUniversalTime() : datetime) - DateTimeService.UnixEpoch).TotalSeconds.As<long>();
 
 		/// <summary>
 		/// Converts this UNIX timestamp to date-time

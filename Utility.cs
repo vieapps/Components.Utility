@@ -1243,7 +1243,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the collection of none-close tags
 		/// </summary>
-		public static List<string> NoneCloseTags { get; } = new List<string> { "img", "br", "hr", "input", "embed", "source" };
+		public static HashSet<string> NoneCloseTags { get; } = "area,base,br,col,command,embed,hr,img,input,keygen,link,meta,param,source,track,wbr".ToHashSet();
 
 		static Regex AllTagsRegex { get; } = new Regex(@"<[^<>]+>", RegexOptions.IgnoreCase);
 
@@ -1300,8 +1300,8 @@ namespace net.vieapps.Components.Utility
 				tag.EndPosition = position + tag.Full.Length;
 			});
 
-			// normalize non-close tags
-			tags.Where(tag => !tag.IsClose && UtilityService.NoneCloseTags.IndexOf(tag.Name) > -1).ForEach(tag => tag.IsClose = true);
+			// normalize none-close tags
+			tags.Where(tag => !tag.IsClose && UtilityService.NoneCloseTags.Contains(tag.Name)).ForEach(tag => tag.IsClose = true);
 
 			// prepare reelevant tags
 			tags.ForEach((current, index) =>
