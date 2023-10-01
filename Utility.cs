@@ -994,8 +994,8 @@ namespace net.vieapps.Components.Utility
 								var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
 								var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
 								var exception = isMoved
-									? new RemoteServerMovedException(response.StatusCode, uri, heads, $"Resource on the remote server was moved [{(heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri)}]")
-									: new RemoteServerException(response.StatusCode, isNotModified, uri, heads);
+									? new RemoteServerMovedException(response.StatusCode, request.Method.ToString(), uri, heads, $"Resource on the remote server was moved [{(heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri)}]")
+									: new RemoteServerException(response.StatusCode, isNotModified, request.Method.ToString(), uri, heads);
 								if (!isMoved && !isNotModified)
 									try
 									{
@@ -2020,6 +2020,18 @@ namespace net.vieapps.Components.Utility
 				using (var stream = content.ToMemoryStream())
 					await stream.SaveAsTextAsync(filePath, cancellationToken, append, encoding).ConfigureAwait(false);
 		}
+
+		/// <summary>
+		/// Saves this JSON as text file
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static Task SaveAsTextAsync(this JToken json, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
+			=> json != null ? json.ToString(Newtonsoft.Json.Formatting.Indented).ToBytes().SaveAsTextAsync(filePath, cancellationToken, append, encoding) : Task.CompletedTask;
 
 		/// <summary>
 		/// Saves this stream as binary file
