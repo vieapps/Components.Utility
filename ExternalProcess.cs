@@ -2,6 +2,8 @@
 using System;
 using System.IO;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 #endregion
@@ -22,7 +24,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
 		/// <param name="onOutputDataReceived">The action to run when an output message was received (OutputDataReceived event)</param>
 		/// <param name="onErrorDataReceived">The action to run when an error message was received (ErrorDataReceived event)</param>
-		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
+		/// <param name="captureOutput">true to capture output (standard output and error output) as string</param>
 		/// <returns></returns>
 		/// <remarks>
 		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
@@ -134,7 +136,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
 		/// <param name="onOutputDataReceived">The action to run when an output message was received (OutputDataReceived event)</param>
 		/// <param name="onErrorDataReceived">The action to run when an error message was received (ErrorDataReceived event)</param>
-		/// <param name="captureOutput">true to capture output (standard output and error output)</param>
+		/// <param name="captureOutput">true to capture output (standard output and error output) as string</param>
 		/// <returns></returns>
 		/// <remarks>
 		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
@@ -146,6 +148,59 @@ namespace net.vieapps.Components.Utility
 				: $"-c \"{command.Replace("\"", "\\\"")}\"";
 			return ExternalProcess.Start(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "/bin/bash", arguments, workingDirectory, onExited, onOutputDataReceived, onErrorDataReceived, captureOutput);
 		}
+
+		/// <summary>
+		/// Starts to run a command as external process with 'cmd.exe' (Windows) or '/bin/bash' (Linux/macOS), wait for complete
+		/// </summary>
+		/// <param name="command">The command to run</param>
+		/// <param name="workingDirectory">The working directory</param>
+		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
+		/// <param name="onOutputDataReceived">The action to run when an output message was received (OutputDataReceived event)</param>
+		/// <param name="onErrorDataReceived">The action to run when an error message was received (ErrorDataReceived event)</param>
+		/// <param name="captureOutput">true to capture output (standard output and error output) as string</param>
+		/// <returns></returns>
+		/// <remarks>
+		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
+		/// </remarks>
+		public static void Run(string command, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false)
+		{
+			var info = ExternalProcess.Start(command, workingDirectory, onExited, onOutputDataReceived, onErrorDataReceived, captureOutput);
+			info.Process.WaitForExit();
+			info.Stop();
+		}
+
+#if !NETSTANDARD2_0
+		/// <summary>
+		/// Starts to run a command as external process with 'cmd.exe' (Windows) or '/bin/bash' (Linux/macOS) and wait for complete
+		/// </summary>
+		/// <param name="command">The command to run</param>
+		/// <param name="workingDirectory">The working directory</param>
+		/// <param name="onExited">The action to run when the process was exited (Exited event)</param>
+		/// <param name="onOutputDataReceived">The action to run when an output message was received (OutputDataReceived event)</param>
+		/// <param name="onErrorDataReceived">The action to run when an error message was received (ErrorDataReceived event)</param>
+		/// <param name="captureOutput">true to capture output (standard output and error output) as string</param>
+		/// <returns></returns>
+		/// <remarks>
+		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
+		/// </remarks>
+		public static async Task RunAsync(string command, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false, CancellationToken cancellationToken = default)
+		{
+			var info = ExternalProcess.Start(command, workingDirectory, onExited, onOutputDataReceived, onErrorDataReceived, captureOutput);
+			await info.Process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+			info.Stop();
+		}
+
+		/// <summary>
+		/// Starts to run a command as external process with 'cmd.exe' (Windows) or '/bin/bash' (Linux/macOS) and wait for complete
+		/// </summary>
+		/// <param name="command">The command to run</param>
+		/// <returns></returns>
+		/// <remarks>
+		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
+		/// </remarks>
+		public static Task RunAsync(string command, CancellationToken cancellationToken)
+			=> ExternalProcess.RunAsync(command, null, null, null, null, false, cancellationToken);
+#endif
 
 		/// <summary>
 		/// Stops an external process
@@ -340,6 +395,23 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Sends a command
+		/// </summary>
+		/// <param name="process"></param>
+		/// <param name="command"></param>
+		public static void Send(Process process, string command)
+			=> process.StandardInput.WriteLine(command);
+
+		/// <summary>
+		/// Sends a command
+		/// </summary>
+		/// <param name="process"></param>
+		/// <param name="command"></param>
+		/// <param name="cancellationToken"></param>
+		public static Task SendAsync(Process process, string command, CancellationToken cancellationToken = default)
+			=> process.StandardInput.WriteLineAsync(command, cancellationToken);
+
+		/// <summary>
 		/// Presents information of an external process
 		/// </summary>
 		public class Info
@@ -446,6 +518,38 @@ namespace net.vieapps.Components.Utility
 				value = this.Get<T>(key);
 				return this.Remove(key);
 			}
+
+			/// <summary>
+			/// Stops an external process
+			/// </summary>
+			/// <param name="onCompleted">The action to run when completed</param>
+			/// <param name="onError">The action to run when got error</param>
+			/// <param name="waitingTimes">The time for waiting when try to close</param>
+			public void Stop(Action<Info> onCompleted = null, Action<Exception> onError = null, int waitingTimes = 456)
+				=> ExternalProcess.Stop(this, onCompleted, onError, waitingTimes);
+
+			/// <summary>
+			/// Kills an external process
+			/// </summary>
+			/// <param name="tryToClose">The action to run to try to close the process before the process be killed</param>
+			/// <param name="onKilled">The action to run when process was killed</param>
+			/// <param name="onError">The action to run when got error</param>
+			public void Kill(Action<Process> tryToClose = null, Action<Process> onKilled = null, Action<Exception> onError = null)
+				=> ExternalProcess.Kill(this.Process, tryToClose, onKilled, onError);
+
+			/// <summary>
+			/// Sends a command
+			/// </summary>
+			/// <param name="command"></param>
+			public void Send(string command)
+				=> ExternalProcess.Send(this.Process, command);
+
+			/// <summary>
+			/// Sends a command
+			/// </summary>
+			/// <param name="command"></param>
+			public Task SendAsync(string command, CancellationToken cancellationToken = default)
+				=> ExternalProcess.SendAsync(this.Process, command, cancellationToken);
 		}
 	}
 }
