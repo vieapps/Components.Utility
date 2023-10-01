@@ -185,6 +185,8 @@ namespace net.vieapps.Components.Utility
 
 		public bool IsSuccessStatusCode { get; internal set; } = false;
 
+		public string Method { get; internal set; }
+
 		public Uri URI { get; internal set; }
 
 		public Dictionary<string, string> Headers { get; internal set; }
@@ -193,10 +195,11 @@ namespace net.vieapps.Components.Utility
 
 		public RemoteServerException() : base("Error occured while operating with a remote server") { }
 
-		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, Uri uri, Dictionary<string, string> headers, string body = null, string message = null, Exception innerException = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with a remote server", innerException)
+		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, string method, Uri uri, Dictionary<string, string> headers, string body = null, string message = null, Exception innerException = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with a remote server", innerException)
 		{
 			this.StatusCode = statusCode;
 			this.IsSuccessStatusCode = isSuccessStatusCode;
+			this.Method = method;
 			this.URI = uri;
 			this.Headers = headers;
 			this.Body = body;
@@ -208,7 +211,7 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class RemoteServerMovedException : RemoteServerException
 	{
-		public RemoteServerMovedException(HttpStatusCode statusCode, Uri uri, Dictionary<string, string> headers, string message = null) : base(statusCode, true, uri, headers, null, message ?? $"Remote server was moved [{uri}]") { }
+		public RemoteServerMovedException(HttpStatusCode statusCode, string method, Uri uri, Dictionary<string, string> headers, string message = null) : base(statusCode, true, method, uri, headers, null, message ?? $"Remote server was moved [{uri}]") { }
 	}
 
 	[Serializable]
