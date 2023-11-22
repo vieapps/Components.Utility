@@ -360,7 +360,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
-#if NET7_0
+#if NET8_0
 			=> writer.WriteAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
 #else
 			=> writer.WriteAsync(@string).WithCancellationToken(cancellationToken);
@@ -374,7 +374,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteLineAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
-#if NET7_0
+#if NET8_0
 			=> writer.WriteLineAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
 #else
 			=> writer.WriteLineAsync(@string).WithCancellationToken(cancellationToken);
@@ -565,7 +565,7 @@ namespace net.vieapps.Components.Utility
 		public static Task WriteLinesAsync(this StreamWriter writer, IEnumerable<string> lines, CancellationToken cancellationToken)
 			=> lines == null
 				? Task.CompletedTask
-#if NET7_0
+#if NET8_0
 				: lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false), true, false);
 #else
 				: lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line, cancellationToken).ConfigureAwait(false), true, false);
@@ -960,7 +960,7 @@ namespace net.vieapps.Components.Utility
 					if (headers.TryGetValue("Cookie", out var cookies))
 					{
 						handler.CookieContainer = new CookieContainer();
-						handler.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), cookies.ToList(";").Join(",").ToList().GetCookies(uri.Host));
+						handler.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), cookies.ToList().GetCookies(uri.Host));
 					}
 
 					if (credential != null)
@@ -2981,7 +2981,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
 		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default)
-#if NET7_0
+#if NET8_0
 			=> this._reader.ReadLineAsync(cancellationToken).AsTask();
 #else
 			=> this._reader.ReadLineAsync(cancellationToken);

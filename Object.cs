@@ -716,6 +716,7 @@ namespace net.vieapps.Components.Utility
 		public static bool IsStringEnum(this object @object)
 			=> @object != null && @object.GetType().IsStringEnum();
 
+#if NETSTANDARD2_0
 		/// <summary>
 		/// Gets the state to determines the attribute's type is serializable (got 'Serializable' attribute) or not
 		/// </summary>
@@ -731,6 +732,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static bool IsSerializable(this object @object)
 			=> @object != null && @object.GetType().IsSerializable;
+#endif
 
 		/// <summary>
 		/// Gets the nullable type from this type

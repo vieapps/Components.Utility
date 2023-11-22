@@ -14,7 +14,9 @@ namespace net.vieapps.Components.Utility
 
 		public AppException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public AppException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -28,7 +30,9 @@ namespace net.vieapps.Components.Utility
 
 		public InvalidRequestException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public InvalidRequestException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -42,7 +46,9 @@ namespace net.vieapps.Components.Utility
 
 		public InvalidAppOperationException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public InvalidAppOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -56,7 +62,9 @@ namespace net.vieapps.Components.Utility
 
 		public InformationRequiredException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public InformationRequiredException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -70,7 +78,9 @@ namespace net.vieapps.Components.Utility
 
 		public InformationInvalidException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public InformationInvalidException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -84,7 +94,9 @@ namespace net.vieapps.Components.Utility
 
 		public InformationExistedException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public InformationExistedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -98,7 +110,9 @@ namespace net.vieapps.Components.Utility
 
 		public InformationNotFoundException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public InformationNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -112,7 +126,9 @@ namespace net.vieapps.Components.Utility
 
 		public MessageException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public MessageException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -126,7 +142,9 @@ namespace net.vieapps.Components.Utility
 
 		public DatabaseOperationException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public DatabaseOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -145,7 +163,9 @@ namespace net.vieapps.Components.Utility
 			this.Info = info;
 		}
 
+#if NETSTANDARD2_0
 		public RepositoryOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 
 		public string Info { get; set; } = "";
 	}
@@ -161,7 +181,9 @@ namespace net.vieapps.Components.Utility
 
 		public ServiceOperationException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public ServiceOperationException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -175,7 +197,9 @@ namespace net.vieapps.Components.Utility
 
 		public ServiceNotFoundException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public ServiceNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -205,7 +229,9 @@ namespace net.vieapps.Components.Utility
 			this.Body = body;
 		}
 
+#if NETSTANDARD2_0
 		public RemoteServerException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -223,7 +249,9 @@ namespace net.vieapps.Components.Utility
 
 		public ConnectionTimeoutException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public ConnectionTimeoutException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 
 	[Serializable]
@@ -237,6 +265,8 @@ namespace net.vieapps.Components.Utility
 
 		public MethodNotAllowedException(string message, Exception innerException) : base(message, innerException) { }
 
+#if NETSTANDARD2_0
 		public MethodNotAllowedException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
 	}
 }
