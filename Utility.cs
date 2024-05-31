@@ -429,16 +429,6 @@ namespace net.vieapps.Components.Utility
 			=> UtilityService.RecyclableMemoryStreamManager;
 
 		/// <summary>
-		/// Gets the recyclable memory stream manager
-		/// </summary>
-		/// <param name="blockSize"></param>
-		/// <param name="largeBufferMultiple"></param>
-		/// <param name="maximumBufferSize"></param>
-		/// <returns></returns>
-		public static RecyclableMemoryStreamManager GetRecyclableMemoryStreamManager(int blockSize, int largeBufferMultiple, int maximumBufferSize)
-			=> new RecyclableMemoryStreamManager(blockSize, largeBufferMultiple, maximumBufferSize);
-
-		/// <summary>
 		/// Creates an instance of <see cref="MemoryStream">MemoryStream</see> using RecyclableMemoryStream to limit LOH fragmentation and improve performance
 		/// </summary>
 		/// <param name="buffer"></param>

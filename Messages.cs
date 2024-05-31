@@ -257,10 +257,14 @@ namespace net.vieapps.Components.Utility
 			}
 			catch
 			{
-				json["Body"] = new JObject
+				try
 				{
-					["_original"] = this.Body
-				};
+					json["Body"] = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(this.Body).ToDictionary(kvp => kvp.Key.ToLower(), kvp => kvp.Value.Where(@string => @string != null).Select(@string => @string.AsciiDecode()).Join(","), StringComparer.OrdinalIgnoreCase).ToJObject();
+				}
+				catch
+				{
+					json["Body"] = new JObject { ["_original"] = this.Body ?? "" };
+				}
 			}
 		});
 
@@ -874,7 +878,7 @@ namespace net.vieapps.Components.Utility
 		/// Sends this email message
 		/// </summary>
 		/// <param name="message">The email message</param>
-		public static void SendMessage(this EmailMessage message)
+		public static void Send(this EmailMessage message)
 		{
 			if (message == null)
 				throw new MessageException("The message is invalid");
@@ -886,7 +890,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="message">The email message</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		public static Task SendMessageAsync(this EmailMessage message, CancellationToken cancellationToken = default)
+		public static Task SendAsync(this EmailMessage message, CancellationToken cancellationToken = default)
 			=> message == null
 				? Task.FromException(new MessageException("The message is invalid"))
 				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, cancellationToken);
@@ -984,7 +988,16 @@ namespace net.vieapps.Components.Utility
 					throw new MessageException("Decryption Key/IV", ex);
 				}
 
-			if (string.IsNullOrWhiteSpace(secretToken))
+			var gotValidSecretToken = true;
+			if (!string.IsNullOrWhiteSpace(secretToken))
+			{
+				secretTokenName = string.IsNullOrWhiteSpace(secretTokenName) ? "x-webhook-secret-token" : secretTokenName;
+				var secretTokenOfMessage = (message.Header != null && message.Header.TryGetValue(secretTokenName, out var headerSecretToken) ? headerSecretToken : null) ?? (message.Query != null && message.Query.TryGetValue(secretTokenName, out var querySecretToken) ? querySecretToken : null);
+				gotValidSecretToken = secretToken.IsEquals(secretTokenOfMessage);
+			}
+
+			var gotValidSignature = true;
+			if (!gotValidSecretToken || string.IsNullOrWhiteSpace(secretToken))
 			{
 				signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
 				signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
@@ -995,17 +1008,12 @@ namespace net.vieapps.Components.Utility
 					var signatureOfMessage = (message.Header != null && message.Header.TryGetValue(signatureName, out var headerSignature) ? headerSignature : null) ?? (message.Query != null && message.Query.TryGetValue(signatureName, out var querySignature) ? querySignature : null);
 					body = body.Any() ? body : message.Body.ToBytes();
 					var signature = signatureAsHex ? hasher.ComputeHash(body).ToHex() : hasher.ComputeHash(body).ToBase64();
-					if (!signature.IsEquals(signatureOfMessage))
-						throw new MessageException("Invalid (signature)");
+					gotValidSignature = gotValidSecretToken = signature.IsEquals(signatureOfMessage);
 				}
 			}
-			else
-			{
-				secretTokenName = string.IsNullOrWhiteSpace(secretTokenName) ? "x-webhook-secret-token" : secretTokenName;
-				var secretTokenOfMessage = (message.Header != null && message.Header.TryGetValue(secretTokenName, out var headerSecretToken) ? headerSecretToken : null) ?? (message.Query != null && message.Query.TryGetValue(secretTokenName, out var querySecretToken) ? querySecretToken : null);
-				if (!secretToken.IsEquals(secretTokenOfMessage))
-					throw new MessageException("Invalid (secret token)");
-			}
+
+			if (!gotValidSecretToken && !gotValidSignature)
+				throw new MessageException($"Invalid ({(!gotValidSignature ? "signature" : "secret token")})");
 
 			if (requiredQuery != null && requiredQuery.Any())
 				foreach (var kvp in requiredQuery)
@@ -1029,23 +1037,26 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Sends a web-hook message (means post a JSON document to a specified URL)
+		/// Sends a web-hook message (means perform a HTTP request with body as a JSON document to a specified URL)
 		/// </summary>
 		/// <param name="message">The well-formed webhook message to send</param>
 		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="verb">The HTTP Verb</param>
+		/// <param name="timeout">The performing time-out (in seconds)</param>
 		/// <param name="userAgent">The additional name to add to 'User-Agent' header string</param>
 		/// <returns></returns>
-		public static Task<HttpResponseMessage> SendMessageAsync(this WebHookMessage message, CancellationToken cancellationToken, string userAgent = null)
+		public static Task<HttpResponseMessage> SendAsync(this WebHookMessage message, CancellationToken cancellationToken, string verb = "POST", int timeout = 30, string userAgent = null)
 		{
 			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
 				return Task.FromException<HttpResponseMessage>(new MessageException($"Invalid ({(message == null ? "null" : "end-point/body")})"));
+
 			var uri = new Uri($"{message.EndpointURL}{(message.Query.Any() ? message.EndpointURL.IndexOf("?") > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}");
 			var headers = new Dictionary<string, string>(message.Header, StringComparer.OrdinalIgnoreCase)
 			{
 				["User-Agent"] = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"NGX-Sender/{Assembly.GetExecutingAssembly().GetVersion(false)}"}",
 				["Content-Type"] = "application/json; charset=utf-8"
 			};
-			return uri.SendHttpRequestAsync("POST", headers, message.Body, 120, cancellationToken);
+			return uri.SendHttpRequestAsync(verb, headers, message.Body, timeout, cancellationToken);
 		}
 		#endregion
 
