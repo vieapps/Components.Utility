@@ -360,10 +360,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
-#if NET8_0
-			=> writer.WriteAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
-#else
+#if NETSTANDARD2_0
 			=> writer.WriteAsync(@string).WithCancellationToken(cancellationToken);
+#else
+			=> writer.WriteAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
 #endif
 
 		/// <summary>
@@ -374,13 +374,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public static Task WriteLineAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
-#if NET8_0
-			=> writer.WriteLineAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
-#else
+#if NETSTANDARD2_0
 			=> writer.WriteLineAsync(@string).WithCancellationToken(cancellationToken);
+#else
+			=> writer.WriteLineAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
 #endif
 
-#if !NET7_0
+#if NETSTANDARD2_0
 		/// <summary>
 		/// Reads all characters from the current position to the end of the stream asynchronously and returns them as one string
 		/// </summary>
@@ -398,9 +398,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
 			=> reader.ReadLineAsync().WithCancellationToken(cancellationToken);
-#endif
 
-#if NETSTANDARD2_0
 		public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
 			=> source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
 
@@ -555,10 +553,10 @@ namespace net.vieapps.Components.Utility
 		public static Task WriteLinesAsync(this StreamWriter writer, IEnumerable<string> lines, CancellationToken cancellationToken)
 			=> lines == null
 				? Task.CompletedTask
-#if NET8_0
-				: lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line.AsMemory(), cancellationToken).ConfigureAwait(false), true, false);
+#if NETSTANDARD2_0
+				: lines.Where(line => line != null).ForEachAsync(line => writer.WriteLineAsync(line, cancellationToken), true, false);
 #else
-				: lines.Where(line => line != null).ForEachAsync(async line => await writer.WriteLineAsync(line, cancellationToken).ConfigureAwait(false), true, false);
+				: lines.Where(line => line != null).ForEachAsync(line => writer.WriteLineAsync(line.AsMemory(), cancellationToken), true, false);
 #endif
 
 		/// <summary>
@@ -1838,9 +1836,13 @@ namespace net.vieapps.Components.Utility
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
+#if NETSTANDARD2_0
 			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
 				return await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+#else
+			return await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+#endif
 		}
 
 		/// <summary>
@@ -1912,12 +1914,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="totalOfLines"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<Tuple<List<string>, long>> ReadAsTextAsync(this FileInfo fileInfo, long position, int totalOfLines, CancellationToken cancellationToken = default)
+		public static async Task<(List<string> Lines, long Position)> ReadAsTextAsync(this FileInfo fileInfo, long position, int totalOfLines, CancellationToken cancellationToken = default)
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 			using (var reader = new TextFileReader(fileInfo.FullName, position))
-				return new Tuple<List<string>, long>(await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
+				return (await reader.ReadLinesAsync(totalOfLines, cancellationToken).ConfigureAwait(false), reader.Position);
 		}
 
 		/// <summary>
@@ -1927,12 +1929,12 @@ namespace net.vieapps.Components.Utility
 		/// <param name="position"></param>
 		/// <param name="totalOfLines"></param>
 		/// <returns></returns>
-		public static Tuple<List<string>, long> ReadAsText(this FileInfo fileInfo, long position, int totalOfLines)
+		public static (List<string> Lines, long Position) ReadAsText(this FileInfo fileInfo, long position, int totalOfLines)
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
 			using (var reader = new TextFileReader(fileInfo.FullName, position))
-				return new Tuple<List<string>, long>(reader.ReadLines(totalOfLines), reader.Position);
+				return (reader.ReadLines(totalOfLines), reader.Position);
 		}
 
 		/// <summary>
@@ -1945,12 +1947,16 @@ namespace net.vieapps.Components.Utility
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
+#if NETSTANDARD2_0
 			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				var buffer = new byte[fileInfo.Length];
 				await fileStream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 				return buffer;
 			}
+#else
+			return await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+#endif
 		}
 
 		/// <summary>
@@ -1968,7 +1974,7 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 				fileStream.Read(buffer, 0, buffer.Length);
 #else
-				fileStream.Read(buffer);
+				fileStream.ReadExactly(buffer);
 #endif
 				return buffer;
 			}
@@ -2971,10 +2977,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns>The next line from file, or null if the end of file is reached</returns>
 		public Task<string> ReadLineAsync(CancellationToken cancellationToken = default)
-#if NET8_0
-			=> this._reader.ReadLineAsync(cancellationToken).AsTask();
-#else
+#if NETSTANDARD2_0
 			=> this._reader.ReadLineAsync(cancellationToken);
+#else
+			=> this._reader.ReadLineAsync(cancellationToken).AsTask();
 #endif
 
 		/// <summary>
