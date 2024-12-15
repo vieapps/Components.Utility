@@ -25,7 +25,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		public static void Zip(IEnumerable<FileInfo> files, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null)
 		{
-			if (files == null || files.Count() < 1)
+			if (files == null || !files.Any())
 				throw new ArgumentException("Source files are invalid", nameof(files));
 			else if (string.IsNullOrWhiteSpace(zipFilePath))
 				throw new ArgumentException("Path of .ZIP file is invalid", nameof(zipFilePath));
@@ -59,7 +59,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		public static void Zip(IEnumerable<string> files, string zipFilePath, CompressionLevel compressionLevel = CompressionLevel.Optimal, Encoding encoding = null)
 		{
-			if (files == null || files.Count() < 1)
+			if (files == null || !files.Any())
 				throw new ArgumentException("Source files are invalid", nameof(files));
 			else if (string.IsNullOrWhiteSpace(zipFilePath))
 				throw new ArgumentException("Path of .ZIP file is invalid", nameof(zipFilePath));

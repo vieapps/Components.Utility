@@ -1,7 +1,9 @@
 using System;
 using System.Net;
 using System.Collections.Generic;
+#if NETSTANDARD2_0
 using System.Runtime.Serialization;
+#endif
 
 namespace net.vieapps.Components.Utility
 {

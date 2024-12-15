@@ -1,24 +1,24 @@
 ﻿#region Related components
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
+using System.Xml;
 using System.Linq;
+using System.Text;
 using System.Net;
 using System.Net.Http;
+using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Numerics;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
-using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Text.RegularExpressions;
 using Microsoft.IO;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 #endregion
 
 #if !SIGN
@@ -638,12 +638,12 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets an user-agent as mobile browser
 		/// </summary>
-		public static string MobileUserAgent => "Mozilla/5.0 (iPhone; CPU iPhone OS 15_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1";
+		public static string MobileUserAgent => "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Mobile/15E148 Safari/604.1 QNGX/10.9";
 
 		/// <summary>
 		/// Gets an user-agent as desktop browser
 		/// </summary>
-		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36";
+		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Safari/605.1.15 QNGX/10.9";
 
 		/// <summary>
 		/// Gets the web proxy
