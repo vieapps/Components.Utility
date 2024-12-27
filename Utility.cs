@@ -16,8 +16,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
-using Microsoft.IO;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IO;
 using Newtonsoft.Json.Linq;
 #endregion
 
@@ -896,7 +896,7 @@ namespace net.vieapps.Components.Utility
 					request.Headers.Add("User-Agent", UtilityService.DesktopUserAgent);
 
 				if (!headers.ContainsKey("Accept"))
-					request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+					request.Headers.Add("Accept", string.IsNullOrWhiteSpace(multipartFilename) ? "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" : "application/json,text/plain,*/*");
 
 				if (!headers.ContainsKey("Accept-Language"))
 					request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
@@ -1161,37 +1161,86 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken)
 			=> new Uri(uri).FetchHttpAsync(cancellationToken);
+		#endregion
 
+		#region Upload/Download a remote end-point file
 		/// <summary>
 		/// Uploads a stream as a file to a remote end-point
 		/// </summary>
-		/// <param name="uri"></param>
 		/// <param name="stream"></param>
-		/// <param name="filename"></param>
+		/// <param name="uri"></param>
+		/// <param name="fileName"></param>
 		/// <param name="headers"></param>
 		/// <param name="timeout"></param>
 		/// <param name="cancellationToken"></param>
 		/// <param name="onSuccess"></param>
 		/// <param name="onError"></param>
 		/// <returns></returns>
-		public static async Task UploadAsync(string uri, Stream stream, string filename, Dictionary<string, string> headers = null, int timeout = 600, CancellationToken cancellationToken = default, Action<string, string, string, long> onSuccess = null, Action<string, string, Exception> onError = null)
+		public static async Task UploadAsync(this Stream stream, string uri, string fileName, Dictionary<string, string> headers, int timeout, CancellationToken cancellationToken = default, Action<string, string, string, long> onSuccess = null, Action<string, string, Exception> onError = null)
 		{
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var response = await new Uri(uri).SendHttpRequestAsync("POST", headers, stream, timeout, null, null, cancellationToken, filename).ConfigureAwait(false))
+				using (var response = await new Uri(uri).SendHttpRequestAsync("POST", headers, stream, timeout, null, null, cancellationToken, fileName).ConfigureAwait(false))
 				{
 					var results = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 					stopwatch.Stop();
-					onSuccess?.Invoke(uri, filename, results, stopwatch.ElapsedMilliseconds);
+					onSuccess?.Invoke(uri, fileName, results, stopwatch.ElapsedMilliseconds);
 				}
 			}
 			catch (Exception ex)
 			{
 				if (onError != null)
-					onError(uri, filename, ex);
+					onError(uri, fileName, ex);
 				else
 					throw;
+			}
+		}
+
+		/// <summary>
+		/// Uploads a stream as a file to a remote end-point
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="uri"></param>
+		/// <param name="fileName"></param>
+		/// <param name="headers"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task UploadAsync(this Stream stream, string uri, string fileName, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default)
+			=> stream.UploadAsync(uri, fileName, headers, 600, cancellationToken);
+
+		/// <summary>
+		/// Uploads a file to a remote end-point
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="uri"></param>
+		/// <param name="headers"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task UploadAsync(this FileInfo fileInfo, string uri, Dictionary<string, string> headers = null, CancellationToken cancellationToken = default)
+		{
+			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+				await fileStream.UploadAsync(uri, fileInfo.Name, headers, cancellationToken).ConfigureAwait(false);
+		}
+
+		/// <summary>
+		/// Downloads a file as stream from a remote end-point
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <param name="headers"></param>
+		/// <param name="timeout"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task<Stream> DownloadAsync(this Uri uri, Dictionary<string, string> headers = null, int timeout = 600, CancellationToken cancellationToken = default)
+		{
+			try
+			{
+				using (var response = await uri.SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
+					return await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+			}
+			catch
+			{
+				throw;
 			}
 		}
 
@@ -1210,8 +1259,7 @@ namespace net.vieapps.Components.Utility
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var response = await new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
-				using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+				using (var stream = await new Uri(uri).DownloadAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
 				{
 					stopwatch.Stop();
 					onSuccess?.Invoke(uri, stream, stopwatch.ElapsedMilliseconds);
