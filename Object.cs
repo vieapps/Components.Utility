@@ -2206,17 +2206,36 @@ namespace net.vieapps.Components.Utility
 			if (@object == null)
 				return null;
 
-			if (@object is JToken)
-				return JsonConvert.DeserializeXNode(@object.ToString())?.Root;
-
-			using (var stream = UtilityService.CreateMemoryStream())
-			using (var writer = new StreamWriter(stream))
+			XElement xml = null;
+			if (@object is JToken jsonToken)
 			{
-				new XmlSerializer(typeof(T)).Serialize(writer, @object);
-				var xml = XElement.Parse(stream.ToBytes().GetString());
-				onCompleted?.Invoke(xml);
-				return xml;
+				var elementName = @object.GetTypeName(true);
+				xml = jsonToken is JObject jsonObject
+					? jsonObject.ToXml(elementName, null)
+					: JsonConvert.DeserializeXNode(jsonToken.ToString(), elementName)?.Root;
 			}
+
+			else
+				try
+				{
+					using (var stream = UtilityService.CreateMemoryStream())
+					using (var writer = new StreamWriter(stream))
+					{
+						new XmlSerializer(typeof(T)).Serialize(writer, @object);
+						xml = XElement.Parse(stream.ToBytes().GetString());
+					}
+				}
+				catch
+				{
+					var elementName = @object.GetTypeName(true);
+					var json = @object.ToJson();
+					xml = json is JObject jsonObject
+					? jsonObject.ToXml(elementName, null)
+					: JsonConvert.DeserializeXNode(json.ToString(), elementName)?.Root;
+				}
+
+			onCompleted?.Invoke(xml);
+			return xml;
 		}
 
 		/// <summary>

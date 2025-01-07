@@ -444,7 +444,7 @@ namespace net.vieapps.Components.Utility
 			{
 				stream = new MemoryStream();
 			}
-			if (buffer != null && buffer.Any())
+			if (buffer != null && buffer.Length > 0)
 			{
 				index = index > -1 && index < buffer.Length ? index : 0;
 				count = count > 0 && count < buffer.Length - index ? count : buffer.Length - index;
