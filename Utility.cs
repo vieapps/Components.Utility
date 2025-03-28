@@ -1732,24 +1732,25 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="searchPatterns"></param>
+		/// <param name="numberOfFiles"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<FileInfo> GetFiles(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
+		public static List<FileInfo> GetFiles(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			if (!Directory.Exists(path))
 				throw new DirectoryNotFoundException($"The folder is not found [{path}]");
 
-			var files = new List<FileInfo>();
+			IEnumerable<FileInfo> files = new List<FileInfo>();
 			var searchingPatterns = string.IsNullOrWhiteSpace(searchPatterns)
 				? new[] { "*.*" }
 				: searchPatterns.ToArray('|', true);
 
 			searchingPatterns.ForEach(searchingPattern =>
 			{
-				var results = Directory.GetFiles(path, searchingPattern).Select(filePath => new FileInfo(filePath));
+				var results = Directory.EnumerateFiles(path, searchingPattern).Select(filePath => new FileInfo(filePath));
 				if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
 					results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
 						? orderBy.IsStartsWith("Name")
@@ -1758,11 +1759,11 @@ namespace net.vieapps.Components.Utility
 						: orderBy.IsStartsWith("Name")
 							? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
 							: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
-				files = files.Concat(results).ToList();
+				files = files.Concat(results);
 			});
 
 			if (searchInSubFolder)
-				Directory.GetDirectories(path).Where(folderPath =>
+				Directory.EnumerateDirectories(path).Where(folderPath =>
 				{
 					var isExcluded = false;
 					if (excludedSubFolders != null && excludedSubFolders.Count > 0)
@@ -1775,7 +1776,7 @@ namespace net.vieapps.Components.Utility
 					return !isExcluded;
 				}).ForEach(folderPath => searchingPatterns.ForEach(searchingPattern =>
 				{
-					var results = Directory.GetFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
+					var results = Directory.EnumerateFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
 					if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
 						results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
 							? orderBy.IsStartsWith("Name")
@@ -1784,10 +1785,10 @@ namespace net.vieapps.Components.Utility
 							: orderBy.IsStartsWith("Name")
 								? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
 								: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
-					files = files.Concat(results).ToList();
+					files = files.Concat(results);
 				}));
 
-			return files;
+			return (numberOfFiles > 0 ? files.Take(numberOfFiles) : files).ToList();
 		}
 
 		/// <summary>
@@ -1795,27 +1796,29 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="searchPatterns"></param>
+		/// <param name="numberOfFiles"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
+		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
+			=> UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, numberOfFiles, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
 		/// Searchs and gets the listing of file paths by searching pattern
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="searchPatterns"></param>
+		/// <param name="numberOfFiles"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<string> GetFilePaths(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
-			=> UtilityService.GetFiles(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
+		public static List<string> GetFilePaths(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
+			=> UtilityService.GetFiles(path, searchPatterns, numberOfFiles, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
 				.Select(file => file.FullName)
 				.ToList();
 
@@ -1824,14 +1827,15 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="searchPatterns"></param>
+		/// <param name="numberOfFiles"></param>
 		/// <param name="searchInSubFolder"></param>
 		/// <param name="excludedSubFolders"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
+		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
+			=> UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, numberOfFiles, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
 		/// Gets path to a file/folder with 'right' path separator on each OS Platform
@@ -2164,9 +2168,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2196,9 +2200,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2227,9 +2231,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					compressor.Write(data.Array, data.Offset, data.Count);
@@ -2257,9 +2261,9 @@ namespace net.vieapps.Components.Utility
 		public static byte[] Decompress(this Stream stream, string mode = "deflate")
 		{
 #if NETSTANDARD2_0
-			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
-			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif
 			{
 				var output = Array.Empty<byte>();
@@ -2284,9 +2288,9 @@ namespace net.vieapps.Components.Utility
 		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
 		{
 #if NETSTANDARD2_0
-			using (var decompressor = "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
-			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif
 			{
 				var output = Array.Empty<byte>();
