@@ -2783,17 +2783,17 @@ namespace net.vieapps.Components.Utility
 		public SearchQuery(string query = null)
 			=> this.Parse(query);
 
-		public List<string> AndWords { get; } = new List<string>();
+		public List<string> AndWords => new List<string>();
 
-		public List<string> OrWords { get; } = new List<string>();
+		public List<string> OrWords => new List<string>();
 
-		public List<string> NotWords { get; } = new List<string>();
+		public List<string> NotWords => new List<string>();
 
-		public List<string> AndPhrases { get; } = new List<string>();
+		public List<string> AndPhrases => new List<string>();
 
-		public List<string> OrPhrases { get; } = new List<string>();
+		public List<string> OrPhrases => new List<string>();
 
-		public List<string> NotPhrases { get; } = new List<string>();
+		public List<string> NotPhrases => new List<string>();
 
 		/// <summary>
 		/// Parses the searching query

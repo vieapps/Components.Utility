@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -25,8 +26,8 @@ namespace net.vieapps.Components.Utility
 			EncodingService.HexToByte["ff"] = 255;
 		}
 
-		static string[] ByteToHex { get; } =
-		{
+		static string[] ByteToHex =>
+		new[] {
 			"00", "01", "02", "03", "04", "05", "06", "07",
 			"08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
 			"10", "11", "12", "13", "14", "15", "16", "17",
@@ -61,10 +62,18 @@ namespace net.vieapps.Components.Utility
 			"f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"
 		};
 
-		static Dictionary<string, byte> HexToByte { get; } = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+		static Dictionary<string, byte> HexToByte => new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
 		#endregion
 
 		#region To Bytes
+		/// <summary>
+		/// Converts this read-only memory to array of bytes
+		/// </summary>
+		/// <param name="input"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes<T>(this ReadOnlyMemory<T> input) where T : struct
+			=> MemoryMarshal.AsBytes(input.Span).ToArray();
+
 		/// <summary>
 		/// Converts this array segment of bytes to array of bytes
 		/// </summary>
@@ -452,7 +461,7 @@ namespace net.vieapps.Components.Utility
 		public static string Base58Encode(this byte[] bytes, bool addChecksum = true, string hashAlgorithm = "SHA256")
 		{
 			// add prefix / surfix
-			var data = bytes ?? new byte[0];
+			var data = bytes ?? Array.Empty<byte>();
 
 			// add check-sum
 			if (addChecksum)
