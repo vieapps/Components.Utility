@@ -1763,7 +1763,10 @@ namespace net.vieapps.Components.Utility
 			});
 
 			if (searchInSubFolder)
-				Directory.EnumerateDirectories(path).Where(folderPath =>
+				Directory.EnumerateDirectories(path)
+				.Select(dpath => new[] { dpath }.Concat(Directory.EnumerateDirectories(dpath)))
+				.SelectMany(paths => paths)
+				.Where(folderPath =>
 				{
 					var isExcluded = false;
 					if (excludedSubFolders != null && excludedSubFolders.Count > 0)
@@ -1774,7 +1777,8 @@ namespace net.vieapps.Components.Utility
 								break;
 						}
 					return !isExcluded;
-				}).ForEach(folderPath => searchingPatterns.ForEach(searchingPattern =>
+				})
+				.ForEach(folderPath => searchingPatterns.ForEach(searchingPattern =>
 				{
 					var results = Directory.EnumerateFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
 					if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
@@ -2161,16 +2165,16 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Compression mode (zstd/br/gzip/deflate)</param>
 		/// <returns></returns>
-		public static ArraySegment<byte> Compress(this Stream stream, string mode = "deflate")
+		public static byte[] Compress(this Stream stream, string mode = "zstd")
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
 				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2184,7 +2188,7 @@ namespace net.vieapps.Components.Utility
 					}
 					compressor.Flush();
 				}
-				return output.ToArraySegment();
+				return output.ToBytes();
 			}
 		}
 
@@ -2192,17 +2196,17 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Compression mode (zstd/br/gzip/deflate)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<ArraySegment<byte>> CompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
+		public static async Task<byte[]> CompressAsync(this Stream stream, string mode = "zstd", CancellationToken cancellationToken = default)
 		{
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
 				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2216,30 +2220,7 @@ namespace net.vieapps.Components.Utility
 					}
 					await compressor.FlushAsync(cancellationToken).ConfigureAwait(false);
 				}
-				return output.ToArraySegment();
-			}
-		}
-
-		/// <summary>
-		/// Compresses the array segment of bytes
-		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
-		/// <returns></returns>
-		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "deflate")
-		{
-			using (var output = UtilityService.CreateMemoryStream())
-			{
-#if NETSTANDARD2_0
-				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
-#else
-				using (var compressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
-#endif
-				{
-					compressor.Write(data.Array, data.Offset, data.Count);
-					compressor.Flush();
-				}
-				return output.ToArraySegment();
+				return output.ToBytes();
 			}
 		}
 
@@ -2247,23 +2228,35 @@ namespace net.vieapps.Components.Utility
 		/// Compresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Compression mode (zstd/br/gzip/deflate)</param>
 		/// <returns></returns>
-		public static byte[] Compress(this byte[] data, string mode = "deflate")
-			=> data.ToArraySegment().Compress(mode).ToBytes();
+		public static byte[] Compress(this byte[] data, string mode = "zstd")
+		{
+			using (var stream = data.ToMemoryStream())
+				return stream.Compress(mode);
+		}
+
+		/// <summary>
+		/// Compresses the array segment of bytes
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="mode">Compression mode (zstd/br/gzip/deflate)</param>
+		/// <returns></returns>
+		public static ArraySegment<byte> Compress(this ArraySegment<byte> data, string mode = "zstd")
+			=> data.ToBytes().Compress(mode).ToArraySegment();
 
 		/// <summary>
 		/// Decompresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Decompression mode (zstd/br/gzip/deflate)</param>
 		/// <returns></returns>
-		public static byte[] Decompress(this Stream stream, string mode = "deflate")
+		public static byte[] Decompress(this Stream stream, string mode = "zstd")
 		{
 #if NETSTANDARD2_0
-			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
 #else
-			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress, true) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
 #endif
 			{
 				var output = Array.Empty<byte>();
@@ -2282,15 +2275,15 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the stream
 		/// </summary>
 		/// <param name="stream"></param>
-		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Decompression mode (zstd/br/gzip/deflate)</param>
 		/// <param name="cancellationToken">The cancellation token</param>
 		/// <returns></returns>
-		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "deflate", CancellationToken cancellationToken = default)
+		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "zstd", CancellationToken cancellationToken = default)
 		{
 #if NETSTANDARD2_0
 			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #else
-			using (var decompressor = "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
 #endif
 			{
 				var output = Array.Empty<byte>();
@@ -2309,9 +2302,9 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the array of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Decompression mode (zstd/br/gzip/deflate)</param>
 		/// <returns></returns>
-		public static byte[] Decompress(this byte[] data, string mode = "deflate")
+		public static byte[] Decompress(this byte[] data, string mode = "zstd")
 		{
 			using (var stream = data.ToMemoryStream())
 				return stream.Decompress(mode);
@@ -2321,13 +2314,10 @@ namespace net.vieapps.Components.Utility
 		/// Decompresses the array segment of bytes
 		/// </summary>
 		/// <param name="data"></param>
-		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Decompression mode (zstd/br/gzip/deflate)</param>
 		/// <returns></returns>
-		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "deflate")
-		{
-			using (var stream = data.ToMemoryStream())
-				return stream.Decompress(mode).ToArraySegment();
-		}
+		public static ArraySegment<byte> Decompress(this ArraySegment<byte> data, string mode = "zstd")
+			=> data.ToBytes().Decompress(mode).ToArraySegment();
 		#endregion
 
 		#region BigInteger extensions

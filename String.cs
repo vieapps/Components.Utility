@@ -222,23 +222,23 @@ namespace net.vieapps.Components.Utility
 
 		#region Compressions
 		/// <summary>
-		/// Compresses the string using Deflate compression method
+		/// Compresses the string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="mode">Compression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Compression mode (zstd/br/gzip/deflate)</param>
 		/// <returns>The compressed-string in Base64 format</returns>
-		public static string Compress(this string @string, string mode = "deflate")
+		public static string Compress(this string @string, string mode = "zstd")
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.ToBytes().Compress(mode).ToBase64();
 
 		/// <summary>
-		/// Decompresses the Base64 string using Deflate compression method
+		/// Decompresses the Base64 string
 		/// </summary>
 		/// <param name="string"></param>
-		/// <param name="mode">Decompression mode (br/gzip/deflate)</param>
+		/// <param name="mode">Decompression mode (zstd/br/gzip/deflate)</param>
 		/// <returns>The decompressed-string</returns>
-		public static string Decompress(this string @string, string mode = "deflate")
+		public static string Decompress(this string @string, string mode = "zstd")
 			=> string.IsNullOrWhiteSpace(@string)
 				? ""
 				: @string.Base64ToBytes().Decompress(mode).GetString();
