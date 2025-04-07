@@ -2172,9 +2172,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2204,9 +2204,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)

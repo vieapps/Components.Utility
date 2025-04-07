@@ -26,8 +26,8 @@ namespace net.vieapps.Components.Utility
 			EncodingService.HexToByte["ff"] = 255;
 		}
 
-		static string[] ByteToHex =>
-		new[] {
+		static string[] ByteToHex { get; } = 
+		{
 			"00", "01", "02", "03", "04", "05", "06", "07",
 			"08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
 			"10", "11", "12", "13", "14", "15", "16", "17",
@@ -62,7 +62,7 @@ namespace net.vieapps.Components.Utility
 			"f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff"
 		};
 
-		static Dictionary<string, byte> HexToByte => new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
+		static Dictionary<string, byte> HexToByte { get; } = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
 		#endregion
 
 		#region To Bytes
