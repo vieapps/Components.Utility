@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
+using System.IO;
+
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -18,7 +20,6 @@ namespace net.vieapps.Components.Utility
 	public static partial class EncodingService
 	{
 
-		#region Constructor
 		static EncodingService()
 		{
 			for (byte @byte = 0; @byte < 255; @byte++)
@@ -63,7 +64,6 @@ namespace net.vieapps.Components.Utility
 		};
 
 		static Dictionary<string, byte> HexToByte { get; } = new Dictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
-		#endregion
 
 		#region To Bytes
 		/// <summary>
@@ -82,6 +82,22 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] ToBytes(this ArraySegment<byte> bytes, int count = 0)
 			=> bytes.Take(count);
+
+		/// <summary>
+		/// Converts this memory stream to array of bytes
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this MemoryStream stream)
+		{
+			if (stream.TryGetBuffer(out var buffer))
+			{
+				var array = new byte[buffer.Count];
+				Buffer.BlockCopy(buffer.Array, buffer.Offset, array, 0, buffer.Count);
+				return array;
+			}
+			return stream.ToArray();
+		}
 
 		/// <summary>
 		/// Converts this string to array of bytes

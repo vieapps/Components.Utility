@@ -516,32 +516,13 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this memory stream to array segment of byte
+		/// Writes the string lines to the stream asynchronously
 		/// </summary>
-		/// <param name="stream"></param>
-		/// <remarks>
-		/// Try to get buffer first to avoid calling ToArray on the MemoryStream because it allocates a new byte array on the heap.
-		/// Avoid this by attempting to access the internal memory stream buffer, this works with supported streams like the recyclable memory stream and writable memory streams
-		/// </remarks>
+		/// <param name="writer"></param>
+		/// <param name="lines"></param>
 		/// <returns></returns>
-		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
-			=> stream.TryGetBuffer(out var buffer) ? buffer : new ArraySegment<byte>(stream.ToArray());
-
-		/// <summary>
-		/// Converts this memory stream to array of bytes
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <returns></returns>
-		public static byte[] ToBytes(this MemoryStream stream)
-		{
-			if (stream.TryGetBuffer(out var buffer))
-			{
-				var array = new byte[buffer.Count];
-				Buffer.BlockCopy(buffer.Array, buffer.Offset, array, 0, buffer.Count);
-				return array;
-			}
-			return stream.ToArray();
-		}
+		public static void WriteLines(this StreamWriter writer, IEnumerable<string> lines)
+			=> lines?.Where(line => line != null).ForEach(line => writer.WriteLine(line));
 
 		/// <summary>
 		/// Writes the string lines to the stream asynchronously
@@ -558,15 +539,6 @@ namespace net.vieapps.Components.Utility
 #else
 				: lines.Where(line => line != null).ForEachAsync(line => writer.WriteLineAsync(line.AsMemory(), cancellationToken), true, false);
 #endif
-
-		/// <summary>
-		/// Writes the string lines to the stream asynchronously
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="lines"></param>
-		/// <returns></returns>
-		public static void WriteLines(this StreamWriter writer, IEnumerable<string> lines)
-			=> lines?.Where(line => line != null).ForEach(line => writer.WriteLine(line));
 
 		/// <summary>
 		/// Reads all characters from the stream asynchronously and returns them as one string

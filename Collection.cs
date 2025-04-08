@@ -1,5 +1,9 @@
 ﻿#region Related components
 using System;
+using System.IO;
+#if NETSTANDARD2_0
+using System.Net;
+#endif
 using System.Text;
 using System.Linq;
 using System.Collections;
@@ -12,9 +16,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Xml;
-#if NETSTANDARD2_0
-using System.Net;
-#endif
 using Newtonsoft.Json.Linq;
 using net.vieapps.Components.Utility;
 #endregion
@@ -1851,6 +1852,18 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Conversions (ArraySegment)
+		/// <summary>
+		/// Converts this memory stream to array segment of byte
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <remarks>
+		/// Try to get buffer first to avoid calling ToArray on the MemoryStream because it allocates a new byte array on the heap.
+		/// Avoid this by attempting to access the internal memory stream buffer, this works with supported streams like the recyclable memory stream and writable memory streams
+		/// </remarks>
+		/// <returns></returns>
+		public static ArraySegment<byte> ToArraySegment(this MemoryStream stream)
+			=> stream.TryGetBuffer(out var buffer) ? buffer : stream.ToArray().ToArraySegment();
+
 		/// <summary>
 		/// Converts this list to array segment
 		/// </summary>
