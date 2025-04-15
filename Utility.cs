@@ -834,6 +834,8 @@ namespace net.vieapps.Components.Utility
 			return response.GetHeaders().TryGetValue("Content-Type", out var contentType) && contentType.IsStartsWith("text/html") ? @string?.HtmlDecode() : @string;
 		}
 
+		static IEnumerable<string> ExcludedHttpRequestHeaders { get; } = new[] { "Accept-Encoding", "Connection", "Content-Type", "Cookie", "Host", "AllowAutoRedirect" };
+
 		/// <summary>
 		/// Sends a request to a remote end-point
 		/// </summary>
@@ -855,7 +857,7 @@ namespace net.vieapps.Components.Utility
 			headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			using (var request = new HttpRequestMessage(new HttpMethod(string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper()), uri))
 			{
-				headers.Copy(new[] { "Accept-Encoding", "Connection", "Content-Type", "Cookie", "Host", "AllowAutoRedirect" }).ForEach(kvp =>
+				headers.Copy(UtilityService.ExcludedHttpRequestHeaders).ForEach(kvp =>
 				{
 					try
 					{
@@ -1883,9 +1885,13 @@ namespace net.vieapps.Components.Utility
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
+#if NETSTANDARD2_0
 			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
 				return streamReader.ReadToEnd();
+#else
+			return File.ReadAllText(fileInfo.FullName);
+#endif
 		}
 
 		/// <summary>
