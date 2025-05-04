@@ -1662,39 +1662,43 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Copy objects' properties from JSON
+		static JsonSerializer JSONSerializer { get; } = JsonSerializer.CreateDefault();
+
 		/// <summary>
 		/// Copies data of the JSON object
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="json">JSON object to copy data</param>
-		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
+		/// <param name="nullable">The hash-set of attributes that allow null value when not found</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static T CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+		public static T CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded, HashSet<string> nullable, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
 			if (@object == null || json == null)
 				throw new ArgumentNullException(nameof(json), "The objects were null");
 
-			var serializer = new JsonSerializer();
 			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+			var nullableAttributes = new HashSet<string>(nullable ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
 
-			foreach (var attribute in @object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)))
+			@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && (excluded == null || !excluded.Contains(attribute.Name))).ForEach(attribute =>
 			{
-				// check token
+				// get token
 				JToken token = null;
 				try
 				{
 					token = json[attribute.Name];
 				}
 				catch { }
-				if (token == null)
-					continue;
+
+				if (token == null && !nullableAttributes.Contains(attribute.Name))
+					return;
 
 				// array
 				if (attribute.IsArray())
 				{
 					var type = attribute.Type.GetElementType().MakeArrayType();
-					@object.SetAttributeValue(attribute, serializer.Deserialize(new JTokenReader(token), type));
+					@object.SetAttributeValue(attribute, JSONSerializer.Deserialize(new JTokenReader(token), type));
 				}
 
 				// generic list/hash-set
@@ -1713,7 +1717,7 @@ namespace net.vieapps.Components.Utility
 								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
 								foreach (var item in jobject)
 									if (gotSpecialAttributes)
-										data.Add(JObject.FromObject(dataType.CreateInstance().CopyFrom(item.Value)));
+										data.Add(JObject.FromObject(dataType.CreateInstance().CopyFrom(item.Value, excluded, nullable, null, onError)));
 									else
 										data.Add(item.Value);
 							}
@@ -1725,7 +1729,7 @@ namespace net.vieapps.Components.Utility
 						var type = attribute.IsGenericList()
 							? typeof(List<>).MakeGenericType(dataType)
 							: typeof(HashSet<>).MakeGenericType(dataType);
-						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? serializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
+						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? JSONSerializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
 					{
@@ -1750,10 +1754,11 @@ namespace net.vieapps.Components.Utility
 									? asArray.KeyAttribute
 									: "ID";
 								var gotSpecialAttributes = dataType.GetSpecialSerializeAttributes().Count > 0;
-								foreach (JObject item in jarray)
+								jarray.Select(item => item as JObject).Where(item => item != null).ForEach(item =>
+								{
 									if (gotSpecialAttributes)
 									{
-										var child = dataType.CreateInstance().CopyFrom(item);
+										var child = dataType.CreateInstance().CopyFrom(item, excluded, nullable, null, onError);
 										var keyValue = child.GetAttributeValue(keyAttribute);
 										if (keyValue != null)
 											data.Add(keyValue.ToString(), JObject.FromObject(child));
@@ -1764,6 +1769,7 @@ namespace net.vieapps.Components.Utility
 										if (keyValue != null && keyValue is JValue jvalue && jvalue.Value != null)
 											data.Add(jvalue.Value.ToString(), item);
 									}
+								});
 							}
 						}
 						else
@@ -1773,7 +1779,7 @@ namespace net.vieapps.Components.Utility
 						var type = attribute.Type.IsGenericDictionary()
 							? typeof(Dictionary<,>).MakeGenericType(attribute.GetFirstGenericTypeArgument(), dataType)
 							: typeof(Collection<,>).MakeGenericType(attribute.GetFirstGenericTypeArgument(), dataType);
-						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? serializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
+						@object.SetAttributeValue(attribute, data != null && data.Count > 0 ? JSONSerializer.Deserialize(new JTokenReader(data), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
 					{
@@ -1784,7 +1790,8 @@ namespace net.vieapps.Components.Utility
 				else if (attribute.IsCollection())
 					try
 					{
-						@object.SetAttributeValue(attribute, token is JObject jobject && jobject.Count > 0 ? serializer.Deserialize(new JTokenReader(token), typeof(System.Collections.Specialized.Collection)) : typeof(System.Collections.Specialized.Collection).CreateInstance());
+						var type = typeof(System.Collections.Specialized.Collection);
+						@object.SetAttributeValue(attribute, token is JObject jobject && jobject.Count > 0 ? JSONSerializer.Deserialize(new JTokenReader(token), type) : type.CreateInstance());
 					}
 					catch (Exception ex)
 					{
@@ -1805,7 +1812,7 @@ namespace net.vieapps.Components.Utility
 					{
 						var instance = attribute.Type.CreateInstance();
 						if (token is JObject jobject && jobject.Count > 0)
-							instance.CopyFrom(token);
+							instance.CopyFrom(token, excluded, nullable, null, onError);
 						@object.SetAttributeValue(attribute, instance);
 					}
 					catch (Exception ex)
@@ -1823,23 +1830,47 @@ namespace net.vieapps.Components.Utility
 					{
 						onError?.Invoke(ex);
 					}
-			}
+			});
 
 			onCompleted?.Invoke(@object);
 			return @object;
 		}
 
 		/// <summary>
+		/// Copies data of the JSON object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="json">JSON object to copy data</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		public static T CopyFrom<T>(this T @object, JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> @object != null ? @object.CopyFrom(json, excluded, null, onCompleted, onError) : throw new ArgumentNullException("The objects were null");
+
+		/// <summary>
 		/// Creates new an instance of the object and copies data (from a JSON object)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="json">The JSON object to copy data</param>
-		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
+		/// <param name="nullable">The hash-set of attributes that allow null value when not found</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns></returns>
+		public static T Copy<T>(this JToken json, HashSet<string> excluded, HashSet<string> nullable, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> typeof(T).CreateInstance<T>().CopyFrom(json, excluded, nullable, onCompleted, onError);
+
+		/// <summary>
+		/// Creates new an instance of the object and copies data (from a JSON object)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="json">The JSON object to copy data</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
 		public static T Copy<T>(this JToken json, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> typeof(T).CreateInstance<T>().CopyFrom(json, excluded, onCompleted, onError);
+			=> json != null ? json.Copy(excluded, null, onCompleted, onError) : throw new ArgumentNullException("The objects were null");
 		#endregion
 
 		#region Copy objects' properties from ExpandoObject
@@ -1848,15 +1879,22 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="expandoObject">The <see cref="ExpandoObject">ExpandoObject</see> object to copy data</param>
-		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
+		/// <param name="nullable">The hash-set of attributes that allow null value when not found</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static T CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+		public static T CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded, HashSet<string> nullable, Action<T> onCompleted = null, Action<Exception> onError = null)
 		{
-			@object?.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && (excluded == null || !excluded.Contains(attribute.Name))).ForEach(attribute =>
+			if (@object == null || expandoObject == null)
+				throw new ArgumentNullException(nameof(expandoObject), "The objects were null");
+
+			var excludedAttributes = new HashSet<string>(excluded ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+			var nullableAttributes = new HashSet<string>(nullable ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+
+			@object.GetPublicAttributes(attribute => !attribute.IsStatic && attribute.CanWrite && !excludedAttributes.Contains(attribute.Name)).ForEach(attribute =>
 			{
-				// by-pass
-				if (!expandoObject.TryGet(attribute.Name, out var value))
+				// check to by-pass on null
+				if (!expandoObject.TryGet(attribute.Name, out var value) && !nullableAttributes.Contains(attribute.Name))
 					return;
 
 				// normalize the value
@@ -1876,7 +1914,7 @@ namespace net.vieapps.Components.Utility
 
 					// class/array
 					else if (value is ExpandoObject expandoObj && attribute.IsClassType() && !attribute.Type.Equals(typeof(ExpandoObject)))
-						value = attribute.Type.CreateInstance().CopyFrom(expandoObj);
+						value = attribute.Type.CreateInstance().CopyFrom(expandoObj, excluded, nullable, null, onError);
 
 					// enum
 					else if (attribute.Type.IsEnum)
@@ -1908,21 +1946,46 @@ namespace net.vieapps.Components.Utility
 					onError?.Invoke(ex);
 				}
 			});
+
 			onCompleted?.Invoke(@object);
 			return @object;
 		}
+
+		/// <summary>
+		/// Copies data of the ExpandoObject object
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="expandoObject">The <see cref="ExpandoObject">ExpandoObject</see> object to copy data</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		public static T CopyFrom<T>(this T @object, ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> @object != null ? @object.CopyFrom(expandoObject, excluded, null, onCompleted, onError) : throw new ArgumentNullException("The objects were null");
 
 		/// <summary>
 		/// Creates new an instance of the object and copies data (from an ExpandoObject object)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="expandoObject">The ExpandoObject object to copy data</param>
-		/// <param name="excluded">The hash-set of excluded attributes</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
+		/// <param name="nullable">The hash-set of attributes that allow null value when not found</param>
+		/// <param name="onCompleted">The action to run before completing the copy process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns></returns>
+		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded, HashSet<string> nullable, Action<T> onCompleted = null, Action<Exception> onError = null)
+			=> typeof(T).CreateInstance<T>().CopyFrom(expandoObject, excluded, nullable, onCompleted, onError);
+
+		/// <summary>
+		/// Creates new an instance of the object and copies data (from an ExpandoObject object)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="expandoObject">The ExpandoObject object to copy data</param>
+		/// <param name="excluded">The hash-set of attributes that will be excluded</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns></returns>
 		public static T Copy<T>(this ExpandoObject expandoObject, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> typeof(T).CreateInstance<T>().CopyFrom(expandoObject, excluded, onCompleted, onError);
+			=> expandoObject != null ? expandoObject.Copy(excluded, null, onCompleted, onError) : throw new ArgumentNullException("The objects were null");
 		#endregion
 
 		#region JSON conversions
@@ -2064,7 +2127,7 @@ namespace net.vieapps.Components.Utility
 				? value.Value != null ? value.Value.CastAs<T>() : default
 				: (copy || type.GotSpecialSerializeAttributes()) && type.IsClassType() && !type.IsGenericListOrHashSet() && !type.IsGenericDictionaryOrCollection()
 					? type.CreateInstance<T>().CopyFrom(json)
-					: new JsonSerializer().Deserialize<T>(new JTokenReader(json));
+					: JSONSerializer.Deserialize<T>(new JTokenReader(json));
 			onCompleted?.Invoke(@object, json);
 			return @object;
 		}
@@ -2143,7 +2206,7 @@ namespace net.vieapps.Components.Utility
 		{
 			try
 			{
-				var expando = new JsonSerializer().Deserialize<ExpandoObject>(new JTokenReader(json));
+				var expando = JSONSerializer.Deserialize<ExpandoObject>(new JTokenReader(json));
 				onCompleted?.Invoke(expando);
 				return expando;
 			}
@@ -2274,13 +2337,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T FromXml<T>(this XContainer xml, Action<T, XContainer> onCompleted = null) where T : class
 		{
-			// deserialize
 			var @object = (T)new XmlSerializer(typeof(T)).Deserialize(xml.CreateReader());
-
-			// run the handler
 			onCompleted?.Invoke(@object, xml);
-
-			// return the object
 			return @object;
 		}
 
@@ -2303,16 +2361,11 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static T FromXml<T>(this string xml, Action<T> onCompleted = null) where T : class
 		{
-			// deserialize
 			T @object;
 			using (var stringReader = new StringReader(xml))
 			using (var xmlReader = new XmlTextReader(stringReader))
 				@object = (T)new XmlSerializer(typeof(T)).Deserialize(xmlReader);
-
-			// run the handler
 			onCompleted?.Invoke(@object);
-
-			// return the object
 			return @object;
 		}
 
