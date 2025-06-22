@@ -668,8 +668,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="toLowerCase">true to return lower case</param>
 		/// <param name="allowDotSymbols">true to allow dot symbols (.)</param>
 		/// <param name="allowEmpty">true to allow empty (default is false - will be updated as a random value)</param>
+		/// <param name="normalizeNumeric">true to normalize numberic</param>
+		/// <param name="normalizeNumericGUID">true to normalize numberic GUID</param>
 		/// <returns></returns>
-		public static string GetANSIUri(this string @string, bool toLowerCase = true, bool allowDotSymbols = false, bool allowEmpty = false)
+		public static string GetANSIUri(this string @string, bool toLowerCase = true, bool allowDotSymbols = false, bool allowEmpty = false, bool normalizeNumeric = true, bool normalizeNumericGUID = false)
 		{
 			// convert Vietnamese characters
 			var result = @string.Trim().ConvertUnicodeToANSI();
@@ -694,11 +696,14 @@ namespace net.vieapps.Components.Utility
 
 			// add timestamp if has no value
 			if (result.Equals("") && !allowEmpty)
-				result = "v" + DateTime.Now.ToUnixTimestamp();
+				result = $"v{DateTime.Now.ToUnixTimestamp()}";
 
 			// numeric
-			else if (result.IsNumeric())
-				result = "v" + DateTime.Now.ToUnixTimestamp() + result;
+			else if (result.IsNumeric() && normalizeNumeric)
+			{
+				var normalize = !result.IsValidUUID() || normalizeNumericGUID;
+				result = (normalize ? $"v{DateTime.Now.ToUnixTimestamp()}" : "") + result;
+			}
 
 			return toLowerCase
 				? result.ToLower()
