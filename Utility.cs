@@ -1,27 +1,26 @@
 ﻿#region Related components
-using Microsoft.Extensions.Configuration;
-using Microsoft.IO;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.IO;
-using System.IO.Compression;
+using System.Xml;
+using System.Text;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Numerics;
+using System.Diagnostics;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
-
+using System.IO.Compression;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IO;
+using Newtonsoft.Json.Linq;
 #endregion
+
 #if !SIGN
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("VIEApps.Components.XUnitTests")]
 #endif
@@ -645,8 +644,11 @@ namespace net.vieapps.Components.Utility
 #endif
 		#endregion
 
-		#region Send HTTP requests
-		internal static string[] UserAgents { get; } = new[]
+		#region User agents
+		/// <summary>
+		/// Gets the collection of spider web-browsers' user-agents
+		/// </summary>
+		public static List<string> SpiderUserAgents { get; } = new List<string>
 		{
 			"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
 			"Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
@@ -676,18 +678,42 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets an user-agent as spider-bot
 		/// </summary>
-		public static string SpiderUserAgent => UtilityService.UserAgents[UtilityService.GetRandomNumber(0, UtilityService.UserAgents.Length - 1)];
+		public static string SpiderUserAgent => UtilityService.SpiderUserAgents[UtilityService.GetRandomNumber(0, UtilityService.SpiderUserAgents.Count - 1)];
+
+		/// <summary>
+		/// Gets the collection of mobile web-browsers' user-agents
+		/// </summary>
+		public static List<string> MobileUserAgents { get; } = new List<string>
+		{
+			"Mozilla/5.0 (iPhone; CPU iPhone OS 18_5_1 like Mac OS X) AppleWebKit/605.2 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.2",
+			"Mozilla/5.0 (iPad; CPU iPad OS 18_5_1 like Mac OS X) AppleWebKit/605.2 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.2",
+			"Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+		};
 
 		/// <summary>
 		/// Gets an user-agent as mobile browser
 		/// </summary>
-		public static string MobileUserAgent => "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Mobile/15E148 Safari/604.1 QNGX/10.9";
+		public static string MobileUserAgent => $"{UtilityService.MobileUserAgents[UtilityService.GetRandomNumber(0, UtilityService.MobileUserAgents.Count - 1)]} QNGX/10.9";
+
+		/// <summary>
+		/// Gets the collection of desktop web-browsers' user-agents
+		/// </summary>
+		public static List<string> DesktopUserAgents { get; } = new List<string>
+		{
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.2 (KHTML, like Gecko) Version/18.5 Safari/605.2",
+			"Mozilla/5.0 (Macintosh; Apple Silicon; Mac OS X 10_15_7) AppleWebKit/605.2 (KHTML, like Gecko) Version/18.5 Safari/605.2",
+			"Mozilla/5.0 (X11; Ubuntu; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+		};
 
 		/// <summary>
 		/// Gets an user-agent as desktop browser
 		/// </summary>
-		public static string DesktopUserAgent => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1.1 Safari/605.1.15 QNGX/10.9";
+		public static string DesktopUserAgent => $"{UtilityService.DesktopUserAgents[UtilityService.GetRandomNumber(0, UtilityService.DesktopUserAgents.Count - 1)]} QNGX/10.9";
+		#endregion
 
+		#region HTTP proxies
 		/// <summary>
 		/// Gets the web proxy
 		/// </summary>
@@ -729,7 +755,9 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
 			=> UtilityService.Proxy ?? (UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass));
+		#endregion
 
+		#region Send HTTP requests
 		/// <summary>
 		/// Converts the collection of cookies to a string for using in HTTP headers
 		/// </summary>
