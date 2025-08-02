@@ -395,7 +395,7 @@ namespace net.vieapps.Components.Utility
 			attachments?.Where(attachment => File.Exists(attachment)).ForEach(attachment => message.Attachments.Add(new Attachment(attachment)));
 
 			// final
-			message.Headers.Add("x-mailer", mailer ?? "VIEApps NGX Mailer");
+			message.Headers.Add("x-mailer", mailer ?? "vieapps.ngx");
 			return message;
 		}
 
@@ -568,7 +568,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="user">The name of user for connecting with SMTP server</param>
 		/// <param name="password">The password of user for connecting with SMTP server</param>
 		/// <param name="enableSsl">true if the SMTP server requires SSL</param>
-		public static SmtpClient GetSmtpClient(string host, int port, string user, string password, bool enableSsl)
+		/// <param name="clientDomain">Domain for the client (replacement of computer name)</param>
+		public static SmtpClient GetSmtpClient(string host, int port, string user, string password, bool enableSsl, string clientDomain = null)
 		{
 			var smtp = new SmtpClient
 			{
@@ -587,7 +588,12 @@ namespace net.vieapps.Components.Utility
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && RuntimeInformation.FrameworkDescription.IsContains(".NET Framework"))
 				smtp.ServicePoint.Expect100Continue = false;
 #endif
-
+			// client domain
+			try
+			{
+				typeof(SmtpClient).GetField("clientDomain", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(smtp, clientDomain ?? "funnels.vieapps.net");
+			}
+			catch { }
 			return smtp;
 		}
 
@@ -599,14 +605,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="user">The name of user for connecting with SMTP server</param>
 		/// <param name="password">The password of user for connecting with SMTP server</param>
 		/// <param name="enableSsl">true if the SMTP server requires SSL</param>
-		public static SmtpClient GetSmtpClient(string host, string port, string user, string password, bool enableSsl)
+		/// <param name="clientDomain">Domain for the client (replacement of computer name)</param>
+		public static SmtpClient GetSmtpClient(string host, string port, string user, string password, bool enableSsl, string clientDomain = null)
 		{
 			enableSsl = !string.IsNullOrWhiteSpace(host) ? enableSsl : "true".IsEquals(UtilityService.GetAppSetting("Email:SmtpServerEnableSsl"));
 			host = !string.IsNullOrWhiteSpace(host) ? host : UtilityService.GetAppSetting("Email:SmtpServer");
 			port = !string.IsNullOrWhiteSpace(port) ? port : UtilityService.GetAppSetting("Email:SmtpPort");
 			user = !string.IsNullOrWhiteSpace(user) ? user : UtilityService.GetAppSetting("Email:SmtpUser");
 			password = !string.IsNullOrWhiteSpace(password) ? password : UtilityService.GetAppSetting("Email:SmtpUserPassword");
-			return MessageService.GetSmtpClient(host, Int32.TryParse(port, out var smtpPort) ? smtpPort : 25, user, password, enableSsl);
+			return MessageService.GetSmtpClient(host, Int32.TryParse(port, out var smtpPort) && smtpPort > 0 ? smtpPort : 25, user, password, enableSsl, clientDomain);
 		}
 		#endregion
 
@@ -901,6 +908,8 @@ namespace net.vieapps.Components.Utility
 		/// Normalizes the web-hook message
 		/// </summary>
 		/// <param name="message">The web-hook message</param>
+		/// <param name="secretToken">The value of secret token (replacement of signature)</param>
+		/// <param name="secretTokenName">The name of secret token (in header or query string)</param>
 		/// <param name="signAlgorithm">The HMAC algorithm to sign with the body by a specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signKey">The key that use to sign</param>
 		/// <param name="signKeyIsHex">true to use bytes of hex-string sign-key</param>
@@ -914,7 +923,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encryptionKey">The AES key (256 bits-length) for encrypting message's body</param>
 		/// <param name="encryptionIV">The AES initialize vector (128 bits-length) for encrypting message's body</param>
 		/// <returns></returns>
-		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm, string signKey, bool signKeyIsHex, string signatureName, bool signatureAsHex, bool signatureInQuery, string signaturePrefix, string signatureSuffix, IDictionary<string, string> additionalQuery, IDictionary<string, string> additionalHeader, byte[] encryptionKey, byte[] encryptionIV)
+		public static WebHookMessage Normalize(this WebHookMessage message, string secretToken, string secretTokenName, string signAlgorithm, string signKey, bool signKeyIsHex, string signatureName, bool signatureAsHex, bool signatureInQuery, string signaturePrefix, string signatureSuffix, IDictionary<string, string> additionalQuery, IDictionary<string, string> additionalHeader, byte[] encryptionKey, byte[] encryptionIV)
 		{
 			if (message == null)
 				throw new MessageException();
@@ -927,6 +936,8 @@ namespace net.vieapps.Components.Utility
 
 			message.Header = new Dictionary<string, string>(message.Header ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			additionalHeader?.ForEach(kvp => message.Header[kvp.Key] = kvp.Value);
+			if (!string.IsNullOrWhiteSpace(secretToken))
+				message.Header[string.IsNullOrWhiteSpace(secretTokenName) ? "x-webhook-secret-token" : secretTokenName] = secretToken;
 
 			signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
 			signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
@@ -973,7 +984,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encryptionIV">The AES initialize vector (128 bits-length) for encrypting message's body</param>
 		/// <returns></returns>
 		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, bool signKeyIsHex = false, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, IDictionary<string, string> additionalQuery = null, IDictionary<string, string> additionalHeader = null, byte[] encryptionKey = null, byte[] encryptionIV = null)
-			=> message.Normalize(signAlgorithm, signKey, signKeyIsHex, signatureName, signatureAsHex, signatureInQuery, null, null, additionalQuery, additionalHeader, encryptionKey, encryptionIV);
+			=> message.Normalize(null, null, signAlgorithm, signKey, signKeyIsHex, signatureName, signatureAsHex, signatureInQuery, null, null, additionalQuery, additionalHeader, encryptionKey, encryptionIV);
 
 		/// <summary>
 		/// Validates the web-hook message
