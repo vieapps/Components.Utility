@@ -589,11 +589,7 @@ namespace net.vieapps.Components.Utility
 				smtp.ServicePoint.Expect100Continue = false;
 #endif
 			// client domain
-			try
-			{
-				typeof(SmtpClient).GetField("clientDomain", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(smtp, clientDomain ?? "funnels.vieapps.net");
-			}
-			catch { }
+			typeof(SmtpClient).GetField("clientDomain", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(smtp, clientDomain ?? "vieapps.ngx");
 			return smtp;
 		}
 
