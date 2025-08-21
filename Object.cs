@@ -2168,6 +2168,33 @@ namespace net.vieapps.Components.Utility
 				}
 			return value;
 		}
+
+		/// <summary>
+		/// Converts this string (in format of JSON or URL-encoded) to JSON
+		/// </summary>
+		/// <param name="JSONOrURLEncodedString"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static JToken ToJSON(this string JSONOrURLEncodedString, Action<JToken> onCompleted = null)
+		{
+			JToken json;
+			try
+			{
+				json = (JSONOrURLEncodedString ?? "").ToJson();
+			}
+			catch
+			{
+				try
+				{
+					json = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(JSONOrURLEncodedString ?? "").ToDictionary(kvp => kvp.Key.ToLower(), kvp => kvp.Value.Where(@string => @string != null).Select(@string => @string.AsciiDecode()).Join(","), StringComparer.OrdinalIgnoreCase).ToJObject();
+				}
+				catch
+				{
+					json = new JObject { ["_original"] = JSONOrURLEncodedString ?? "" };
+				}
+			}
+			return json;
+		}
 		#endregion
 
 		#region ExpandoObject conversions

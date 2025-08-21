@@ -249,24 +249,7 @@ namespace net.vieapps.Components.Utility
 		/// Gets the JSON that presents the message
 		/// </summary>
 		[JsonIgnore]
-		public JToken AsJson => this.ToJson(json =>
-		{
-			try
-			{
-				json["Body"] = (string.IsNullOrWhiteSpace(this.Body) ? "{}" : this.Body).ToJson();
-			}
-			catch
-			{
-				try
-				{
-					json["Body"] = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(this.Body).ToDictionary(kvp => kvp.Key.ToLower(), kvp => kvp.Value.Where(@string => @string != null).Select(@string => @string.AsciiDecode()).Join(","), StringComparer.OrdinalIgnoreCase).ToJObject();
-				}
-				catch
-				{
-					json["Body"] = new JObject { ["_original"] = this.Body ?? "" };
-				}
-			}
-		});
+		public JToken AsJson => this.ToJson(json => json["Body"] = (this.Body ?? "").ToJSON());
 
 		/// <summary>
 		/// Gets the string that presents the encrypted messages
@@ -1102,7 +1085,8 @@ namespace net.vieapps.Components.Utility
 			var headers = new Dictionary<string, string>(message.Header, StringComparer.OrdinalIgnoreCase)
 			{
 				["User-Agent"] = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"NGX-Sender/{Assembly.GetExecutingAssembly().GetVersion(false)}"}",
-				["Content-Type"] = "application/json; charset=utf-8"
+				["Content-Type"] = "application/json; charset=utf-8",
+				["X-Correlation-ID"] = message.CorrelationID
 			};
 			return uri.SendHttpRequestAsync(verb, headers, message.Body, timeout, cancellationToken);
 		}
