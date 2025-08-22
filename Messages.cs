@@ -888,7 +888,7 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="message">The web-hook message</param>
 		/// <param name="secretToken">The value of secret token (replacement of signature)</param>
-		/// <param name="secretTokenName">The name of secret token (in header or query string)</param>
+		/// <param name="secretTokenName">The name of secret token (in header or query string), default is 'x-webhook-secret-token'</param>
 		/// <param name="signAlgorithm">The HMAC algorithm to sign with the body by a specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="signKey">The key that use to sign</param>
 		/// <param name="signKeyIsHex">true to use bytes of hex-string sign-key</param>
@@ -897,12 +897,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
 		/// <param name="signaturePrefix">The additional prefix of the signature</param>
 		/// <param name="signatureSuffix">The additional suffix of the signature</param>
+		/// <param name="signWithTimestamp">true to sign with Unix timestamp (place before raw body)</param>
+		/// <param name="signWithTimestampName">The name of the timestamp parameter, default is 'x-webhook-timestamp'</param>
+		/// <param name="signWithTimestampConnect">The value to connect between timestamp and raw body, default is dot (.)</param>
 		/// <param name="additionalQuery">The additional query string</param>
 		/// <param name="additionalHeader">The additional header</param>
 		/// <param name="encryptionKey">The AES key (256 bits-length) for encrypting message's body</param>
 		/// <param name="encryptionIV">The AES initialize vector (128 bits-length) for encrypting message's body</param>
 		/// <returns></returns>
-		public static WebHookMessage Normalize(this WebHookMessage message, string secretToken, string secretTokenName, string signAlgorithm, string signKey, bool signKeyIsHex, string signatureName, bool signatureAsHex, bool signatureInQuery, string signaturePrefix, string signatureSuffix, IDictionary<string, string> additionalQuery, IDictionary<string, string> additionalHeader, byte[] encryptionKey, byte[] encryptionIV)
+		public static WebHookMessage Normalize(this WebHookMessage message, string secretToken, string secretTokenName, string signAlgorithm, string signKey, bool signKeyIsHex, string signatureName, bool signatureAsHex, bool signatureInQuery, string signaturePrefix, string signatureSuffix, bool signWithTimestamp, string signWithTimestampName, string signWithTimestampConnect, IDictionary<string, string> additionalQuery, IDictionary<string, string> additionalHeader, byte[] encryptionKey, byte[] encryptionIV)
 		{
 			if (message == null)
 				throw new MessageException();
@@ -918,26 +921,35 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(secretToken))
 				message.Header[string.IsNullOrWhiteSpace(secretTokenName) ? "x-webhook-secret-token" : secretTokenName] = secretToken;
 
-			signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
-			signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
-			signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
-			signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
-			var body = message.Body.ToBytes();
+			var timestamp = DateTime.Now.ToUnixTimestamp().ToString();
+			if (signWithTimestamp)
+			{
+				if (signatureInQuery)
+					message.Query[signWithTimestampName ?? "x-webhook-timestamp"] = timestamp;
+				else
+					message.Header[signWithTimestampName ?? "x-webhook-timestamp"] = timestamp;
+			}
 
 			try
 			{
 				message.Body = encryptionKey != null && encryptionKey.Length > 0 && encryptionIV != null && encryptionIV.Length > 0
-					? body.Encrypt(encryptionKey, encryptionIV).ToBase64()
+					? message.Body.ToBytes().Encrypt(encryptionKey, encryptionIV).ToBase64()
 					: message.Body;
 			}
 			catch (Exception ex)
 			{
-				throw new MessageException("Encryption Key/IV", ex);
+				throw new MessageException("Cannot encrypt", ex);
 			}
 
-			using (var hasher = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
+			signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
+			signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
+			signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
+			signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
+
+			using (var signer = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
 			{
-				var signature = signatureAsHex ? hasher.ComputeHash(body).ToHex() : hasher.ComputeHash(body).ToBase64();
+				var body = ((signWithTimestamp ? timestamp : "") + (signWithTimestampConnect ?? ".") + message.Body).ToBytes();
+				var signature = signatureAsHex ? signer.ComputeHash(body).ToHex() : signer.ComputeHash(body).ToBase64();
 				if (signatureInQuery)
 					message.Query[signatureName] = $"{signaturePrefix ?? ""}{signature}{signatureSuffix ?? ""}";
 				else
@@ -946,24 +958,6 @@ namespace net.vieapps.Components.Utility
 
 			return message;
 		}
-
-		/// <summary>
-		/// Normalizes the web-hook message
-		/// </summary>
-		/// <param name="message">The web-hook message</param>
-		/// <param name="signAlgorithm">The HMAC algorithm to sign with the body by a specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="signKey">The key that use to sign</param>
-		/// <param name="signKeyIsHex">true to use bytes of hex-string sign-key</param>
-		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
-		/// <param name="signatureInQuery">true to place the signature in query string, false to place in header, default is false</param>
-		/// <param name="additionalQuery">The additional query string</param>
-		/// <param name="additionalHeader">The additional header</param>
-		/// <param name="encryptionKey">The AES key (256 bits-length) for encrypting message's body</param>
-		/// <param name="encryptionIV">The AES initialize vector (128 bits-length) for encrypting message's body</param>
-		/// <returns></returns>
-		public static WebHookMessage Normalize(this WebHookMessage message, string signAlgorithm = "SHA256", string signKey = null, bool signKeyIsHex = false, string signatureName = null, bool signatureAsHex = true, bool signatureInQuery = false, IDictionary<string, string> additionalQuery = null, IDictionary<string, string> additionalHeader = null, byte[] encryptionKey = null, byte[] encryptionIV = null)
-			=> message.Normalize(null, null, signAlgorithm, signKey, signKeyIsHex, signatureName, signatureAsHex, signatureInQuery, null, null, additionalQuery, additionalHeader, encryptionKey, encryptionIV);
 
 		/// <summary>
 		/// Validates the web-hook message
@@ -978,27 +972,37 @@ namespace net.vieapps.Components.Utility
 		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
 		/// <param name="signaturePrefix">The additional prefix of the signature</param>
 		/// <param name="signatureSuffix">The additional suffix of the signature</param>
+		/// <param name="signWithTimestamp">true to sign with Unix timestamp (place before raw body)</param>
+		/// <param name="signWithTimestampName">The name of the timestamp parameter, default is 'x-webhook-timestamp'</param>
+		/// <param name="signWithTimestampConnect">The value to connect between timestamp and raw body, default is dot (.)</param>
 		/// <param name="requiredQuery">The required query string parameters</param>
 		/// <param name="requiredHeader">The required header parameters</param>
 		/// <param name="decryptionKey">The AES key (256 bits-length) for decrypting message's body</param>
 		/// <param name="decryptionIV">The AES initialize vector (128 bits-length) for decrypting message's body</param>
 		/// <returns></returns>
-		public static WebHookMessage Validate(this WebHookMessage message, string secretToken, string secretTokenName, string signAlgorithm, string signKey, bool signKeyIsHex, string signatureName, bool signatureAsHex, string signaturePrefix, string signatureSuffix, IDictionary<string, string> requiredQuery, IDictionary<string, string> requiredHeader, byte[] decryptionKey, byte[] decryptionIV)
+		public static WebHookMessage Validate(this WebHookMessage message, string secretToken, string secretTokenName, string signAlgorithm, string signKey, bool signKeyIsHex, string signatureName, bool signatureAsHex, string signaturePrefix, string signatureSuffix, bool signWithTimestamp, string signWithTimestampName, string signWithTimestampConnect, IDictionary<string, string> requiredQuery, IDictionary<string, string> requiredHeader, byte[] decryptionKey, byte[] decryptionIV)
 		{
 			if (message == null)
 				throw new MessageException();
 
-			var body = Array.Empty<byte>();
 			if (decryptionKey != null && decryptionKey.Length > 0 && decryptionIV != null && decryptionIV.Length > 0)
 				try
 				{
-					body = message.Body.Base64ToBytes().Decrypt(decryptionKey, decryptionIV);
-					message.Body = body.GetString();
+					message.Body = message.Body.Base64ToBytes().Decrypt(decryptionKey, decryptionIV).GetString();
 				}
 				catch (Exception ex)
 				{
-					throw new MessageException("Decryption Key/IV", ex);
+					throw new MessageException("Invalid (decryption key/iv)", ex);
 				}
+
+			var timestamp = string.Empty;
+			if (signWithTimestamp)
+			{
+				signWithTimestampName = string.IsNullOrWhiteSpace(signWithTimestampName) ? "x-webhook-timestamp" : signWithTimestampName;
+				timestamp = (message.Header != null && message.Header.TryGetValue(signWithTimestampName, out var headerTimestamp) ? headerTimestamp : null) ?? (message.Query != null && message.Query.TryGetValue(signWithTimestampName, out var queryTimestamp) ? queryTimestamp : null);
+				if (timestamp == null || (DateTime.Now.ToUnixTimestamp() - timestamp.As<long>() > 300))
+					throw new MessageException("Invalid (timestamp)");
+			}
 
 			var gotValidSecretToken = true;
 			if (!string.IsNullOrWhiteSpace(secretToken))
@@ -1014,12 +1018,12 @@ namespace net.vieapps.Components.Utility
 				signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
 				signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
 				signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
-				using (var hasher = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
+				using (var signer = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
 				{
 					signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
 					var signatureOfMessage = (message.Header != null && message.Header.TryGetValue(signatureName, out var headerSignature) ? headerSignature : null) ?? (message.Query != null && message.Query.TryGetValue(signatureName, out var querySignature) ? querySignature : null);
-					body = body.Length > 0 ? body : message.Body.ToBytes();
-					var signature = signatureAsHex ? hasher.ComputeHash(body).ToHex() : hasher.ComputeHash(body).ToBase64();
+					var body = ((signWithTimestamp ? timestamp + (signWithTimestampConnect ?? ".") : "") + message.Body).ToBytes();
+					var signature = signatureAsHex ? signer.ComputeHash(body).ToHex() : signer.ComputeHash(body).ToBase64();
 					gotValidSignature = gotValidSecretToken = $"{signaturePrefix ?? ""}{signature}{signatureSuffix ?? ""}".IsEquals(signatureOfMessage);
 				}
 			}
@@ -1047,25 +1051,6 @@ namespace net.vieapps.Components.Utility
 
 			return message;
 		}
-
-		/// <summary>
-		/// Validates the web-hook message
-		/// </summary>
-		/// <param name="message">The web-hook message</param>
-		/// <param name="secretToken">The value of secret token (replacement of signature)</param>
-		/// <param name="secretTokenName">The name of secret token (in header or query string)</param>
-		/// <param name="signAlgorithm">The HMAC algorithm to sign with the body by a specified key (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <param name="signKey">The key that use to sign</param>
-		/// <param name="signKeyIsHex">true to use bytes of hex-string sign-key</param>
-		/// <param name="signatureName">The name of the signature parameter, default is combination of algorithm and the string 'Signature', ex: HmacSha256Signature</param>
-		/// <param name="signatureAsHex">true to use signature as hex, false to use as Base64</param>
-		/// <param name="requiredQuery">The required query string parameters</param>
-		/// <param name="requiredHeader">The required header parameters</param>
-		/// <param name="decryptionKey">The AES key (256 bits-length) for decrypting message's body</param>
-		/// <param name="decryptionIV">The AES initialize vector (128 bits-length) for decrypting message's body</param>
-		/// <returns></returns>
-		public static WebHookMessage Validate(this WebHookMessage message, string secretToken = null, string secretTokenName = null, string signAlgorithm = "SHA256", string signKey = null, bool signKeyIsHex = false, string signatureName = null, bool signatureAsHex = true, IDictionary<string, string> requiredQuery = null, IDictionary<string, string> requiredHeader = null, byte[] decryptionKey = null, byte[] decryptionIV = null)
-			=> message.Validate(secretToken, secretTokenName, signAlgorithm, signKey, signKeyIsHex, signatureName, signatureAsHex, null, null, requiredQuery, requiredHeader, decryptionKey, decryptionIV);
 
 		/// <summary>
 		/// Sends a web-hook message (means perform a HTTP request with body as a JSON document to a specified URL)
