@@ -924,10 +924,11 @@ namespace net.vieapps.Components.Utility
 			var timestamp = DateTime.Now.ToUnixTimestamp().ToString();
 			if (signWithTimestamp)
 			{
+				signWithTimestampName = string.IsNullOrWhiteSpace(signWithTimestampName) ? "x-webhook-timestamp" : signWithTimestampName;
 				if (signatureInQuery)
-					message.Query[signWithTimestampName ?? "x-webhook-timestamp"] = timestamp;
+					message.Query[signWithTimestampName] = timestamp;
 				else
-					message.Header[signWithTimestampName ?? "x-webhook-timestamp"] = timestamp;
+					message.Header[signWithTimestampName] = timestamp;
 			}
 
 			try
@@ -948,7 +949,8 @@ namespace net.vieapps.Components.Utility
 
 			using (var signer = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
 			{
-				var body = ((signWithTimestamp ? timestamp : "") + (signWithTimestampConnect ?? ".") + message.Body).ToBytes();
+				signWithTimestampConnect = string.IsNullOrWhiteSpace(signWithTimestampConnect) ? "." : signWithTimestampConnect;
+				var body = ((signWithTimestamp ? timestamp + signWithTimestampConnect : "") + message.Body).ToBytes();
 				var signature = signatureAsHex ? signer.ComputeHash(body).ToHex() : signer.ComputeHash(body).ToBase64();
 				if (signatureInQuery)
 					message.Query[signatureName] = $"{signaturePrefix ?? ""}{signature}{signatureSuffix ?? ""}";
@@ -1016,14 +1018,15 @@ namespace net.vieapps.Components.Utility
 			if (!gotValidSecretToken || string.IsNullOrWhiteSpace(secretToken))
 			{
 				signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
+				signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
 				signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
 				signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
 				using (var signer = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
 				{
-					signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
-					var signatureOfMessage = (message.Header != null && message.Header.TryGetValue(signatureName, out var headerSignature) ? headerSignature : null) ?? (message.Query != null && message.Query.TryGetValue(signatureName, out var querySignature) ? querySignature : null);
-					var body = ((signWithTimestamp ? timestamp + (signWithTimestampConnect ?? ".") : "") + message.Body).ToBytes();
+					signWithTimestampConnect = string.IsNullOrWhiteSpace(signWithTimestampConnect) ? "." : signWithTimestampConnect;
+					var body = ((signWithTimestamp ? timestamp + signWithTimestampConnect : "") + message.Body).ToBytes();
 					var signature = signatureAsHex ? signer.ComputeHash(body).ToHex() : signer.ComputeHash(body).ToBase64();
+					var signatureOfMessage = (message.Header != null && message.Header.TryGetValue(signatureName, out var headerSignature) ? headerSignature : null) ?? (message.Query != null && message.Query.TryGetValue(signatureName, out var querySignature) ? querySignature : null);
 					gotValidSignature = gotValidSecretToken = $"{signaturePrefix ?? ""}{signature}{signatureSuffix ?? ""}".IsEquals(signatureOfMessage);
 				}
 			}
@@ -1065,8 +1068,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(message?.EndpointURL) || string.IsNullOrWhiteSpace(message?.Body))
 				return Task.FromException<HttpResponseMessage>(new MessageException($"Invalid ({(message == null ? "null" : "end-point/body")})"));
-
-			var uri = new Uri($"{message.EndpointURL}{(message.Query.Count > 0 ? message.EndpointURL.IndexOf('?') > 0 ? "&" : "?" : "")}{message.Query.ToString("&", kvp => $"{kvp.Key}={kvp.Value?.UrlEncode()}")}");
+			var uri = new Uri($"{message.EndpointURL}{(message.Query.Count > 0 ? message.EndpointURL.IndexOf('?') > 0 ? "&" : "?" : "")}{message.Query.ToQuery()}");
 			var headers = new Dictionary<string, string>(message.Header, StringComparer.OrdinalIgnoreCase)
 			{
 				["User-Agent"] = $"{UtilityService.DesktopUserAgent} {userAgent ?? $"NGX-Sender/{Assembly.GetExecutingAssembly().GetVersion(false)}"}",
