@@ -1541,6 +1541,56 @@ namespace net.vieapps.Components.Utility
 			});
 			return collection;
 		}
+
+		/// <summary>
+		/// Converts this object into 'query-string' styled string
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static string ToQuery(this IDictionary<string, object> @object, Action<string> onCompleted = null)
+		{
+			var query = "";
+			@object?.ForEach(kvp =>
+			{
+				var value = kvp.Value?.ToString();
+				query += (query != "" ? "&" : "") + kvp.Key + (string.IsNullOrWhiteSpace(value) ? "" : "=" + value.UrlEncode());
+			});
+			onCompleted?.Invoke(query);
+			return query;
+		}
+
+		/// <summary>
+		/// Converts this object into 'query-string' styled string
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static string ToQuery(this IDictionary<string, string> @object, Action<string> onCompleted = null)
+		{
+			var query = "";
+			@object?.ForEach(kvp => query += (query != "" ? "&" : "") + kvp.Key + (string.IsNullOrWhiteSpace(kvp.Value) ? "" : "=" + kvp.Value.UrlEncode()));
+			onCompleted?.Invoke(query);
+			return query;
+		}
+
+		/// <summary>
+		/// Converts this object into 'query-string' styled string
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static string ToQuery(this JObject @object, Action<string> onCompleted = null)
+			=> @object?.ToDictionary(value => value?.ToString()).ToQuery(onCompleted);
+
+		/// <summary>
+		/// Converts this object into 'query-string' styled string
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="onCompleted"></param>
+		/// <returns></returns>
+		public static string ToQuery(this object @object, Action<string> onCompleted = null)
+			=> (@object?.ToJson() as JObject).ToQuery(onCompleted);
 		#endregion
 
 		#region Conversions (Special)
