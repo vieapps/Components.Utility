@@ -82,9 +82,13 @@ namespace net.vieapps.Components.Utility
 
 		public bool SmtpServerEnableSsl { get; set; } = true;
 
+		public string SmtpMailer { get; set; }
+
+		public string SmtpClientDomain { get; set; }
+
 		static string _EncryptionKey = null;
 
-		internal static string EncryptionKey => EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-9D17C42D-Core-AE9F-Components-4D72-Email-586D-Encryption-277D9E606F1F-Keys"));
+		internal static string EncryptionKey => EmailMessage._EncryptionKey ?? (EmailMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:Encryption", "VIEApps-9D17C42D-Core-AE9F-Components-4D72-Message-586D-Encryption-277D9E606F1F-Keys"));
 
 		/// <summary>
 		/// Gets or sets the identity of the message
@@ -198,7 +202,7 @@ namespace net.vieapps.Components.Utility
 
 		static string _EncryptionKey = null;
 
-		internal static string EncryptionKey => WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:MessageEncryption", "VIE-Apps-5D659BA4-Core-23BE-Components-4E43-WebHook-81E4-Encryption-EACD7EDE222A-Keys"));
+		internal static string EncryptionKey => WebHookMessage._EncryptionKey ?? (WebHookMessage._EncryptionKey = UtilityService.GetAppSetting("Keys:Encryption", "VIEApps-9D17C42D-Core-AE9F-Components-4D72-Message-586D-Encryption-277D9E606F1F-Keys"));
 
 		/// <summary>
 		/// Gets or sets identity of the message
@@ -699,9 +703,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
-		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
+		/// <param name="smtpClientDomain">The host name of mailer client</param>
+		public static void SendMail(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, string smtpClientDomain = null)
 		{
-			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl, smtpClientDomain))
 				smtp.SendMail(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer);
 		}
 
@@ -726,10 +731,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
+		/// <param name="smtpClientDomain">The host name of mailer client</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		public static async Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
+		public static async Task SendMailAsync(MailAddress fromAddress, MailAddress replyToAddress, IEnumerable<MailAddress> toAddresses, IEnumerable<MailAddress> ccAddresses, IEnumerable<MailAddress> bccAddresses, string subject, string body, IEnumerable<string> attachments, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, string smtpClientDomain = null, CancellationToken cancellationToken = default)
 		{
-			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl, smtpClientDomain))
 				await smtp.SendMailAsync(fromAddress, replyToAddress, toAddresses, ccAddresses, bccAddresses, subject, body, attachments, footer, priority, isBodyHtml, encoding, mailer, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -801,9 +807,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
-		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true)
+		/// <param name="smtpClientDomain">The host name of mailer client</param>
+		public static void SendMail(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, string smtpClientDomain = null)
 		{
-			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl, smtpClientDomain))
 				smtp.SendMail(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer);
 		}
 
@@ -828,10 +835,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="smtpServerUser">The name of user for connecting with SMTP server</param>
 		/// <param name="smtpServerPassword">The password of user for connecting with SMTP server</param>
 		/// <param name="smtpServerEnableSsl">true if the SMTP server requires SSL</param>
+		/// <param name="smtpClientDomain">The host name of mailer client</param>
 		/// <param name="cancellationToken">The cancellation token</param>
-		public static async Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, CancellationToken cancellationToken = default)
+		public static async Task SendMailAsync(string from, string replyTo, string to, string cc, string bcc, string subject, string body, string attachment, string footer = null, MailPriority priority = MailPriority.Normal, bool isBodyHtml = true, Encoding encoding = null, string mailer = null, string smtpServerHost = null, string smtpServerPort = null, string smtpServerUser = null, string smtpServerPassword = null, bool smtpServerEnableSsl = true, string smtpClientDomain = null, CancellationToken cancellationToken = default)
 		{
-			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl))
+			using (var smtp = MessageService.GetSmtpClient(smtpServerHost, smtpServerPort, smtpServerUser, smtpServerPassword, smtpServerEnableSsl, smtpClientDomain))
 				await smtp.SendMailAsync(from, replyTo, to, cc, bcc, subject, body, attachment, footer, priority, isBodyHtml, encoding, mailer, cancellationToken).ConfigureAwait(false);
 		}
 
@@ -868,7 +876,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (message == null)
 				throw new MessageException("The message is invalid");
-			MessageService.SendMail(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl);
+			MessageService.SendMail(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), message.SmtpMailer, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, message.SmtpClientDomain);
 		}
 
 		/// <summary>
@@ -879,7 +887,7 @@ namespace net.vieapps.Components.Utility
 		public static Task SendAsync(this EmailMessage message, CancellationToken cancellationToken = default)
 			=> message == null
 				? Task.FromException(new MessageException("The message is invalid"))
-				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), null, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, cancellationToken);
+				: MessageService.SendMailAsync(message.From, message.ReplyTo, message.To, message.Cc, message.Bcc, message.Subject, message.Body, message.Attachment, message.Footer, message.Priority, message.IsBodyHtml, Encoding.GetEncoding(message.Encoding), message.SmtpMailer, message.SmtpServer, message.SmtpServerPort.ToString(), message.SmtpUsername, message.SmtpPassword, message.SmtpServerEnableSsl, message.SmtpClientDomain, cancellationToken);
 		#endregion
 
 		#region Send webhook messages
@@ -943,7 +951,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
-			signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
+			signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"x-webhook-signature-hmac-{signAlgorithm.ToLower()}" : signatureName;
 			signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
 			signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
 
@@ -1018,7 +1026,7 @@ namespace net.vieapps.Components.Utility
 			if (!gotValidSecretToken || string.IsNullOrWhiteSpace(secretToken))
 			{
 				signAlgorithm = string.IsNullOrWhiteSpace(signAlgorithm) || !CryptoService.HmacHashAlgorithmFactories.ContainsKey(signAlgorithm) ? "SHA256" : signAlgorithm;
-				signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"Hmac{signAlgorithm.GetCapitalizedFirstLetter()}Signature" : signatureName;
+				signatureName = string.IsNullOrWhiteSpace(signatureName) ? $"x-webhook-signature-hmac-{signAlgorithm.ToLower()}" : signatureName;
 				signKeyIsHex = signKeyIsHex && !string.IsNullOrWhiteSpace(signKey);
 				signKey = string.IsNullOrWhiteSpace(signKey) ? CryptoService.DEFAULT_PASS_PHRASE : signKey;
 				using (var signer = CryptoService.GetHMACHashAlgorithm(signKeyIsHex ? signKey.HexToBytes() : signKey.ToBytes(), signAlgorithm))
