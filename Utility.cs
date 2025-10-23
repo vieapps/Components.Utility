@@ -1069,15 +1069,10 @@ namespace net.vieapps.Components.Utility
 							}
 							return response;
 						}
-						catch (TaskCanceledException ex)
+						catch (Exception ex)
 						{
-							if (ex.Message.IsContains("HttpClient.Timeout"))
+							if ((ex is TaskCanceledException || ex is OperationCanceledException) && ex.Message.IsContains("HttpClient.Timeout"))
 								throw new ConnectionTimeoutException(ex);
-							else
-								throw;
-						}
-						catch (Exception)
-						{
 							throw;
 						}
 				}
