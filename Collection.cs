@@ -35,7 +35,11 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T, int> action)
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
 		{
 			if (enumerable == null)
 				throw new ArgumentNullException(nameof(enumerable));
@@ -43,11 +47,25 @@ namespace net.vieapps.Components.Utility
 			if (action == null)
 				throw new ArgumentNullException(nameof(action));
 
-			var index = -1;
-			foreach (var item in enumerable)
+			if (parallelExecutions)
+				Parallel.ForEach
+				(
+					enumerable,
+					new ParallelOptions
+					{
+						CancellationToken = cancellationToken,
+						MaxDegreeOfParallelism = maxDegreeOfParallelism ?? Environment.ProcessorCount
+					},
+					(item, _, index) => action(item, (int)index)
+				);
+			else
 			{
-				index++;
-				action(item, index);
+				var index = -1;
+				foreach (var item in enumerable)
+				{
+					index++;
+					action(item, index);
+				}
 			}
 		}
 
@@ -57,8 +75,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
-			=> enumerable?.ForEach((item, _) => action(item));
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> enumerable?.ForEach((item, _) => action(item), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
 
 		/// <summary>
 		/// Performs the specified action on each element of the collection
@@ -67,8 +89,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="dictionary"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>, int> action)
-			=> dictionary?.Select(kvp => kvp).ForEach((kvp, index) => action(kvp, index));
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.Select(kvp => kvp).ForEach((kvp, index) => action(kvp, index), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
 
 		/// <summary>
 		/// Performs the specified action on each element of the collection
@@ -77,8 +103,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="dictionary"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>> action)
-			=> dictionary?.ForEach((kvp, _) => action(kvp));
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.ForEach((kvp, _) => action(kvp), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
 
 		/// <summary>
 		/// Performs the specified action on each element of the collection
@@ -87,8 +117,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="dictionary"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue, int> action)
-			=> dictionary?.ForEach((kvp, index) => action(kvp.Value, index));
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.ForEach((kvp, index) => action(kvp.Value, index), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
 
 		/// <summary>
 		/// Performs the specified action on each element of the collection
@@ -97,8 +131,12 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="TValue"></typeparam>
 		/// <param name="dictionary"></param>
 		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue> action)
-			=> dictionary?.ForEach((kvp, _) => action(kvp.Value));
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.ForEach((kvp, _) => action(kvp.Value), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
 		#endregion
 
 		#region LINQ IEnumerable Async Extensions
