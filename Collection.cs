@@ -172,11 +172,9 @@ namespace net.vieapps.Components.Utility
 					{
 						await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 					}
-					catch
+					catch (Exception ex)
 					{
-						if (exceptions.Count > 0)
-							throw new AggregateException(exceptions);
-						throw;
+						throw new AggregateException(exceptions.Count > 0 ? exceptions : new List<Exception> { ex });
 					}
 				}
 		}
@@ -344,11 +342,9 @@ namespace net.vieapps.Components.Utility
 						{
 							await Task.WhenAll(tasks).ConfigureAwait(captureContext);
 						}
-						catch
+						catch (Exception ex)
 						{
-							if (exceptions.Count > 0)
-								throw new AggregateException(exceptions);
-							throw;
+							throw new AggregateException(exceptions.Count > 0 ? exceptions : new List<Exception> { ex });
 						}
 					}
 					finally

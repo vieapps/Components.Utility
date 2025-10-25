@@ -288,7 +288,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="defer">defer in miliseconds</param>
 		public static void Run(this Task task, int defer)
-			=> task.Run(false, (Exception) => { }, defer);
+			=> task.Run(false, _ => { }, defer);
 
 		/// <summary>
 		/// Runs a task and just forget it (or wait for completion)
@@ -296,7 +296,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		public static void Run(this Task task, bool waitForCompletion = false)
-			=> task.Run(waitForCompletion, (Exception) => { });
+			=> task.Run(waitForCompletion, _ => { });
 
 		static async Task ExecuteTask(this Task task, Func<Exception, Task> onError, int defer)
 		{
@@ -1809,7 +1809,7 @@ namespace net.vieapps.Components.Utility
 		public static List<FileInfo> GetFiles(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			if (!Directory.Exists(path))
-				throw new DirectoryNotFoundException($"The folder is not found [{path}]");
+				throw new DirectoryNotFoundException($"The directory is not found [{path}]");
 
 			IEnumerable<FileInfo> files = new List<FileInfo>();
 			var searchingPatterns = string.IsNullOrWhiteSpace(searchPatterns)
