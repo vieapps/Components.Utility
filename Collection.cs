@@ -28,7 +28,368 @@ namespace net.vieapps.Components.Utility
 	public static partial class CollectionService
 	{
 
-		#region IEnumerable extensions
+		#region JSON ForEach extensions
+		/// <summary>
+		/// Performs the specified action on each element of the JSON
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach(this JObject json, Action<JToken> action, CancellationToken cancellationToken)
+			=> json?.ForEach(action, false, null, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach(this JObject json, Action<JToken> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> json?.ForEach(kvp => action(kvp.Value), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach(this JObject json, Action<KeyValuePair<string, JToken>> action, CancellationToken cancellationToken)
+			=> json?.ForEach(action, false, null, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach(this JObject json, Action<KeyValuePair<string, JToken>> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> json?.ForEach((kvp, _) => action(kvp), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach(this JObject json, Action<KeyValuePair<string, JToken>, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> (json as IDictionary<string, JToken>)?.ForEach(action, parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON (in asynchronous way)
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync(this JObject json, Func<JToken, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> json == null || json.Count < 1
+				? Task.CompletedTask
+				: json.ForEachAsync((token, _) => actionAsync(token), waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON (in asynchronous way)
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync(this JObject json, Func<JToken, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> json == null || json.Count < 1
+				? Task.CompletedTask
+				: json.ForEachAsync((kvp, index) => actionAsync(kvp.Value, index), waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON (in asynchronous way)
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> json == null || json.Count < 1
+				? Task.CompletedTask
+				: json.ForEachAsync((kvp, _) => actionAsync(kvp), waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON (in asynchronous way)
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> json == null || json.Count < 1
+				? Task.CompletedTask
+				: json.ForEachAsync((kvp, index, _) => actionAsync(kvp, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON (in asynchronous way)
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> json == null || json.Count < 1
+				? Task.CompletedTask
+				: json.ForEachAsync((kvp, _, token) => actionAsync(kvp, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the JSON (in asynchronous way)
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> json == null || json.Count < 1
+				? Task.CompletedTask
+				: (json as IDictionary<string, JToken>).ForEachAsync(actionAsync, cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+		#endregion
+
+		#region Dictionary ForEach extensions
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.ForEach((value, _) => action(value), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.ForEach((kvp, index) => action(kvp.Value, index), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.ForEach((kvp, _) => action(kvp), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> dictionary?.Select(kvp => kvp).ForEach((kvp, index) => action(kvp, index), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((value, _) => actionAsync(value), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((value, _, token) => actionAsync(value, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((value, index, _) => actionAsync(value, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((kvp, index, token) => actionAsync(kvp.Value, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((kvp, _) => actionAsync(kvp), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((kvp, _, token) => actionAsync(kvp, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.ForEachAsync((kvp, index, _) => actionAsync(kvp, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="TKey"></typeparam>
+		/// <typeparam name="TValue"></typeparam>
+		/// <param name="dictionary"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> dictionary == null || dictionary.Count < 1
+				? Task.CompletedTask
+				: dictionary.Select(kvp => kvp).ForEachAsync((kvp, index, token) => actionAsync(kvp, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+		#endregion
+
+		#region Enumerable ForEach extensions
+		/// <summary>
+		/// Performs the specified action on each element of the collection
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="action">The delegated action to perform on each element of the collection</param>
+		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
+			=> enumerable?.ForEach((item, _) => action(item), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+
 		/// <summary>
 		/// Performs the specified action on each element of the collection
 		/// </summary>
@@ -71,17 +432,53 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Performs the specified action on each element of the collection
+		/// Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
-			=> enumerable?.ForEach((item, _) => action(item), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> enumerable == null
+				? Task.CompletedTask
+				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
+		/// <param name="cancellationToken">The cancellation token.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> enumerable == null
+				? Task.CompletedTask
+				: enumerable.ForEachAsync((item, _, token) => actionAsync(item, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+
+		/// <summary>
+		/// Performs the specified action on each element of the collection (in asynchronous way)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="enumerable"></param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
+		/// <param name="captureContext">true to capture/return back to calling context.</param>
+		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+			=> enumerable == null
+				? Task.CompletedTask
+				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
 
 		/// <summary>
 		/// Performs the specified action on each element of the collection (in asynchronous way)
@@ -178,22 +575,24 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 		}
+		#endregion
 
+		#region AsyncEnumerable ForEach extensions
 		/// <summary>
 		/// Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
 			=> enumerable == null
 				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
+				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
 
 		/// <summary>
 		/// Performs the specified action on each element of the collection (in asynchronous way)
@@ -207,7 +606,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, _, token) => actionAsync(item, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -217,19 +616,17 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
+		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
+		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
+		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
 			=> enumerable == null
 				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-		#endregion
+				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
 
-		#region IAsyncEnumerable extensions
 		/// <summary>
 		/// Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
@@ -353,253 +750,6 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 		}
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> enumerable == null
-				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> enumerable == null
-				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, _, token) => actionAsync(item, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> enumerable == null
-				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-		#endregion
-
-		#region IDictionary extensions
-		/// <summary>
-		/// Performs the specified action on each element of the collection
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
-			=> dictionary?.Select(kvp => kvp).ForEach((kvp, index) => action(kvp, index), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<KeyValuePair<TKey, TValue>> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
-			=> dictionary?.ForEach((kvp, _) => action(kvp), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue, int> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
-			=> dictionary?.ForEach((kvp, index) => action(kvp.Value, index), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="action">The delegated action to perform on each element of the collection</param>
-		/// <param name="parallelExecutions">true to execute all actions in parallel (for working with CPU-bound heavy work); otherwise to execute in sequence.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static void ForEach<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Action<TValue> action, bool parallelExecutions = false, int? maxDegreeOfParallelism = null, CancellationToken cancellationToken = default)
-			=> dictionary?.ForEach((kvp, _) => action(kvp.Value), parallelExecutions, maxDegreeOfParallelism, cancellationToken);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.Select(kvp => kvp).ForEachAsync((kvp, index, token) => actionAsync(kvp, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((kvp, index, _) => actionAsync(kvp, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((kvp, _, token) => actionAsync(kvp, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((kvp, _) => actionAsync(kvp), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((kvp, index, token) => actionAsync(kvp.Value, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((value, index, _) => actionAsync(value, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="cancellationToken">The cancellation token</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((value, _, token) => actionAsync(value, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="TKey"></typeparam>
-		/// <typeparam name="TValue"></typeparam>
-		/// <param name="dictionary"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
-			=> dictionary == null || dictionary.Count < 1
-				? Task.CompletedTask
-				: dictionary.ForEachAsync((value, _) => actionAsync(value), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
 		#endregion
 
 		#region String conversions
