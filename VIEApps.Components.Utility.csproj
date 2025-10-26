@@ -8,10 +8,10 @@
 		<RootNamespace>net.vieapps.Components.Utility</RootNamespace>
 		<AssemblyName>VIEApps.Components.Utility</AssemblyName>
 		<AssemblyTitle>VIEApps NGX Utility</AssemblyTitle>
-		<AssemblyVersion>10.10$(ReleaseVersion)</AssemblyVersion>
-		<FileVersion>10.10$(ReleaseVersion)</FileVersion>
-		<InformationalVersion>10.10.$([System.DateTime]::Now.Year).$([System.DateTime]::Now.Month).$([System.DateTime]::Now.Day)@$(TargetFramework)#sn:$(Sign)#$(ReleaseRevision)</InformationalVersion>
-		<Version>10.10$(ReleaseVersion)$(ReleaseSuffix)</Version>
+		<AssemblyVersion>10.9$(ReleaseVersion)</AssemblyVersion>
+		<FileVersion>10.9$(ReleaseVersion)</FileVersion>
+		<InformationalVersion>10.9.$([System.DateTime]::Now.Year).$([System.DateTime]::Now.Month).$([System.DateTime]::Now.Day)@$(TargetFramework)#sn:$(Sign)#$(ReleaseRevision)</InformationalVersion>
+		<Version>10.9$(ReleaseVersion)$(ReleaseSuffix)</Version>
 		<Product>VIEApps NGX</Product>
 		<Title>VIEApps NGX Utility</Title>
 		<Description>The general purpose component for developing apps with .NET</Description>

@@ -28,7 +28,7 @@ namespace net.vieapps.Components.Utility
 	public static partial class CollectionService
 	{
 
-		#region JSON ForEach extensions
+		#region ForEach extensions (JSON/IDictionary/IEnumerable/IAsyncEnumerable)
 		/// <summary>
 		/// Performs the specified action on each element of the JSON
 		/// </summary>
@@ -176,9 +176,7 @@ namespace net.vieapps.Components.Utility
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: (json as IDictionary<string, JToken>).ForEachAsync(actionAsync, cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-		#endregion
 
-		#region Dictionary ForEach extensions
 		/// <summary>
 		/// Performs the specified action on each element of the collection
 		/// </summary>
@@ -374,9 +372,7 @@ namespace net.vieapps.Components.Utility
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.Select(kvp => kvp).ForEachAsync((kvp, index, token) => actionAsync(kvp, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-		#endregion
 
-		#region Enumerable ForEach extensions
 		/// <summary>
 		/// Performs the specified action on each element of the collection
 		/// </summary>
@@ -575,9 +571,7 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 		}
-		#endregion
 
-		#region AsyncEnumerable ForEach extensions
 		/// <summary>
 		/// Performs the specified action on each element of the collection (in asynchronous way)
 		/// </summary>
