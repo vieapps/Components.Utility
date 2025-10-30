@@ -66,7 +66,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The string that presents an 128 bits UUID</returns>
 		public static string GetUUID(byte[] uuid, string format = null, bool asBase64Url = false)
 		{
-			var guid = uuid == null || !uuid.Any() ? Guid.NewGuid() : new Guid(uuid.Take(16));
+			var guid = uuid == null || uuid.Length < 1 ? Guid.NewGuid() : new Guid(uuid.Take(16));
 			return asBase64Url ? guid.ToByteArray().ToBase64Url() : guid.ToString(format ?? "N");
 		}
 
@@ -107,7 +107,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string BlankUUID => UtilityService._BlankUUID ?? (UtilityService._BlankUUID = new string('0', 32));
 
-		static Regex HexRegex => new Regex("[^0-9a-fA-F]+");
+		static Regex HexRegex { get; } = new Regex("[^0-9a-fA-F]+");
 
 		/// <summary>
 		/// Validates the UUID string
@@ -120,7 +120,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Random number & code
-		readonly static Random _Random = new Random();
+		static Random Random { get; } = new Random();
 
 		/// <summary>
 		/// Gets the random number between min and max
@@ -129,9 +129,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="max"></param>
 		/// <returns></returns>
 		public static int GetRandomNumber(int min = 0, int max = Int32.MaxValue)
-			=> UtilityService._Random.Next(min, max);
+			=> UtilityService.Random.Next(min, max);
 
-		readonly static RandomBigInteger _RandomBigInteger = new RandomBigInteger();
+		static RandomBigInteger RandomBigInteger { get; } = new RandomBigInteger();
 
 		/// <summary>
 		/// Gets the random of big integer number
@@ -139,7 +139,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">The number of random bits to generate.</param>
 		/// <returns></returns>
 		public static BigInteger GetRandomNumber(int length)
-			=> UtilityService._RandomBigInteger.Next(length);
+			=> UtilityService.RandomBigInteger.Next(length);
 
 		/// <summary>
 		/// Gets a random code
@@ -2845,7 +2845,6 @@ namespace net.vieapps.Components.Utility
 	/// <summary>
 	/// Presents a parsed query for searching
 	/// </summary>
-	[Serializable]
 	public class SearchQuery
 	{
 		/// <summary>

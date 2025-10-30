@@ -1031,7 +1031,7 @@ namespace net.vieapps.Components.Utility
 			if (@object.Length < 1 || size >= @object.Length)
 				return new List<T[]> { @object };
 
-			else if (size < 2)
+			if (size < 2)
 				return @object.Select(e => new[] { e }).ToList();
 
 			var arrays = new List<T[]>();
@@ -1124,7 +1124,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key">The key of the element to remove</param>
 		/// <returns>true if the object was removed successfully; otherwise, false.</returns>
 		public static bool Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> @object, TKey key)
-			=> @object != null && @object.TryRemove(key, out var value);
+			=> @object != null && @object.TryRemove(key, out var _);
 
 		/// <summary>
 		/// Gets the value associated with the specified key from this dictionary
@@ -1226,9 +1226,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (first != second && first > -1 && first < @object.Count && second > -1 && second < @object.Count)
 			{
-				var element = @object[second];
-				@object[second] = @object[first];
-				@object[first] = element;
+				(@object[first], @object[second]) = (@object[second], @object[first]);
 				return true;
 			}
 			return false;
@@ -1240,6 +1238,14 @@ namespace net.vieapps.Components.Utility
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object"></param>
 		public static IList<T> Randomize<T>(this IList<T> @object)
+			=> @object.Shuffle();
+
+		/// <summary>
+		/// Shuffles (Randomizes items with random indexes)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="object"></param>
+		public static IList<T> Shuffle<T>(this IList<T> @object)
 		{
 			if (@object.Count.Equals(2))
 				@object.Swap(0, 1);
@@ -2348,7 +2354,7 @@ namespace System.Collections.Specialized
 	/// <summary>
 	/// Represents a collection of key/value pairs that are accessible by key or index
 	/// </summary>
-	[Serializable, DebuggerDisplay("Count = {Count}")]
+	[DebuggerDisplay("Count = {Count}")]
 	public class Collection : IDictionary
 	{
 		readonly OrderedDictionary _collection = new OrderedDictionary();
@@ -2635,7 +2641,7 @@ namespace System.Collections.Generic
 	/// </summary>
 	/// <typeparam name="TKey">The type of all keys</typeparam>
 	/// <typeparam name="TValue">The type of all values</typeparam>
-	[Serializable, DebuggerDisplay("Count = {Count}")]
+	[DebuggerDisplay("Count = {Count}")]
 	public class Collection<TKey, TValue> : Collection, IDictionary<TKey, TValue>
 	{
 		/// <summary>
@@ -2915,7 +2921,7 @@ namespace System.Collections.Concurrent
 	/// </summary>
 	/// <typeparam name="T">The type of the items in the collection.</typeparam>
 	/// <remarks>All public members of <see cref="ConcurrentHashSet{T}"/> are thread-safe and may be used concurrently from multiple threads.</remarks>
-	[Serializable, DebuggerDisplay("Count = {Count}")]
+	[DebuggerDisplay("Count = {Count}")]
 	public class ConcurrentHashSet<T> : IReadOnlyCollection<T>, ICollection<T>
 	{
 
