@@ -255,7 +255,11 @@ namespace net.vieapps.Components.Utility
 			}
 			catch (Exception ex)
 			{
-				onError?.Invoke(ex);
+				try
+				{
+					onError?.Invoke(ex);
+				}
+				catch { }
 			}
 		}
 
@@ -268,10 +272,13 @@ namespace net.vieapps.Components.Utility
 		/// <param name="defer">defer in miliseconds</param>
 		public static void Run(this Task task, bool waitForCompletion, Action<Exception> onError, int defer = 0)
 		{
+			if (task is null)
+				throw new ArgumentNullException(nameof(task));
+
 			if (waitForCompletion)
-				task.ExecuteTask(onError, defer).Wait();
+				task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
 			else
-				task.ExecuteTask(onError, defer).ConfigureAwait(false);
+				_ = task.ExecuteTask(onError, defer);
 		}
 
 		/// <summary>
@@ -288,7 +295,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="defer">defer in miliseconds</param>
 		public static void Run(this Task task, int defer)
-			=> task.Run(false, _ => { }, defer);
+			=> task.Run(false, null, defer);
 
 		/// <summary>
 		/// Runs a task and just forget it (or wait for completion)
@@ -296,7 +303,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		public static void Run(this Task task, bool waitForCompletion = false)
-			=> task.Run(waitForCompletion, _ => { });
+			=> task.Run(waitForCompletion, null);
 
 		static async Task ExecuteTask(this Task task, Func<Exception, Task> onError, int defer)
 		{
@@ -307,7 +314,11 @@ namespace net.vieapps.Components.Utility
 			}
 			catch (Exception ex)
 			{
-				await (onError == null ? Task.CompletedTask : onError(ex)).ConfigureAwait(false);
+				try
+				{
+					await (onError == null ? Task.CompletedTask : onError(ex)).ConfigureAwait(false);
+				}
+				catch { }
 			}
 		}
 
@@ -321,9 +332,9 @@ namespace net.vieapps.Components.Utility
 		public static void Run(this Task task, bool waitForCompletion, Func<Exception, Task> onError, int defer = 0)
 		{
 			if (waitForCompletion)
-				task.ExecuteTask(onError, defer).Wait();
+				task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
 			else
-				task.ExecuteTask(onError, defer).ConfigureAwait(false);
+				_ = task.ExecuteTask(onError, defer);
 		}
 
 		/// <summary>
@@ -343,7 +354,11 @@ namespace net.vieapps.Components.Utility
 			}
 			catch (Exception ex)
 			{
-				onError?.Invoke(ex);
+				try
+				{
+					onError?.Invoke(ex);
+				}
+				catch { }
 			}
 		}
 
@@ -357,9 +372,9 @@ namespace net.vieapps.Components.Utility
 		public static void Run(this ValueTask task, bool waitForCompletion, Action<Exception> onError, int defer = 0)
 		{
 			if (waitForCompletion)
-				task.ExecuteTask(onError, defer).Wait();
+				task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
 			else
-				task.ExecuteTask(onError, defer).ConfigureAwait(false);
+				_ = task.ExecuteTask(onError, defer);
 		}
 
 		/// <summary>
