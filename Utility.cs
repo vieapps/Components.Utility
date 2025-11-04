@@ -224,6 +224,11 @@ namespace net.vieapps.Components.Utility
 
 		#region Task/CancellationToken extensions
 		/// <summary>
+		/// Gets the default exception handler
+		/// </summary>
+		public static Action<Exception> DefaultExHandler { get; } = _ => { };
+
+		/// <summary>
 		/// Executes an action in the thread pool with cancellation supported
 		/// </summary>
 		/// <param name="action">The action to run in the thread pool</param>
@@ -250,7 +255,8 @@ namespace net.vieapps.Components.Utility
 		{
 			try
 			{
-				await (defer < 1 ? Task.CompletedTask : Task.Delay(defer)).ConfigureAwait(false);
+				if (defer > 0)
+					await Task.Delay(defer).ConfigureAwait(false);
 				await task.ConfigureAwait(false);
 			}
 			catch (Exception ex)
@@ -270,13 +276,19 @@ namespace net.vieapps.Components.Utility
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		/// <param name="onError">The error handler</param>
 		/// <param name="defer">defer in miliseconds</param>
-		public static void Run(this Task task, bool waitForCompletion, Action<Exception> onError, int defer = 0)
+		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult()</param>
+		public static void Run(this Task task, bool waitForCompletion, Action<Exception> onError, int defer = 0, bool useWait = false)
 		{
 			if (task is null)
 				throw new ArgumentNullException(nameof(task));
 
 			if (waitForCompletion)
-				task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+			{
+				if (useWait)
+					task.ExecuteTask(onError, defer).Wait();
+				else
+					task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+			}
 			else
 				_ = task.ExecuteTask(onError, defer);
 		}
@@ -295,7 +307,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="defer">defer in miliseconds</param>
 		public static void Run(this Task task, int defer)
-			=> task.Run(false, null, defer);
+			=> task.Run(false, UtilityService.DefaultExHandler, defer);
 
 		/// <summary>
 		/// Runs a task and just forget it (or wait for completion)
@@ -303,13 +315,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		public static void Run(this Task task, bool waitForCompletion = false)
-			=> task.Run(waitForCompletion, null);
+			=> task.Run(waitForCompletion, UtilityService.DefaultExHandler);
 
 		static async Task ExecuteTask(this Task task, Func<Exception, Task> onError, int defer)
 		{
 			try
 			{
-				await (defer < 1 ? Task.CompletedTask : Task.Delay(defer)).ConfigureAwait(false);
+				if (defer > 0)
+					await Task.Delay(defer).ConfigureAwait(false);
 				await task.ConfigureAwait(false);
 			}
 			catch (Exception ex)
@@ -329,10 +342,19 @@ namespace net.vieapps.Components.Utility
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		/// <param name="onError">The error handler</param>
 		/// <param name="defer">defer in miliseconds</param>
-		public static void Run(this Task task, bool waitForCompletion, Func<Exception, Task> onError, int defer = 0)
+		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult()</param>
+		public static void Run(this Task task, bool waitForCompletion, Func<Exception, Task> onError, int defer = 0, bool useWait = false)
 		{
+			if (task is null)
+				throw new ArgumentNullException(nameof(task));
+
 			if (waitForCompletion)
-				task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+			{
+				if (useWait)
+					task.ExecuteTask(onError, defer).Wait();
+				else
+					task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+			}
 			else
 				_ = task.ExecuteTask(onError, defer);
 		}
@@ -349,7 +371,8 @@ namespace net.vieapps.Components.Utility
 		{
 			try
 			{
-				await (defer < 1 ? Task.CompletedTask : Task.Delay(defer)).ConfigureAwait(false);
+				if (defer > 0)
+					await Task.Delay(defer).ConfigureAwait(false);
 				await task.ConfigureAwait(false);
 			}
 			catch (Exception ex)
@@ -369,10 +392,16 @@ namespace net.vieapps.Components.Utility
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		/// <param name="onError">The error handler</param>
 		/// <param name="defer">defer in miliseconds</param>
-		public static void Run(this ValueTask task, bool waitForCompletion, Action<Exception> onError, int defer = 0)
+		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult()</param>
+		public static void Run(this ValueTask task, bool waitForCompletion, Action<Exception> onError, int defer = 0, bool useWait = false)
 		{
 			if (waitForCompletion)
-				task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+			{
+				if (useWait)
+					task.ExecuteTask(onError, defer).Wait();
+				else
+					task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+			}
 			else
 				_ = task.ExecuteTask(onError, defer);
 		}
@@ -391,7 +420,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="defer">defer in miliseconds</param>
 		public static void Run(this ValueTask task, int defer)
-			=> task.Run(false, null, defer);
+			=> task.Run(false, UtilityService.DefaultExHandler, defer);
 
 		/// <summary>
 		/// Runs a task and just forget it (or wait for completion)
@@ -399,7 +428,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		public static void Run(this ValueTask task, bool waitForCompletion = false)
-			=> task.Run(waitForCompletion, null);
+			=> task.Run(waitForCompletion, UtilityService.DefaultExHandler);
 
 		/// <summary>
 		/// Performs an awaitable task with cancellation token supported
