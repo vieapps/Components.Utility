@@ -277,7 +277,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The error handler</param>
 		/// <param name="defer">defer in miliseconds</param>
 		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult()</param>
-		public static void Run(this Task task, bool waitForCompletion, Action<Exception> onError, int defer = 0, bool useWait = false)
+		public static void Run(this Task task, bool waitForCompletion, Action<Exception> onError, int defer = 0, bool useWait = true)
 		{
 			if (task is null)
 				throw new ArgumentNullException(nameof(task));
@@ -343,7 +343,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The error handler</param>
 		/// <param name="defer">defer in miliseconds</param>
 		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult()</param>
-		public static void Run(this Task task, bool waitForCompletion, Func<Exception, Task> onError, int defer = 0, bool useWait = false)
+		public static void Run(this Task task, bool waitForCompletion, Func<Exception, Task> onError, int defer = 0, bool useWait = true)
 		{
 			if (task is null)
 				throw new ArgumentNullException(nameof(task));
@@ -393,7 +393,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="onError">The error handler</param>
 		/// <param name="defer">defer in miliseconds</param>
 		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult()</param>
-		public static void Run(this ValueTask task, bool waitForCompletion, Action<Exception> onError, int defer = 0, bool useWait = false)
+		public static void Run(this ValueTask task, bool waitForCompletion, Action<Exception> onError, int defer = 0, bool useWait = true)
 		{
 			if (waitForCompletion)
 			{
