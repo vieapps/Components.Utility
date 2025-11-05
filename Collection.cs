@@ -506,7 +506,7 @@ namespace net.vieapps.Components.Utility
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 					index++;
-					actionAsync(item, index, cancellationToken).Run();
+					actionAsync(item, index, cancellationToken).Execute();
 				}
 
 			else if (!parallelExecutions)
@@ -655,7 +655,7 @@ namespace net.vieapps.Components.Utility
 					{
 						cancellationToken.ThrowIfCancellationRequested();
 						index++;
-						actionAsync(enumerator.Current, index, cancellationToken).Run();
+						actionAsync(enumerator.Current, index, cancellationToken).Execute();
 					}
 				}
 				finally

@@ -219,7 +219,7 @@ namespace net.vieapps.Components.Utility
 		public void Dispose()
 		{
 			GC.SuppressFinalize(this);
-			this.DisconnectAsync().Run(true);
+			this.DisconnectAsync().Execute(true);
 			this.Locker.Dispose();
 		}
 		/// <summary>
