@@ -700,7 +700,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets an user-agent as mobile browser
 		/// </summary>
-		public static string MobileUserAgent => $"{UtilityService.MobileUserAgents[UtilityService.GetRandomNumber(0, UtilityService.MobileUserAgents.Count - 1)]} QNGX/10.9";
+		public static string MobileUserAgent => $"{UtilityService.MobileUserAgents[UtilityService.GetRandomNumber(0, UtilityService.MobileUserAgents.Count - 1)]} QNGX/10.10";
 
 		/// <summary>
 		/// Gets the collection of desktop web-browsers' user-agents
@@ -716,7 +716,7 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets an user-agent as desktop browser
 		/// </summary>
-		public static string DesktopUserAgent => $"{UtilityService.DesktopUserAgents[UtilityService.GetRandomNumber(0, UtilityService.DesktopUserAgents.Count - 1)]} QNGX/10.9";
+		public static string DesktopUserAgent => $"{UtilityService.DesktopUserAgents[UtilityService.GetRandomNumber(0, UtilityService.DesktopUserAgents.Count - 1)]} QNGX/10.10";
 		#endregion
 
 		#region HTTP proxies
