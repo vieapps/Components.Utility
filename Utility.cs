@@ -633,18 +633,64 @@ namespace net.vieapps.Components.Utility
 		}
 
 #if NETSTANDARD2_0
+		/// <summary>
+		/// Asynchronously reads a sequence of bytes from the current stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task<int> ReadAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken)
 			=> stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
 
+		/// <summary>
+		/// Asynchronously writes a sequence of bytes to the current stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="count"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, byte[] buffer, int count = 0, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer, 0, count > 0 ? count : buffer.Length, cancellationToken);
 
+		/// <summary>
+		/// Asynchronously writes a sequence of bytes to the current stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task WriteAsync(this Stream stream, byte[] buffer, CancellationToken cancellationToken)
+			=> stream.WriteAsync(buffer, 0, cancellationToken);
+
+		/// <summary>
+		/// Asynchronously writes a sequence of bytes to the current stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.Array, buffer.Offset, buffer.Count, cancellationToken);
 #else
+		/// <summary>
+		/// Asynchronously writes a sequence of bytes to the current stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="count"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, byte[] buffer, int count = 0, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.AsMemory(0, count > 0 ? count : buffer.Length), cancellationToken).AsTask();
-
+		/// <summary>
+		/// Asynchronously writes a sequence of bytes to the current stream
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="buffer"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.AsMemory(), cancellationToken).AsTask();
 #endif
