@@ -1988,7 +1988,46 @@ namespace net.vieapps.Components.Utility
 			=> expandoObject != null ? expandoObject.Copy(excluded, null, onCompleted, onError) : throw new ArgumentNullException("The objects were null");
 		#endregion
 
-		#region JSON conversions
+		#region JSON manipulations/conversions
+		/// <summary>
+		/// Removes the property with the specified name.
+		/// </summary>
+		/// <param name="json">The JSON object</param>
+		/// <param name="propertyName">Name of the property.</param>
+		/// <param name="onCompleted">The action to run when the process is completed</param>
+		public static bool Remove(this JToken json, string propertyName, Action<JObject> onCompleted = null)
+		{
+			var result = false;
+			if (json is JObject @object)
+			{
+				result = @object.Remove(propertyName);
+				onCompleted?.Invoke(@object);
+			}
+			return result;
+		}
+
+		/// <summary>
+		/// Removes the properties with the specified name.
+		/// </summary>
+		/// <param name="json">The JSON object</param>
+		/// <param name="propertyNames">The collection of propertys' names.</param>
+		/// <param name="onCompleted">The action to run when the process is completed</param>
+		public static JToken Remove(this JToken json, IEnumerable<string> propertyNames, Action<JObject> onCompleted = null)
+			=> json is JObject @object ? @object.Remove(propertyNames, onCompleted) : json;
+
+		/// <summary>
+		/// Removes the properties with the specified name.
+		/// </summary>
+		/// <param name="json">The JSON object</param>
+		/// <param name="propertyNames">The collection of propertys' names.</param>
+		/// <param name="onCompleted">The action to run when the process is completed</param>
+		public static JObject Remove(this JObject json, IEnumerable<string> propertyNames, Action<JObject> onCompleted = null)
+		{
+			propertyNames?.ForEach(propertyName => json?.Remove(propertyName));
+			onCompleted?.Invoke(json);
+			return json;
+		}
+
 		/// <summary>
 		/// Converts this XmlNode object to JSON object
 		/// </summary>

@@ -33,7 +33,7 @@
 		<PackageIcon>Icon.png</PackageIcon>
 		<PackageOutputPath>../</PackageOutputPath>
 		<PackageTags>utility;extensions;crypto;logging;encoding;secp256k1;ecc;rsa;vieapps;vieapps.components</PackageTags>
-		<PackageReleaseNotes>Support .NET 10</PackageReleaseNotes>
+		<PackageReleaseNotes>Latest components of .NET 10</PackageReleaseNotes>
 		<PackageProjectUrl>https://vieapps.net</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/vieapps/Components.Utility</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
@@ -64,7 +64,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
 		<PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-		<PackageReference Include="SharpCompress" Version="0.41.0" />
+		<PackageReference Include="SharpCompress" Version="0.42.1" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.0" />
 		<PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
 	</ItemGroup>
