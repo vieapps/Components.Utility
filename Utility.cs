@@ -684,6 +684,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task WriteAsync(this Stream stream, byte[] buffer, int count = 0, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.AsMemory(0, count > 0 ? count : buffer.Length), cancellationToken).AsTask();
+
 		/// <summary>
 		/// Asynchronously writes a sequence of bytes to the current stream
 		/// </summary>
@@ -2296,9 +2297,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(output, CompressionMode.Compress, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(output, CompressionMode.Compress, true) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2328,9 +2329,9 @@ namespace net.vieapps.Components.Utility
 			using (var output = UtilityService.CreateMemoryStream())
 			{
 #if NETSTANDARD2_0
-				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(output, CompressionMode.Compress, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #else
-				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
+				using (var compressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.CompressionStream(output, 10) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(output, CompressionMode.Compress, true) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(output, CompressionLevel.Optimal, true) : "gzip".IsEquals(mode) ? new GZipStream(output, CompressionLevel.Optimal, true) : new DeflateStream(output, CompressionLevel.Optimal, true) as Stream)
 #endif
 				{
 					if (stream.CanSeek)
@@ -2378,9 +2379,9 @@ namespace net.vieapps.Components.Utility
 		public static byte[] Decompress(this Stream stream, string mode = "zstd")
 		{
 #if NETSTANDARD2_0
-			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
+			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(stream, CompressionMode.Decompress, true) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
 #else
-			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress, true) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
+			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(stream, CompressionMode.Decompress, true) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress, true) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
 #endif
 			{
 				var output = Array.Empty<byte>();
@@ -2405,9 +2406,9 @@ namespace net.vieapps.Components.Utility
 		public static async Task<byte[]> DecompressAsync(this Stream stream, string mode = "zstd", CancellationToken cancellationToken = default)
 		{
 #if NETSTANDARD2_0
-			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(stream, CompressionMode.Decompress, true) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
 #else
-			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress) : new DeflateStream(stream, CompressionMode.Decompress) as Stream)
+			using (var decompressor = string.IsNullOrWhiteSpace(mode) || "zstd".IsEquals(mode) || "zstandard".IsEquals(mode) ? new ZstdSharp.DecompressionStream(stream) : "snap".IsEquals(mode) || "snappy".IsEquals(mode) ? new Snappier.SnappyStream(stream, CompressionMode.Decompress, true) : "br".IsEquals(mode) || "brotli".IsEquals(mode) ? new BrotliStream(stream, CompressionMode.Decompress, true) : "gzip".IsEquals(mode) ? new GZipStream(stream, CompressionMode.Decompress, true) : new DeflateStream(stream, CompressionMode.Decompress, true) as Stream)
 #endif
 			{
 				var output = Array.Empty<byte>();
