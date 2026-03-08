@@ -118,7 +118,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<EmailMessage> LoadAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new EmailMessage(await new FileInfo(filePath).ReadAsTextAsync(cancellationToken).ConfigureAwait(false))
+				? new EmailMessage(await UtilityService.ReadAsTextAsync(filePath, cancellationToken).ConfigureAwait(false))
 				: null;
 
 		/// <summary>
@@ -132,7 +132,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await message.Encrypted.ToBytes().SaveAsTextAsync(Path.Combine(directory, message.ID + ".msg"), cancellationToken).ConfigureAwait(false);
+					await message.Encrypted.SaveAsTextAsync(Path.Combine(directory, message.ID + ".msg"), cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 		}
@@ -229,7 +229,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<WebHookMessage> LoadAsync(string filePath, CancellationToken cancellationToken = default)
 			=> !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath)
-				? new WebHookMessage(await new FileInfo(filePath).ReadAsTextAsync(cancellationToken).ConfigureAwait(false))
+				? new WebHookMessage(await UtilityService.ReadAsTextAsync(filePath, cancellationToken).ConfigureAwait(false))
 				: null;
 
 		/// <summary>
@@ -243,7 +243,7 @@ namespace net.vieapps.Components.Utility
 			if (message != null && Directory.Exists(directory))
 				try
 				{
-					await message.Encrypted.ToBytes().SaveAsTextAsync(Path.Combine(directory, message.ID + ".msg"), cancellationToken).ConfigureAwait(false);
+					await message.Encrypted.SaveAsTextAsync(Path.Combine(directory, message.ID + ".msg"), cancellationToken).ConfigureAwait(false);
 				}
 				catch { }
 		}

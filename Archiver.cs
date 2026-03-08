@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using SharpCompress.Common;
 using SharpCompress.Archives;
 using SharpCompress.Archives.Tar;
-using SharpCompress.Writers;
+using SharpCompress.Writers.Tar;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -163,42 +163,10 @@ namespace net.vieapps.Components.Utility
 
 			using (var fileStream = File.Create(archiveFilePath))
 			using (var zstdStream = new ZstdSharp.CompressionStream(fileStream, level: compressionLevel, leaveOpen: false))
-			using (var archiver = TarArchive.Create())
+			using (var archiver = TarArchive.CreateArchive())
 			{
-				files.ForEach(file => archiver.AddEntry(file.Name, file.FullName));
-				archiver.SaveTo(zstdStream, new WriterOptions(CompressionType.None) { LeaveStreamOpen = false });
-			}
-		}
-
-		/// <summary>
-		/// Archives a directory (means all files) using TAR/ZSTD
-		/// </summary>
-		/// <param name="sourcePath"></param>
-		/// <param name="archiveFilePath"></param>
-		/// <param name="includeSubDirectories"></param>
-		/// <param name="compressionLevel"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task TarAsync(string sourcePath, string archiveFilePath, bool includeSubDirectories = true, int compressionLevel = 10, CancellationToken cancellationToken = default)
-		{
-			if (!Directory.Exists(sourcePath))
-				throw new ArgumentException("Source path to the directory for archiving is invalid", nameof(sourcePath));
-
-			var files = Directory.EnumerateFiles(sourcePath, "*.*", includeSubDirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
-				.OrderBy(filePath =>
-				{
-					var ext = Path.GetExtension(filePath).ToLowerInvariant();
-					return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".mp4" || ext == ".mkv" || ext == ".avi" || ext == ".zip" || ext == ".rar" || ext == ".7z" ? 1 : 0;
-				})
-				.Select(filePath => new FileInfo(filePath))
-				.ToList();
-
-			using (var fileStream = File.Create(archiveFilePath))
-			using (var zstdStream = new ZstdSharp.CompressionStream(fileStream, level: compressionLevel, leaveOpen: false))
-			using (var archiver = TarArchive.Create())
-			{
-				files.ForEach(file => archiver.AddEntry(file.Name, file.FullName));
-				await archiver.SaveToAsync(zstdStream, new WriterOptions(CompressionType.None) { LeaveStreamOpen = false }, cancellationToken).ConfigureAwait(false);
+				files.ForEach(file => archiver.AddEntry(file.Name, file.FullName));				
+				archiver.SaveTo(zstdStream, new TarWriterOptions(CompressionType.None));
 			}
 		}
 
@@ -218,44 +186,11 @@ namespace net.vieapps.Components.Utility
 
 			using (var fileStream = File.OpenRead(archiveFilePath))
 			using (var zstdStream = new ZstdSharp.DecompressionStream(fileStream))
-			using (var archiver = TarArchive.Open(zstdStream))
+			using (var archiver = TarArchive.OpenArchive(zstdStream))
 				foreach (var entry in archiver.Entries)
 				{
 					if (!entry.IsDirectory)
-						entry.WriteToDirectory(destinationPath, new ExtractionOptions
-						{
-							ExtractFullPath = true,
-							Overwrite = true
-						});
-				}
-		}
-
-		/// <summary>
-		/// UnArchives to a directory using TAR/ZSTD
-		/// </summary>
-		/// <param name="archiveFilePath"></param>
-		/// <param name="destinationPath"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task UnTarAsync(string archiveFilePath, string destinationPath, CancellationToken cancellationToken = default)
-		{
-			if (string.IsNullOrWhiteSpace(archiveFilePath))
-				throw new ArgumentException("Path of .TAR.ZST file is invalid", nameof(archiveFilePath));
-
-			if (!Directory.Exists(destinationPath))
-				throw new ArgumentException("Destination path to the directory for unarchiving is invalid", nameof(destinationPath));
-
-			using (var fileStream = File.OpenRead(archiveFilePath))
-			using (var zstdStream = new ZstdSharp.DecompressionStream(fileStream))
-			using (var archiver = TarArchive.Open(zstdStream))
-				foreach (var entry in archiver.Entries)
-				{
-					if (!entry.IsDirectory)
-						await entry.WriteToDirectoryAsync(destinationPath, new ExtractionOptions
-						{
-							ExtractFullPath = true,
-							Overwrite = true
-						}, cancellationToken).ConfigureAwait(false);
+						entry.WriteToDirectory(destinationPath);
 				}
 		}
 	}

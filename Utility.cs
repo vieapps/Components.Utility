@@ -246,21 +246,42 @@ namespace net.vieapps.Components.Utility
 		public static Task<T> ExecuteTask<T>(Func<T> func, CancellationToken cancellationToken = default, TaskCreationOptions creationOptions = TaskCreationOptions.DenyChildAttach, TaskScheduler scheduler = null)
 			=> Task.Factory.StartNew(func, cancellationToken, creationOptions, scheduler ?? TaskScheduler.Default);
 
-		static async Task ExecuteTask(this Task task, Func<Exception, Task> onErrorAsync, int defer)
+#if NETSTANDARD2_0
+		static async Task ExecuteTask(this Task task, Func<Exception, Task> onErrorAsync, int defer, int timeout, CancellationTokenSource cts)
+#else
+		static async Task ExecuteTask(this Task task, Func<Exception, Task> onErrorAsync, int defer, int timeout)
+#endif
 		{
 			try
 			{
 				if (defer > 0)
 					await Task.Delay(defer).ConfigureAwait(false);
+#if NETSTANDARD2_0
+				if (timeout > 0 && cts != null && !task.IsCompleted)
+				{
+					var timeoutTask = Task.Delay(timeout);
+					if (await Task.WhenAny(task, timeoutTask).ConfigureAwait(false) != task && !task.IsCompleted)
+					{
+						cts.Cancel();
+						throw new TimeoutException($"Task timeout after {timeout} ms");
+					}
+				}
 				await task.ConfigureAwait(false);
+#else
+				if (timeout > 0)
+					await task.WaitAsync(TimeSpan.FromMilliseconds(timeout)).ConfigureAwait(false);
+				else
+					await task.ConfigureAwait(false);
+#endif
 			}
 			catch (Exception ex)
 			{
-				try
-				{
-					await (onErrorAsync == null ? Task.CompletedTask : onErrorAsync(ex)).ConfigureAwait(false);
-				}
-				catch { }
+				if (onErrorAsync != null)
+					try
+					{
+						await onErrorAsync(ex).ConfigureAwait(false);
+					}
+					catch { }
 			}
 		}
 
@@ -270,19 +291,36 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		/// <param name="onErrorAsync">The error handler</param>
-		/// <param name="defer">defer times (in miliseconds)</param>
+		/// <param name="defer">defer in miliseconds</param>
+		/// <param name="timeout">timeout in miliseconds</param>
 		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult() when wait for task completion</param>
-		public static void Execute(this Task task, bool waitForCompletion, Func<Exception, Task> onErrorAsync, int defer = 0, bool useWait = false)
+#if NETSTANDARD2_0
+		public static void Execute(this Task task, bool waitForCompletion, Func<Exception, Task> onErrorAsync, int defer = 0, int timeout = 0, CancellationTokenSource cts = null, bool useWait = false)
+#else
+		public static void Execute(this Task task, bool waitForCompletion, Func<Exception, Task> onErrorAsync, int defer = 0, int timeout = 0, bool useWait = false)
+#endif
 		{
 			if (waitForCompletion)
 			{
 				if (useWait)
-					task.ExecuteTask(onErrorAsync, defer).Wait();
+#if NETSTANDARD2_0
+					task.ExecuteTask(onErrorAsync, defer, timeout, cts).Wait();
+#else
+					task.ExecuteTask(onErrorAsync, defer, timeout).Wait();
+#endif
 				else
-					task.ExecuteTask(onErrorAsync, defer).GetAwaiter().GetResult();
+#if NETSTANDARD2_0
+					task.ExecuteTask(onErrorAsync, defer, timeout, cts).GetAwaiter().GetResult();
+#else
+					task.ExecuteTask(onErrorAsync, defer, timeout).GetAwaiter().GetResult();
+#endif
 			}
 			else
-				_ = task.ExecuteTask(onErrorAsync, defer);
+#if NETSTANDARD2_0
+				_ = task.ExecuteTask(onErrorAsync, defer, timeout, cts);
+#else
+				_ = task.ExecuteTask(onErrorAsync, defer, timeout);
+#endif
 		}
 
 		/// <summary>
@@ -290,17 +328,37 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="task"></param>
 		/// <param name="onErrorAsync">The error handler</param>
-		/// <param name="defer">defer times (in miliseconds)</param>
-		public static void Execute(this Task task, Func<Exception, Task> onErrorAsync, int defer = 0)
-			=> task.Execute(false, onErrorAsync, defer, true);
+		/// <param name="defer">defer in miliseconds</param>
+		public static void Execute(this Task task, Func<Exception, Task> onErrorAsync, int defer = 0, int timeout = 0)
+			=> task.Execute(false, onErrorAsync, defer, timeout);
 
-		static async Task ExecuteTask(this Task task, Action<Exception> onError, int defer)
+#if NETSTANDARD2_0
+		static async Task ExecuteTask(this Task task, Action<Exception> onError, int defer, int timeout, CancellationTokenSource cts)
+#else
+		static async Task ExecuteTask(this Task task, Action<Exception> onError, int defer, int timeout)
+#endif
 		{
 			try
 			{
 				if (defer > 0)
 					await Task.Delay(defer).ConfigureAwait(false);
+#if NETSTANDARD2_0
+				if (timeout > 0 && cts != null && !task.IsCompleted)
+				{
+					var timeoutTask = Task.Delay(timeout);
+					if (await Task.WhenAny(task, timeoutTask).ConfigureAwait(false) != task && !task.IsCompleted)
+					{
+						cts.Cancel();
+						throw new TimeoutException($"Task timeout after {timeout} ms");
+					}
+				}
 				await task.ConfigureAwait(false);
+#else
+				if (timeout > 0)
+					await task.WaitAsync(TimeSpan.FromMilliseconds(timeout)).ConfigureAwait(false);
+				else
+					await task.ConfigureAwait(false);
+#endif
 			}
 			catch (Exception ex)
 			{
@@ -318,19 +376,36 @@ namespace net.vieapps.Components.Utility
 		/// <param name="task"></param>
 		/// <param name="waitForCompletion">true to wait for completion of the task</param>
 		/// <param name="onError">The error handler</param>
-		/// <param name="defer">defer times (in miliseconds)</param>
+		/// <param name="defer">defer in miliseconds</param>
+		/// <param name="timeout">timeout in miliseconds</param>
 		/// <param name="useWait">true to use Wait() instead of GetAwaiter().GetResult() when wait for task completion</param>
-		public static void Execute(this Task task, bool waitForCompletion = false, Action<Exception> onError = null, int defer = 0, bool useWait = false)
+#if NETSTANDARD2_0
+		public static void Execute(this Task task, bool waitForCompletion = false, Action<Exception> onError = null, int defer = 0, int timeout = 0, CancellationTokenSource cts = null, bool useWait = false)
+#else
+		public static void Execute(this Task task, bool waitForCompletion = false, Action<Exception> onError = null, int defer = 0, int timeout = 0, bool useWait = false)
+#endif
 		{
 			if (waitForCompletion)
 			{
 				if (useWait)
-					task.ExecuteTask(onError, defer).Wait();
+#if NETSTANDARD2_0
+					task.ExecuteTask(onError, defer, timeout, cts).Wait();
+#else
+					task.ExecuteTask(onError, defer, timeout).Wait();
+#endif
 				else
-					task.ExecuteTask(onError, defer).GetAwaiter().GetResult();
+#if NETSTANDARD2_0
+					task.ExecuteTask(onError, defer, timeout, cts).GetAwaiter().GetResult();
+#else
+					task.ExecuteTask(onError, defer, timeout).GetAwaiter().GetResult();
+#endif
 			}
 			else
-				_ = task.ExecuteTask(onError, defer);
+#if NETSTANDARD2_0
+				_ = task.ExecuteTask(onError, defer, timeout, cts);
+#else
+				_ = task.ExecuteTask(onError, defer, timeout);
+#endif
 		}
 
 		/// <summary>
@@ -338,9 +413,9 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="task"></param>
 		/// <param name="onError">The error handler</param>
-		/// <param name="defer">defer times (in miliseconds)</param>
-		public static void Execute(this Task task, Action<Exception> onError, int defer = 0)
-			=> task.Execute(false, onError, defer, true);
+		/// <param name="defer">defer in miliseconds</param>
+		public static void Execute(this Task task, Action<Exception> onError, int defer = 0, int timeout = 0)
+			=> task.Execute(false, onError, defer, timeout);
 
 		static async Task ExecuteTask(this ValueTask task, Action<Exception> onError, int defer)
 		{
@@ -389,9 +464,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="defer">defer times (in miliseconds)</param>
 		public static void Execute(this ValueTask task, Action<Exception> onError, int defer = 0)
 			=> task.Execute(false, onError, defer, true);
-		#endregion
 
-		#region CancellationToken extensions
 		/// <summary>
 		/// Performs an awaitable task with cancellation token supported
 		/// </summary>
@@ -427,69 +500,6 @@ namespace net.vieapps.Components.Utility
 					: task.Result;
 			}
 		}
-
-		/// <summary>
-		/// Writes a string to the stream asynchronously
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="string"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task WriteAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
-#if NETSTANDARD2_0
-			=> writer.WriteAsync(@string).WithCancellationToken(cancellationToken);
-#else
-			=> writer.WriteAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
-#endif
-
-		/// <summary>
-		/// Writes a line of string to the stream asynchronously
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="string"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task WriteLineAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
-#if NETSTANDARD2_0
-			=> writer.WriteLineAsync(@string).WithCancellationToken(cancellationToken);
-#else
-			=> writer.WriteLineAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
-#endif
-
-#if NETSTANDARD2_0
-		/// <summary>
-		/// Reads all characters from the current position to the end of the stream asynchronously and returns them as one string
-		/// </summary>
-		/// <param name="reader"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task<string> ReadToEndAsync(this StreamReader reader, CancellationToken cancellationToken)
-			=> reader.ReadToEndAsync().WithCancellationToken(cancellationToken);
-
-		/// <summary>
-		/// Reads a line of characters asynchronously from the current stream and returns the data as a string
-		/// </summary>
-		/// <param name="reader"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
-			=> reader.ReadLineAsync().WithCancellationToken(cancellationToken);
-
-		public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
-			=> source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
-
-		public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
-			=> httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
-
-		public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-			=> httpContent.ReadAsStreamAsync().WithCancellationToken(cancellationToken);
-
-		public static Task<byte[]> ReadAsByteArrayAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-			=> httpContent.ReadAsByteArrayAsync().WithCancellationToken(cancellationToken);
-
-		public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-			=> httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
-#endif
 		#endregion
 
 		#region Stream/MemoryStream extensions
@@ -592,6 +602,46 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		///  Writes a subarray of characters to the stream
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="buffer"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task WriteAsync(this StreamWriter writer, char[] buffer, int index, int count, CancellationToken cancellationToken)
+			=> writer.WriteAsync(buffer, index, count).WithCancellationToken(cancellationToken);
+
+		/// <summary>
+		/// Writes a string to the stream asynchronously
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="string"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task WriteAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
+#if NETSTANDARD2_0
+			=> writer.WriteAsync(@string).WithCancellationToken(cancellationToken);
+#else
+			=> writer.WriteAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
+#endif
+
+		/// <summary>
+		/// Writes a line of string to the stream asynchronously
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="string"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task WriteLineAsync(this StreamWriter writer, string @string, CancellationToken cancellationToken)
+#if NETSTANDARD2_0
+			=> writer.WriteLineAsync(@string).WithCancellationToken(cancellationToken);
+#else
+			=> writer.WriteLineAsync(@string == null ? null : @string.AsMemory(), cancellationToken);
+#endif
+
+		/// <summary>
 		/// Writes the string lines to the stream asynchronously
 		/// </summary>
 		/// <param name="writer"></param>
@@ -614,6 +664,53 @@ namespace net.vieapps.Components.Utility
 				: lines.Where(line => line != null).ForEachAsync(line => writer.WriteLineAsync(line, cancellationToken), true, false);
 #else
 				: lines.Where(line => line != null).ForEachAsync(line => writer.WriteLineAsync(line.AsMemory(), cancellationToken), true, false);
+#endif
+
+		/// <summary>
+		/// Reads a specified maximum number of characters from the current stream
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <param name="buffer"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task<int> ReadAsync(this StreamReader reader, char[] buffer, int index, int count, CancellationToken cancellationToken)
+			=> reader.ReadAsync(buffer, index, count).WithCancellationToken(cancellationToken);
+
+#if NETSTANDARD2_0
+		/// <summary>
+		/// Reads all characters from the current position to the end of the stream asynchronously and returns them as one string
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task<string> ReadToEndAsync(this StreamReader reader, CancellationToken cancellationToken)
+			=> reader.ReadToEndAsync().WithCancellationToken(cancellationToken);
+
+		/// <summary>
+		/// Reads a line of characters asynchronously from the current stream and returns the data as a string
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static Task<string> ReadLineAsync(this StreamReader reader, CancellationToken cancellationToken)
+			=> reader.ReadLineAsync().WithCancellationToken(cancellationToken);
+
+		public static Task CopyToAsync(this Stream source, Stream destinaion, CancellationToken cancellationToken)
+			=> source.CopyToAsync(destinaion).WithCancellationToken(cancellationToken);
+
+		public static Task CopyToAsync(this HttpContent httpContent, Stream stream, CancellationToken cancellationToken)
+			=> httpContent.CopyToAsync(stream).WithCancellationToken(cancellationToken);
+
+		public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+			=> httpContent.ReadAsStreamAsync().WithCancellationToken(cancellationToken);
+
+		public static Task<byte[]> ReadAsByteArrayAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+			=> httpContent.ReadAsByteArrayAsync().WithCancellationToken(cancellationToken);
+
+		public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+			=> httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
 #endif
 
 		/// <summary>
@@ -1849,118 +1946,109 @@ namespace net.vieapps.Components.Utility
 			=> string.IsNullOrWhiteSpace(filePath) ? null : UtilityService.GetFileSize(new FileInfo(filePath));
 
 		/// <summary>
-		/// Searchs and gets listing of files by searching pattern
+		/// Gets listing of files
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="searchPatterns"></param>
 		/// <param name="numberOfFiles"></param>
-		/// <param name="searchInSubFolder"></param>
-		/// <param name="excludedSubFolders"></param>
+		/// <param name="searchInSubDirectory"></param>
+		/// <param name="excludedSubDirectories"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <returns></returns>
-		public static List<FileInfo> GetFiles(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
+		public static List<string> GetFiles(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubDirectory = false, IEnumerable<string> excludedSubDirectories = null, string orderBy = "Name", string orderMode = "Ascending")
 		{
 			if (!Directory.Exists(path))
 				throw new DirectoryNotFoundException($"The directory is not found [{path}]");
 
-			IEnumerable<FileInfo> files = new List<FileInfo>();
-			var searchingPatterns = string.IsNullOrWhiteSpace(searchPatterns)
-				? new[] { "*.*" }
-				: searchPatterns.ToArray('|', true);
+			var orderDesc = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Desc");
+			var orderByTime = !string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("CreationTime") || orderBy.IsStartsWith("LastAccessTime") || orderBy.IsStartsWith("LastWriteTime"));
+			var orderByName = !orderByTime && !orderDesc && (string.IsNullOrWhiteSpace(orderBy) || orderBy.IsStartsWith("Name"));
 
-			searchingPatterns.ForEach(searchingPattern =>
+			var directories = new Stack<string>();
+			directories.Push(path);
+
+			var patterns = string.IsNullOrWhiteSpace(searchPatterns) ? new[] { "*.*" } : searchPatterns.ToArray("|");
+			var results = new List<(string Path, DateTime Time)>();
+
+			while (directories.Count > 0)
 			{
-				var results = Directory.EnumerateFiles(path, searchingPattern).Select(filePath => new FileInfo(filePath));
-				if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
-					results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
-						? orderBy.IsStartsWith("Name")
-							? results.OrderBy(file => file.Name).ThenByDescending(file => file.LastWriteTime)
-							: results.OrderBy(file => file.LastWriteTime).ThenBy(file => file.Name)
-						: orderBy.IsStartsWith("Name")
-							? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
-							: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
-				files = files.Concat(results);
-			});
+				var current = directories.Pop();
+				foreach (var pattern in patterns)
+					foreach (var filePath in Directory.EnumerateFiles(current, pattern))
+					{
+						results.Add((filePath, orderByTime ? orderBy.IsStartsWith("CreationTime") ? File.GetCreationTimeUtc(filePath) : orderBy.IsStartsWith("LastAccessTime") ? File.GetLastAccessTimeUtc(filePath) : File.GetLastWriteTimeUtc(filePath) : DateTime.MinValue));
+						if (numberOfFiles > 0 && results.Count >= numberOfFiles && orderByName)
+							return results.Select(file => file.Path).Take(numberOfFiles).ToList();
+					}
 
-			if (searchInSubFolder)
-				Directory.EnumerateDirectories(path)
-				.Select(dpath => new[] { dpath }.Concat(Directory.EnumerateDirectories(dpath)))
-				.SelectMany(paths => paths)
-				.Where(folderPath =>
-				{
-					var isExcluded = false;
-					if (excludedSubFolders != null && excludedSubFolders.Count > 0)
-						foreach (var excludedFolder in excludedSubFolders)
-						{
-							isExcluded = folderPath.IsEndsWith(Path.DirectorySeparatorChar.ToString() + excludedFolder);
-							if (isExcluded)
-								break;
-						}
-					return !isExcluded;
-				})
-				.ForEach(folderPath => searchingPatterns.ForEach(searchingPattern =>
-				{
-					var results = Directory.EnumerateFiles(folderPath, searchingPattern).Select(filePath => new FileInfo(filePath));
-					if (!string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("Name") || orderBy.IsStartsWith("LastWriteTime")))
-						results = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Asc")
-							? orderBy.IsStartsWith("Name")
-								? results.OrderBy(file => file.Name).ThenByDescending(file => file.LastWriteTime)
-								: results.OrderBy(file => file.LastWriteTime).ThenBy(file => file.Name)
-							: orderBy.IsStartsWith("Name")
-								? results.OrderByDescending(file => file.Name).ThenByDescending(file => file.LastWriteTime)
-								: results.OrderByDescending(file => file.LastWriteTime).ThenBy(file => file.Name);
-					files = files.Concat(results);
-				}));
+				if (searchInSubDirectory)
+					foreach (var subDirectory in Directory.EnumerateDirectories(current))
+					{
+						var excluded = false;
+						if (excludedSubDirectories != null)
+							foreach (var excludedSubDirectory in excludedSubDirectories)
+								if (subDirectory.EndsWith(Path.DirectorySeparatorChar + excludedSubDirectory))
+								{
+									excluded = true;
+									break;
+								}
+						if (!excluded)
+							directories.Push(subDirectory);
+					}
+			}
 
-			return (numberOfFiles > 0 ? files.Take(numberOfFiles) : files).ToList();
+			var ordered = orderByTime
+				? orderDesc ? results.OrderByDescending(file => file.Time) : results.OrderBy(file => file.Time)
+				: orderDesc ? results.OrderByDescending(file => file.Path) : results as IEnumerable<(string Path, DateTime Time)>;
+			if (numberOfFiles > 0)
+				ordered = ordered.Take(numberOfFiles);
+			return ordered.Select(file => file.Path).ToList();
 		}
 
 		/// <summary>
-		/// Searchs and gets listing of files by searching pattern
+		/// Gets listing of files
+		/// </summary>
+		/// <param name="directory"></param>
+		/// <param name="searchPatterns"></param>
+		/// <param name="numberOfFiles"></param>
+		/// <param name="searchInSubDirectory"></param>
+		/// <param name="excludedSubDirectories"></param>
+		/// <param name="orderBy"></param>
+		/// <param name="orderMode"></param>
+		/// <returns></returns>
+		public static List<string> GetFiles(this DirectoryInfo directory, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubDirectory = false, IEnumerable<string> excludedSubDirectories = null, string orderBy = "Name", string orderMode = "Ascending")
+			=> UtilityService.GetFiles(directory.FullName, searchPatterns, numberOfFiles, searchInSubDirectory, excludedSubDirectories, orderBy, orderMode);
+
+		/// <summary>
+		/// Gets listing of files
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="searchPatterns"></param>
 		/// <param name="numberOfFiles"></param>
-		/// <param name="searchInSubFolder"></param>
-		/// <param name="excludedSubFolders"></param>
+		/// <param name="searchInSubDirectory"></param>
+		/// <param name="excludedSubDirectories"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<FileInfo>> GetFilesAsync(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, numberOfFiles, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
+		public static Task<List<string>> GetFilesAsync(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubDirectory = false, IEnumerable<string> excludedSubDirectories = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
+			=> UtilityService.ExecuteTask(() => UtilityService.GetFiles(path, searchPatterns, numberOfFiles, searchInSubDirectory, excludedSubDirectories, orderBy, orderMode), cancellationToken);
 
 		/// <summary>
-		/// Searchs and gets the listing of file paths by searching pattern
+		/// Gets listing of files
 		/// </summary>
-		/// <param name="path"></param>
+		/// <param name="directory"></param>
 		/// <param name="searchPatterns"></param>
 		/// <param name="numberOfFiles"></param>
-		/// <param name="searchInSubFolder"></param>
-		/// <param name="excludedSubFolders"></param>
-		/// <param name="orderBy"></param>
-		/// <param name="orderMode"></param>
-		/// <returns></returns>
-		public static List<string> GetFilePaths(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending")
-			=> UtilityService.GetFiles(path, searchPatterns, numberOfFiles, searchInSubFolder, excludedSubFolders, orderBy, orderMode)
-				.Select(file => file.FullName)
-				.ToList();
-
-		/// <summary>
-		/// Searchs and gets the listing of file paths by searching pattern
-		/// </summary>
-		/// <param name="path"></param>
-		/// <param name="searchPatterns"></param>
-		/// <param name="numberOfFiles"></param>
-		/// <param name="searchInSubFolder"></param>
-		/// <param name="excludedSubFolders"></param>
+		/// <param name="searchInSubDirectory"></param>
+		/// <param name="excludedSubDirectories"></param>
 		/// <param name="orderBy"></param>
 		/// <param name="orderMode"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static Task<List<string>> GetFilePathsAsync(string path, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubFolder = false, List<string> excludedSubFolders = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
-			=> UtilityService.ExecuteTask(() => UtilityService.GetFilePaths(path, searchPatterns, numberOfFiles, searchInSubFolder, excludedSubFolders, orderBy, orderMode), cancellationToken);
+		public static Task<List<string>> GetFilesAsync(this DirectoryInfo directory, string searchPatterns = null, int numberOfFiles = 0, bool searchInSubDirectory = false, IEnumerable<string> excludedSubDirectories = null, string orderBy = "Name", string orderMode = "Ascending", CancellationToken cancellationToken = default)
+			=> UtilityService.GetFilesAsync(directory.FullName, searchPatterns, numberOfFiles, searchInSubDirectory, excludedSubDirectories, orderBy, orderMode, cancellationToken);
 
 		/// <summary>
 		/// Gets path to a file/folder with 'right' path separator on each OS Platform
@@ -1981,15 +2069,14 @@ namespace net.vieapps.Components.Utility
 		{
 			if (!Directory.Exists(source) || !Directory.Exists(destination))
 				throw new InformationInvalidException("The paths are invalid");
-			if (source.IsEquals(destination))
-				return;
-			UtilityService.GetFiles(source, searchPatterns).ForEach(file =>
-			{
-				var path = Path.Combine(destination, file.Name);
-				if (deleteOldFilesBeforeMoving && File.Exists(path))
-					File.Delete(path);
-				File.Move(file.FullName, path);
-			});
+			if (!source.IsEquals(destination))
+				UtilityService.GetFiles(source, searchPatterns).Select(path => new FileInfo(path)).ForEach(file =>
+				{
+					var path = Path.Combine(destination, file.Name);
+					if (deleteOldFilesBeforeMoving && File.Exists(path))
+						File.Delete(path);
+					File.Move(file.FullName, path);
+				});
 		}
 
 		/// <summary>
@@ -2005,21 +2092,23 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Reads this file as text
 		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <param name="cancellationToken"></param>
+		/// <param name="filePath"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static async Task<string> ReadAsTextAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null)
+		public static string ReadAsText(string filePath, Encoding encoding = null, Action<string> onCompleted = null)
 		{
-			if (fileInfo == null || !fileInfo.Exists)
-				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
 #if NETSTANDARD2_0
-			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+			var @string = string.Empty;
+			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.SequentialScan))
 			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
-				return await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+				@string = streamReader.ReadToEnd();
 #else
-			return await File.ReadAllTextAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
+			var @string = File.ReadAllText(filePath, encoding ?? Encoding.UTF8);
 #endif
+			onCompleted?.Invoke(@string);
+			return @string;
 		}
 
 		/// <summary>
@@ -2028,64 +2117,154 @@ namespace net.vieapps.Components.Utility
 		/// <param name="fileInfo"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static string ReadAsText(this FileInfo fileInfo, Encoding encoding = null)
+		public static string ReadAsText(this FileInfo fileInfo, Encoding encoding = null, Action<string> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsText(fileInfo.FullName, encoding, onCompleted) : throw new ArgumentNullException(nameof(fileInfo));
+
+		/// <summary>
+		/// Reads this file as text
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static async Task<string> ReadAsTextAsync(string filePath, CancellationToken cancellationToken = default, Encoding encoding = null, Action<string> onCompleted = null)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+#if NETSTANDARD2_0
+			var @string = string.Empty;
+			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan))
+			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
+				@string = await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+#else
+			var @string = await File.ReadAllTextAsync(filePath, encoding ?? Encoding.UTF8, cancellationToken).ConfigureAwait(false);
+#endif
+			onCompleted?.Invoke(@string);
+			return @string;
+		}
+
+		/// <summary>
+		/// Reads this file as text
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static Task<string> ReadAsTextAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null, Action<string> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsTextAsync(fileInfo.FullName, cancellationToken, encoding, onCompleted) : Task.FromException<string>(new ArgumentNullException(nameof(fileInfo)));
+
+		/// <summary>
+		/// Reads this file as XML
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static XmlDocument ReadAsXml(string filePath, Encoding encoding = null, Action<XmlDocument> onCompleted = null)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			var xml = new XmlDocument();
+			xml.LoadXml(UtilityService.ReadAsText(filePath, encoding));
+			onCompleted?.Invoke(xml);
+			return xml;
+		}
+
+		/// <summary>
+		/// Reads this file as XML
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static XmlDocument ReadAsXml(this FileInfo fileInfo, Encoding encoding = null, Action<XmlDocument> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsXml(fileInfo.FullName, encoding, onCompleted) : throw new ArgumentNullException(nameof(fileInfo));
+
+		/// <summary>
+		/// Reads this file as XML
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static async Task<XmlDocument> ReadAsXmlAsync(string filePath, CancellationToken cancellationToken = default, Encoding encoding = null, Action<XmlDocument> onCompleted = null)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			var xml = new XmlDocument();
+			xml.LoadXml(await UtilityService.ReadAsTextAsync(filePath, cancellationToken, encoding).ConfigureAwait(false));
+			onCompleted?.Invoke(xml);
+			return xml;
+		}
+
+		/// <summary>
+		/// Reads this file as XML
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static Task<XmlDocument> ReadAsXmlAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null, Action<XmlDocument> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsXmlAsync(fileInfo.FullName, cancellationToken, encoding, onCompleted) : Task.FromException<XmlDocument>(new ArgumentNullException(nameof(fileInfo)));
+
+		/// <summary>
+		/// Reads this file as JSON
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static JToken ReadAsJson(string filePath, Encoding encoding = null, Action<JToken> onCompleted = null)
+		{
+			var json = JToken.Parse(UtilityService.ReadAsText(filePath, encoding));
+			onCompleted?.Invoke(json);
+			return json;
+		}
+
+		/// <summary>
+		/// Reads this file as JSON
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static JToken ReadAsJson(this FileInfo fileInfo, Encoding encoding = null, Action<JToken> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsJson(fileInfo.FullName, encoding, onCompleted) : throw new ArgumentNullException(nameof(fileInfo));
+
+		/// <summary>
+		/// Reads this file as JSON
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static async Task<JToken> ReadAsJsonAsync(string filePath, CancellationToken cancellationToken = default, Encoding encoding = null, Action<JToken> onCompleted = null)
+		{
+			var json = JToken.Parse(await UtilityService.ReadAsTextAsync(filePath, cancellationToken, encoding).ConfigureAwait(false));
+			onCompleted?.Invoke(json);
+			return json;
+		}
+
+		/// <summary>
+		/// Reads this file as JSON
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static Task<JToken> ReadAsJsonAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null, Action<JToken> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsJsonAsync(fileInfo.FullName, cancellationToken, encoding, onCompleted) : Task.FromException<JToken>(new ArgumentNullException(nameof(fileInfo)));
+
+		/// <summary>
+		/// Reads multiple lines of this file
+		/// </summary>
+		/// <param name="fileInfo"></param>
+		/// <param name="position"></param>
+		/// <param name="totalOfLines"></param>
+		/// <returns></returns>
+		public static (List<string> Lines, long Position) ReadAsText(this FileInfo fileInfo, long position, int totalOfLines)
 		{
 			if (fileInfo == null || !fileInfo.Exists)
 				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
-#if NETSTANDARD2_0
-			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
-				return streamReader.ReadToEnd();
-#else
-			return File.ReadAllText(fileInfo.FullName);
-#endif
+			using (var reader = new TextFileReader(fileInfo.FullName, position))
+				return (reader.ReadLines(totalOfLines), reader.Position);
 		}
-
-		/// <summary>
-		/// Reads this file as XML
-		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <param name="cancellationToken"></param>
-		/// <param name="encoding"></param>
-		/// <returns></returns>
-		public static async Task<XmlDocument> ReadAsXmlAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null)
-		{
-			var xml = new XmlDocument();
-			xml.LoadXml(await fileInfo.ReadAsTextAsync(cancellationToken, encoding).ConfigureAwait(false));
-			return xml;
-		}
-
-		/// <summary>
-		/// Reads this file as XML
-		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <param name="encoding"></param>
-		/// <returns></returns>
-		public static XmlDocument ReadAsXml(this FileInfo fileInfo, Encoding encoding = null)
-		{
-			var xml = new XmlDocument();
-			xml.LoadXml(fileInfo.ReadAsText(encoding));
-			return xml;
-		}
-
-		/// <summary>
-		/// Reads this file as JSON
-		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <param name="cancellationToken"></param>
-		/// <param name="encoding"></param>
-		/// <returns></returns>
-		public static async Task<JToken> ReadAsJsonAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Encoding encoding = null)
-			=> JToken.Parse(await fileInfo.ReadAsTextAsync(cancellationToken, encoding).ConfigureAwait(false));
-
-		/// <summary>
-		/// Reads this file as JSON
-		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <param name="encoding"></param>
-		/// <returns></returns>
-		public static JToken ReadAsJson(this FileInfo fileInfo, Encoding encoding = null)
-			=> JToken.Parse(fileInfo.ReadAsText(encoding));
 
 		/// <summary>
 		/// Reads multiple lines of this file
@@ -2104,18 +2283,78 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Reads multiple lines of this file
+		/// Reads this file as binary
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <returns></returns>
+		public static byte[] ReadAsBinary(string filePath, Action<byte[]> onCompleted = null)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			var buffer = Array.Empty<byte>();
+#if NETSTANDARD2_0
+			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.SequentialScan))
+			{
+				var length = fileStream.Length;
+				if (length > int.MaxValue)
+					throw new IOException($"File too large [{length}]");
+				buffer = new byte[(int)length];
+				var offset = 0;
+				while (offset < buffer.Length)
+				{
+					var read = fileStream.Read(buffer, offset, buffer.Length - offset);
+					if (read == 0)
+						throw new EndOfStreamException();
+					offset += read;
+				}
+			}
+#else
+			buffer = File.ReadAllBytes(filePath);
+#endif
+			onCompleted?.Invoke(buffer);
+			return buffer;
+		}
+
+		/// <summary>
+		/// Reads this file as binary
 		/// </summary>
 		/// <param name="fileInfo"></param>
-		/// <param name="position"></param>
-		/// <param name="totalOfLines"></param>
 		/// <returns></returns>
-		public static (List<string> Lines, long Position) ReadAsText(this FileInfo fileInfo, long position, int totalOfLines)
+		public static byte[] ReadAsBinary(this FileInfo fileInfo, Action<byte[]> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsBinary(fileInfo.FullName, onCompleted) : throw new ArgumentNullException(nameof(fileInfo));
+
+		/// <summary>
+		/// Reads this file as binary
+		/// </summary>
+		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task<byte[]> ReadAsBinaryAsync(string filePath, CancellationToken cancellationToken = default, Action<byte[]> onCompleted = null)
 		{
-			if (fileInfo == null || !fileInfo.Exists)
-				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
-			using (var reader = new TextFileReader(fileInfo.FullName, position))
-				return (reader.ReadLines(totalOfLines), reader.Position);
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			var buffer = Array.Empty<byte>();
+#if NETSTANDARD2_0
+			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan))
+			{
+				var length = fileStream.Length;
+				if (length > int.MaxValue)
+					throw new IOException($"File too large [{length}]");
+				buffer = new byte[(int)length];
+				var offset = 0;
+				while (offset < buffer.Length)
+				{
+					var read = await fileStream.ReadAsync(buffer, offset, buffer.Length - offset, cancellationToken).ConfigureAwait(false);
+					if (read == 0)
+						throw new EndOfStreamException();
+					offset += read;
+				}
+			}
+#else
+			buffer = await File.ReadAllBytesAsync(filePath, cancellationToken).ConfigureAwait(false);
+#endif
+			onCompleted?.Invoke(buffer);
+			return buffer;
 		}
 
 		/// <summary>
@@ -2124,42 +2363,8 @@ namespace net.vieapps.Components.Utility
 		/// <param name="fileInfo"></param>
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
-		public static async Task<byte[]> ReadAsBinaryAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default)
-		{
-			if (fileInfo == null || !fileInfo.Exists)
-				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
-#if NETSTANDARD2_0
-			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			{
-				var buffer = new byte[fileInfo.Length];
-				await fileStream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-				return buffer;
-			}
-#else
-			return await File.ReadAllBytesAsync(fileInfo.FullName, cancellationToken).ConfigureAwait(false);
-#endif
-		}
-
-		/// <summary>
-		/// Reads this file as binary
-		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <returns></returns>
-		public static byte[] ReadAsBinary(this FileInfo fileInfo)
-		{
-			if (fileInfo == null || !fileInfo.Exists)
-				throw new FileNotFoundException($"Not found [{(fileInfo == null ? nameof(fileInfo) : fileInfo.FullName)}]");
-			using (var fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			{
-				var buffer = new byte[fileInfo.Length];
-#if NETSTANDARD2_0
-				fileStream.Read(buffer, 0, buffer.Length);
-#else
-				fileStream.ReadExactly(buffer);
-#endif
-				return buffer;
-			}
-		}
+		public static Task<byte[]> ReadAsBinaryAsync(this FileInfo fileInfo, CancellationToken cancellationToken = default, Action<byte[]> onCompleted = null)
+			=> fileInfo != null ? UtilityService.ReadAsBinaryAsync(fileInfo.FullName, cancellationToken, onCompleted) : Task.FromException<byte[]>(new ArgumentNullException(nameof(fileInfo)));
 
 		/// <summary>
 		/// Saves this stream as text file
@@ -2174,12 +2379,23 @@ namespace net.vieapps.Components.Utility
 		public static async Task SaveAsTextAsync(this Stream stream, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
-				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
+				throw new ArgumentException("Invalid file path", nameof(filePath));
 			if (stream.CanSeek)
 				stream.Seek(0, SeekOrigin.Begin);
+			encoding = encoding ?? Encoding.UTF8;
+			using (var reader = new StreamReader(stream, encoding, true, TextFileReader.BufferSize, true))
 			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			using (var streamWriter = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize, false))
-				await streamWriter.WriteAsync(await stream.ReadAllAsync(cancellationToken, true, encoding).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+			using (var writer = new StreamWriter(fileStream, encoding, TextFileReader.BufferSize, false))
+			{
+				var buffer = new char[TextFileReader.BufferSize];
+				var read = await reader.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					await writer.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+					read = await reader.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				}
+				await writer.FlushAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
+			}
 		}
 
 		/// <summary>
@@ -2194,8 +2410,35 @@ namespace net.vieapps.Components.Utility
 		public static async Task SaveAsTextAsync(this byte[] content, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
 		{
 			if (content != null)
+			{
+				if (string.IsNullOrWhiteSpace(filePath))
+					throw new ArgumentException("Invalid file path", nameof(filePath));
 				using (var stream = content.ToMemoryStream())
 					await stream.SaveAsTextAsync(filePath, cancellationToken, append, encoding).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Saves this content as text file
+		/// </summary>
+		/// <param name="content"></param>
+		/// <param name="filePath"></param>
+		/// <param name="cancellationToken"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentException"></exception>
+		public static async Task SaveAsTextAsync(this string content, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+			using (var writer = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize, false))
+			{
+				await writer.WriteAsync(content, cancellationToken).ConfigureAwait(false);
+				await writer.FlushAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
+			}
 		}
 
 		/// <summary>
@@ -2208,7 +2451,15 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static Task SaveAsTextAsync(this JToken json, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
-			=> json != null ? json.ToString(Newtonsoft.Json.Formatting.Indented).ToBytes().SaveAsTextAsync(filePath, cancellationToken, append, encoding) : Task.CompletedTask;
+		{
+			if (json != null)
+			{
+				if (string.IsNullOrWhiteSpace(filePath))
+					throw new ArgumentException("Invalid file path", nameof(filePath));
+				return json.ToString(Newtonsoft.Json.Formatting.Indented).SaveAsTextAsync(filePath, cancellationToken, append, encoding);
+			}
+			return Task.CompletedTask;
+		}
 
 		/// <summary>
 		/// Saves this stream as binary file
@@ -2221,7 +2472,7 @@ namespace net.vieapps.Components.Utility
 		public static async Task SaveAsBinaryAsync(this Stream stream, string filePath, CancellationToken cancellationToken = default, bool append = false)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
-				throw new ArgumentNullException(nameof(filePath), "File path is invalid");
+				throw new ArgumentException("Invalid file path", nameof(filePath));
 			if (stream.CanSeek)
 				stream.Seek(0, SeekOrigin.Begin);
 			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
@@ -2247,8 +2498,28 @@ namespace net.vieapps.Components.Utility
 		public static async Task SaveAsBinaryAsync(this byte[] content, string filePath, CancellationToken cancellationToken = default, bool append = false)
 		{
 			if (content != null)
-				using (var stream = content.ToMemoryStream())
-					await stream.SaveAsBinaryAsync(filePath, cancellationToken, append).ConfigureAwait(false);
+			{
+				if (string.IsNullOrWhiteSpace(filePath))
+					throw new ArgumentException("Invalid file path", nameof(filePath));
+				using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+					await fileStream.WriteAsync(content, content.Length, cancellationToken).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Writes the multiple lines into a text file
+		/// </summary>
+		/// <param name="lines"></param>
+		/// <param name="filePath"></param>
+		/// <param name="append"></param>
+		/// <param name="encoding"></param>
+		public static void SaveTo(this IEnumerable<string> lines, string filePath, bool append = true, Encoding encoding = null)
+		{
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
+			using (var streamWriter = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize))
+				streamWriter.WriteLines(lines);
 		}
 
 		/// <summary>
@@ -2262,26 +2533,10 @@ namespace net.vieapps.Components.Utility
 		public static async Task SaveToAsync(this IEnumerable<string> lines, string filePath, CancellationToken cancellationToken = default, bool append = true, Encoding encoding = null)
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
-				throw new ArgumentException("File path is invalid", nameof(filePath));
-			using (var filleStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			using (var streamWriter = new StreamWriter(filleStream, encoding ?? Encoding.UTF8))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+			using (var streamWriter = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize))
 				await streamWriter.WriteLinesAsync(lines, cancellationToken).ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Writes the multiple lines into a text file
-		/// </summary>
-		/// <param name="lines"></param>
-		/// <param name="filePath"></param>
-		/// <param name="append"></param>
-		/// <param name="encoding"></param>
-		public static void SaveTo(this IEnumerable<string> lines, string filePath, bool append = true, Encoding encoding = null)
-		{
-			if (string.IsNullOrWhiteSpace(filePath))
-				throw new ArgumentException("File path is invalid", nameof(filePath));
-			using (var filleStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
-			using (var streamWriter = new StreamWriter(filleStream, encoding ?? Encoding.UTF8))
-				streamWriter.WriteLines(lines);
 		}
 		#endregion
 
@@ -3052,15 +3307,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="position">The initializing position</param>
 		public TextFileReader(string filePath, long position = 0)
 		{
-			// check
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("File path is invalid", nameof(filePath));
-
-			else if (!File.Exists(filePath))
-				throw new FileNotFoundException($"File is not found ({filePath})");
-
-			// initialize
-			this._stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true);
+			this._stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan);
 			this._reader = new StreamReader(this._stream, true);
 			if (position > 0)
 				this.Seek(position);
