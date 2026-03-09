@@ -863,51 +863,7 @@ namespace net.vieapps.Components.Utility
 		public static string DesktopUserAgent => $"{UtilityService.DesktopUserAgents[UtilityService.GetRandomNumber(0, UtilityService.DesktopUserAgents.Count - 1)]} QNGX/10.10";
 		#endregion
 
-		#region HTTP proxies
-		/// <summary>
-		/// Gets the web proxy
-		/// </summary>
-		/// <param name="uri"></param>
-		/// <param name="username"></param>
-		/// <param name="password"></param>
-		/// <param name="bypass"></param>
-		/// <returns></returns>
-		public static WebProxy GetWebProxy(Uri uri, string username, string password, IEnumerable<string> bypass = null)
-			=> uri != null
-				? new WebProxy(uri, true, bypass?.ToArray(), !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password) ? new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } } : null)
-				: null;
-
-		/// <summary>
-		/// Gets the web proxy
-		/// </summary>
-		/// <param name="host"></param>
-		/// <param name="port"></param>
-		/// <param name="username"></param>
-		/// <param name="password"></param>
-		/// <param name="bypass"></param>
-		/// <returns></returns>
-		public static WebProxy GetWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
-			=> UtilityService.GetWebProxy(string.IsNullOrWhiteSpace(host) ? null : new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "http://" : "")}{host}:{port}"), username, password, bypass);
-
-		/// <summary>
-		/// Gets the pre-configurated web proxy
-		/// </summary>
-		public static WebProxy Proxy { get; private set; }
-
-		/// <summary>
-		/// Assigns the web-proxy
-		/// </summary>
-		/// <param name="host"></param>
-		/// <param name="port"></param>
-		/// <param name="username"></param>
-		/// <param name="password"></param>
-		/// <param name="bypass"></param>
-		/// <returns></returns>
-		public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
-			=> UtilityService.Proxy ?? (UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass));
-		#endregion
-
-		#region Send HTTP requests
+		#region HTTP requests
 		/// <summary>
 		/// Converts the collection of cookies to a string for using in HTTP headers
 		/// </summary>
@@ -1083,7 +1039,202 @@ namespace net.vieapps.Components.Utility
 			return response.GetHeaders().TryGetValue("Content-Type", out var contentType) && contentType.IsStartsWith("text/html") ? @string?.HtmlDecode() : @string;
 		}
 
-		static IEnumerable<string> ExcludedHttpRequestHeaders { get; } = new[] { "Accept-Encoding", "Connection", "Content-Type", "Cookie", "Host", "AllowAutoRedirect" };
+		/// <summary>
+		/// Gets the pre-configurated web proxy to perform a HTTP request
+		/// </summary>
+		/// <param name="uri"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy GetWebProxy(Uri uri, string username, string password, IEnumerable<string> bypass = null)
+			=> uri != null
+				? new WebProxy(uri, true, bypass?.ToArray(), !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password) ? new CredentialCache { { uri, "Basic", new NetworkCredential(username, password) } } : null)
+				: null;
+
+		/// <summary>
+		/// Gets the pre-configurated web proxy to perform a HTTP request
+		/// </summary>
+		/// <param name="host"></param>
+		/// <param name="port"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy GetWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
+			=> UtilityService.GetWebProxy(string.IsNullOrWhiteSpace(host) ? null : new Uri($"{(!host.IsStartsWith("http://") && !host.IsStartsWith("https://") ? "http://" : "")}{host}:{port}"), username, password, bypass);
+
+		/// <summary>
+		/// Assigns the pre-configurated web proxy to perform a HTTP request
+		/// </summary>
+		/// <param name="host"></param>
+		/// <param name="port"></param>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		/// <param name="bypass"></param>
+		/// <returns></returns>
+		public static WebProxy AssignWebProxy(string host, int port, string username, string password, IEnumerable<string> bypass = null)
+		{
+			UtilityService.Proxy = UtilityService.GetWebProxy(host, port, username, password, bypass);
+			UtilityService.PrepareHttpClient();
+			return UtilityService.Proxy;
+		}
+
+		/// <summary>
+		/// Gets the pre-configurated web proxy to perform a HTTP request
+		/// </summary>
+		public static WebProxy Proxy { get; private set; }
+
+		/// <summary>
+		/// Gets the pre-configurated HttpClient instance to perform a HTTP request
+		/// </summary>
+		public static HttpClient HttpClient { get; private set; }
+
+#if NETSTANDARD2_0
+		static Lazy<HttpClient> LazyHttpClient { get; set; }
+#else
+		static SocketsHttpHandler HttpHandler { get; set; }
+#endif
+
+		static HttpClient PrepareHttpClient()
+		{
+			UtilityService.HttpClient?.Dispose();
+#if NETSTANDARD2_0
+			UtilityService.LazyHttpClient = new Lazy<HttpClient>(() =>
+			{
+				var handler = new HttpClientHandler
+				{
+					UseCookies = false,
+					AllowAutoRedirect = true,
+					AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+					Proxy = UtilityService.Proxy,
+					UseProxy = UtilityService.Proxy != null
+				};
+				try
+				{
+					handler.AutomaticDecompression |= (DecompressionMethods)4;
+				}
+				catch { }
+				return new HttpClient(handler);
+			});
+			return UtilityService.HttpClient = UtilityService.LazyHttpClient.Value;
+#else
+			UtilityService.HttpHandler?.Dispose();
+			UtilityService.HttpHandler = new SocketsHttpHandler
+			{
+				PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+				MaxConnectionsPerServer = 100,
+				UseCookies = false,
+				AllowAutoRedirect = true,
+				AutomaticDecompression = DecompressionMethods.All,
+				Proxy = UtilityService.Proxy,
+				UseProxy = UtilityService.Proxy != null
+			};
+			return UtilityService.HttpClient = new HttpClient(UtilityService.HttpHandler);
+#endif
+		}
+
+		/// <summary>
+		/// Gets the HttpClient instance to perform a HTTP request
+		/// </summary>
+		/// <param name="credential"></param>
+		/// <param name="proxy"></param>
+		/// <param name="allowAutoRedirect"></param>
+		/// <returns></returns>
+		public static HttpClient GetHttpClient(NetworkCredential credential = null, IWebProxy proxy = null, bool allowAutoRedirect = true)
+		{
+			if (credential != null || (proxy != null && !proxy.Equals(UtilityService.Proxy)) || !allowAutoRedirect)
+			{
+#if NETSTANDARD2_0
+				var httpHandler = new HttpClientHandler
+				{
+					UseCookies = false,
+					AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+					Proxy = proxy ?? UtilityService.Proxy,
+					UseProxy = (proxy ?? UtilityService.Proxy) != null,
+					Credentials = credential,
+					AllowAutoRedirect = allowAutoRedirect
+				};
+#else
+				var httpHandler = new SocketsHttpHandler
+				{
+					UseCookies = false,
+					AutomaticDecompression = DecompressionMethods.All,
+					Proxy = proxy ?? UtilityService.Proxy,
+					UseProxy = (proxy ?? UtilityService.Proxy) != null,
+					Credentials = credential,
+					AllowAutoRedirect = allowAutoRedirect,
+					PooledConnectionLifetime = TimeSpan.FromSeconds(60)
+				};
+#endif
+				return new HttpClient(httpHandler);
+			}
+			return UtilityService.HttpClient ?? UtilityService.PrepareHttpClient();
+		}
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="request">The request to perform</param>
+		/// <param name="timeout">The requesting timeout (in seconds)</param>
+		/// <param name="credential">The credential for sending the request</param>
+		/// <param name="proxy">The proxy for sending the request</param>
+		/// <param name="allowAutoRedirect">Allow auto-redirect</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static async Task<HttpResponseMessage> SendHttpRequestAsync(this HttpRequestMessage request, int timeout = 0, NetworkCredential credential = null, IWebProxy proxy = null, bool allowAutoRedirect = true, CancellationToken cancellationToken = default)
+		{
+			using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+			{
+				cts.CancelAfter(TimeSpan.FromSeconds(timeout > 0 ? timeout : 30));
+				var httpClient = UtilityService.GetHttpClient(credential, proxy, allowAutoRedirect);
+				try
+				{
+					var response = await httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
+					if (!response.IsSuccessStatusCode)
+					{
+						var heads = response.GetHeaders();
+						var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
+						var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
+						var exception = isMoved
+							? new RemoteServerMovedException(response.StatusCode, request.Method.ToString(), request.RequestUri, heads, $"Resource on the remote server was moved [{(heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{request.RequestUri.Scheme}://{request.RequestUri.Host}") + url) : request.RequestUri)}]")
+							: new RemoteServerException(response.StatusCode, isNotModified, request.Method.ToString(), request.RequestUri, heads);
+						if (!isMoved && !isNotModified)
+							try
+							{
+								exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+								exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
+							}
+							catch { }
+						response.Dispose();
+						throw exception;
+					}
+					return response;
+				}
+				catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+				{
+					throw new ConnectionTimeoutException("Request timeout", ex);
+				}
+				catch (Exception)
+				{
+					throw;
+				}
+				finally
+				{
+					if (credential != null || (proxy != null && !proxy.Equals(UtilityService.Proxy)) || !allowAutoRedirect)
+						httpClient.Dispose();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Sends a request to a remote end-point
+		/// </summary>
+		/// <param name="request">The request to perform</param>
+		/// <param name="cancellationToken">The cancellation token</param>
+		/// <returns></returns>
+		public static Task<HttpResponseMessage> SendHttpRequestAsync(this HttpRequestMessage request, CancellationToken cancellationToken)
+			=> request.SendHttpRequestAsync(0, null, null, true, cancellationToken);
 
 		/// <summary>
 		/// Sends a request to a remote end-point
@@ -1103,9 +1254,9 @@ namespace net.vieapps.Components.Utility
 			if (string.IsNullOrWhiteSpace(uri?.AbsoluteUri))
 				throw new InformationRequiredException("The URI is invalid");
 
-			headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 			using (var request = new HttpRequestMessage(new HttpMethod(string.IsNullOrWhiteSpace(method) ? "GET" : method.ToUpper()), uri))
 			{
+				headers = new Dictionary<string, string>(headers ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
 				headers.Copy(UtilityService.ExcludedHttpRequestHeaders).ForEach(kvp =>
 				{
 					try
@@ -1123,6 +1274,9 @@ namespace net.vieapps.Components.Utility
 
 				if (!headers.ContainsKey("Accept-Language"))
 					request.Headers.Add("Accept-Language", "en-US,en;q=0.9,vi;q=0.8");
+
+				if (headers.TryGetValue("Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies))
+					request.Headers.TryAddWithoutValidation("Cookie", cookies);
 
 #if NETSTANDARD2_0
 				request.Headers.Add("Accept-Encoding", "deflate, gzip");
@@ -1166,68 +1320,11 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 
-				using (var handler = new HttpClientHandler { UseCookies = true })
-				{
-					if (headers.TryGetValue("Cookie", out var cookies))
-					{
-						handler.CookieContainer = new CookieContainer();
-						handler.CookieContainer.Add(new Uri($"{uri.Scheme}://{uri.Host}"), cookies.ToList().GetCookies(uri.Host));
-					}
-
-					if (credential != null)
-					{
-						handler.PreAuthenticate = true;
-						handler.UseDefaultCredentials = false;
-						handler.Credentials = credential;
-					}
-
-					proxy = proxy ?? UtilityService.Proxy;
-					if (proxy != null)
-					{
-						handler.Proxy = proxy;
-						handler.UseProxy = true;
-					}
-
-					handler.AllowAutoRedirect = headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) && "true".IsEquals(allowAutoRedirect);
-					handler.ServerCertificateCustomValidationCallback = (requestMsg, certificate, chain, sslPolicyErrors) => true;
-#if NETSTANDARD2_0
-					handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
-#else
-					handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip | DecompressionMethods.Brotli;
-#endif
-					using (var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(timeout) })
-						try
-						{
-							var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-							if (!response.IsSuccessStatusCode)
-							{
-								var heads = response.GetHeaders();
-								var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
-								var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
-								var exception = isMoved
-									? new RemoteServerMovedException(response.StatusCode, request.Method.ToString(), uri, heads, $"Resource on the remote server was moved [{(heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{uri.Scheme}://{uri.Host}") + url) : uri)}]")
-									: new RemoteServerException(response.StatusCode, isNotModified, request.Method.ToString(), uri, heads);
-								if (!isMoved && !isNotModified)
-									try
-									{
-										exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-										exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
-									}
-									catch { }
-								response.Dispose();
-								throw exception;
-							}
-							return response;
-						}
-						catch (Exception ex)
-						{
-							if ((ex is TaskCanceledException || ex is OperationCanceledException) && ex.Message.IsContains("HttpClient.Timeout"))
-								throw new ConnectionTimeoutException(ex);
-							throw;
-						}
-				}
+				return await request.SendHttpRequestAsync(timeout, credential, proxy, !headers.TryGetValue("AllowAutoRedirect", out var allowAutoRedirect) || !"false".IsEquals(allowAutoRedirect), cancellationToken).ConfigureAwait(false);
 			}
 		}
+
+		static IEnumerable<string> ExcludedHttpRequestHeaders { get; } = new[] { "Accept-Encoding", "Connection", "Content-Type", "Cookie", "Host", "AllowAutoRedirect" };
 
 		/// <summary>
 		/// Sends a request to a remote end-point
@@ -1379,7 +1476,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken)
 			=> new Uri(uri).FetchHttpAsync(cancellationToken);
-		#endregion
+#endregion
 
 		#region Upload/Download a remote end-point file
 		/// <summary>
@@ -1453,8 +1550,8 @@ namespace net.vieapps.Components.Utility
 		{
 			try
 			{
-				using (var response = await uri.SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
-					return await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+				var response = await uri.SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false);
+				return await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 			}
 			catch
 			{
@@ -1477,7 +1574,8 @@ namespace net.vieapps.Components.Utility
 			try
 			{
 				var stopwatch = Stopwatch.StartNew();
-				using (var stream = await new Uri(uri).DownloadAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
+				using (var response = await new Uri(uri).SendHttpRequestAsync(headers, timeout, cancellationToken).ConfigureAwait(false))
+				using (var stream = await response.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
 				{
 					stopwatch.Stop();
 					onSuccess?.Invoke(uri, stream, stopwatch.ElapsedMilliseconds);
