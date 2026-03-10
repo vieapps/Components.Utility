@@ -1193,12 +1193,12 @@ namespace net.vieapps.Components.Utility
 					var response = await httpClient.SendAsync(request, cts.Token).ConfigureAwait(false);
 					if (!response.IsSuccessStatusCode)
 					{
-						var heads = response.GetHeaders();
+						var headers = response.GetHeaders();
 						var isMoved = response.StatusCode == HttpStatusCode.Moved || response.StatusCode == HttpStatusCode.MovedPermanently || response.StatusCode == HttpStatusCode.Redirect;
 						var isNotModified = response.StatusCode == HttpStatusCode.NotModified;
 						var exception = isMoved
-							? new RemoteServerMovedException(response.StatusCode, request.Method.ToString(), request.RequestUri, heads, $"Resource on the remote server was moved [{(heads.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{request.RequestUri.Scheme}://{request.RequestUri.Host}") + url) : request.RequestUri)}]")
-							: new RemoteServerException(response.StatusCode, isNotModified, request.Method.ToString(), request.RequestUri, heads);
+							? new RemoteServerMovedException(response.StatusCode, request.Method.ToString(), request.RequestUri, headers, $"Resource on the remote server was moved [{(headers.TryGetValue("Location", out var url) && !string.IsNullOrWhiteSpace(url) ? new Uri((url.IsContains("://") ? "" : $"{request.RequestUri.Scheme}://{request.RequestUri.Host}") + url) : request.RequestUri)}]")
+							: new RemoteServerException(response.StatusCode, isNotModified, request.Method.ToString(), request.RequestUri, headers);
 						if (!isMoved && !isNotModified)
 							try
 							{

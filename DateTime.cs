@@ -17,9 +17,9 @@ namespace net.vieapps.Components.Utility
 		public static DateTime UnixEpoch { get; } = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
 		/// <summary>
-		/// Gets the default date-time for checking (1/1/1900)
+		/// Gets the default date-time for checking (min-value = 1/1/0001)
 		/// </summary>
-		public static DateTime CheckingDateTime { get; } = new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+		public static DateTime CheckingDateTime { get; } = DateTime.MinValue;
 
 		/// <summary>
 		/// Gets the string that presents elapsed times (means times for processing)
@@ -32,14 +32,14 @@ namespace net.vieapps.Components.Utility
 		/// <param name="strMinutes">The string that presents the label of minute(s)</param>
 		/// <param name="strSeconds">The string that presents the label of second(s)</param>
 		/// <param name="strMiliseconds">The string that presents the label of mili-second(s)</param>
-		/// <param name="strNanoseconds">The string that presents the label of nano-second(s)</param>
+		/// <param name="strMicroseconds">The string that presents the label of micro-second(s)</param>
 		/// <param name="seperator">The string that use as element seperator</param>
 		/// <param name="addMiliseconds">The string that use as element seperator</param>
 		/// <returns>The string that presents elapsed times</returns>
-		public static string GetElapsedTimes(this long elapsedTimes, bool computeMinutes = true, bool addString = true, string strDays = " day(s)", string strHours = " hour(s)", string strMinutes = " minute(s)", string strSeconds = " second(s)", string strMiliseconds = " milisecond(s)", string strNanoseconds = " nanosecond(s)", string seperator = ", ", bool addMiliseconds = true)
+		public static string GetElapsedTimes(this long elapsedTimes, bool computeMinutes = true, bool addString = true, string strDays = " day(s)", string strHours = " hour(s)", string strMinutes = " minute(s)", string strSeconds = " second(s)", string strMiliseconds = " milisecond(s)", string strMicroseconds = " microsecond(s)", string seperator = ", ", bool addMiliseconds = true)
 		{
 			if (elapsedTimes < 1)
-				return "1" + (addString ? $"{strNanoseconds ?? " nanosecond(s)"}" : "");
+				return "1" + (addString ? $"{strMicroseconds ?? " microsecond(s)"}" : "");
 
 			int days = 0, hours = 0, minutes = 0, seconds = 0;
 
