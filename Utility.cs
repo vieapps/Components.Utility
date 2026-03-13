@@ -2076,7 +2076,7 @@ namespace net.vieapps.Components.Utility
 					foreach (var filePath in Directory.EnumerateFiles(current, pattern))
 					{
 						results.Add((filePath, orderByTime ? orderBy.IsStartsWith("CreationTime") ? File.GetCreationTimeUtc(filePath) : orderBy.IsStartsWith("LastAccessTime") ? File.GetLastAccessTimeUtc(filePath) : File.GetLastWriteTimeUtc(filePath) : DateTime.MinValue));
-						if (numberOfFiles > 0 && results.Count >= numberOfFiles && orderByName)
+						if (orderByName && numberOfFiles > 0 && results.Count >= numberOfFiles)
 							return results.Select(file => file.Path).Take(numberOfFiles).ToList();
 					}
 
