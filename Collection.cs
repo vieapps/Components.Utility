@@ -95,7 +95,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync(this JObject json, Func<JToken, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync(this JObject json, Func<JToken, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: json.ForEachAsync((token, _) => actionAsync(token), waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -110,7 +110,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync(this JObject json, Func<JToken, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync(this JObject json, Func<JToken, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: json.ForEachAsync((kvp, index) => actionAsync(kvp.Value, index), waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -125,7 +125,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: json.ForEachAsync((kvp, _) => actionAsync(kvp), waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -140,7 +140,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: json.ForEachAsync((kvp, index, _) => actionAsync(kvp, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -156,7 +156,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: json.ForEachAsync((kvp, _, token) => actionAsync(kvp, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -172,7 +172,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync(this JObject json, Func<KeyValuePair<string, JToken>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> json == null || json.Count < 1
 				? Task.CompletedTask
 				: (json as IDictionary<string, JToken>).ForEachAsync(actionAsync, cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -245,7 +245,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((value, _) => actionAsync(value), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -263,7 +263,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((value, _, token) => actionAsync(value, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -280,7 +280,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((value, index, _) => actionAsync(value, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -298,7 +298,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<TValue, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((kvp, index, token) => actionAsync(kvp.Value, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -315,7 +315,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((kvp, _) => actionAsync(kvp), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -333,7 +333,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((kvp, _, token) => actionAsync(kvp, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -350,7 +350,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.ForEachAsync((kvp, index, _) => actionAsync(kvp, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -368,7 +368,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, Func<KeyValuePair<TKey, TValue>, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> dictionary == null || dictionary.Count < 1
 				? Task.CompletedTask
 				: dictionary.Select(kvp => kvp).ForEachAsync((kvp, index, token) => actionAsync(kvp, index, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -438,7 +438,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -455,7 +455,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, _, token) => actionAsync(item, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -471,7 +471,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -488,7 +488,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 		{
 			if (enumerable == null)
 				throw new ArgumentNullException(nameof(enumerable));
@@ -496,10 +496,11 @@ namespace net.vieapps.Components.Utility
 			if (actionAsync == null)
 				throw new ArgumentNullException(nameof(actionAsync));
 
-			if (maxDegreeOfParallelism < 1)
+			if (maxDegreeOfParallelism != null && maxDegreeOfParallelism.Value < 1)
 				throw new ArgumentOutOfRangeException(nameof(maxDegreeOfParallelism));
 
 			var index = -1;
+			var maxDegreeOfParallelisms = maxDegreeOfParallelism ?? Environment.ProcessorCount * 2;
 
 			if (!waitForAllCompleted)
 				foreach (var item in enumerable)
@@ -519,9 +520,9 @@ namespace net.vieapps.Components.Utility
 
 			else
 				using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-				using (var locker = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism))
+				using (var locker = new SemaphoreSlim(maxDegreeOfParallelisms, maxDegreeOfParallelisms))
 				{
-					var exceptions = new List<Exception>();
+					var exceptions = new ConcurrentBag<Exception>();
 					async Task performAsync(T item, int idx)
 					{
 						try
@@ -541,7 +542,7 @@ namespace net.vieapps.Components.Utility
 						}
 					}
 
-					var tasks = new List<Task>(maxDegreeOfParallelism);
+					var tasks = new List<Task>(maxDegreeOfParallelisms);
 					foreach (var item in enumerable)
 					{
 						cts.Token.ThrowIfCancellationRequested();
@@ -549,7 +550,7 @@ namespace net.vieapps.Components.Utility
 						index++;
 						tasks.Add(performAsync(item, index));
 
-						if (tasks.Count >= maxDegreeOfParallelism)
+						if (tasks.Count >= maxDegreeOfParallelisms)
 						{
 							var task = await Task.WhenAny(tasks).ConfigureAwait(captureContext);
 							tasks.Remove(task);
@@ -567,7 +568,7 @@ namespace net.vieapps.Components.Utility
 					}
 					catch (Exception ex)
 					{
-						throw new AggregateException(exceptions.Count > 0 ? exceptions : new List<Exception> { ex });
+						throw new AggregateException(exceptions.IsEmpty ? (IEnumerable<Exception>)new[] { ex } : exceptions);
 					}
 				}
 		}
@@ -583,7 +584,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -600,7 +601,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, _, token) => actionAsync(item, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -616,7 +617,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 			=> enumerable == null
 				? Task.CompletedTask
 				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
@@ -633,7 +634,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="captureContext">true to capture/return back to calling context.</param>
 		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static async Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int maxDegreeOfParallelism = 32)
+		public static async Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
 		{
 			if (enumerable == null)
 				throw new ArgumentNullException(nameof(enumerable));
@@ -641,10 +642,11 @@ namespace net.vieapps.Components.Utility
 			if (actionAsync == null)
 				throw new ArgumentNullException(nameof(actionAsync));
 
-			if (maxDegreeOfParallelism < 1)
+			if (maxDegreeOfParallelism != null && maxDegreeOfParallelism.Value < 1)
 				throw new ArgumentOutOfRangeException(nameof(maxDegreeOfParallelism));
 
 			var index = -1;
+			var maxDegreeOfParallelisms = maxDegreeOfParallelism ?? Environment.ProcessorCount * 2;
 
 			if (!waitForAllCompleted)
 			{
@@ -684,9 +686,9 @@ namespace net.vieapps.Components.Utility
 
 			else
 				using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-				using (var locker = new SemaphoreSlim(maxDegreeOfParallelism, maxDegreeOfParallelism))
+				using (var locker = new SemaphoreSlim(maxDegreeOfParallelisms, maxDegreeOfParallelisms))
 				{
-					var exceptions = new List<Exception>();
+					var exceptions = new ConcurrentBag<Exception>();
 					async Task performAsync(T item, int idx)
 					{
 						try
@@ -706,7 +708,7 @@ namespace net.vieapps.Components.Utility
 						}
 					}
 
-					var tasks = new List<Task>(maxDegreeOfParallelism);
+					var tasks = new List<Task>(maxDegreeOfParallelisms);
 					var enumerator = enumerable.GetAsyncEnumerator(cts.Token);
 					try
 					{
@@ -717,7 +719,7 @@ namespace net.vieapps.Components.Utility
 							index++;
 							tasks.Add(performAsync(enumerator.Current, index));
 
-							if (tasks.Count >= maxDegreeOfParallelism)
+							if (tasks.Count >= maxDegreeOfParallelisms)
 							{
 								var task = await Task.WhenAny(tasks).ConfigureAwait(captureContext);
 								tasks.Remove(task);
@@ -735,7 +737,7 @@ namespace net.vieapps.Components.Utility
 						}
 						catch (Exception ex)
 						{
-							throw new AggregateException(exceptions.Count > 0 ? exceptions : new List<Exception> { ex });
+							throw new AggregateException(exceptions.IsEmpty ? (IEnumerable<Exception>)new[] { ex } : exceptions);
 						}
 					}
 					finally
