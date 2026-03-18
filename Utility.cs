@@ -2061,7 +2061,6 @@ namespace net.vieapps.Components.Utility
 
 			var orderDesc = !string.IsNullOrWhiteSpace(orderMode) && orderMode.IsStartsWith("Desc");
 			var orderByTime = !string.IsNullOrWhiteSpace(orderBy) && (orderBy.IsStartsWith("CreationTime") || orderBy.IsStartsWith("LastAccessTime") || orderBy.IsStartsWith("LastWriteTime"));
-			var orderByName = !orderByTime && !orderDesc && (string.IsNullOrWhiteSpace(orderBy) || orderBy.IsStartsWith("Name"));
 
 			var directories = new Stack<string>();
 			directories.Push(path);
@@ -2074,11 +2073,7 @@ namespace net.vieapps.Components.Utility
 				var current = directories.Pop();
 				foreach (var pattern in patterns)
 					foreach (var filePath in Directory.EnumerateFiles(current, pattern))
-					{
 						results.Add((filePath, orderByTime ? orderBy.IsStartsWith("CreationTime") ? File.GetCreationTimeUtc(filePath) : orderBy.IsStartsWith("LastAccessTime") ? File.GetLastAccessTimeUtc(filePath) : File.GetLastWriteTimeUtc(filePath) : DateTime.MinValue));
-						if (orderByName && numberOfFiles > 0 && results.Count >= numberOfFiles)
-							return results.Select(file => file.Path).Take(numberOfFiles).ToList();
-					}
 
 				if (searchInSubDirectory)
 					foreach (var subDirectory in Directory.EnumerateDirectories(current))
@@ -2096,12 +2091,10 @@ namespace net.vieapps.Components.Utility
 					}
 			}
 
-			var ordered = orderByTime
+			IEnumerable<(string Path, DateTime Time)> ordered = orderByTime
 				? orderDesc ? results.OrderByDescending(file => file.Time) : results.OrderBy(file => file.Time)
-				: orderDesc ? results.OrderByDescending(file => file.Path) : results as IEnumerable<(string Path, DateTime Time)>;
-			if (numberOfFiles > 0)
-				ordered = ordered.Take(numberOfFiles);
-			return ordered.Select(file => file.Path).ToList();
+				: orderDesc ? results.OrderByDescending(file => file.Path) : results.OrderBy(file => file.Path);
+			return (numberOfFiles > 0 ? ordered.Take(numberOfFiles) : ordered).Select(file => file.Path).ToList();
 		}
 
 		/// <summary>
