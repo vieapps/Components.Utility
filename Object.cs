@@ -1100,19 +1100,29 @@ namespace net.vieapps.Components.Utility
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
 		/// </summary>
 		/// <param name="type">The type to be created</param>
+		/// <param name="useActivatorWhenGotError">true to use activator when got error</param>
 		/// <returns>The newly created instance</returns>
-		public static object CreateInstance(this Type type)
+		public static object CreateInstance(this Type type, bool useActivatorWhenGotError = false)
 		{
-			if (!ObjectService.TypeFactories.TryGetValue(type, out var func) || func == null)
-				lock (ObjectService.TypeFactories)
-				{
-					if (!ObjectService.TypeFactories.TryGetValue(type, out func) || func == null)
+			try
+			{
+				if (!ObjectService.TypeFactories.TryGetValue(type, out var func) || func == null)
+					lock (ObjectService.TypeFactories)
 					{
-						func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
-						ObjectService.TypeFactories.TryAdd(type, func);
+						if (!ObjectService.TypeFactories.TryGetValue(type, out func) || func == null)
+						{
+							func = Expression.Lambda<Func<object>>(Expression.New(type)).Compile();
+							ObjectService.TypeFactories.TryAdd(type, func);
+						}
 					}
-				}
-			return func();
+				return func();
+			}
+			catch (Exception)
+			{
+				if (useActivatorWhenGotError)
+					return Activator.CreateInstance(type);
+				throw;
+			}
 		}
 
 		/// <summary>
@@ -1120,17 +1130,19 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="type"></param>
+		/// <param name="useActivatorWhenGotError">true to use activator when got error</param>
 		/// <returns>The newly created instance</returns>
-		public static T CreateInstance<T>(this Type type)
-			=> (T)type.CreateInstance();
+		public static T CreateInstance<T>(this Type type, bool useActivatorWhenGotError = false)
+			=> (T)type.CreateInstance(useActivatorWhenGotError);
 
 		/// <summary>
 		/// Creates an instance of the specified type using a generated factory to avoid using Reflection
 		/// </summary>
 		/// <typeparam name="T">The type to be created</typeparam>
+		/// <param name="useActivatorWhenGotError">true to use activator when got error</param>
 		/// <returns>The newly created instance</returns>
-		public static T CreateInstance<T>()
-			=> typeof(T).CreateInstance<T>();
+		public static T CreateInstance<T>(bool useActivatorWhenGotError = false)
+			=> typeof(T).CreateInstance<T>(useActivatorWhenGotError);
 		#endregion
 
 		#region Object casts/conversions
@@ -1139,42 +1151,67 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="object">The object to cast to other type</param>
 		/// <param name="type">The type to cast to</param>
+		/// <param name="allowNull">true to allow nullable</param>
 		/// <returns></returns>
-		public static object CastAs(this object @object, Type type)
-			=> @object != null
-				? @object.GetType().Equals(type)
-					? @object
-					: Convert.ChangeType(@object, type.IsGenericType && type.GetGenericTypeDefinition().Equals(typeof(Nullable<>)) ? Nullable.GetUnderlyingType(type) : type)
-				: null;
+		public static object CastAs(this object @object, Type type, bool allowNull = false)
+		{
+			if (@object == null || type == typeof(object) || @object.GetType().Equals(type))
+				return @object;
+
+			var isNullable = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+			var underlyingType = isNullable ? Nullable.GetUnderlyingType(type) : type;
+
+			if (@object is string str && string.IsNullOrWhiteSpace(str))
+				try
+				{
+					return allowNull || isNullable || !type.IsValueType ? null : underlyingType.CreateInstance();
+				}
+				catch (Exception ex)
+				{
+					throw ex is InvalidCastException ? ex : new InvalidCastException($"Cannot cast null to non-nullable type [{type.FullName}]", ex);
+				}
+
+			return !underlyingType.IsAssignableFrom(@object.GetType())
+				? Convert.ChangeType(@object, underlyingType)
+				: @object;
+		}
 
 		/// <summary>
 		/// Casts the object to other type
 		/// </summary>
 		/// <param name="object">The object to cast to other type</param>
 		/// <param name="type">The type to cast to</param>
+		/// <param name="allowNull">true to allow nullable</param>
 		/// <returns></returns>
-		public static object As(this object @object, Type type)
-			=> @object?.CastAs(type);
+		public static object As(this object @object, Type type, bool allowNull = false)
+			=> ObjectService.CastAs(@object, type, allowNull);
 
 		/// <summary>
 		/// Casts the value to other type
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object">The object to cast to other type</param>
+		/// <param name="allowNull">true to allow nullable</param>
 		/// <returns></returns>
-		public static T CastAs<T>(this object @object)
-			=> @object != null
-				? (T)@object.CastAs(typeof(T))
-				: default;
+		public static T CastAs<T>(this object @object, bool allowNull = false)
+		{
+			var type = typeof(T);
+			var isNullable = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+			var castAs = ObjectService.CastAs(@object, type, allowNull);
+			if (castAs == null && !allowNull && type.IsValueType && !isNullable)
+				throw new InvalidCastException($"Cannot cast null to non-nullable type [{type.FullName}]");
+			return castAs != null && castAs is T castAsT ? castAsT : default;
+		}
 
 		/// <summary>
 		/// Casts the value to other type
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="object">The object to cast to other type</param>
+		/// <param name="allowNull">true to allow nullable</param>
 		/// <returns></returns>
-		public static T As<T>(this object @object)
-			=> @object.CastAs<T>();
+		public static T As<T>(this object @object, bool allowNull = false)
+			=> ObjectService.CastAs<T>(@object, allowNull);
 		#endregion
 
 		#region Object manipulations
