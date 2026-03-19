@@ -431,6 +431,22 @@ namespace net.vieapps.Components.Utility
 				: DateTimeService.UnixEpoch.AddSeconds(unixTimestamp).ToLocalTime();
 
 		/// <summary>
+		/// Gets the total seconds to now
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <returns></returns>
+		public static long GetTotalSecondsToNow(this DateTime datetime)
+			=> (datetime - DateTime.Now).TotalSeconds.As<long>();
+
+		/// <summary>
+		/// Gets the total seconds from now
+		/// </summary>
+		/// <param name="datetime"></param>
+		/// <returns></returns>
+		public static long GetTotalSecondsFromNow(this DateTime datetime)
+			=> (DateTime.Now - datetime).TotalSeconds.As<long>();
+
+		/// <summary>
 		/// Converts this date-time to string in format 'yyyy/MM/dd HH:mm:ss'
 		/// </summary>
 		/// <param name="datetime"></param>
