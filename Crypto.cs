@@ -916,7 +916,7 @@ namespace net.vieapps.Components.Utility
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
 
 		/// <summary>
-		/// Encrypts by specific key and initialization vector using AES
+		/// Encrypts by specified key and initialization vector using AES
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="key"></param>
@@ -932,7 +932,7 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Encrypts by specific key and initialization vector using AES
+		/// Encrypts by specified pass-phrase using AES
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="passPhrase"></param>
@@ -941,7 +941,7 @@ namespace net.vieapps.Components.Utility
 			=> data?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
 
 		/// <summary>
-		/// Encrypts this string by specific key and initialization vector using AES
+		/// Encrypts this string by specified key and initialization vector using AES
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -949,20 +949,24 @@ namespace net.vieapps.Components.Utility
 		/// <param name="toHex"></param>
 		/// <returns></returns>
 		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHex = false)
-			=> (toHex ? @string?.ToBytes().Encrypt(key, iv).ToHex() : @string?.ToBytes().Encrypt(key, iv).ToBase64()) ?? throw new ArgumentException("Invalid", nameof(@string));
+			=> string.IsNullOrWhiteSpace(@string)
+				? ""
+				: toHex
+					? @string.ToBytes().Encrypt(key, iv).ToHex()
+					: @string.ToBytes().Encrypt(key, iv).ToBase64();
 
 		/// <summary>
-		/// Encrypts this string by specific pass-phrase using AES
+		/// Encrypts this string by specified pass-phrase using AES
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="passPhrase"></param>
 		/// <param name="toHex"></param>
 		/// <returns></returns>
 		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
-			=> @string?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex) ?? throw new ArgumentException("Invalid", nameof(@string));
+			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
 
 		/// <summary>
-		/// Decrypts by specific key and initialization vector using AES
+		/// Decrypts by specified key and initialization vector using AES
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="key"></param>
@@ -978,16 +982,16 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Decrypts by specific key and initialization vector using AES
+		/// Decrypts by specific pass-phrase using AES
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
 		public static byte[] Decrypt(this byte[] data, string passPhrase = null)
-			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128)) ?? throw new ArgumentException("Invalid", nameof(data));
+			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
 
 		/// <summary>
-		/// Decrypts this encrypted string by specific key and initialization vector using AES
+		/// Decrypts this encrypted string by specified key and initialization vector using AES
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="key"></param>
@@ -995,7 +999,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false)
-			=> (isHex ? @string?.HexToBytes().Decrypt(key, iv).GetString() : @string?.Base64ToBytes().Decrypt(key, iv).GetString()) ?? throw new ArgumentException("Invalid", nameof(@string));
+			=> string.IsNullOrWhiteSpace(@string)
+				? ""
+				: isHex
+					? @string.HexToBytes().Decrypt(key, iv).GetString()
+					: @string.Base64ToBytes().Decrypt(key, iv).GetString();
 
 		/// <summary>
 		/// Decrypts this encrypted string by specific pass-phrase using AES
@@ -1005,7 +1013,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
-			=> @string?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex) ?? throw new ArgumentException("Invalid", nameof(@string));
+			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)
