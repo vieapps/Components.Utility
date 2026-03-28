@@ -36,10 +36,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Generate keys & passwords
-#pragma warning disable SYSLIB0023 // Type or member is obsolete
-		static RNGCryptoServiceProvider RNGcsp { get; } = new RNGCryptoServiceProvider();
-#pragma warning restore SYSLIB0023 // Type or member is obsolete
-
 		/// <summary>
 		/// Generates a random key with cryptographically strong sequence of random values
 		/// </summary>
@@ -47,9 +43,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns>An array of bytes that presents the key</returns>
 		public static byte[] GenerateRandomKey(int length = 256)
 		{
+#if NET6_0_OR_GREATER
+			return RandomNumberGenerator.GetBytes(length > 0 ? length : 256);
+#else
 			var key = new byte[length > 0 ? length : 256];
-			CryptoService.RNGcsp.GetBytes(key);
+			using (var rng = RandomNumberGenerator.Create())
+				rng.GetBytes(key);
 			return key;
+#endif
 		}
 
 		/// <summary>
@@ -76,7 +77,7 @@ namespace net.vieapps.Components.Utility
 			=> (passphrase ?? DEFAULT_PASS_PHRASE).ToBytes().GenerateHashKey(length, doubleHash);
 
 		/// <summary>
-		/// Generates a hashing password from a plain-text password with salt and pepper using strong hashing algorithm (Argon2)
+		/// Generates a hashing password from a plain-text password with salt and pepper using strong hashing algorithm (Argon2id)
 		/// </summary>
 		/// <param name="password">The string that presents the plain-text password for hashing</param>
 		/// <param name="salt">The string that presents the salt for hashing</param>
@@ -84,14 +85,14 @@ namespace net.vieapps.Components.Utility
 		/// <returns>The string that presents the 125 bytes of hashing password</returns>
 		public static string GenerateHashPassword(this string password, string salt = null, string pepper = null)
 		{
-			using (var argon2 = new Argon2i(password.GetHMACBLAKE256Hash((pepper ?? DEFAULT_PASS_PHRASE).ToUpper()))
+			using (var argon2 = new Argon2id(password.GetHMACBLAKE256Hash((pepper ?? DEFAULT_PASS_PHRASE).ToUpper()))
 			{
-				DegreeOfParallelism = 13,
-				Iterations = 13,
-				MemorySize = 1024,
+				DegreeOfParallelism = Environment.ProcessorCount,
+				Iterations = 3,
+				MemorySize = 65536,
 				Salt = (salt ?? DEFAULT_PASS_PHRASE).ToLower().GetBLAKE512Hash()
 			})
-				return argon2.GetBytes(125).ToHex();
+				return argon2.GetBytes(32).ToHex();
 		}
 		#endregion
 
@@ -1793,10 +1794,10 @@ namespace net.vieapps.Components.Utility
 		/// </summary>
 		/// <param name="length">The byte-length of the key (means number of total bytes :: 256 bytes = 2048 bits)</param>
 		/// <returns></returns>
-		public static Tuple<BigInteger, ECCsecp256k1.Point> GenerateECCKeyPair(int length = 256)
+		public static (BigInteger PrivateKey, ECCsecp256k1.Point PublicKey) GenerateECCKeyPair(int length = 256)
 		{
 			var key = ECCsecp256k1.GeneratePrivateKey(length);
-			return new Tuple<BigInteger, ECCsecp256k1.Point>(key, ECCsecp256k1.GeneratePublicKey(key));
+			return (key, ECCsecp256k1.GeneratePublicKey(key));
 		}
 		#endregion
 

@@ -2928,6 +2928,7 @@ namespace System.Collections.Concurrent
 	{
 		readonly ConcurrentDictionary<T, byte> _dictionary;
 
+		#region Constructors
 		/// <summary>
 		/// Initializes a new instance
 		/// </summary>
@@ -2965,7 +2966,9 @@ namespace System.Collections.Concurrent
 				foreach (var item in collection)
 					this._dictionary.TryAdd(item, 0);
 		}
+		#endregion
 
+		#region Properties
 		/// <summary>
 		/// Gets the number of items
 		/// </summary>
@@ -2980,7 +2983,9 @@ namespace System.Collections.Concurrent
 		/// Gets a value that indicates whether the <see cref="ConcurrentHashSet{T}"/> is read-only
 		/// </summary>
 		bool ICollection<T>.IsReadOnly => false;
+		#endregion
 
+		#region Methods
 		/// <summary>
 		/// Adds the specified item to the <see cref="ConcurrentHashSet{T}"/>.
 		/// </summary>
@@ -3062,5 +3067,7 @@ namespace System.Collections.Concurrent
 		/// <returns></returns>
 		IEnumerator IEnumerable.GetEnumerator()
 			=> this.GetEnumerator();
+		#endregion
+
 	}
 }

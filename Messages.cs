@@ -141,13 +141,13 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the JSON that presents the message
 		/// </summary>
-		[JsonIgnore]
+		[JsonIgnore, System.Xml.Serialization.XmlIgnore]
 		public JToken AsJson => this.ToJson();
 
 		/// <summary>
 		/// Gets the string that presents the encrypted messages
 		/// </summary>
-		[JsonIgnore]
+		[JsonIgnore, System.Xml.Serialization.XmlIgnore]
 		public string Encrypted => this.AsJson.ToString(Formatting.None).Encrypt(EmailMessage.EncryptionKey);
 
 	}
@@ -252,13 +252,13 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Gets the JSON that presents the message
 		/// </summary>
-		[JsonIgnore]
+		[JsonIgnore, System.Xml.Serialization.XmlIgnore]
 		public JToken AsJson => this.ToJson(json => json["Body"] = (this.Body ?? "").ToJSON());
 
 		/// <summary>
 		/// Gets the string that presents the encrypted messages
 		/// </summary>
-		[JsonIgnore]
+		[JsonIgnore, System.Xml.Serialization.XmlIgnore]
 		public string Encrypted => this.ToJson().ToString(Formatting.None).Encrypt(WebHookMessage.EncryptionKey);
 
 	}
