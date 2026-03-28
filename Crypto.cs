@@ -881,9 +881,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this byte[] bytes, string hashAlgorithm = "SHA256", int length = 4)
-			=> bytes == null || bytes.Length < 1
-				? throw new ArgumentException("Invalid", nameof(bytes))
-				: bytes.GetDoubleHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
+			=> bytes?.GetDoubleHash(hashAlgorithm).Take(0, length > 0 ? length : 4) ?? throw new ArgumentException("Invalid", nameof(bytes));
 
 		/// <summary>
 		/// Gets the check-sum of this string using double-hash
@@ -893,9 +891,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this string @string, string hashAlgorithm = "SHA256", int length = 4)
-			=> string.IsNullOrWhiteSpace(@string)
-				? Array.Empty<byte>()
-				: @string.ToBytes().GetCheckSum(hashAlgorithm, length);
+			=> @string?.ToBytes().GetCheckSum(hashAlgorithm, length) ?? throw new ArgumentException("Invalid", nameof(@string));
 
 		/// <summary>
 		/// Gets the check-sum of this file
@@ -926,7 +922,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
 		/// <returns></returns>
-		public static byte[] Encrypt(this byte[] data, byte[] key = null, byte[] iv = null)
+		public static byte[] Encrypt(this byte[] data, byte[] key, byte[] iv)
 		{
 			if (data == null || data.Length < 1)
 				return null;
@@ -934,6 +930,15 @@ namespace net.vieapps.Components.Utility
 			using (var encryptor = CryptoService.AEScsp.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
 				return encryptor.TransformFinalBlock(data, 0, data.Length);
 		}
+
+		/// <summary>
+		/// Encrypts by specific key and initialization vector using AES
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="passPhrase"></param>
+		/// <returns></returns>
+		public static byte[] Encrypt(this byte[] data, string passPhrase = null)
+			=> data?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
 
 		/// <summary>
 		/// Encrypts this string by specific key and initialization vector using AES
@@ -944,11 +949,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="toHex"></param>
 		/// <returns></returns>
 		public static string Encrypt(this string @string, byte[] key, byte[] iv, bool toHex = false)
-			=> string.IsNullOrWhiteSpace(@string)
-				? ""
-				: toHex
-					? @string.ToBytes().Encrypt(key, iv).ToHex()
-					: @string.ToBytes().Encrypt(key, iv).ToBase64();
+			=> (toHex ? @string?.ToBytes().Encrypt(key, iv).ToHex() : @string?.ToBytes().Encrypt(key, iv).ToBase64()) ?? throw new ArgumentException("Invalid", nameof(@string));
 
 		/// <summary>
 		/// Encrypts this string by specific pass-phrase using AES
@@ -958,7 +959,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="toHex"></param>
 		/// <returns></returns>
 		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
-			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
+			=> @string?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex) ?? throw new ArgumentException("Invalid", nameof(@string));
 
 		/// <summary>
 		/// Decrypts by specific key and initialization vector using AES
@@ -967,7 +968,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
 		/// <returns></returns>
-		public static byte[] Decrypt(this byte[] data, byte[] key = null, byte[] iv = null)
+		public static byte[] Decrypt(this byte[] data, byte[] key, byte[] iv)
 		{
 			if (data == null || data.Length < 1)
 				return null;
@@ -975,6 +976,15 @@ namespace net.vieapps.Components.Utility
 			using (var decryptor = CryptoService.AEScsp.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
 				return decryptor.TransformFinalBlock(data, 0, data.Length);
 		}
+
+		/// <summary>
+		/// Decrypts by specific key and initialization vector using AES
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="passPhrase"></param>
+		/// <returns></returns>
+		public static byte[] Decrypt(this byte[] data, string passPhrase = null)
+			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128)) ?? throw new ArgumentException("Invalid", nameof(data));
 
 		/// <summary>
 		/// Decrypts this encrypted string by specific key and initialization vector using AES
@@ -985,11 +995,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false)
-			=> string.IsNullOrWhiteSpace(@string)
-				? ""
-				: isHex
-					? @string.HexToBytes().Decrypt(key, iv).GetString()
-					: @string.Base64ToBytes().Decrypt(key, iv).GetString();
+			=> (isHex ? @string?.HexToBytes().Decrypt(key, iv).GetString() : @string?.Base64ToBytes().Decrypt(key, iv).GetString()) ?? throw new ArgumentException("Invalid", nameof(@string));
 
 		/// <summary>
 		/// Decrypts this encrypted string by specific pass-phrase using AES
@@ -999,7 +1005,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
-			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
+			=> @string?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex) ?? throw new ArgumentException("Invalid", nameof(@string));
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)
@@ -1354,7 +1360,7 @@ namespace net.vieapps.Components.Utility
 					results.WriteLine(PEM_PRIVATE_KEY_BEGIN);
 
 					// output as Base64 with lines chopped at 64 characters
-					var base64 = stream.ToArraySegment().Take().ToBase64().ToCharArray();
+					var base64 = stream.ToBytes().ToBase64().ToCharArray();
 					for (var index = 0; index < base64.Length; index += 64)
 						results.WriteLine(base64, index, Math.Min(64, base64.Length - index));
 
@@ -1427,7 +1433,7 @@ namespace net.vieapps.Components.Utility
 					results.WriteLine(PEM_PUBLIC_KEY_BEGIN);
 
 					// output as Base64 with lines chopped at 64 characters
-					var base64 = stream.ToArraySegment().Take().ToBase64().ToCharArray();
+					var base64 = stream.ToBytes().ToBase64().ToCharArray();
 					for (var index = 0; index < base64.Length; index += 64)
 						results.WriteLine(base64, index, Math.Min(64, base64.Length - index));
 
