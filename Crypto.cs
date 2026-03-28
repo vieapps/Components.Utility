@@ -911,10 +911,6 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Encrypt/Decrypt (using AES)
-#pragma warning disable SYSLIB0021 // Type or member is obsolete
-		static AesCryptoServiceProvider AEScsp { get; } = new AesCryptoServiceProvider();
-#pragma warning restore SYSLIB0021 // Type or member is obsolete
-
 		/// <summary>
 		/// Encrypts by specified key and initialization vector using AES
 		/// </summary>
@@ -927,8 +923,13 @@ namespace net.vieapps.Components.Utility
 			if (data == null || data.Length < 1)
 				return null;
 
-			using (var encryptor = CryptoService.AEScsp.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-				return encryptor.TransformFinalBlock(data, 0, data.Length);
+			using (var aes = Aes.Create())
+			{
+				aes.Mode = CipherMode.CBC;
+				aes.Padding = PaddingMode.PKCS7;
+				using (var encryptor = aes.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
+					return encryptor.TransformFinalBlock(data, 0, data.Length);
+			}
 		}
 
 		/// <summary>
@@ -977,8 +978,13 @@ namespace net.vieapps.Components.Utility
 			if (data == null || data.Length < 1)
 				return null;
 
-			using (var decryptor = CryptoService.AEScsp.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-				return decryptor.TransformFinalBlock(data, 0, data.Length);
+			using (var aes = Aes.Create())
+			{
+				aes.Mode = CipherMode.CBC;
+				aes.Padding = PaddingMode.PKCS7;
+				using (var decryptor = aes.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
+					return decryptor.TransformFinalBlock(data, 0, data.Length);
+			}
 		}
 
 		/// <summary>
