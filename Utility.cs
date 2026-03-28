@@ -596,8 +596,8 @@ namespace net.vieapps.Components.Utility
 		{
 			if (stream is MemoryStream memoryStream)
 			{
-				memoryStream.Seek(0, SeekOrigin.Begin);
 				onCompleted?.Invoke(memoryStream);
+				memoryStream.Seek(0, SeekOrigin.Begin);
 				return memoryStream;
 			}
 			memoryStream = UtilityService.CreateMemoryStream();

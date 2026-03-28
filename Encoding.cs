@@ -137,7 +137,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this string @string, Encoding encoding = null)
-			=> (encoding ?? Encoding.UTF8).GetBytes(@string);
+			=> (encoding ?? Encoding.UTF8).GetBytes(@string) ?? throw new ArgumentNullException(nameof(@string), "Invalid");
 
 		/// <summary>
 		/// Converts this boolean to array of bytes
@@ -335,7 +335,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isBase64"></param>
 		/// <returns></returns>
 		public static string ToHex(this string @string, bool isBase64 = false)
-			=> (isBase64 ? @string.Base64ToBytes() : @string.ToBytes()).ToHex();
+			=> (isBase64 ? @string?.Base64ToBytes() : @string?.ToBytes())?.ToHex() ?? throw new ArgumentNullException(nameof(@string), "Invalid");
 
 		/// <summary>
 		/// Converts this big-integer to hexa string
@@ -425,8 +425,8 @@ namespace net.vieapps.Components.Utility
 				throw new ArgumentNullException(nameof(@string), "Invalid");
 
 			var base32 = @string.ToUpperInvariant();
-			var output = new byte[base32.Length * 5 / 8];
-			if (output.Length == 0)
+			var bytes = new byte[base32.Length * 5 / 8];
+			if (bytes.Length == 0)
 				throw new ArgumentException("The specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
 
 			var pos = 0;
@@ -435,15 +435,15 @@ namespace net.vieapps.Components.Utility
 			var outputSubPos = 0;
 			var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
-			while (outputPos < output.Length)
+			while (outputPos < bytes.Length)
 			{
 				var current = base32Alphabet.IndexOf(base32[pos]);
 				if (current < 0)
 					throw new FormatException($"Invalid Base32 character \"{@string[pos]}\" at position {pos}");
 
 				var bits = Math.Min(5 - subPos, 8 - outputSubPos);
-				output[outputPos] <<= bits;
-				output[outputPos] |= (byte)(current >> (5 - (subPos + bits)));
+				bytes[outputPos] <<= bits;
+				bytes[outputPos] |= (byte)(current >> (5 - (subPos + bits)));
 				outputSubPos += bits;
 
 				if (outputSubPos >= 8)
@@ -460,19 +460,16 @@ namespace net.vieapps.Components.Utility
 				}
 			}
 
-			// verify & remove check-sum
+			// verify with check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = output.Take(output.Length - 2);
-				output = output.Take(0, output.Length - 2);
-				var correctChecksum = output.GetCheckSum(hashAlgorithm, 2);
-				return givenChecksum.SequenceEqual(correctChecksum)
-					? output
-					: null;
+				var givenChecksum = bytes.Take(bytes.Length - 2);
+				bytes = bytes.Take(0, bytes.Length - 2);
+				var correctChecksum = bytes.GetCheckSum(hashAlgorithm, 2);
+				if (!givenChecksum.SequenceEqual(correctChecksum))
+					throw new ArgumentException("Invalid checksum", nameof(@string));
 			}
-
-			// no check-sum
-			return output;
+			return bytes;
 		}
 
 		/// <summary>
@@ -562,21 +559,18 @@ namespace net.vieapps.Components.Utility
 
 			// encode BigInteger to byte[] - leading zero bytes get encoded as leading `1` characters
 			var zeros = Enumerable.Repeat((byte)0, @string.TakeWhile(c => c == '1').Count());
-			var output = zeros.Concat(bigInt.ToBytes().Reverse().SkipWhile(b => b == 0)).ToArray();
+			var bytes = zeros.Concat(bigInt.ToBytes().Reverse().SkipWhile(b => b == 0)).ToArray();
 
-			// verify & remove check-sum
+			// verify with check-sum
 			if (verifyChecksum)
 			{
-				var givenChecksum = output.Take(output.Length - 4);
-				output = output.Take(0, output.Length - 4);
-				var correctChecksum = output.GetCheckSum(hashAlgorithm, 4);
-				return givenChecksum.SequenceEqual(correctChecksum)
-					? output
-					: null;
+				var givenChecksum = bytes.Take(bytes.Length - 4);
+				bytes = bytes.Take(0, bytes.Length - 4);
+				var correctChecksum = bytes.GetCheckSum(hashAlgorithm, 4);
+				if (!givenChecksum.SequenceEqual(correctChecksum))
+					throw new ArgumentException("Invalid checksum", nameof(@string));
 			}
-
-			// no check-sum
-			return output;
+			return bytes;
 		}
 
 		/// <summary>
