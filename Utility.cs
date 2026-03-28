@@ -566,7 +566,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static MemoryStream ToMemoryStream(this Stream stream, Action<MemoryStream> onCompleted = null)
 		{
-			var memoryStream = UtilityService.CreateMemoryStream();
+			if (stream is MemoryStream memoryStream)
+			{
+				onCompleted?.Invoke(memoryStream);
+				memoryStream.Seek(0, SeekOrigin.Begin);
+				return memoryStream;
+			}
+			memoryStream = UtilityService.CreateMemoryStream();
 			var buffer = new byte[4096];
 			var read = stream.Read(buffer, 0, buffer.Length);
 			while (read > 0)
@@ -574,8 +580,8 @@ namespace net.vieapps.Components.Utility
 				memoryStream.Write(buffer, 0, read);
 				read = stream.Read(buffer, 0, buffer.Length);
 			}
-			memoryStream.Seek(0, SeekOrigin.Begin);
 			onCompleted?.Invoke(memoryStream);
+			memoryStream.Seek(0, SeekOrigin.Begin);
 			return memoryStream;
 		}
 
@@ -588,7 +594,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static async Task<MemoryStream> ToMemoryStreamAsync(this Stream stream, CancellationToken cancellationToken = default, Action<MemoryStream> onCompleted = null)
 		{
-			var memoryStream = UtilityService.CreateMemoryStream();
+			if (stream is MemoryStream memoryStream)
+			{
+				memoryStream.Seek(0, SeekOrigin.Begin);
+				onCompleted?.Invoke(memoryStream);
+				return memoryStream;
+			}
+			memoryStream = UtilityService.CreateMemoryStream();
 			var buffer = new byte[4096];
 			var read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 			while (read > 0)
@@ -596,8 +608,8 @@ namespace net.vieapps.Components.Utility
 				await memoryStream.WriteAsync(buffer, read, cancellationToken).ConfigureAwait(false);
 				read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 			}
-			memoryStream.Seek(0, SeekOrigin.Begin);
 			onCompleted?.Invoke(memoryStream);
+			memoryStream.Seek(0, SeekOrigin.Begin);
 			return memoryStream;
 		}
 
