@@ -1216,6 +1216,8 @@ namespace net.vieapps.Components.Utility
 							{
 								exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 								exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
+								if (exception.Code != 522 && (exception.Body ?? "").IsContains("522: Connection timed out"))
+									exception.Code = 522;
 							}
 							catch { }
 						response.Dispose();
@@ -1327,7 +1329,7 @@ namespace net.vieapps.Components.Utility
 					if (string.IsNullOrWhiteSpace(multipartFilename))
 					{
 						if (!headers.TryGetValue("Content-Type", out var contenType) || string.IsNullOrWhiteSpace(contenType))
-							contenType = "application/octet-stream; charset=utf-8";
+							contenType = "application/octet-stream";
 						request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(contenType);
 					}
 				}
@@ -1488,7 +1490,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static Task<string> FetchHttpAsync(string uri, CancellationToken cancellationToken)
 			=> new Uri(uri).FetchHttpAsync(cancellationToken);
-#endregion
+		#endregion
 
 		#region Upload/Download a remote end-point file
 		/// <summary>

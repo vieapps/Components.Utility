@@ -207,6 +207,8 @@ namespace net.vieapps.Components.Utility
 	[Serializable]
 	public class RemoteServerException : AppException
 	{
+		public int Code { get; set; } = (int)HttpStatusCode.InternalServerError;
+
 		public HttpStatusCode StatusCode { get; internal set; } = HttpStatusCode.InternalServerError;
 
 		public bool IsSuccessStatusCode { get; internal set; } = false;
@@ -223,6 +225,7 @@ namespace net.vieapps.Components.Utility
 
 		public RemoteServerException(HttpStatusCode statusCode, bool isSuccessStatusCode, string method, Uri uri, Dictionary<string, string> headers, string body = null, string message = null, Exception innerException = null) : base(message ?? $"[HTTP {(int)statusCode}]: Error occurred while operating with a remote server", innerException)
 		{
+			this.Code = (int)statusCode;
 			this.StatusCode = statusCode;
 			this.IsSuccessStatusCode = isSuccessStatusCode;
 			this.Method = method;
