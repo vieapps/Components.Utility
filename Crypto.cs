@@ -82,8 +82,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="password">The string that presents the plain-text password for hashing</param>
 		/// <param name="salt">The string that presents the salt for hashing</param>
 		/// <param name="pepper">The string that presents the pepper for hashing</param>
-		/// <returns>The string that presents the 125 bytes of hashing password</returns>
-		public static string GenerateHashPassword(this string password, string salt = null, string pepper = null)
+		/// <param name="length">The number of bytes of the hashing password</param>
+		/// <returns>The string that presents the hashing password in hex string</returns>
+		public static string GenerateHashPassword(this string password, string salt = null, string pepper = null, int length = 32)
 		{
 			using (var argon2 = new Argon2id(password.GetHMACBLAKE256Hash((pepper ?? DEFAULT_PASS_PHRASE).ToUpper()))
 			{
@@ -92,7 +93,7 @@ namespace net.vieapps.Components.Utility
 				MemorySize = 65536,
 				Salt = (salt ?? DEFAULT_PASS_PHRASE).ToLower().GetBLAKE512Hash()
 			})
-				return argon2.GetBytes(32).ToHex();
+				return argon2.GetBytes(length > 0 && length <= 128 ? length : 32).ToHex();
 		}
 		#endregion
 
