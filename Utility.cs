@@ -569,11 +569,12 @@ namespace net.vieapps.Components.Utility
 			if (stream is MemoryStream memoryStream)
 			{
 				onCompleted?.Invoke(memoryStream);
-				memoryStream.Seek(0, SeekOrigin.Begin);
+				if (memoryStream.CanSeek)
+					memoryStream.Seek(0, SeekOrigin.Begin);
 				return memoryStream;
 			}
 			memoryStream = UtilityService.CreateMemoryStream();
-			var buffer = new byte[4096];
+			var buffer = new byte[TextFileReader.BufferSize];
 			var read = stream.Read(buffer, 0, buffer.Length);
 			while (read > 0)
 			{
@@ -581,7 +582,8 @@ namespace net.vieapps.Components.Utility
 				read = stream.Read(buffer, 0, buffer.Length);
 			}
 			onCompleted?.Invoke(memoryStream);
-			memoryStream.Seek(0, SeekOrigin.Begin);
+			if (memoryStream.CanSeek)
+				memoryStream.Seek(0, SeekOrigin.Begin);
 			return memoryStream;
 		}
 
@@ -597,11 +599,12 @@ namespace net.vieapps.Components.Utility
 			if (stream is MemoryStream memoryStream)
 			{
 				onCompleted?.Invoke(memoryStream);
-				memoryStream.Seek(0, SeekOrigin.Begin);
+				if (memoryStream.CanSeek)
+					memoryStream.Seek(0, SeekOrigin.Begin);
 				return memoryStream;
 			}
 			memoryStream = UtilityService.CreateMemoryStream();
-			var buffer = new byte[4096];
+			var buffer = new byte[TextFileReader.BufferSize];
 			var read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 			while (read > 0)
 			{
@@ -609,7 +612,8 @@ namespace net.vieapps.Components.Utility
 				read = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 			}
 			onCompleted?.Invoke(memoryStream);
-			memoryStream.Seek(0, SeekOrigin.Begin);
+			if (memoryStream.CanSeek)
+				memoryStream.Seek(0, SeekOrigin.Begin);
 			return memoryStream;
 		}
 
