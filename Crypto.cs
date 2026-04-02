@@ -146,7 +146,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetHash(this byte[] bytes, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid", nameof(bytes));
+				throw new ArgumentException($"Invalid data ({hashAlgorithm} hash)", nameof(bytes));
 
 			using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
 				return hasher.ComputeHash(bytes);
@@ -394,10 +394,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="firstAlgorithm">Name of the first hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="secondAlgorithm">Name of the second hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetDoubleHash(this byte[] bytes, string firstAlgorithm = "SHA256", string secondAlgorithm = null)
+		public static byte[] GetDoubleHash(this byte[] bytes, string firstAlgorithm = "SHA256", string secondAlgorithm = "RIPEMD160")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid", nameof(bytes));
+				throw new ArgumentException($"Invalid data ({firstAlgorithm}/{secondAlgorithm ?? firstAlgorithm} double hash)", nameof(bytes));
 
 			using (var firstHasher = CryptoService.GetHashAlgorithm(firstAlgorithm))
 			{
@@ -416,30 +416,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="firstAlgorithm">Name of the first hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <param name="secondAlgorithm">Name of the second hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
 		/// <returns></returns>
-		public static byte[] GetDoubleHash(this string @string, string firstAlgorithm = "SHA256", string secondAlgorithm = null)
+		public static byte[] GetDoubleHash(this string @string, string firstAlgorithm = "SHA256", string secondAlgorithm = "RIPEMD160")
 			=> string.IsNullOrWhiteSpace(@string)
 				? Array.Empty<byte>()
 				: @string.ToBytes().GetDoubleHash(firstAlgorithm, secondAlgorithm);
-
-		/// <summary>
-		/// Gets the double-hash of this array of bytes with first hash is SHA256, second hash is RIPEMD160
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <returns></returns>
-		public static byte[] GetHash160(this byte[] bytes)
-			=> bytes == null || bytes.Length < 1
-				? throw new ArgumentException("Invalid", nameof(bytes))
-				: bytes.GetDoubleHash("SHA256", "RIPEMD160");
-
-		/// <summary>
-		/// Gets the double-hash of this string with first hash is SHA256, second hash is RIPEMD160
-		/// </summary>
-		/// <param name="string"></param>
-		/// <returns></returns>
-		public static byte[] GetHash160(this string @string)
-			=> string.IsNullOrWhiteSpace(@string)
-				? Array.Empty<byte>()
-				: @string.ToBytes().GetHash160();
 		#endregion
 
 		#region HMAC Hash an array of bytes or string
@@ -494,9 +474,9 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid", nameof(bytes));
+				throw new ArgumentException($"Invalid data (HMAC {hashAlgorithm} hash)", nameof(bytes));
 			else if (key == null || key.Length < 1)
-				throw new ArgumentException("Invalid", nameof(key));
+				throw new ArgumentException($"Invalid data (HMAC {hashAlgorithm} hash)", nameof(key));
 
 			using (var hasher = CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm))
 				return hasher.ComputeHash(bytes);
@@ -874,7 +854,7 @@ namespace net.vieapps.Components.Utility
 			=> @string.GetHMACRIPEMD160(null, toHex);
 		#endregion
 
-		#region Get checksum of bytes, string, file
+		#region Get checksum of bytes or string
 		/// <summary>
 		/// Gets the check-sum of this array of bytes using double-hash
 		/// </summary>
@@ -883,7 +863,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this byte[] bytes, string hashAlgorithm = "SHA256", int length = 4)
-			=> bytes?.GetDoubleHash(hashAlgorithm).Take(0, length > 0 ? length : 4) ?? throw new ArgumentException("Invalid", nameof(bytes));
+			=> bytes?.GetHash(hashAlgorithm).Take(0, length > 0 ? length : 4) ?? throw new ArgumentException($"Invalid data ({hashAlgorithm} checksum)", nameof(bytes));
 
 		/// <summary>
 		/// Gets the check-sum of this string using double-hash
@@ -893,23 +873,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="length">Length of the check-sum</param>
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this string @string, string hashAlgorithm = "SHA256", int length = 4)
-			=> @string?.ToBytes().GetCheckSum(hashAlgorithm, length) ?? throw new ArgumentException("Invalid", nameof(@string));
-
-		/// <summary>
-		/// Gets the check-sum of this file
-		/// </summary>
-		/// <param name="fileInfo"></param>
-		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
-		/// <returns></returns>
-		public static byte[] GetCheckSum(this FileInfo fileInfo, string hashAlgorithm = "SHA256")
-		{
-			if (fileInfo == null || !fileInfo.Exists)
-				return Array.Empty<byte>();
-
-			using (var stream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
-			using (var hasher = CryptoService.GetHashAlgorithm(hashAlgorithm))
-				return hasher.ComputeHash(stream);
-		}
+			=> @string?.ToBytes().GetCheckSum(hashAlgorithm, length) ?? throw new ArgumentException($"Invalid data (HMAC {hashAlgorithm} checksum)", nameof(@string));
 		#endregion
 
 		#region Encrypt/Decrypt (using AES)
@@ -941,7 +905,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
 		public static byte[] Encrypt(this byte[] data, string passPhrase = null)
-			=> data?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
+			=> data?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128));
 
 		/// <summary>
 		/// Encrypts this string by specified key and initialization vector using AES
@@ -966,7 +930,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="toHex"></param>
 		/// <returns></returns>
 		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
-			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
+			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128), toHex);
 
 		/// <summary>
 		/// Decrypts by specified key and initialization vector using AES
@@ -996,7 +960,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
 		public static byte[] Decrypt(this byte[] data, string passPhrase = null)
-			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
+			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128));
 
 		/// <summary>
 		/// Decrypts this encrypted string by specified key and initialization vector using AES
@@ -1021,7 +985,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
-			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
+			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128), isHex);
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)
@@ -3040,7 +3004,7 @@ namespace net.vieapps.Components.Utility
 					if (keyPoint.IsInfinity || tag.IsInfinity)
 						continue;
 
-					key = keyPoint.Encode(false).GetDoubleHash("SHA256");
+					key = keyPoint.Encode(false).GetDoubleHash("SHA256", "SHA256");
 					return tag;
 				}
 
@@ -3048,9 +3012,7 @@ namespace net.vieapps.Components.Utility
 			}
 
 			public byte[] DecipherKey(BigInteger privateKey, Point tag)
-			{
-				return tag.Multiply(privateKey).Encode(false).GetDoubleHash("SHA256");
-			}
+				=> tag.Multiply(privateKey).Encode(false).GetDoubleHash("SHA256", "SHA256");
 		}
 		#endregion
 
@@ -3058,40 +3020,27 @@ namespace net.vieapps.Components.Utility
 		public class Encryption
 		{
 			Elgamal Elgamal { get; set; } = new Elgamal();
-#pragma warning disable SYSLIB0022 // Type or member is obsolete
-			RijndaelManaged Rijndael { get; set; } = new RijndaelManaged();
-#pragma warning restore SYSLIB0022 // Type or member is obsolete
-
-			public Encryption()
-			{
-				this.Rijndael.KeySize = 256;
-				this.Rijndael.BlockSize = 128;
-				this.Rijndael.Mode = CipherMode.CBC;
-				this.Rijndael.Padding = PaddingMode.PKCS7;
-			}
-
-			~Encryption()
-			{
-				this.Rijndael.Dispose();
-			}
 
 			public byte[] Encrypt(Point publicKey, byte[] data)
 			{
 				var tag = this.Elgamal.GenerateKey(publicKey, out byte[] key);
 				var tagBytes = tag.Encode(false);
-
-				this.Rijndael.Key = key;
-				this.Rijndael.IV = CryptoService.GenerateRandomKey(16);
-
-				using (var cryptor = this.Rijndael.CreateEncryptor())
+				using (var aes = Aes.Create())
 				{
-					var encrypted = cryptor.TransformFinalBlock(data, 0, data.Length);
-
-					var cipher = new byte[encrypted.Length + 65 + 16];
-					Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
-					Buffer.BlockCopy(Rijndael.IV, 0, cipher, 65, 16);
-					Buffer.BlockCopy(encrypted, 0, cipher, 65 + 16, encrypted.Length);
-					return cipher;
+					aes.KeySize = 256;
+					aes.Mode = CipherMode.CBC;
+					aes.Padding = PaddingMode.PKCS7;
+					aes.Key = key;
+					aes.IV = CryptoService.GenerateRandomKey(16);
+					using (var encryptor = aes.CreateEncryptor())
+					{
+						var encrypted = encryptor.TransformFinalBlock(data, 0, data.Length);
+						var cipher = new byte[encrypted.Length + 65 + 16];
+						Buffer.BlockCopy(tagBytes, 0, cipher, 0, 65);
+						Buffer.BlockCopy(aes.IV, 0, cipher, 65, 16);
+						Buffer.BlockCopy(encrypted, 0, cipher, 65 + 16, encrypted.Length);
+						return cipher;
+					}
 				}
 			}
 
@@ -3100,21 +3049,20 @@ namespace net.vieapps.Components.Utility
 				var tagBytes = new byte[65];
 				Buffer.BlockCopy(data, 0, tagBytes, 0, tagBytes.Length);
 				var keyPoint = Point.Decode(tagBytes);
-
 				var iv = new byte[16];
 				Buffer.BlockCopy(data, 65, iv, 0, iv.Length);
-
 				var cipher = new byte[data.Length - 16 - 65];
 				Buffer.BlockCopy(data, 65 + 16, cipher, 0, cipher.Length);
-
 				var key = this.Elgamal.DecipherKey(privateKey, keyPoint);
-
-				this.Rijndael.IV = iv;
-				this.Rijndael.Key = key;
-
-				using (var decryptor = this.Rijndael.CreateDecryptor())
+				using (var aes = Aes.Create())
 				{
-					return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+					aes.KeySize = 256;
+					aes.Mode = CipherMode.CBC;
+					aes.Padding = PaddingMode.PKCS7;
+					aes.Key = key;
+					aes.IV = iv;
+					using (var decryptor = aes.CreateDecryptor())
+						return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
 				}
 			}
 		}
@@ -3238,7 +3186,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="prefix">The byte that presents prefix of the public address</param>
 		/// <returns></returns>
 		public static string GeneratePublicAddress(Point publicKey, bool compressed = true, byte prefix = 0)
-			=> new[] { prefix }.Concat(publicKey.Encode(compressed).GetHash160()).Base58Encode();
+			=> new[] { prefix }.Concat(publicKey.Encode(compressed).GetDoubleHash()).Base58Encode();
 
 		/// <summary>
 		/// Generates the public address from the public key using Elliptic Curve Cryptography (follow Secp256k1 specs - Bitcoin)
