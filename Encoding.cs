@@ -72,18 +72,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="input"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes<T>(this ReadOnlyMemory<T> input) where T : struct
-		{
-			if (typeof(T) == typeof(byte))
-			{
-				if (MemoryMarshal.TryGetArray(input, out ArraySegment<T> segment))
-				{
-					if (segment.Array is byte[] array && segment.Offset == 0 && segment.Count == array.Length)
-						return array;
-				}
-				return input.Span.ToArray() as byte[];
-			}
-			return MemoryMarshal.AsBytes(input.Span).ToArray();
-		}
+			=> typeof(T) == typeof(byte)
+				? MemoryMarshal.TryGetArray(input, out ArraySegment<T> segment) && segment.Array is byte[] array && segment.Offset == 0 && segment.Count == array.Length
+					? array
+					: input.Span.ToArray() as byte[]
+				: MemoryMarshal.AsBytes(input.Span).ToArray();
 
 		/// <summary>
 		/// Converts this array segment of bytes to array of bytes
@@ -120,14 +113,19 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] ToBytes(this MemoryStream stream)
 		{
+			byte[] array = null;
+			if (stream.CanSeek)
+				stream.Seek(0, SeekOrigin.Begin);
+
 			if (stream.TryGetBuffer(out var buffer) && buffer.Array != null)
 			{
 				var length = (int)stream.Length;
-				return buffer.Offset == 0 && length == buffer.Array.Length
+				array = buffer.Offset == 0 && length == buffer.Array.Length
 					? buffer.Array
 					: new ArraySegment<byte>(buffer.Array, buffer.Offset, length).ToBytes();
 			}
-			return stream.ToArray();
+
+			return array != null && array.Length > 0 ? array : stream.ToArray();
 		}
 
 		/// <summary>
@@ -137,7 +135,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static byte[] ToBytes(this string @string, Encoding encoding = null)
-			=> (encoding ?? Encoding.UTF8).GetBytes(@string) ?? throw new ArgumentException("Invalid data (to-bytes)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+				? Array.Empty<byte>()
+				: (encoding ?? Encoding.UTF8).GetBytes(@string);
 
 		/// <summary>
 		/// Converts this boolean to array of bytes
@@ -287,7 +287,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] Base64ToBytes(this string @string, bool isBase64Url = false)
 		{
-			var base64 = (isBase64Url ? @string?.Replace('-', '+').Replace('_', '/') : @string) ?? throw new ArgumentException("Invalid data (base64-to-bytes)", nameof(@string));
+			var base64 = (isBase64Url ? @string?.Replace('-', '+').Replace('_', '/') : @string) ?? throw new ArgumentException("Invalid base64 string");
 			if (isBase64Url)
 				switch (base64.Length % 4)
 				{
@@ -300,7 +300,7 @@ namespace net.vieapps.Components.Utility
 						base64 += "=";
 						break;
 					default:
-						throw new Exception("Illegal base64url string!");
+						throw new ArgumentException("Invalid base64url string!");
 				}
 			return Convert.FromBase64String(base64);
 		}
@@ -311,7 +311,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static byte[] Base64UrlToBytes(this string @string)
-			=> @string?.Base64ToBytes(true) ?? throw new ArgumentException("Invalid data (base64url-to-bytes)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+				? Array.Empty<byte>()
+				: @string.Base64ToBytes(true);
 		#endregion
 
 		#region To Hex
@@ -323,7 +325,7 @@ namespace net.vieapps.Components.Utility
 		public static string ToHex(this byte[] bytes)
 		{
 			if (bytes == null || bytes.Length < 1)
-				return "";
+				return string.Empty;
 			var hex = new StringBuilder(bytes.Length * 2);
 			foreach (var @byte in bytes)
 				hex.Append(EncodingService.ByteToHex[@byte]);
@@ -337,7 +339,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isBase64"></param>
 		/// <returns></returns>
 		public static string ToHex(this string @string, bool isBase64 = false)
-			=> (isBase64 ? @string?.Base64ToBytes() : @string?.ToBytes())?.ToHex();
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: (isBase64 ? @string.Base64ToBytes() : @string.ToBytes())?.ToHex();
 
 		/// <summary>
 		/// Converts this big-integer to hexa string
@@ -378,7 +382,7 @@ namespace net.vieapps.Components.Utility
 		public static string Base32Encode(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA1")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid data (base32 encode)", nameof(bytes));
+				throw new ArgumentException("Invalid data for Base32 encoding", nameof(bytes));
 
 			var data = addChecksum
 				? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 2))
@@ -424,7 +428,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] Base32Decode(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA1")
 		{
 			if (string.IsNullOrWhiteSpace(@string))
-				throw new ArgumentException("Invalid data (base32 decode)", nameof(@string));
+				throw new ArgumentException("Invalid data for Base32 encoding", nameof(@string));
 
 			var base32 = @string.ToUpperInvariant();
 			var bytes = new byte[base32.Length * 5 / 8];
@@ -482,7 +486,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string ToBase32(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA1")
-			=> bytes?.Base32Encode(addChecksum, hashAlgorithm) ?? throw new ArgumentException("Invalid data (base32 encode)", nameof(bytes));
+			=> bytes == null || bytes.Length < 1
+				? string.Empty
+				: bytes.Base32Encode(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this string to Base32 string
@@ -492,7 +498,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string ToBase32(this string @string, bool addChecksum = false, string hashAlgorithm = "SHA1")
-			=> @string?.ToBytes().ToBase32(addChecksum, hashAlgorithm) ?? throw new ArgumentException("Invalid data (base32 encode)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+			? string.Empty
+			: @string.ToBytes().ToBase32(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this Base32 string to plain string
@@ -502,7 +510,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string FromBase32(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA1")
-			=> @string?.Base32Decode(verifyChecksum, hashAlgorithm).GetString() ?? throw new ArgumentException("Invalid data (base32 decode)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+			? string.Empty
+			: @string.Base32Decode(verifyChecksum, hashAlgorithm).GetString();
 		#endregion
 
 		#region Encode/Decode Base58
@@ -583,7 +593,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string ToBase58(this byte[] bytes, bool addChecksum = true, string hashAlgorithm = "SHA256")
-			=> bytes?.Base58Encode(addChecksum, hashAlgorithm) ?? throw new ArgumentException("Invalid data (base58 encode)", nameof(bytes));
+			=> bytes == null || bytes.Length < 1
+				? string.Empty
+				: bytes.Base58Encode(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this string to Base58 string
@@ -593,7 +605,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string ToBase58(this string @string, bool addChecksum = true, string hashAlgorithm = "SHA256")
-			=> @string?.ToBytes().ToBase58(addChecksum, hashAlgorithm) ?? throw new ArgumentException("Invalid data (base58 encode)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: @string.ToBytes()?.ToBase58(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this Base58 string to plain string
@@ -603,7 +617,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string FromBase58(this string @string, bool verifyChecksum = true, string hashAlgorithm = "SHA256")
-			=> @string?.Base58Decode(verifyChecksum, hashAlgorithm)?.GetString() ?? throw new ArgumentException("Invalid data (base58 decode)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: @string.Base58Decode(verifyChecksum, hashAlgorithm)?.GetString();
 		#endregion
 
 		#region Encode/Decode Base64
@@ -615,9 +631,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string Base64Encode(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
-			=> bytes != null && bytes.Length > 0
-				? Convert.ToBase64String(addChecksum ? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 4)) : bytes)
-				: throw new ArgumentException("Invalid data (base64 encode)", nameof(bytes));
+		{
+			if (bytes == null || bytes.Length < 1)
+				throw new ArgumentException("Invalid data (null or empty for Base64 encoding)");
+			return Convert.ToBase64String(addChecksum ? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 4)) : bytes);
+		}
 
 		/// <summary>
 		/// Decodes this base64 string to array of bytes
@@ -648,7 +666,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string ToBase64(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
-			=> bytes?.Base64Encode(addChecksum, hashAlgorithm) ?? throw new ArgumentException("Invalid data (base64 encode)", nameof(bytes));
+			=> bytes == null || bytes.Length < 1
+				? string.Empty
+				: bytes.Base64Encode(addChecksum, hashAlgorithm);
 
 		/// <summary>
 		/// Converts this string to Base64 string
@@ -661,11 +681,13 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToBase64(this string @string, bool isHex = false, bool isBase64Url = false, bool addChecksum = false, string hashAlgorithm = "SHA256")
 		{
-			var bytes = (isHex
-				? @string?.HexToBytes()
-				: isBase64Url
-					? @string?.Base64ToBytes(true)
-					: @string?.ToBytes()) ?? throw new ArgumentException("Invalid data (base64 encode)", nameof(@string));
+			var bytes = string.IsNullOrEmpty(@string)
+				? Array.Empty<byte>()
+				: (isHex
+					? @string.HexToBytes()
+					: isBase64Url
+						? @string.Base64ToBytes(true)
+						: @string.ToBytes()) ?? throw new ArgumentException("Invalid data (base64 encode)", nameof(@string));
 			return bytes.ToBase64(addChecksum, hashAlgorithm);
 		}
 
@@ -692,7 +714,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string ToBase64Url(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
-			=> bytes?.ToBase64(addChecksum, hashAlgorithm).ToBase64Url(true) ?? throw new ArgumentException("Invalid data (base64url encode)", nameof(bytes));
+			=> bytes == null || bytes.Length < 1
+			? string.Empty
+			: bytes.ToBase64(addChecksum, hashAlgorithm).ToBase64Url(true);
 
 		/// <summary>
 		/// Converts this Base64 string to plain string
@@ -703,7 +727,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512) for working with check-sum</param>
 		/// <returns></returns>
 		public static string FromBase64(this string @string, bool isBase64Url = false, bool verifyChecksum = false, string hashAlgorithm = "SHA256")
-			=> (isBase64Url ? @string?.ToBase64(false, true) : @string)?.Base64Decode(verifyChecksum, hashAlgorithm)?.GetString() ?? throw new ArgumentException("Invalid data (base64 decode)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: (isBase64Url ? @string.ToBase64(false, true) : @string).Base64Decode(verifyChecksum, hashAlgorithm).GetString();
 
 		/// <summary>
 		/// Converts this Base64Url string to plain string
@@ -711,7 +737,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		public static string FromBase64Url(this string @string)
-			=> @string?.FromBase64(true) ?? throw new ArgumentException("Invalid data (base64url decode)", nameof(@string));
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: @string?.FromBase64(true);
 		#endregion
 
 		#region Encode/Decode by URL/HTML/ASCII
