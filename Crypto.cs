@@ -905,7 +905,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
 		public static byte[] Encrypt(this byte[] data, string passPhrase = null)
-			=> data?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128));
+			=> data?.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128)) ?? throw new ArgumentException("Invalid data (aes-encrypt)", nameof(data));
 
 		/// <summary>
 		/// Encrypts this string by specified key and initialization vector using AES
@@ -930,7 +930,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="toHex"></param>
 		/// <returns></returns>
 		public static string Encrypt(this string @string, string passPhrase = null, bool toHex = false)
-			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128), toHex);
+			=> @string.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), toHex);
 
 		/// <summary>
 		/// Decrypts by specified key and initialization vector using AES
@@ -960,7 +960,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
 		public static byte[] Decrypt(this byte[] data, string passPhrase = null)
-			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128));
+			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128)) ?? throw new ArgumentException("Invalid data (aes-decrypt)", nameof(data));
 
 		/// <summary>
 		/// Decrypts this encrypted string by specified key and initialization vector using AES
@@ -985,7 +985,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
-			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128) ?? CryptoService.GenerateRandomKey(128), isHex);
+			=> @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)

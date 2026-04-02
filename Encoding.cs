@@ -323,7 +323,7 @@ namespace net.vieapps.Components.Utility
 		public static string ToHex(this byte[] bytes)
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid data (hex encode)", nameof(bytes));
+				return "";
 			var hex = new StringBuilder(bytes.Length * 2);
 			foreach (var @byte in bytes)
 				hex.Append(EncodingService.ByteToHex[@byte]);
@@ -337,7 +337,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isBase64"></param>
 		/// <returns></returns>
 		public static string ToHex(this string @string, bool isBase64 = false)
-			=> (isBase64 ? @string?.Base64ToBytes() : @string?.ToBytes())?.ToHex() ?? throw new ArgumentException("Invalid data (hex encode)", nameof(@string));
+			=> (isBase64 ? @string?.Base64ToBytes() : @string?.ToBytes())?.ToHex();
 
 		/// <summary>
 		/// Converts this big-integer to hexa string
