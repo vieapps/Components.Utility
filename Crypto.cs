@@ -183,7 +183,9 @@ namespace net.vieapps.Components.Utility
 		public static string GetMD5(this string @string, bool toHex = true)
 			=> string.IsNullOrEmpty(@string)
 				? string.Empty
-				: toHex ? @string.GetMD5Hash().ToHex() : @string.GetMD5Hash().ToBase64();
+				: toHex
+					? @string.GetMD5Hash().ToHex()
+					: @string.GetMD5Hash().ToBase64();
 
 		/// <summary>
 		/// Gets SHA hash of this string (256 bits)
@@ -446,15 +448,13 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetDoubleHash(this byte[] bytes, string firstAlgorithm = "SHA256", string secondAlgorithm = "RIPEMD160")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException($"Invalid data ({firstAlgorithm}/{secondAlgorithm ?? firstAlgorithm} double hash)", nameof(bytes));
+				throw new ArgumentException($"Invalid bytes ({firstAlgorithm}/{secondAlgorithm ?? firstAlgorithm} double hash)", nameof(bytes));
 
 			using (var firstHasher = CryptoService.GetHashAlgorithm(firstAlgorithm))
 			{
-				var firstHash = firstHasher.ComputeHash(bytes);
-				if (string.IsNullOrWhiteSpace(secondAlgorithm) || secondAlgorithm.IsEquals(firstAlgorithm))
-					return firstHasher.ComputeHash(firstHash);
+				var hash = firstHasher.ComputeHash(bytes);
 				using (var secondHasher = CryptoService.GetHashAlgorithm(secondAlgorithm))
-					return secondHasher.ComputeHash(firstHash);
+					return secondHasher.ComputeHash(hash);
 			}
 		}
 
@@ -523,7 +523,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] GetHMACHash(this byte[] bytes, byte[] key, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException($"Invalid data for hashing with HMAC {hashAlgorithm}", nameof(bytes));
+				throw new ArgumentException($"Invalid bytes for hashing with HMAC {hashAlgorithm}", nameof(bytes));
 			if (key == null || key.Length < 1)
 				throw new ArgumentException($"Invalid key for hashing with HMAC {hashAlgorithm}", nameof(key));
 			using (var hasher = CryptoService.GetHMACHashAlgorithm(key, hashAlgorithm))
@@ -988,8 +988,8 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] GetCheckSum(this byte[] bytes, string hashAlgorithm = "SHA256", int length = 4)
 			=> bytes == null || bytes.Length < 1
-			? Array.Empty<byte>()
-			: bytes.GetHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
+				? Array.Empty<byte>()
+				: bytes.GetHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
 
 		/// <summary>
 		/// Gets the check-sum of this string using double-hash
@@ -1008,13 +1008,13 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Encrypts by specified key and initialization vector using AES
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="bytes"></param>
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
 		/// <returns></returns>
-		public static byte[] Encrypt(this byte[] data, byte[] key, byte[] iv)
+		public static byte[] Encrypt(this byte[] bytes, byte[] key, byte[] iv)
 		{
-			if (data == null || data.Length < 1)
+			if (bytes == null || bytes.Length < 1)
 				return Array.Empty<byte>();
 
 			using (var aes = Aes.Create())
@@ -1022,20 +1022,20 @@ namespace net.vieapps.Components.Utility
 				aes.Mode = CipherMode.CBC;
 				aes.Padding = PaddingMode.PKCS7;
 				using (var encryptor = aes.CreateEncryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-					return encryptor.TransformFinalBlock(data, 0, data.Length);
+					return encryptor.TransformFinalBlock(bytes, 0, bytes.Length);
 			}
 		}
 
 		/// <summary>
 		/// Encrypts by specified pass-phrase using AES
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="bytes"></param>
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
-		public static byte[] Encrypt(this byte[] data, string passPhrase = null)
-			=> data == null || data.Length < 1
+		public static byte[] Encrypt(this byte[] bytes, string passPhrase = null)
+			=> bytes == null || bytes.Length < 1
 				? Array.Empty<byte>()
-				: data.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
+				: bytes.Encrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
 
 		/// <summary>
 		/// Encrypts this string by specified key and initialization vector using AES
@@ -1067,32 +1067,34 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Decrypts by specified key and initialization vector using AES
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="bytes"></param>
 		/// <param name="key"></param>
 		/// <param name="iv"></param>
 		/// <returns></returns>
-		public static byte[] Decrypt(this byte[] data, byte[] key, byte[] iv)
+		public static byte[] Decrypt(this byte[] bytes, byte[] key, byte[] iv)
 		{
-			if (data == null || data.Length < 1)
-				return null;
+			if (bytes == null || bytes.Length < 1)
+				return Array.Empty<byte>();
 
 			using (var aes = Aes.Create())
 			{
 				aes.Mode = CipherMode.CBC;
 				aes.Padding = PaddingMode.PKCS7;
 				using (var decryptor = aes.CreateDecryptor(key ?? DEFAULT_ENCRYPTION_KEY, iv ?? DEFAULT_ENCRYPTION_IV))
-					return decryptor.TransformFinalBlock(data, 0, data.Length);
+					return decryptor.TransformFinalBlock(bytes, 0, bytes.Length);
 			}
 		}
 
 		/// <summary>
 		/// Decrypts by specific pass-phrase using AES
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="bytes"></param>
 		/// <param name="passPhrase"></param>
 		/// <returns></returns>
-		public static byte[] Decrypt(this byte[] data, string passPhrase = null)
-			=> data?.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
+		public static byte[] Decrypt(this byte[] bytes, string passPhrase = null)
+			=> bytes == null || bytes.Length < 1
+				? Array.Empty<byte>()
+				: bytes.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128));
 
 		/// <summary>
 		/// Decrypts this encrypted string by specified key and initialization vector using AES
@@ -1103,9 +1105,11 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, byte[] key, byte[] iv, bool isHex = false)
-			=> isHex
-				? @string?.HexToBytes().Decrypt(key, iv).GetString()
-				: @string?.Base64ToBytes().Decrypt(key, iv).GetString();
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: isHex
+					? @string.HexToBytes().Decrypt(key, iv).GetString()
+					: @string.Base64ToBytes().Decrypt(key, iv).GetString();
 
 		/// <summary>
 		/// Decrypts this encrypted string by specific pass-phrase using AES
@@ -1115,7 +1119,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="isHex"></param>
 		/// <returns></returns>
 		public static string Decrypt(this string @string, string passPhrase = null, bool isHex = false)
-			=> string.IsNullOrEmpty(@string) ? string.Empty : @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
+			=> string.IsNullOrEmpty(@string)
+				? string.Empty
+				: @string.Decrypt(passPhrase?.GenerateHashKey(256), passPhrase?.GenerateHashKey(128), isHex);
 		#endregion
 
 		#region Encrypt/Decrypt (using RSA)
