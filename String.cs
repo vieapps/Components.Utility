@@ -726,7 +726,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="string"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		unsafe public static int GetUniqueHash(string @string)
+		unsafe public static int GetUniqueHash(this string @string)
 		{
 			if (@string == null)
 				throw new ArgumentNullException(nameof(@string));
