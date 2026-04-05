@@ -720,5 +720,55 @@ namespace net.vieapps.Components.Utility
 			=> !string.IsNullOrWhiteSpace(ansiUri) && ansiUri.IsEquals(allowDotSymbols ? StringService.URICharactersWithDot.Replace(ansiUri, "") : StringService.URICharacters.Replace(ansiUri, ""));
 		#endregion
 
+		/// <summary>
+		/// Returns the unique hash code for this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		unsafe public static int GetUniqueHash(string @string)
+		{
+			if (@string == null)
+				throw new ArgumentNullException(nameof(@string));
+			const uint M = 0x5bd1e995;
+			const int R = 24;
+			int length = @string.Length * 2;
+			uint seed = (uint)(0xdeadbeef * length);
+			uint hash = seed ^ (uint)length;
+			fixed (char* c = @string)
+			{
+				byte* data = (byte*)c;
+				int count = length >> 2;
+				uint* ptr = (uint*)data;
+				while (count-- > 0)
+				{
+					uint k = *ptr++;
+					k *= M;
+					k ^= k >> R;
+					k *= M;
+					hash *= M;
+					hash ^= k;
+				}
+				byte* tail = (byte*)ptr;
+				switch (length & 3)
+				{
+					case 3:
+						hash ^= (uint)(tail[2] << 16);
+						goto case 2;
+					case 2:
+						hash ^= (uint)(tail[1] << 8);
+						goto case 1;
+					case 1:
+						hash ^= tail[0];
+						hash *= M;
+						break;
+				}
+			}
+			hash ^= hash >> 13;
+			hash *= M;
+			hash ^= hash >> 15;
+			return (int)(hash & 0x7fffffff);
+		}
+
 	}
 }

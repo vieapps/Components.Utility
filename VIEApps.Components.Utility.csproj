@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0;net8.0;netstandard2.0</TargetFrameworks>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<WarningLevel>3</WarningLevel>
 		<NoWarn>IDE0003,IDE0054,IDE0056,IDE0057,IDE0063,IDE0074,IDE0090,CA1068,CA1510,CA1512,CA1822,CA2208,CS8002,NU1701,1573,1591</NoWarn>
 		<DocumentationFile>bin/$(Configuration)/$(TargetFramework)/VIEApps.Components.Utility.xml</DocumentationFile>
