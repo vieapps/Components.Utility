@@ -246,6 +246,22 @@ namespace net.vieapps.Components.Utility
 	}
 
 	[Serializable]
+	public class SystemBusyException : AppException
+	{
+		public SystemBusyException() : base("System is busy. Please try again...") { }
+
+		public SystemBusyException(string message) : base(message) { }
+
+		public SystemBusyException(Exception innerException) : base("System is busy. Please try again...", innerException) { }
+
+		public SystemBusyException(string message, Exception innerException) : base(message, innerException) { }
+
+#if NETSTANDARD2_0
+		public SystemBusyException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+#endif
+	}
+
+	[Serializable]
 	public class ConnectionTimeoutException : AppException
 	{
 		public ConnectionTimeoutException() : base("Connection timeout") { }
