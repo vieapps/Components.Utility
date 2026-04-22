@@ -1699,7 +1699,7 @@ namespace net.vieapps.Components.Utility
 		#endregion
 
 		#region Copy objects' properties from JSON
-		static JsonSerializer JSONSerializer { get; } = JsonSerializer.CreateDefault();
+		internal static JsonSerializer JSONSerializer { get; } = JsonSerializer.CreateDefault();
 
 		/// <summary>
 		/// Copies data of the JSON object
@@ -2269,8 +2269,29 @@ namespace net.vieapps.Components.Utility
 					json = new JObject { ["_original"] = JSONOrURLEncodedString ?? "" };
 				}
 			}
+			onCompleted?.Invoke(json);
 			return json;
 		}
+
+		/// <summary>
+		/// Converts this JSON to string avoid .ToString() methods of Newtonsoft.Json
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="tag"></param>
+		/// <param name="capacity"></param>
+		/// <param name="formatting"></param>
+		/// <returns></returns>
+		public static string AsString(this JToken @object, string tag, int capacity, Newtonsoft.Json.Formatting formatting)
+			=> @object.ToBytes(tag, capacity, formatting).GetString();
+
+		/// <summary>
+		/// Converts this JSON to string avoid .ToString() methods of Newtonsoft.Json
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="formatting"></param>
+		/// <returns></returns>
+		public static string AsString(this JToken @object, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
+			=> @object.ToBytes(formatting).GetString();
 		#endregion
 
 		#region ExpandoObject conversions

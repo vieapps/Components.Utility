@@ -515,20 +515,26 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Creates an instance of <see cref="MemoryStream">MemoryStream</see> using RecyclableMemoryStream to limit LOH fragmentation and improve performance
 		/// </summary>
+		/// <param name="tag"></param>
+		/// <param name="capacity"></param>
 		/// <param name="buffer"></param>
 		/// <param name="index"></param>
 		/// <param name="count"></param>
 		/// <returns></returns>
-		public static MemoryStream CreateMemoryStream(byte[] buffer = null, int index = 0, int count = 0)
+		public static MemoryStream CreateMemoryStream(string tag, int capacity, byte[] buffer = null, int index = 0, int count = 0)
 		{
 			MemoryStream stream;
 			try
 			{
-				stream = UtilityService.RecyclableMemoryStreamManager.GetStream();
+				stream = !string.IsNullOrWhiteSpace(tag) && capacity > 0
+					? UtilityService.RecyclableMemoryStreamManager.GetStream(tag, capacity)
+					: UtilityService.RecyclableMemoryStreamManager.GetStream();
 			}
 			catch
 			{
-				stream = new MemoryStream();
+				stream = !string.IsNullOrWhiteSpace(tag) && capacity > 0
+					? new MemoryStream(capacity)
+					: new MemoryStream();
 			}
 			if (buffer != null && buffer.Length > 0)
 			{
@@ -539,6 +545,16 @@ namespace net.vieapps.Components.Utility
 			}
 			return stream;
 		}
+
+		/// <summary>
+		/// Creates an instance of <see cref="MemoryStream">MemoryStream</see> using RecyclableMemoryStream to limit LOH fragmentation and improve performance
+		/// </summary>
+		/// <param name="buffer"></param>
+		/// <param name="index"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		public static MemoryStream CreateMemoryStream(byte[] buffer = null, int index = 0, int count = 0)
+			=> UtilityService.CreateMemoryStream(null, 0, buffer, index, count);
 
 		/// <summary>
 		/// Converts this array of bytes to memory stream

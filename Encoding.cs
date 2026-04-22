@@ -129,6 +129,37 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
+		/// Converts this json to array of bytes
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="tag"></param>
+		/// <param name="capacity"></param>
+		/// <param name="formatting"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this Newtonsoft.Json.Linq.JToken @object, string tag = null, int capacity = 0, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
+		{
+			using (var stream = UtilityService.CreateMemoryStream(tag, capacity))
+			using (var streamWritter = new StreamWriter(stream, new UTF8Encoding(false), 1024, true))
+			using (var jsonTextWriter = new Newtonsoft.Json.JsonTextWriter(streamWritter) { Formatting = formatting })
+			{
+				@object.WriteTo(jsonTextWriter);
+				jsonTextWriter.Flush();
+				streamWritter.Flush();
+				return stream.ToBytes();
+			}
+		}
+
+
+		/// <summary>
+		/// Converts this json to array of bytes
+		/// </summary>
+		/// <param name="object"></param>
+		/// <param name="formatting"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this Newtonsoft.Json.Linq.JToken @object, Newtonsoft.Json.Formatting formatting)
+			=> @object.ToBytes(null, 0, formatting);
+
+		/// <summary>
 		/// Converts this string to array of bytes
 		/// </summary>
 		/// <param name="string"></param>
@@ -364,7 +395,7 @@ namespace net.vieapps.Components.Utility
 			{
 				var key = hex.Substring(index * 2, 2);
 				if (!EncodingService.HexToByte.TryGetValue(key, out var value))
-					throw new ArgumentException($"Invalid hex data => {hex}");
+					throw new ArgumentException($"Invalid hex @object => {hex}");
 				bytes[index] = value;
 			}
 			return bytes;
@@ -382,7 +413,7 @@ namespace net.vieapps.Components.Utility
 		public static string Base32Encode(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA1")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid data for Base32 encoding", nameof(bytes));
+				throw new ArgumentException("Invalid @object for Base32 encoding", nameof(bytes));
 
 			var data = addChecksum
 				? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 2))
@@ -428,12 +459,12 @@ namespace net.vieapps.Components.Utility
 		public static byte[] Base32Decode(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA1")
 		{
 			if (string.IsNullOrWhiteSpace(@string))
-				throw new ArgumentException("Invalid data for Base32 encoding", nameof(@string));
+				throw new ArgumentException("Invalid @object for Base32 encoding", nameof(@string));
 
 			var base32 = @string.ToUpperInvariant();
 			var bytes = new byte[base32.Length * 5 / 8];
 			if (bytes.Length == 0)
-				throw new ArgumentException("The specified string is not valid Base32 format because it doesn't have enough data to construct a complete byte array");
+				throw new ArgumentException("The specified string is not valid Base32 format because it doesn't have enough @object to construct a complete byte array");
 
 			var pos = 0;
 			var subPos = 0;
@@ -633,7 +664,7 @@ namespace net.vieapps.Components.Utility
 		public static string Base64Encode(this byte[] bytes, bool addChecksum = false, string hashAlgorithm = "SHA256")
 		{
 			if (bytes == null || bytes.Length < 1)
-				throw new ArgumentException("Invalid data (null or empty for Base64 encoding)");
+				throw new ArgumentException("Invalid @object (null or empty for Base64 encoding)");
 			return Convert.ToBase64String(addChecksum ? bytes.Concat(bytes.GetCheckSum(hashAlgorithm, 4)) : bytes);
 		}
 
@@ -646,7 +677,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] Base64Decode(this string @string, bool verifyChecksum = false, string hashAlgorithm = "SHA256")
 		{
-			var bytes = @string?.Base64ToBytes() ?? throw new ArgumentException("Invalid data (base64 decode)", nameof(@string));
+			var bytes = @string?.Base64ToBytes() ?? throw new ArgumentException("Invalid @object (base64 decode)", nameof(@string));
 			if (verifyChecksum)
 			{
 				var givenChecksum = bytes.Take(bytes.Length - 4);
@@ -687,7 +718,7 @@ namespace net.vieapps.Components.Utility
 					? @string.HexToBytes()
 					: isBase64Url
 						? @string.Base64ToBytes(true)
-						: @string.ToBytes()) ?? throw new ArgumentException("Invalid data (base64 encode)", nameof(@string));
+						: @string.ToBytes()) ?? throw new ArgumentException("Invalid @object (base64 encode)", nameof(@string));
 			return bytes.ToBase64(addChecksum, hashAlgorithm);
 		}
 
@@ -702,7 +733,7 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string ToBase64Url(this string @string, bool isBase64 = false, bool isHex = false, bool addChecksum = false, string hashAlgorithm = "SHA256")
 		{
-			var base64 = (isBase64 ? @string : @string?.ToBase64(isHex, false, addChecksum, hashAlgorithm)) ?? throw new ArgumentException("Invalid data (base64url encode)", nameof(@string));
+			var base64 = (isBase64 ? @string : @string?.ToBase64(isHex, false, addChecksum, hashAlgorithm)) ?? throw new ArgumentException("Invalid @object (base64url encode)", nameof(@string));
 			return base64.Split('=').First().Replace('+', '-').Replace('/', '_');
 		}
 
