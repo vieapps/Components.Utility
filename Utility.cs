@@ -743,6 +743,9 @@ namespace net.vieapps.Components.Utility
 
 		public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
 			=> httpContent.ReadAsStringAsync().WithCancellationToken(cancellationToken);
+
+		public static Task FlushAsync(this StreamWriter streamWritter, CancellationToken cancellationToken)
+			=> streamWritter.FlushAsync().WithCancellationToken(cancellationToken);
 #endif
 
 		/// <summary>
@@ -757,7 +760,7 @@ namespace net.vieapps.Components.Utility
 		{
 			if (stream.CanSeek)
 				stream.Seek(0, SeekOrigin.Begin);
-			using (var streamReader = new StreamReader(stream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, leaveOpen))
+			using (var streamReader = new StreamReader(stream, encoding ?? StringService.UTF8NoBOM, encoding == null, TextFileReader.BufferSize, leaveOpen))
 				return await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 		}
 
@@ -824,6 +827,94 @@ namespace net.vieapps.Components.Utility
 		public static Task WriteAsync(this Stream stream, ArraySegment<byte> buffer, CancellationToken cancellationToken = default)
 			=> stream.WriteAsync(buffer.AsMemory(), cancellationToken).AsTask();
 #endif
+
+		/// <summary>
+		/// Writes this stream into an output stream using StreamWriter
+		/// </summary>
+		/// <param name="inputStream"></param>
+		/// <param name="outputStream"></param>
+		/// <returns></returns>
+		public static void WriteTo(this Stream inputStream, Stream outputStream, Encoding encoding = null)
+		{
+			if (inputStream == null || outputStream == null)
+				return;
+
+			if (inputStream.CanSeek)
+				inputStream.Seek(0, SeekOrigin.Begin);
+
+			using (var streamReader = new StreamReader(inputStream, encoding ?? StringService.UTF8NoBOM, true, TextFileReader.BufferSize, true))
+			using (var streamWriter = new StreamWriter(outputStream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize, false))
+			{
+				var buffer = new char[TextFileReader.BufferSize];
+				var read = streamReader.Read(buffer, 0, buffer.Length);
+				while (read > 0)
+				{
+					streamWriter.Write(buffer, 0, read);
+					read = streamReader.Read(buffer, 0, buffer.Length);
+				}
+				streamWriter.Flush();
+			}
+		}
+
+		/// <summary>
+		/// Writes this stream into an output stream using StreamWriter
+		/// </summary>
+		/// <param name="inputStream"></param>
+		/// <param name="outputStream"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task WriteToAsync(this Stream inputStream, Stream outputStream, Encoding encoding = null, CancellationToken cancellationToken = default)
+		{
+			if (inputStream == null || outputStream == null)
+				return;
+
+			if (inputStream.CanSeek)
+				inputStream.Seek(0, SeekOrigin.Begin);
+
+			using (var streamReader = new StreamReader(inputStream, encoding ?? StringService.UTF8NoBOM, true, TextFileReader.BufferSize, true))
+			using (var streamWriter = new StreamWriter(outputStream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize, false))
+			{
+				var buffer = new char[TextFileReader.BufferSize];
+				var read = await streamReader.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				while (read > 0)
+				{
+					await streamWriter.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
+					read = await streamReader.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+				}
+				await streamWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
+			}
+		}
+
+		/// <summary>
+		/// Writes this array of bytes into a stream using StreamWriter
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static void WriteTo(this byte[] bytes, Stream stream, Encoding encoding = null)
+		{
+			if (bytes == null || bytes.Length < 1 || stream == null)
+				return;
+
+			using (var memoryStream = bytes.ToMemoryStream())
+			memoryStream.WriteTo(stream, encoding);
+		}
+
+		/// <summary>
+		/// Writes this array of bytes into a stream using StreamWriter
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="stream"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task WriteToAsync(this byte[] bytes, Stream stream, Encoding encoding = null, CancellationToken cancellationToken = default)
+		{
+			if (bytes == null || bytes.Length < 1 || stream == null)
+				return;
+
+			using (var memoryStream = bytes.ToMemoryStream())
+			await memoryStream.WriteToAsync(stream, encoding, cancellationToken).ConfigureAwait(false);
+		}
 		#endregion
 
 		#region User agents
@@ -2227,10 +2318,10 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 			var @string = string.Empty;
 			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.SequentialScan))
-			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
+			using (var streamReader = new StreamReader(fileStream, encoding ?? StringService.UTF8NoBOM, encoding == null, TextFileReader.BufferSize, false))
 				@string = streamReader.ReadToEnd();
 #else
-			var @string = File.ReadAllText(filePath, encoding ?? Encoding.UTF8);
+			var @string = File.ReadAllText(filePath, encoding ?? StringService.UTF8NoBOM);
 #endif
 			onCompleted?.Invoke(@string);
 			return @string;
@@ -2259,10 +2350,10 @@ namespace net.vieapps.Components.Utility
 #if NETSTANDARD2_0
 			var @string = string.Empty;
 			using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, FileOptions.Asynchronous | FileOptions.SequentialScan))
-			using (var streamReader = new StreamReader(fileStream, encoding ?? Encoding.UTF8, encoding == null, TextFileReader.BufferSize, false))
+			using (var streamReader = new StreamReader(fileStream, encoding ?? StringService.UTF8NoBOM, encoding == null, TextFileReader.BufferSize, false))
 				@string = await streamReader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 #else
-			var @string = await File.ReadAllTextAsync(filePath, encoding ?? Encoding.UTF8, cancellationToken).ConfigureAwait(false);
+			var @string = await File.ReadAllTextAsync(filePath, encoding ?? StringService.UTF8NoBOM, cancellationToken).ConfigureAwait(false);
 #endif
 			onCompleted?.Invoke(@string);
 			return @string;
@@ -2505,22 +2596,9 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("Invalid file path", nameof(filePath));
-			if (stream.CanSeek)
-				stream.Seek(0, SeekOrigin.Begin);
-			encoding = encoding ?? Encoding.UTF8;
-			using (var reader = new StreamReader(stream, encoding, true, TextFileReader.BufferSize, true))
+
 			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			using (var writer = new StreamWriter(fileStream, encoding, TextFileReader.BufferSize, false))
-			{
-				var buffer = new char[TextFileReader.BufferSize];
-				var read = await reader.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-				while (read > 0)
-				{
-					await writer.WriteAsync(buffer, 0, read, cancellationToken).ConfigureAwait(false);
-					read = await reader.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-				}
-				await writer.FlushAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
-			}
+			await stream.WriteToAsync(fileStream, encoding, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -2538,8 +2616,9 @@ namespace net.vieapps.Components.Utility
 			{
 				if (string.IsNullOrWhiteSpace(filePath))
 					throw new ArgumentException("Invalid file path", nameof(filePath));
-				using (var stream = content.ToMemoryStream())
-					await stream.SaveAsTextAsync(filePath, cancellationToken, append, encoding).ConfigureAwait(false);
+
+				using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+				await content.WriteToAsync(fileStream, encoding, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -2554,17 +2633,10 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
-		public static async Task SaveAsTextAsync(this string content, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
-		{
-			if (string.IsNullOrWhiteSpace(filePath))
-				throw new ArgumentException("Invalid file path", nameof(filePath));
-			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			using (var writer = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize, false))
-			{
-				await writer.WriteAsync(content, cancellationToken).ConfigureAwait(false);
-				await writer.FlushAsync().WithCancellationToken(cancellationToken).ConfigureAwait(false);
-			}
-		}
+		public static Task SaveAsTextAsync(this string content, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
+			=> content != null
+				? content.ToBytes(encoding).SaveAsTextAsync(filePath, cancellationToken, append, encoding)
+				: Task.CompletedTask;
 
 		/// <summary>
 		/// Saves this JSON as text file
@@ -2572,18 +2644,19 @@ namespace net.vieapps.Components.Utility
 		/// <param name="json"></param>
 		/// <param name="filePath"></param>
 		/// <param name="cancellationToken"></param>
-		/// <param name="append"></param>
+		/// <param name="formatting"></param>
 		/// <param name="encoding"></param>
 		/// <returns></returns>
-		public static Task SaveAsTextAsync(this JToken json, string filePath, CancellationToken cancellationToken = default, bool append = false, Encoding encoding = null)
+		public static async Task SaveAsTextAsync(this JToken json, string filePath, CancellationToken cancellationToken = default, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.Indented, Encoding encoding = null)
 		{
-			if (json != null)
-			{
-				if (string.IsNullOrWhiteSpace(filePath))
-					throw new ArgumentException("Invalid file path", nameof(filePath));
-				return json.ToString(Newtonsoft.Json.Formatting.Indented).SaveAsTextAsync(filePath, cancellationToken, append, encoding);
-			}
-			return Task.CompletedTask;
+			if (json == null)
+				return;
+
+			if (string.IsNullOrWhiteSpace(filePath))
+				throw new ArgumentException("Invalid file path", nameof(filePath));
+
+			using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
+			await json.WriteToAsync(fileStream, formatting, encoding, cancellationToken).ConfigureAwait(false);
 		}
 
 		/// <summary>
@@ -2598,8 +2671,10 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("Invalid file path", nameof(filePath));
+
 			if (stream.CanSeek)
 				stream.Seek(0, SeekOrigin.Begin);
+
 			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
 			{
 				var buffer = new byte[TextFileReader.BufferSize];
@@ -2626,8 +2701,9 @@ namespace net.vieapps.Components.Utility
 			{
 				if (string.IsNullOrWhiteSpace(filePath))
 					throw new ArgumentException("Invalid file path", nameof(filePath));
+
 				using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-					await fileStream.WriteAsync(content, content.Length, cancellationToken).ConfigureAwait(false);
+				await fileStream.WriteAsync(content, content.Length, cancellationToken).ConfigureAwait(false);
 			}
 		}
 
@@ -2642,9 +2718,10 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("Invalid file path", nameof(filePath));
+
 			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize))
-			using (var streamWriter = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize))
-				streamWriter.WriteLines(lines);
+			using (var streamWriter = new StreamWriter(fileStream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize))
+			streamWriter.WriteLines(lines);
 		}
 
 		/// <summary>
@@ -2659,9 +2736,10 @@ namespace net.vieapps.Components.Utility
 		{
 			if (string.IsNullOrWhiteSpace(filePath))
 				throw new ArgumentException("Invalid file path", nameof(filePath));
+
 			using (var fileStream = new FileStream(filePath, append ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete, TextFileReader.BufferSize, true))
-			using (var streamWriter = new StreamWriter(fileStream, encoding ?? Encoding.UTF8, TextFileReader.BufferSize))
-				await streamWriter.WriteLinesAsync(lines, cancellationToken).ConfigureAwait(false);
+			using (var streamWriter = new StreamWriter(fileStream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize))
+			await streamWriter.WriteLinesAsync(lines, cancellationToken).ConfigureAwait(false);
 		}
 		#endregion
 

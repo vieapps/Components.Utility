@@ -1,15 +1,18 @@
 ﻿#region Related components
 using System;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Linq;
 using System.Numerics;
-using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Globalization;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
-using System.IO;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 #endregion
 
 namespace net.vieapps.Components.Utility
@@ -129,34 +132,29 @@ namespace net.vieapps.Components.Utility
 		}
 
 		/// <summary>
-		/// Converts this json to array of bytes
+		/// Converts this JSON to array of bytes
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="tag"></param>
 		/// <param name="capacity"></param>
 		/// <param name="formatting"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this Newtonsoft.Json.Linq.JToken @object, string tag = null, int capacity = 0, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
+		public static byte[] ToBytes(this JToken @object, string tag = null, int capacity = 0, Formatting formatting = Formatting.None)
 		{
 			using (var stream = UtilityService.CreateMemoryStream(tag, capacity))
-			using (var streamWritter = new StreamWriter(stream, new UTF8Encoding(false), 1024, true))
-			using (var jsonTextWriter = new Newtonsoft.Json.JsonTextWriter(streamWritter) { Formatting = formatting })
 			{
-				@object.WriteTo(jsonTextWriter);
-				jsonTextWriter.Flush();
-				streamWritter.Flush();
+				@object.WriteTo(stream, formatting);
 				return stream.ToBytes();
 			}
 		}
 
-
 		/// <summary>
-		/// Converts this json to array of bytes
+		/// Converts this JSON to array of bytes
 		/// </summary>
 		/// <param name="object"></param>
 		/// <param name="formatting"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes(this Newtonsoft.Json.Linq.JToken @object, Newtonsoft.Json.Formatting formatting)
+		public static byte[] ToBytes(this JToken @object, Formatting formatting)
 			=> @object.ToBytes(null, 0, formatting);
 
 		/// <summary>
@@ -168,7 +166,7 @@ namespace net.vieapps.Components.Utility
 		public static byte[] ToBytes(this string @string, Encoding encoding = null)
 			=> string.IsNullOrEmpty(@string)
 				? Array.Empty<byte>()
-				: (encoding ?? Encoding.UTF8).GetBytes(@string);
+				: (encoding ?? StringService.UTF8NoBOM).GetBytes(@string);
 
 		/// <summary>
 		/// Converts this boolean to array of bytes

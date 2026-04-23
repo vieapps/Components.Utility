@@ -14,6 +14,10 @@ namespace net.vieapps.Components.Utility
 	/// </summary>
 	public static partial class StringService
 	{
+		/// <summary>
+		/// Gets the default text encoding - UTF-8 without byte order mark
+		/// </summary>
+		public static Encoding UTF8NoBOM { get; } = new UTF8Encoding(false);
 
 		#region Manipulations
 		/// <summary>
@@ -351,7 +355,7 @@ namespace net.vieapps.Components.Utility
 		/// <param name="encoding"></param>
 		/// <returns></returns>
 		public static string GetString(this byte[] bytes, int count = 0, Encoding encoding = null)
-			=> (encoding ?? Encoding.UTF8).GetString(bytes, 0, count > 0 ? count : bytes.Length);
+			=> bytes == null ? null : bytes.Length < 1 ? string.Empty : (encoding ?? StringService.UTF8NoBOM).GetString(bytes, 0, count > 0 && count <= bytes.Length ? count : bytes.Length);
 
 		/// <summary>
 		/// Gets the string from array of bytes by specified encoding (default is UTF8)
