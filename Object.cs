@@ -2030,6 +2030,14 @@ namespace net.vieapps.Components.Utility
 
 		#region JSON manipulations/conversions
 		/// <summary>
+		/// Gets the name (node-name) of this JSON token
+		/// </summary>
+		/// <param name="json"></param>
+		/// <returns></returns>
+		public static string GetName(this JToken json)
+			=> (json as JProperty)?.Name;
+
+		/// <summary>
 		/// Removes the property with the specified name.
 		/// </summary>
 		/// <param name="json">The JSON object</param>
