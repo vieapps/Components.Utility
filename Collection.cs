@@ -507,15 +507,19 @@ namespace net.vieapps.Components.Utility
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 					index++;
-					actionAsync(item, index, cancellationToken).Execute();
+					var idx = index;
+					actionAsync(item, idx, cancellationToken).Execute();
 				}
 
+#if NETSTANDARD2_0
 			else if (!parallelExecutions)
 				foreach (var item in enumerable)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
 					index++;
-					await actionAsync(item, index, cancellationToken).ConfigureAwait(captureContext);
+					var idx = index;
+					await Task.Yield();
+					await actionAsync(item, idx, cancellationToken).ConfigureAwait(captureContext);
 				}
 
 			else
@@ -548,7 +552,8 @@ namespace net.vieapps.Components.Utility
 						cts.Token.ThrowIfCancellationRequested();
 						await locker.WaitAsync(cts.Token).ConfigureAwait(captureContext);
 						index++;
-						tasks.Add(performAsync(item, index));
+						var idx = index;
+						tasks.Add(performAsync(item, idx));
 
 						if (tasks.Count >= maxDegreeOfParallelisms)
 						{
@@ -571,180 +576,31 @@ namespace net.vieapps.Components.Utility
 						throw new AggregateException(exceptions.IsEmpty ? (IEnumerable<Exception>)new[] { ex } : exceptions);
 					}
 				}
-		}
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
-			=> enumerable == null
-				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, _) => actionAsync(item), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
-			=> enumerable == null
-				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, _, token) => actionAsync(item, token), cancellationToken, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise false to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise false to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, Task> actionAsync, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
-			=> enumerable == null
-				? Task.CompletedTask
-				: enumerable.ForEachAsync((item, index, _) => actionAsync(item, index), CancellationToken.None, waitForAllCompleted, parallelExecutions, captureContext, maxDegreeOfParallelism);
-
-		/// <summary>
-		/// Performs the specified action on each element of the collection (in asynchronous way)
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="enumerable"></param>
-		/// <param name="actionAsync">The delegated action to perform on each element of the collection.</param>
-		/// <param name="cancellationToken">The cancellation token.</param>
-		/// <param name="waitForAllCompleted">true to wait for all tasks are completed before leaving; otherwise to fire-and-forget.</param>
-		/// <param name="parallelExecutions">true to execute all tasks in parallel; otherwise to execute in sequence.</param>
-		/// <param name="captureContext">true to capture/return back to calling context.</param>
-		/// <param name="maxDegreeOfParallelism">Max degree of parallelism.</param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static async Task ForEachAsync<T>(this IAsyncEnumerable<T> enumerable, Func<T, int, CancellationToken, Task> actionAsync, CancellationToken cancellationToken, bool waitForAllCompleted = true, bool parallelExecutions = true, bool captureContext = false, int? maxDegreeOfParallelism = null)
-		{
-			if (enumerable == null)
-				throw new ArgumentNullException(nameof(enumerable));
-
-			if (actionAsync == null)
-				throw new ArgumentNullException(nameof(actionAsync));
-
-			if (maxDegreeOfParallelism != null && maxDegreeOfParallelism.Value < 1)
-				throw new ArgumentOutOfRangeException(nameof(maxDegreeOfParallelism));
-
-			var index = -1;
-			var maxDegreeOfParallelisms = maxDegreeOfParallelism ?? Environment.ProcessorCount * 2;
-
-			if (!waitForAllCompleted)
-			{
-				var enumerator = enumerable.GetAsyncEnumerator(cancellationToken);
-				try
+#else
+			if (!parallelExecutions)
+				foreach (var item in enumerable)
 				{
-					while (await enumerator.MoveNextAsync().ConfigureAwait(captureContext))
-					{
-						cancellationToken.ThrowIfCancellationRequested();
-						index++;
-						actionAsync(enumerator.Current, index, cancellationToken).Execute();
-					}
+					cancellationToken.ThrowIfCancellationRequested();
+					index++;
+					var idx = index;
+					await Task.Yield();
+					await actionAsync(item, idx, cancellationToken).ConfigureAwait(false);
 				}
-				finally
-				{
-					await enumerator.DisposeAsync().ConfigureAwait(captureContext);
-				}
-			}
-
-			else if (!parallelExecutions)
-			{
-				var enumerator = enumerable.GetAsyncEnumerator(cancellationToken);
-				try
-				{
-					while (await enumerator.MoveNextAsync().ConfigureAwait(captureContext))
-					{
-						cancellationToken.ThrowIfCancellationRequested();
-						index++;
-						await actionAsync(enumerator.Current, index, cancellationToken).ConfigureAwait(captureContext);
-					}
-				}
-				finally
-				{
-					await enumerator.DisposeAsync().ConfigureAwait(captureContext);
-				}
-			}
-
 			else
-				using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-				using (var locker = new SemaphoreSlim(maxDegreeOfParallelisms, maxDegreeOfParallelisms))
-				{
-					var exceptions = new ConcurrentBag<Exception>();
-					async Task performAsync(T item, int idx)
+				await Parallel.ForEachAsync(
+					enumerable as IList<T> ?? enumerable.ToList(),
+					new ParallelOptions
 					{
-						try
-						{
-							if (!cts.IsCancellationRequested)
-								await actionAsync(item, idx, cts.Token).ConfigureAwait(captureContext);
-						}
-						catch (Exception ex)
-						{
-							exceptions.Add(ex);
-							cts.Cancel();
-							throw;
-						}
-						finally
-						{
-							locker.Release();
-						}
-					}
-
-					var tasks = new List<Task>(maxDegreeOfParallelisms);
-					var enumerator = enumerable.GetAsyncEnumerator(cts.Token);
-					try
+						MaxDegreeOfParallelism = maxDegreeOfParallelisms,
+						CancellationToken = cancellationToken
+					},
+					async (item, cancellationtoken) =>
 					{
-						while (await enumerator.MoveNextAsync().ConfigureAwait(captureContext))
-						{
-							cts.Token.ThrowIfCancellationRequested();
-							await locker.WaitAsync(cts.Token).ConfigureAwait(captureContext);
-							index++;
-							tasks.Add(performAsync(enumerator.Current, index));
-
-							if (tasks.Count >= maxDegreeOfParallelisms)
-							{
-								var task = await Task.WhenAny(tasks).ConfigureAwait(captureContext);
-								tasks.Remove(task);
-								try
-								{
-									await task.ConfigureAwait(captureContext);
-								}
-								catch { }
-							}
-						}
-
-						try
-						{
-							await Task.WhenAll(tasks).ConfigureAwait(captureContext);
-						}
-						catch (Exception ex)
-						{
-							throw new AggregateException(exceptions.IsEmpty ? (IEnumerable<Exception>)new[] { ex } : exceptions);
-						}
+						var idx = Interlocked.Increment(ref index);
+						await actionAsync(item, idx, cancellationtoken).ConfigureAwait(false);
 					}
-					finally
-					{
-						await enumerator.DisposeAsync().ConfigureAwait(captureContext);
-					}
-				}
+				).ConfigureAwait(false);
+#endif
 		}
 		#endregion
 
