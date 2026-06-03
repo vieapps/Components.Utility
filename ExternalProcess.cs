@@ -31,10 +31,7 @@ namespace net.vieapps.Components.Utility
 		/// </remarks>
 		public static Info Start(string filePath, string arguments, string workingDirectory = null, Action<object, EventArgs> onExited = null, Action<object, DataReceivedEventArgs> onOutputDataReceived = null, Action<object, DataReceivedEventArgs> onErrorDataReceived = null, bool captureOutput = false)
 		{
-			// prepare information
 			var info = new Info(filePath, arguments);
-
-			// prepare the process
 			var psi = new ProcessStartInfo
 			{
 				FileName = info.FilePath,
@@ -43,9 +40,9 @@ namespace net.vieapps.Components.Utility
 				CreateNoWindow = true,
 				UseShellExecute = false,
 				ErrorDialog = false,
-				RedirectStandardInput = true,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true
+				RedirectStandardInput = captureOutput,
+				RedirectStandardOutput = captureOutput,
+				RedirectStandardError = captureOutput
 			};
 
 			if (string.IsNullOrWhiteSpace(workingDirectory))
@@ -69,7 +66,6 @@ namespace net.vieapps.Components.Utility
 			if (!string.IsNullOrWhiteSpace(workingDirectory))
 				psi.WorkingDirectory = workingDirectory;
 
-			// initialize the proces
 			var process = new Process
 			{
 				StartInfo = psi,
@@ -102,15 +98,17 @@ namespace net.vieapps.Components.Utility
 				(sender as IDisposable)?.Dispose();
 			};
 
-			// start the process
 			process.Start();
-			process.BeginOutputReadLine();
-			process.BeginErrorReadLine();
+			if (captureOutput)
+			{
+				process.BeginOutputReadLine();
+				process.BeginErrorReadLine();
+			}
 
-			// return information
 			info.Process = process;
 			info.ID = process.Id;
 			info.StartTime = process.StartTime;
+
 			return info;
 		}
 
@@ -126,7 +124,7 @@ namespace net.vieapps.Components.Utility
 		/// Remember assign execution permisions to the file (sudo chmod 777 'filename') while running on Linux/macOS
 		/// </remarks>
 		public static Info Start(string filePath, string arguments, Action<object, EventArgs> onExited, Action<object, DataReceivedEventArgs> onDataReceived = null)
-			=> ExternalProcess.Start(filePath, arguments, null, onExited, onDataReceived, onDataReceived, false);
+			=> ExternalProcess.Start(filePath, arguments, null, onExited, onDataReceived, onDataReceived, !RuntimeInformation.IsOSPlatform(OSPlatform.Windows));
 
 		/// <summary>
 		/// Starts to run a command as external process with 'cmd.exe' (Windows) or '/bin/bash' (Linux/macOS)
