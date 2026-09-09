@@ -577,16 +577,7 @@ namespace net.vieapps.Components.Utility
 					}
 				}
 #else
-			if (!parallelExecutions)
-				foreach (var item in enumerable)
-				{
-					cancellationToken.ThrowIfCancellationRequested();
-					index++;
-					var idx = index;
-					await Task.Yield();
-					await actionAsync(item, idx, cancellationToken).ConfigureAwait(false);
-				}
-			else
+			if (parallelExecutions)
 				await Parallel.ForEachAsync(
 					enumerable as IList<T> ?? enumerable.ToList(),
 					new ParallelOptions
@@ -600,6 +591,15 @@ namespace net.vieapps.Components.Utility
 						await actionAsync(item, idx, cancellationtoken).ConfigureAwait(false);
 					}
 				).ConfigureAwait(false);
+			else
+				foreach (var item in enumerable)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					index++;
+					var idx = index;
+					await Task.Yield();
+					await actionAsync(item, idx, cancellationToken).ConfigureAwait(false);
+				}
 #endif
 		}
 		#endregion

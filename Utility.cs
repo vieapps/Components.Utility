@@ -1325,7 +1325,7 @@ namespace net.vieapps.Components.Utility
 						if (!isMoved && !isNotModified)
 							try
 							{
-								exception.Body = await response.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+								exception.Body = await response.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
 								exception.Body = string.IsNullOrWhiteSpace(exception.Body) ? null : exception.Body;
 								if (exception.Code != 522 && (exception.Body ?? "").IsContains("522: Connection timed out"))
 									exception.Code = 522;

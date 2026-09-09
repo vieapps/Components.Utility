@@ -980,7 +980,7 @@ namespace net.vieapps.Components.Utility
 
 		#region Get checksum of bytes or string
 		/// <summary>
-		/// Gets the check-sum of this array of bytes using double-hash
+		/// Gets the check-sum of this array of bytes
 		/// </summary>
 		/// <param name="bytes"></param>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
@@ -992,7 +992,7 @@ namespace net.vieapps.Components.Utility
 				: bytes.GetHash(hashAlgorithm).Take(0, length > 0 ? length : 4);
 
 		/// <summary>
-		/// Gets the check-sum of this string using double-hash
+		/// Gets the check-sum of this string
 		/// </summary>
 		/// <param name="string"></param>
 		/// <param name="hashAlgorithm">Name of a hash algorithm (md5, sha1, sha256, sha384, sha512, ripemd/ripemd160, blake128, blake/blake256, blake384, blake512)</param>
