@@ -1449,13 +1449,11 @@ namespace net.vieapps.Components.Utility
 				if (headers.TryGetValue("Cookie", out var cookies) && !string.IsNullOrWhiteSpace(cookies))
 					request.Headers.TryAddWithoutValidation("Cookie", cookies);
 
-#if NETSTANDARD2_0
-				request.Headers.Add("Accept-Encoding", "deflate, gzip");
-#elif NET10_0
-				request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
-#else
-				request.Headers.Add("Accept-Encoding", "deflate, gzip, br, zstd");
+				var acceptEncoding = "deflate, gzip";
+#if NET10_0
+				acceptEncoding += ", br";
 #endif
+				request.Headers.Add("Accept-Encoding", acceptEncoding);
 
 #if NETSTANDARD2_0
 				if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put)))

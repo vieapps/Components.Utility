@@ -206,185 +206,89 @@ namespace net.vieapps.Components.Utility
 		/// <param name="info">The information</param>
 		/// <param name="onCompleted">The action to run when completed</param>
 		/// <param name="onError">The action to run when got error</param>
-		/// <param name="waitingTimes">The time for waiting when try to close</param>
-		public static void Stop(Info info, Action<Info> onCompleted = null, Action<Exception> onError = null, int waitingTimes = 456)
+		public static void Stop(Info info, Action<Info> onCompleted = null, Action<Exception> onError = null)
 		{
-			if (info == null || info.Process == null)
-				try
-				{
-					info?.Process?.Dispose();
-					onCompleted?.Invoke(info);
-				}
-				catch (Exception ex)
-				{
-					onError?.Invoke(ex);
-				}
+			if (info?.Process == null)
+				onCompleted?.Invoke(info);
+
 			else
-				try
-				{
-					ExternalProcess.Kill
-					(
-						info.Process,
-						process =>
+				ExternalProcess.Kill
+				(
+					info.Process,
+					process =>
+					{
+						try
 						{
-							process.StandardInput.WriteLine("exit");
-							process.StandardInput.Close();
-							process.WaitForExit(waitingTimes > 0 ? waitingTimes : 456);
-							process.Refresh();
-						},
-						process =>
-						{
-							try
+							if (process != null && process.HasExited)
 							{
-								process.WaitForExit(123);
 								info.ExitCode = process.ExitCode;
 								info.ExitTime = process.ExitTime;
 							}
-							catch (InvalidOperationException ex)
-							{
-								if (ex.Message.IsContains("No process is associated with this object"))
-								{
-									info.ExitCode = 0;
-									info.ExitTime = DateTime.Now;
-								}
-								else
-									onError?.Invoke(ex);
-							}
-							catch (Exception ex)
-							{
-								onError?.Invoke(ex);
-							}
-							try
-							{
-								info.Process?.Dispose();
-							}
-							catch (Exception ex)
-							{
-								onError?.Invoke(ex);
-							}
+						}
+						catch (Exception ex)
+						{
+							onError?.Invoke(ex);
+						}
+						finally
+						{
+							process?.Dispose();
 							onCompleted?.Invoke(info);
-						},
-						onError
-					);
-				}
-				catch (Exception ex)
-				{
-					try
-					{
-						info.Process?.Kill();
-						info.Process?.Dispose();
-						onCompleted?.Invoke(info);
-					}
-					catch
-					{
-						onError?.Invoke(ex);
-					}
-				}
+						}
+					},
+					onError
+				);
 		}
 
 		/// <summary>
 		/// Kills an external process
 		/// </summary>
 		/// <param name="process"></param>
-		/// <param name="tryToClose">The action to run to try to close the process before the process be killed</param>
 		/// <param name="onKilled">The action to run when process was killed</param>
 		/// <param name="onError">The action to run when got error</param>
-		public static void Kill(Process process, Action<Process> tryToClose = null, Action<Process> onKilled = null, Action<Exception> onError = null)
+		public static void Kill(Process process, Action<Process> onKilled = null, Action<Exception> onError = null)
 		{
-			try
-			{
-				// check
-				if (process == null)
-				{
-					onKilled?.Invoke(process);
-					return;
-				}
-
-				// try to close
+			if (process == null)
+				onKilled?.Invoke(null);
+			else
 				try
 				{
-					tryToClose?.Invoke(process);
-				}
-				catch (Exception ex)
-				{
-					onError?.Invoke(ex);
-				}
-
-				// re-check after trying to close
-				try
-				{
-					process.WaitForExit(123);
-					if (process.HasExited)
-					{
-						onKilled?.Invoke(process);
-						return;
-					}
-				}
-				catch (InvalidOperationException ex)
-				{
-					if (ex.Message.IsContains("No process is associated with this object"))
-					{
-						onKilled?.Invoke(process);
-						return;
-					}
-					else
-						onError?.Invoke(ex);
-				}
-				catch (Exception ex)
-				{
-					onError?.Invoke(ex);
-				}
-
-				// kill
-				if (process.StartInfo.RedirectStandardInput)
-				{
-					try
-					{
-						process.StandardInput.Close();
-						process.CloseMainWindow();
-						process.WaitForExit(456);
-						process.Refresh();
-					}
-					catch { }
 					if (!process.HasExited)
+					{
+#if NETSTANDARD2_0
 						process.Kill();
-				}
-				else if (!process.HasExited)
-					process.Kill();
-
-				// callback
-				onKilled?.Invoke(process);
-			}
-			catch (Exception ex)
-			{
-				try
-				{
-					process?.Kill();
-					process?.Dispose();
+#else
+						process.Kill(true);
+#endif
+					}
+					process.WaitForExit(456);
 					onKilled?.Invoke(process);
 				}
-				catch
+				catch (InvalidOperationException)
+				{
+					onKilled?.Invoke(process);
+				}
+				catch (Exception ex)
 				{
 					onError?.Invoke(ex);
 				}
-			}
 		}
 
 		/// <summary>
 		/// Kills an external process that specified by identity
 		/// </summary>
 		/// <param name="processID">The integer that presents the identity of a process that to be killed</param>
-		/// <param name="tryToClose">The action to try to close the process before the process be killed</param>
 		/// <param name="onKilled">The action to run when process was killed</param>
 		/// <param name="onError">The action to run when got error</param>
-		public static void Kill(int processID, Action<Process> tryToClose = null, Action<Process> onKilled = null, Action<Exception> onError = null)
+		public static void Kill(int processID, Action<Process> onKilled = null, Action<Exception> onError = null)
 		{
 			try
 			{
 				using (var process = Process.GetProcessById(processID))
-				{
-					ExternalProcess.Kill(process, tryToClose, onKilled, onError);
-				}
+					ExternalProcess.Kill(process, onKilled, onError);
+			}
+			catch (ArgumentException)
+			{
+				onKilled?.Invoke(null);
 			}
 			catch (Exception ex)
 			{
@@ -522,18 +426,16 @@ namespace net.vieapps.Components.Utility
 			/// </summary>
 			/// <param name="onCompleted">The action to run when completed</param>
 			/// <param name="onError">The action to run when got error</param>
-			/// <param name="waitingTimes">The time for waiting when try to close</param>
-			public void Stop(Action<Info> onCompleted = null, Action<Exception> onError = null, int waitingTimes = 456)
-				=> ExternalProcess.Stop(this, onCompleted, onError, waitingTimes);
+			public void Stop(Action<Info> onCompleted = null, Action<Exception> onError = null)
+				=> ExternalProcess.Stop(this, onCompleted, onError);
 
 			/// <summary>
 			/// Kills an external process
 			/// </summary>
-			/// <param name="tryToClose">The action to run to try to close the process before the process be killed</param>
 			/// <param name="onKilled">The action to run when process was killed</param>
 			/// <param name="onError">The action to run when got error</param>
-			public void Kill(Action<Process> tryToClose = null, Action<Process> onKilled = null, Action<Exception> onError = null)
-				=> ExternalProcess.Kill(this.Process, tryToClose, onKilled, onError);
+			public void Kill(Action<Process> onKilled = null, Action<Exception> onError = null)
+				=> ExternalProcess.Kill(this.Process, onKilled, onError);
 
 			/// <summary>
 			/// Sends a command
