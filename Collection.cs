@@ -578,7 +578,8 @@ namespace net.vieapps.Components.Utility
 				}
 #else
 			if (parallelExecutions)
-				await Parallel.ForEachAsync(
+				await Parallel.ForEachAsync
+				(
 					enumerable as IList<T> ?? enumerable.ToList(),
 					new ParallelOptions
 					{

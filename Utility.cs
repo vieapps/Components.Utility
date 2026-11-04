@@ -18,6 +18,7 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IO;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 #endregion
 
@@ -915,6 +916,51 @@ namespace net.vieapps.Components.Utility
 			using (var memoryStream = bytes.ToMemoryStream())
 			await memoryStream.WriteToAsync(stream, encoding, cancellationToken).ConfigureAwait(false);
 		}
+
+		/// <summary>
+		/// Writes this JSON to a stream
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="stream"></param>
+		/// <param name="formatting"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static void WriteTo(this JToken json, Stream stream, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.Indented, Encoding encoding = null)
+		{
+			if (json == null || stream == null)
+				return;
+
+			using (var streamWritter = new StreamWriter(stream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize, true))
+			using (var jsonTextWriter = new JsonTextWriter(streamWritter) { Formatting = formatting })
+			{
+				json.WriteTo(jsonTextWriter);
+				jsonTextWriter.Flush();
+				streamWritter.Flush();
+			}
+		}
+
+		/// <summary>
+		/// Writes this JSON to a stream
+		/// </summary>
+		/// <param name="json"></param>
+		/// <param name="stream"></param>
+		/// <param name="formatting"></param>
+		/// <param name="encoding"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		public static async Task WriteToAsync(this JToken json, Stream stream, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.Indented, Encoding encoding = null, CancellationToken cancellationToken = default)
+		{
+			if (json == null || stream == null)
+				return;
+
+			using (var streamWritter = new StreamWriter(stream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize, true))
+			using (var jsonTextWriter = new JsonTextWriter(streamWritter) { Formatting = formatting })
+			{
+				await json.WriteToAsync(jsonTextWriter, cancellationToken).ConfigureAwait(false);
+				await jsonTextWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
+				await streamWritter.FlushAsync(cancellationToken).ConfigureAwait(false);
+			}
+		}
 		#endregion
 
 		#region User agents
@@ -1253,7 +1299,7 @@ namespace net.vieapps.Components.Utility
 				Proxy = UtilityService.Proxy,
 				UseProxy = UtilityService.Proxy != null
 			};
-			return UtilityService.HttpClient = new HttpClient(UtilityService.HttpHandler);
+			return UtilityService.HttpClient = new(UtilityService.HttpHandler);
 #endif
 		}
 
@@ -1405,11 +1451,15 @@ namespace net.vieapps.Components.Utility
 
 #if NETSTANDARD2_0
 				request.Headers.Add("Accept-Encoding", "deflate, gzip");
+#elif NET10_0
+				request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
+#else
+				request.Headers.Add("Accept-Encoding", "deflate, gzip, br, zstd");
+#endif
 
+#if NETSTANDARD2_0
 				if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put)))
 #else
-				request.Headers.Add("Accept-Encoding", "deflate, gzip, br");
-
 				if (body != null && (request.Method.Equals(HttpMethod.Post) || request.Method.Equals(HttpMethod.Put) || request.Method.Equals(HttpMethod.Patch)))
 #endif
 				{

@@ -4,9 +4,8 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Linq;
+using System.Buffers;
 using System.Numerics;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -72,14 +71,28 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Converts this read-only memory to array of bytes
 		/// </summary>
-		/// <param name="input"></param>
+		/// <param name="bytes"></param>
 		/// <returns></returns>
-		public static byte[] ToBytes<T>(this ReadOnlyMemory<T> input) where T : struct
+		public static byte[] ToBytes<T>(this ReadOnlyMemory<T> bytes) where T : struct
 			=> typeof(T) == typeof(byte)
-				? MemoryMarshal.TryGetArray(input, out ArraySegment<T> segment) && segment.Array is byte[] array && segment.Offset == 0 && segment.Count == array.Length
+				? MemoryMarshal.TryGetArray(bytes, out ArraySegment<T> segment) && segment.Array is byte[] array && segment.Offset == 0 && segment.Count == array.Length
 					? array
-					: input.Span.ToArray() as byte[]
-				: MemoryMarshal.AsBytes(input.Span).ToArray();
+					: bytes.Span.ToArray() as byte[]
+				: MemoryMarshal.AsBytes(bytes.Span).ToArray();
+
+		/// <summary>
+		/// Converts this sequence of bytes to array of bytes
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="length"></param>
+		/// <returns></returns>
+		public static byte[] ToBytes(this ReadOnlySequence<byte> bytes, int length = 0)
+		{
+			length = length > 0 ? length : checked((int)bytes.Length);
+			var buffer = new byte[length];
+			bytes.CopyTo(buffer);
+			return buffer;
+		}
 
 		/// <summary>
 		/// Converts this array segment of bytes to array of bytes
@@ -100,13 +113,7 @@ namespace net.vieapps.Components.Utility
 			if (bytes.Offset == 0 && count == array.Length)
 				return array;
 
-#if NETSTANDARD2_0
-			var result = new byte[count];
-			Buffer.BlockCopy(array, bytes.Offset, result, 0, count);
-			return result;
-#else
 			return new ReadOnlySpan<byte>(array, bytes.Offset, count).ToArray();
-#endif
 		}
 
 		/// <summary>
@@ -116,19 +123,27 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static byte[] ToBytes(this MemoryStream stream)
 		{
-			byte[] array = null;
-			if (stream.CanSeek)
-				stream.Seek(0, SeekOrigin.Begin);
-
-			if (stream.TryGetBuffer(out var buffer) && buffer.Array != null)
+			byte[] bytes = null;
+			if (stream is Microsoft.IO.RecyclableMemoryStream recyclableMemoryStream)
 			{
-				var length = (int)stream.Length;
-				array = buffer.Offset == 0 && length == buffer.Array.Length
-					? buffer.Array
-					: new ArraySegment<byte>(buffer.Array, buffer.Offset, length).ToBytes();
+				var length = checked((int)recyclableMemoryStream.Length);
+				if (length > 0)
+					bytes = recyclableMemoryStream.GetReadOnlySequence().ToBytes(length);
 			}
-
-			return array != null && array.Length > 0 ? array : stream.ToArray();
+			else
+			{
+				if (stream.CanSeek)
+					stream.Seek(0, SeekOrigin.Begin);
+				if (stream.TryGetBuffer(out var buffer) && buffer.Array != null)
+				{
+					var length = checked((int)stream.Length);
+					bytes = buffer.Offset == 0 && length == buffer.Array.Length
+						? buffer.Array
+						: new ArraySegment<byte>(buffer.Array, buffer.Offset, length).ToBytes();
+				}
+				bytes = bytes != null && bytes.Length > 0 ? bytes : stream.ToArray(); ;
+			}
+			return bytes ?? Array.Empty<byte>();
 		}
 
 		/// <summary>

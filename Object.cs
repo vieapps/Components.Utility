@@ -2,13 +2,10 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml;
 using System.Dynamic;
 using System.Reflection;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Collections;
 using System.Collections.Generic;
@@ -2303,51 +2300,6 @@ namespace net.vieapps.Components.Utility
 		/// <returns></returns>
 		public static string AsString(this JToken @object, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.None)
 			=> @object.ToBytes(formatting).GetString();
-
-		/// <summary>
-		/// Writes this JSON to a stream
-		/// </summary>
-		/// <param name="json"></param>
-		/// <param name="stream"></param>
-		/// <param name="formatting"></param>
-		/// <param name="encoding"></param>
-		/// <returns></returns>
-		public static void WriteTo(this JToken json, Stream stream, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.Indented, Encoding encoding = null)
-		{
-			if (json == null || stream == null)
-				return;
-
-			using (var streamWritter = new StreamWriter(stream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize, true))
-			using (var jsonTextWriter = new JsonTextWriter(streamWritter) { Formatting = formatting })
-			{
-				json.WriteTo(jsonTextWriter);
-				jsonTextWriter.Flush();
-				streamWritter.Flush();
-			}
-		}
-
-		/// <summary>
-		/// Writes this JSON to a stream
-		/// </summary>
-		/// <param name="json"></param>
-		/// <param name="stream"></param>
-		/// <param name="formatting"></param>
-		/// <param name="encoding"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		public static async Task WriteToAsync(this JToken json, Stream stream, Newtonsoft.Json.Formatting formatting = Newtonsoft.Json.Formatting.Indented, Encoding encoding = null, CancellationToken cancellationToken = default)
-		{
-			if (json == null || stream == null)
-				return;
-
-			using (var streamWritter = new StreamWriter(stream, encoding ?? StringService.UTF8NoBOM, TextFileReader.BufferSize, true))
-			using (var jsonTextWriter = new JsonTextWriter(streamWritter) { Formatting = formatting })
-			{
-				await json.WriteToAsync(jsonTextWriter, cancellationToken).ConfigureAwait(false);
-				await jsonTextWriter.FlushAsync(cancellationToken).ConfigureAwait(false);
-				await streamWritter.FlushAsync(cancellationToken).ConfigureAwait(false);
-			}
-		}
 		#endregion
 
 		#region ExpandoObject conversions
