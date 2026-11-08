@@ -1689,13 +1689,55 @@ namespace net.vieapps.Components.Utility
 		/// <summary>
 		/// Clones the object (perform a deep copy of the object)
 		/// </summary>
+		/// <param name="object">The object instance to copy</param>
+		/// <param name="settings">The settings to copy</param>
+		/// <param name="onCompleted">The action to run before completing the clone process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns>The copied object.</returns>
+		public static JToken Clone(this JToken @object, JsonCloneSettings settings, Action<JToken> onCompleted, Action<Exception> onError)
+		{
+			if (@object != null)
+				try
+				{
+					var clone = @object.DeepClone(settings);
+					onCompleted?.Invoke(clone);
+					return clone;
+				}
+				catch (Exception ex)
+				{
+					onError?.Invoke(ex);
+				}
+			return default;
+		}
+
+		/// <summary>
+		/// Clones the object (perform a deep copy of the object)
+		/// </summary>
+		/// <param name="object">The object instance to copy</param>
+		/// <param name="onCompleted">The action to run before completing the clone process</param>
+		/// <param name="onError">The action to run when got any error</param>
+		/// <returns>The copied object.</returns>
+		public static JToken Clone(this JToken @object, Action<JToken> onCompleted = null, Action<Exception> onError = null)
+			=> @object == null ? default : @object.Clone(null, onCompleted, onError);
+
+		/// <summary>
+		/// Clones the object (perform a deep copy of the object)
+		/// </summary>
 		/// <typeparam name="T">The type of object being copied</typeparam>
 		/// <param name="object">The object instance to copy</param>
 		/// <param name="onCompleted">The action to run before completing the clone process</param>
 		/// <param name="onError">The action to run when got any error</param>
 		/// <returns>The copied object.</returns>
 		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> @object == null ? default : @object.Copy(null, onCompleted, onError);
+		{
+			if (@object is JToken jobject)
+			{
+				var clone = (T)(object)jobject.Clone(null, onError);
+				onCompleted?.Invoke(clone);
+				return clone;
+			}
+			return @object == null ? default : @object.Copy(null, onCompleted, onError);
+		}
 		#endregion
 
 		#region Copy objects' properties from JSON
