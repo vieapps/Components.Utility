@@ -114,6 +114,15 @@ namespace net.vieapps.Components.Utility
 			return @string.Replace(pattern, replacement, comparisonType);
 #endif
 		}
+
+		/// <summary>
+		/// Counts the bytes of this string
+		/// </summary>
+		/// <param name="string"></param>
+		/// <param name="encoding"></param>
+		/// <returns></returns>
+		public static int CountBytes(this string @string, Encoding encoding = null)
+			=> @string == null ? -1 : (encoding ?? Encoding.UTF8).GetByteCount(@string);
 		#endregion
 
 		#region Comparisons

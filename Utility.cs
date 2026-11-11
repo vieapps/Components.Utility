@@ -1450,8 +1450,8 @@ namespace net.vieapps.Components.Utility
 					request.Headers.TryAddWithoutValidation("Cookie", cookies);
 
 				var acceptEncoding = "deflate, gzip";
-#if NET10_0
-				acceptEncoding += ", br";
+#if NET11_0_OR_GREATER
+				acceptEncoding += ", br, zstd";
 #endif
 				request.Headers.Add("Accept-Encoding", acceptEncoding);
 

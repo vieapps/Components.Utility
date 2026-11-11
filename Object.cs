@@ -1597,7 +1597,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static void CopyTo<T>(this T @object, T destination, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
+		/// <returns>The copied object.</returns>
+		public static void CopyTo<T>(this T @object, T destination, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null, bool throwIfNotGotOnError = false)
 		{
 			if (@object == null || destination == null)
 				throw new ArgumentNullException(nameof(destination), "The destination object is null");
@@ -1612,7 +1614,10 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					onError?.Invoke(ex);
+					if (onError != null)
+						onError(ex);
+					else if (throwIfNotGotOnError)
+						throw;
 				}
 			});
 
@@ -1624,7 +1629,10 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					onError?.Invoke(ex);
+					if (onError != null)
+						onError(ex);
+					else if (throwIfNotGotOnError)
+						throw;
 				}
 			});
 
@@ -1639,7 +1647,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		public static T CopyFrom<T>(this T @object, object source, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
+		/// <returns>The copied object.</returns>
+		public static T CopyFrom<T>(this T @object, object source, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null, bool throwIfNotGotOnError = false)
 		{
 			if (@object == null || source == null)
 				throw new ArgumentNullException(nameof(source), "The source object is null");
@@ -1654,7 +1664,10 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					onError?.Invoke(ex);
+					if (onError != null)
+						onError(ex);
+					else if (throwIfNotGotOnError)
+						throw;
 				}
 			});
 
@@ -1666,7 +1679,10 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					onError?.Invoke(ex);
+					if (onError != null)
+						onError(ex);
+					else if (throwIfNotGotOnError)
+						throw;
 				}
 			});
 
@@ -1682,9 +1698,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="excluded">The hash-set of excluded attributes</param>
 		/// <param name="onCompleted">The action to run before completing the copy process</param>
 		/// <param name="onError">The action to run when got any error</param>
-		/// <returns></returns>
-		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null)
-			=> typeof(T).CreateInstance<T>().CopyFrom(@object, excluded, onCompleted, onError);
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
+		/// <returns>The copied object.</returns>
+		public static T Copy<T>(this T @object, HashSet<string> excluded = null, Action<T> onCompleted = null, Action<Exception> onError = null, bool throwIfNotGotOnError = false)
+			=> typeof(T).CreateInstance<T>().CopyFrom(@object, excluded, onCompleted, onError, throwIfNotGotOnError);
 
 		/// <summary>
 		/// Clones the object (perform a deep copy of the object)
@@ -1693,8 +1710,9 @@ namespace net.vieapps.Components.Utility
 		/// <param name="settings">The settings to copy</param>
 		/// <param name="onCompleted">The action to run before completing the clone process</param>
 		/// <param name="onError">The action to run when got any error</param>
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
 		/// <returns>The copied object.</returns>
-		public static JToken Clone(this JToken @object, JsonCloneSettings settings, Action<JToken> onCompleted, Action<Exception> onError)
+		public static JToken Clone(this JToken @object, JsonCloneSettings settings, Action<JToken> onCompleted, Action<Exception> onError, bool throwIfNotGotOnError = false)
 		{
 			if (@object != null)
 				try
@@ -1705,7 +1723,10 @@ namespace net.vieapps.Components.Utility
 				}
 				catch (Exception ex)
 				{
-					onError?.Invoke(ex);
+					if (onError != null)
+						onError(ex);
+					else if (throwIfNotGotOnError)
+						throw;
 				}
 			return default;
 		}
@@ -1716,9 +1737,10 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object instance to copy</param>
 		/// <param name="onCompleted">The action to run before completing the clone process</param>
 		/// <param name="onError">The action to run when got any error</param>
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
 		/// <returns>The copied object.</returns>
-		public static JToken Clone(this JToken @object, Action<JToken> onCompleted = null, Action<Exception> onError = null)
-			=> @object == null ? default : @object.Clone(null, onCompleted, onError);
+		public static JToken Clone(this JToken @object, Action<JToken> onCompleted = null, Action<Exception> onError = null, bool throwIfNotGotOnError = false)
+			=> @object == null ? default : @object.Clone(null, onCompleted, onError, throwIfNotGotOnError);
 
 		/// <summary>
 		/// Clones the object (perform a deep copy of the object)
@@ -1727,17 +1749,28 @@ namespace net.vieapps.Components.Utility
 		/// <param name="object">The object instance to copy</param>
 		/// <param name="onCompleted">The action to run before completing the clone process</param>
 		/// <param name="onError">The action to run when got any error</param>
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
 		/// <returns>The copied object.</returns>
-		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null)
+		public static T Clone<T>(this T @object, Action<T> onCompleted = null, Action<Exception> onError = null, bool throwIfNotGotOnError = false)
 		{
-			if (@object is JToken jobject)
+			if (@object is JToken json)
 			{
-				var clone = (T)(object)jobject.Clone(null, onError);
+				var clone = (T)(object)json.Clone(null, onError, throwIfNotGotOnError);
 				onCompleted?.Invoke(clone);
 				return clone;
 			}
-			return @object == null ? default : @object.Copy(null, onCompleted, onError);
+			return @object == null ? default : @object.Copy(null, onCompleted, onError, throwIfNotGotOnError);
 		}
+
+		/// <summary>
+		/// Clones the object (perform a deep copy of the object)
+		/// </summary>
+		/// <typeparam name="T">The type of object being copied</typeparam>
+		/// <param name="object">The object instance to copy</param>
+		/// <param name="throwIfNotGotOnError">true to throw exception when got any error and not got 'onError' callback</param>
+		/// <returns>The copied object.</returns>
+		public static T Clone<T>(this T @object, bool throwIfNotGotOnError)
+			=> @object == null ? default : @object.Clone(null, null, throwIfNotGotOnError);
 		#endregion
 
 		#region Copy objects' properties from JSON
